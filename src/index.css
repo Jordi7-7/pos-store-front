@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --primary: #2563eb;
+  --secondary: #0f172a;
+  --tertiary: #f8fafc;
+  --neutral: #64748b;
+  
+  --primary-hover: #1d4ed8;
+  --bg-dark: #f8fafc;        /* Light main background */
+  --bg-card: #ffffff;        /* White card background */
+  --border-card: #e2e8f0;    /* Slate-200 border */
+  --text-main: #0f172a;      /* Dark main text */
+  --text-muted: #64748b;     /* Muted neutral text */
+}
+
+@theme {
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-tertiary: var(--tertiary);
+  --color-neutral: var(--neutral);
+  --color-bg-dark: var(--bg-dark);
+  --color-bg-card: var(--bg-card);
+  --color-border-card: var(--border-card);
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  
+  --font-sans: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+:root {
+  font-family: var(--font-sans);
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--bg-dark);
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-card);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--neutral);
+}
