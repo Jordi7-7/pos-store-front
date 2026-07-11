@@ -37,7 +37,7 @@ export const MainLayout: React.FC = () => {
   const { suppliers } = useSuppliers();
 
   // Media upload shared context hook
-  const { uploadImage, isUploading, uploadedImages } = useMediaUpload();
+  const { uploadImage, isUploading, isLoading: isLoadingMedia, uploadedImages } = useMediaUpload();
 
   // Selected Branch Context
   const [selectedBranchId, setSelectedBranchId] = useState('');
@@ -62,11 +62,9 @@ export const MainLayout: React.FC = () => {
     }
   }, [branches, selectedBranchId]);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleUpload = async (file: File, description: string) => {
     try {
-      await uploadImage(file);
+      await uploadImage({ file, description });
     } catch (err) {
       console.error(err);
       alert('Error en la subida multimedia.');
@@ -252,7 +250,8 @@ export const MainLayout: React.FC = () => {
             <MediaView 
               uploadedImages={uploadedImages} 
               isUploading={isUploading} 
-              handleFileUpload={handleFileUpload} 
+              isLoading={isLoadingMedia}
+              onUpload={handleUpload} 
             />
           )}
 

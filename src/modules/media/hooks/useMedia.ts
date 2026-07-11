@@ -1,32 +1,40 @@
-import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { mediaService } from '../services/media.service';
 import type { RegisteredImage } from '../services/media.service';
 
 export const useMediaUpload = () => {
-  const [uploadedImages, setUploadedImages] = useState<RegisteredImage[]>([]);
+  const queryClient = useQueryClient();
 
+  // Query to get all images from DB
+  const { data: uploadedImages = [], isLoading } = useQuery<RegisteredImage[]>({
+    queryKey: ['media-images'],
+    queryFn: () => mediaService.getImages(),
+  });
+
+  // Mutation to upload a new image
   const uploadMutation = useMutation({
-    mutationFn: async (file: File): Promise<RegisteredImage> => {
+    mutationFn: async ({ file, description }: { file: File; description?: string }): Promise<RegisteredImage> => {
       // 1. Get presigned url
       const { uploadUrl, fileUrl } = await mediaService.getPresignedUrl(file.name, file.type);
       
       // 2. Upload file directly to R2
       await mediaService.uploadToR2(uploadUrl, file);
 
-      // 3. Register image in DB
-      const registered = await mediaService.registerImage(fileUrl);
+      // 3. Register image in DB with description
+      const registered = await mediaService.registerImage(fileUrl, description);
       
-      // Update local session list
-      setUploadedImages((prev) => [...prev, registered]);
-
       return registered;
+    },
+    onSuccess: () => {
+      // Invalidate query to refresh gallery automatically
+      queryClient.invalidateQueries({ queryKey: ['media-images'] });
     }
   });
 
   return {
     uploadImage: uploadMutation.mutateAsync,
     isUploading: uploadMutation.isPending,
+    isLoading,
     uploadedImages,
   };
 };

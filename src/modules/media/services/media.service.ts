@@ -9,10 +9,15 @@ export interface RegisteredImage {
   id: string;
   url: string;
   tenantId: string;
+  description?: string;
   createdAt: string;
 }
 
 export const mediaService = {
+  getImages: async (): Promise<RegisteredImage[]> => {
+    return apiClient.get<RegisteredImage[]>('/media');
+  },
+
   getPresignedUrl: async (filename: string, contentType: string): Promise<PresignedUrlResponse> => {
     return apiClient.get<PresignedUrlResponse>(
       `/media/presigned-url?filename=${encodeURIComponent(filename)}&contentType=${encodeURIComponent(contentType)}`
@@ -33,8 +38,8 @@ export const mediaService = {
     }
   },
 
-  registerImage: async (url: string): Promise<RegisteredImage> => {
-    return apiClient.post<RegisteredImage>('/media/register', { url });
+  registerImage: async (url: string, description?: string): Promise<RegisteredImage> => {
+    return apiClient.post<RegisteredImage>('/media/register', { url, description });
   }
 };
 export default mediaService;
