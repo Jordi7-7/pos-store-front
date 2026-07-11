@@ -31,9 +31,22 @@ export const useMediaUpload = () => {
     }
   });
 
+  // Mutation to delete an image
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string): Promise<void> => {
+      await mediaService.deleteImage(id);
+    },
+    onSuccess: () => {
+      // Invalidate query to refresh gallery automatically
+      queryClient.invalidateQueries({ queryKey: ['media-images'] });
+    }
+  });
+
   return {
     uploadImage: uploadMutation.mutateAsync,
     isUploading: uploadMutation.isPending,
+    deleteImage: deleteMutation.mutateAsync,
+    isDeleting: deleteMutation.isPending,
     isLoading,
     uploadedImages,
   };

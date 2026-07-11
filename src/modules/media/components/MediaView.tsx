@@ -1,23 +1,28 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Image as ImageIcon, FileText, Loader2, Link2 } from 'lucide-react';
+import { Upload, Image as ImageIcon, FileText, Loader2, Link2, Trash2 } from 'lucide-react';
 
 interface MediaViewProps {
   uploadedImages: any[];
   isUploading: boolean;
+  isDeleting: boolean;
   isLoading: boolean;
   onUpload: (file: File, description: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 }
 
 export const MediaView: React.FC<MediaViewProps> = ({
   uploadedImages,
   isUploading,
+  isDeleting,
   isLoading,
-  onUpload
+  onUpload,
+  onDelete
 }) => {
   const [description, setDescription] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDrag = (e: React.DragEvent) => {
@@ -70,6 +75,21 @@ export const MediaView: React.FC<MediaViewProps> = ({
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar esta imagen permanentemente del catálogo y del almacenamiento?')) {
+      return;
+    }
+    
+    try {
+      setDeletingId(id);
+      await onDelete(id);
+    } catch (error) {
+      console.error('Error al eliminar la imagen:', error);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row gap-6">
@@ -111,17 +131,34 @@ export const MediaView: React.FC<MediaViewProps> = ({
                     ) : (
                       <p className="text-[10px] text-neutral italic">Sin descripción</p>
                     )}
+                    
                     <div className="flex items-center justify-between pt-1 border-t border-border-card/50">
                       <span className="text-[9px] text-neutral font-mono">ID: {img.id.substring(0, 8)}...</span>
-                      <a 
-                        href={img.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="text-[9px] text-primary font-semibold hover:underline flex items-center gap-0.5"
-                      >
-                        <Link2 className="w-3 h-3" />
-                        Original ↗
-                      </a>
+                      
+                      <div className="flex items-center gap-2">
+                        <a 
+                          href={img.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-[9px] text-primary font-semibold hover:underline flex items-center gap-0.5"
+                        >
+                          <Link2 className="w-3 h-3" />
+                          Original
+                        </a>
+                        
+                        <button
+                          onClick={() => handleDelete(img.id)}
+                          disabled={isDeleting || deletingId === img.id}
+                          className="text-red-500 hover:text-red-600 disabled:text-neutral/40 p-1 rounded transition-colors"
+                          title="Eliminar imagen"
+                        >
+                          {deletingId === img.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

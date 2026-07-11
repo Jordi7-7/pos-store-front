@@ -41,5 +41,8 @@ export const apiClient = {
 
   post: <T>(path: string, body: any, options?: RequestInit) => 
     apiClient.request<T>(path, { ...options, method: 'POST', body: JSON.stringify(body) }),
+
+  delete: <T>(path: string, options?: RequestInit) => 
+    apiClient.request<T>(path, { ...options, method: 'DELETE' }),
 };
 export default apiClient;

@@ -37,7 +37,7 @@ export const MainLayout: React.FC = () => {
   const { suppliers } = useSuppliers();
 
   // Media upload shared context hook
-  const { uploadImage, isUploading, isLoading: isLoadingMedia, uploadedImages } = useMediaUpload();
+  const { uploadImage, isUploading, deleteImage, isDeleting, isLoading: isLoadingMedia, uploadedImages } = useMediaUpload();
 
   // Selected Branch Context
   const [selectedBranchId, setSelectedBranchId] = useState('');
@@ -68,6 +68,16 @@ export const MainLayout: React.FC = () => {
     } catch (err) {
       console.error(err);
       alert('Error en la subida multimedia.');
+    }
+  };
+
+  const handleDeleteImage = async (id: string) => {
+    try {
+      await deleteImage(id);
+    } catch (err: any) {
+      console.error(err);
+      const message = err?.message || 'Error al eliminar la imagen.';
+      alert(message);
     }
   };
 
@@ -250,8 +260,10 @@ export const MainLayout: React.FC = () => {
             <MediaView 
               uploadedImages={uploadedImages} 
               isUploading={isUploading} 
+              isDeleting={isDeleting}
               isLoading={isLoadingMedia}
               onUpload={handleUpload} 
+              onDelete={handleDeleteImage}
             />
           )}
 
