@@ -50,9 +50,9 @@ export const POSView: React.FC<POSViewProps> = ({
         branchId: branch,
         openingBalance: parseFloat(openingBalance),
       });
-      setActiveSession(res || { id: 'temp-session-uuid-123', openingBalance });
-    } catch (err) {
-      setActiveSession({ id: 'temp-session-uuid-123', openingBalance });
+      setActiveSession(res);
+    } catch (err: any) {
+      alert(err.message || 'Error opening session');
     }
   };
 
@@ -77,6 +77,7 @@ export const POSView: React.FC<POSViewProps> = ({
     try {
       await apiRegisterExpense({
         branchId: branch,
+        cashSessionId: activeSession?.id,
         description: expenseDesc,
         amount: parseFloat(expenseAmount),
         category: expenseCategory

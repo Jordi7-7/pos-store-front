@@ -26,6 +26,7 @@ export interface OpenCashSessionInput {
 
 export interface RegisterExpenseInput {
   branchId: string;
+  cashSessionId?: string;
   description: string;
   amount: number;
   category: string;
@@ -50,5 +51,10 @@ export const salesService = {
 
   registerExpense: async (input: RegisterExpenseInput): Promise<any> => {
     return apiClient.post<any>('/sales/expenses', input);
+  },
+
+  getActiveCashSession: async (branchId?: string): Promise<any> => {
+    const url = branchId ? `/sales/cash-sessions/active?branchId=${branchId}` : '/sales/cash-sessions/active';
+    return apiClient.get<any>(url);
   }
 };

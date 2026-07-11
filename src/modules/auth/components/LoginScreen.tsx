@@ -92,14 +92,14 @@ export const LoginScreen: React.FC = () => {
       <div className="w-full max-w-4xl bg-bg-card border border-border-card rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row transition-all duration-300">
         
         {/* Left Side Panel - Info / Welcome */}
-        <div className="md:w-5/12 bg-gradient-to-br from-primary/5 via-tertiary to-bg-dark p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-border-card">
+        <div className="md:w-5/12 bg-linear-to-br from-primary/5 via-tertiary to-bg-dark p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-border-card">
           <div>
             <div className="flex items-center gap-3 mb-8">
               <div className="bg-primary p-2.5 rounded-xl shadow-lg shadow-primary/20">
                 <Store className="w-6 h-6 text-white" />
               </div>
               <div>
-                <span className="text-xl font-bold tracking-tight text-secondary block">AURA POS</span>
+                <span className="text-xl font-bold tracking-tight text-secondary block">POS STORE</span>
                 <span className="text-[10px] text-primary font-semibold uppercase tracking-widest">SaaS ERP Multi-tenant</span>
               </div>
             </div>

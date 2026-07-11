@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuthStore } from '../modules/auth/hooks/useAuthStore';
 import { useBranches } from '../modules/branches';
 import { useMediaUpload } from '../modules/media';
-import { useSales } from '../modules/sales';
+import { useSales, useActiveCashSession } from '../modules/sales';
 import { useSuppliers } from '../modules/purchases';
 
 // Modular View Components
@@ -45,6 +45,15 @@ export const MainLayout: React.FC = () => {
   // Shared Petty Cash Session State
   const [activeSession, setActiveSession] = useState<any>(null); 
   const [localExpenses, setLocalExpenses] = useState<any[]>([]);
+
+  const { activeSession: fetchedSession } = useActiveCashSession(selectedBranchId);
+
+  // Sync activeSession with backend query
+  React.useEffect(() => {
+    if (fetchedSession !== undefined) {
+      setActiveSession(fetchedSession);
+    }
+  }, [fetchedSession]);
 
   // Automatic Context Initialization
   React.useEffect(() => {
@@ -100,7 +109,7 @@ export const MainLayout: React.FC = () => {
                 <ShoppingBag className="w-5 h-5 text-white" />
               </div>
               <div>
-                <span className="font-bold text-sm tracking-tight text-secondary block">AURA POS</span>
+                <span className="font-bold text-sm tracking-tight text-secondary block">POS STORE</span>
                 <span className="text-[9px] text-primary font-mono font-semibold">ID: {tenantId?.substring(0, 8)}...</span>
               </div>
             </div>
@@ -146,7 +155,7 @@ export const MainLayout: React.FC = () => {
             </div>
             <div className="min-w-0 flex-1">
               <span className="text-xs font-semibold text-secondary block truncate">{user?.name}</span>
-              <span className="text-[10px] text-neutral font-medium block truncate flex items-center gap-1">
+              <span className="text-[10px] text-neutral font-medium truncate flex items-center gap-1">
                 <ShieldCheck className="w-3 h-3 text-primary inline" />
                 {role}
               </span>

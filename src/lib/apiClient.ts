@@ -25,6 +25,10 @@ export const apiClient = {
     });
 
     if (!response.ok) {
+      if (response.status === 401 && !path.includes('/auth/login')) {
+        // Token expirado o inválido: Cerrar sesión
+        useAuthStore.getState().logout();
+      }
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || `Request failed with status ${response.status}`);
     }

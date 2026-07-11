@@ -20,8 +20,12 @@ export const useSales = () => {
 };
 
 export const useOpenCashSession = () => {
+  const queryClient = useQueryClient();
   const openCashMutation = useMutation({
     mutationFn: (input: OpenCashSessionInput) => salesService.openCashSession(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['active-cash-session'] });
+    }
   });
 
   return {
@@ -31,9 +35,13 @@ export const useOpenCashSession = () => {
 };
 
 export const useCloseCashSession = () => {
+  const queryClient = useQueryClient();
   const closeCashMutation = useMutation({
     mutationFn: ({ id, closingBalance }: { id: string; closingBalance: number }) => 
       salesService.closeCashSession(id, closingBalance),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['active-cash-session'] });
+    }
   });
 
   return {
@@ -75,5 +83,20 @@ export const useProcessSale = () => {
   return {
     processSale: processSaleMutation.mutateAsync,
     isProcessing: processSaleMutation.isPending,
+  };
+};
+
+export const useActiveCashSession = (branchId?: string) => {
+  const { isAuthenticated } = useAuthStore();
+  const activeSessionQuery = useQuery({
+    queryKey: ['active-cash-session', branchId],
+    queryFn: () => salesService.getActiveCashSession(branchId),
+    enabled: isAuthenticated && !!branchId,
+  });
+
+  return {
+    activeSession: activeSessionQuery.data || null,
+    isLoading: activeSessionQuery.isLoading,
+    refetchActiveSession: activeSessionQuery.refetch,
   };
 };
