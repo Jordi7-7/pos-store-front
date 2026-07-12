@@ -42,6 +42,10 @@ export const mediaService = {
     return apiClient.post<RegisteredImage>('/media/register', { url, description });
   },
 
+  uploadImageByUrl: async (url: string, description?: string): Promise<RegisteredImage> => {
+    return apiClient.post<RegisteredImage>('/media/upload-by-url', { url, description });
+  },
+
   deleteImage: async (id: string): Promise<void> => {
     return apiClient.delete<void>(`/media/${id}`);
   }

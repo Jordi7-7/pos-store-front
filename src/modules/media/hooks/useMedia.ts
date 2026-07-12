@@ -42,9 +42,21 @@ export const useMediaUpload = () => {
     }
   });
 
+  // Mutation to upload image by URL
+  const uploadByUrlMutation = useMutation({
+    mutationFn: async ({ url, description }: { url: string; description?: string }): Promise<RegisteredImage> => {
+      return mediaService.uploadImageByUrl(url, description);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['media-images'] });
+    }
+  });
+
   return {
     uploadImage: uploadMutation.mutateAsync,
     isUploading: uploadMutation.isPending,
+    uploadImageByUrl: uploadByUrlMutation.mutateAsync,
+    isUploadingByUrl: uploadByUrlMutation.isPending,
     deleteImage: deleteMutation.mutateAsync,
     isDeleting: deleteMutation.isPending,
     isLoading,

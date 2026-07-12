@@ -7,8 +7,55 @@ interface MediaViewProps {
   isDeleting: boolean;
   isLoading: boolean;
   onUpload: (file: File, description: string) => Promise<void>;
+  onUploadByUrl: (url: string, description: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }
+
+const extractImageUrlFromDataTransfer = (dataTransfer: DataTransfer): string | null => {
+  // 1. Intentar con text/uri-list (suele contener la URL limpia o una lista de ellas)
+  const uriList = dataTransfer.getData('text/uri-list');
+  if (uriList) {
+    const lines = uriList.split('\n');
+    for (const line of lines) {
+      const cleanLine = line.trim();
+      if (cleanLine && !cleanLine.startsWith('#')) {
+        return cleanLine;
+      }
+    }
+  }
+
+  // 2. Intentar con text/plain
+  const textPlain = dataTransfer.getData('text/plain');
+  if (textPlain) {
+    const cleanText = textPlain.trim();
+    // Si contiene una redirección de Google Images, ej: https://www.google.com/imgres?imgurl=https%3A%2F%2F...
+    if (cleanText.includes('imgurl=')) {
+      try {
+        const urlObj = new URL(cleanText);
+        const imgUrl = urlObj.searchParams.get('imgurl');
+        if (imgUrl) return decodeURIComponent(imgUrl);
+      } catch (e) {}
+    }
+    if (cleanText.startsWith('http://') || cleanText.startsWith('https://') || cleanText.startsWith('data:image/')) {
+      return cleanText;
+    }
+  }
+
+  // 3. Intentar con text/html (analizar tags img)
+  const htmlData = dataTransfer.getData('text/html');
+  if (htmlData) {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlData, 'text/html');
+      const img = doc.querySelector('img');
+      if (img && img.src) {
+        return img.src;
+      }
+    } catch (e) {}
+  }
+
+  return null;
+};
 
 export const MediaView: React.FC<MediaViewProps> = ({
   uploadedImages,
@@ -16,12 +63,14 @@ export const MediaView: React.FC<MediaViewProps> = ({
   isDeleting,
   isLoading,
   onUpload,
+  onUploadByUrl,
   onDelete
 }) => {
   const [description, setDescription] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,7 +93,16 @@ export const MediaView: React.FC<MediaViewProps> = ({
       const file = e.dataTransfer.files[0];
       if (file.type.startsWith('image/')) {
         setSelectedFile(file);
+        setSelectedUrl(null);
         setPreviewUrl(URL.createObjectURL(file));
+      }
+    } else {
+      // Usar el extractor robusto de URL
+      const url = extractImageUrlFromDataTransfer(e.dataTransfer);
+      if (url) {
+        setSelectedFile(null);
+        setSelectedUrl(url);
+        setPreviewUrl(url);
       }
     }
   };
@@ -53,18 +111,25 @@ export const MediaView: React.FC<MediaViewProps> = ({
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
+      setSelectedUrl(null);
       setPreviewUrl(URL.createObjectURL(file));
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedFile) return;
+    if (!selectedFile && !selectedUrl) return;
 
     try {
-      await onUpload(selectedFile, description);
+      if (selectedFile) {
+        await onUpload(selectedFile, description);
+      } else if (selectedUrl) {
+        await onUploadByUrl(selectedUrl, description);
+      }
+      
       // Reset form
       setSelectedFile(null);
+      setSelectedUrl(null);
       setPreviewUrl(null);
       setDescription('');
       if (fileInputRef.current) {
@@ -238,7 +303,7 @@ export const MediaView: React.FC<MediaViewProps> = ({
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={!selectedFile || isUploading}
+              disabled={(!selectedFile && !selectedUrl) || isUploading}
               className="w-full bg-primary hover:bg-primary-hover disabled:bg-neutral/20 disabled:text-neutral/60 disabled:cursor-not-allowed text-white text-xs font-bold py-3 px-4 rounded-xl shadow-sm transition-all duration-200 flex items-center justify-center gap-2"
             >
               {isUploading ? (

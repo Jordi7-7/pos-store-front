@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useProducts } from '../../products/hooks/useProducts';
 import { useCategories } from '../../products/hooks/useCategories';
 import { useBranches } from '../../branches/hooks/useBranches';
@@ -6,9 +6,20 @@ import {
   useOpenCashSession, 
   useCloseCashSession, 
   useRegisterExpense, 
-  useProcessSale 
+  useProcessSale,
+  useSales
 } from '../hooks/useSales';
-import { Search } from 'lucide-react';
+import { useCustomers } from '../hooks/useCustomers';
+import { PaymentMethod } from '../services/sales.service';
+import { Search, MoreVertical, Wallet, ArrowRightLeft, Receipt, X } from 'lucide-react';
+import { toast } from 'sonner';
+
+// Subcomponents import
+import { CatalogGrid } from './pos/CatalogGrid';
+import { CartSummary } from './pos/CartSummary';
+import { VariantSelectorModal } from './pos/VariantSelectorModal';
+import { ThermalTicketModal } from './pos/ThermalTicketModal';
+import { CashSessionModals } from './pos/CashSessionModals';
 
 interface POSViewProps {
   selectedBranchId: string;
@@ -16,6 +27,18 @@ interface POSViewProps {
   setActiveSession: (session: any) => void;
   localExpenses: any[];
   setLocalExpenses: React.Dispatch<React.SetStateAction<any[]>>;
+}
+
+interface CartItem {
+  variantId: string;
+  productId: string;
+  productName: string;
+  variantSku: string;
+  combinationText: string;
+  price: number;
+  quantity: number;
+  imageUrl?: string;
+  maxStock: number;
 }
 
 export const POSView: React.FC<POSViewProps> = ({
@@ -26,33 +49,91 @@ export const POSView: React.FC<POSViewProps> = ({
   setLocalExpenses
 }) => {
   const { branches } = useBranches();
-  const { products, isLoading: isLoadingProducts } = useProducts();
   const { categories } = useCategories();
+  const { customers } = useCustomers();
+  const { sales } = useSales();
 
-  const { openSession } = useOpenCashSession();
-  const { closeSession } = useCloseCashSession();
-  const { registerExpense: apiRegisterExpense } = useRegisterExpense();
-  const { processSale } = useProcessSale();
+  // Search & Categories selection
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
+  const { products, isLoading: isLoadingProducts, refetch: refetchProducts } = useProducts({ 
+    page: 1, 
+    limit: 100, 
+    search: searchTerm.trim() 
+  });
+
+  const { openSession, isOpening } = useOpenCashSession();
+  const { closeSession, isClosing } = useCloseCashSession();
+  const { registerExpense: apiRegisterExpense, isRegistering } = useRegisterExpense();
+  const { processSale, isProcessing } = useProcessSale();
+
+  // Session Balance & Expense Form fields
   const [openingBalance, setOpeningBalance] = useState('150.00');
   const [closingBalance, setClosingBalance] = useState('200.00');
   const [expenseDesc, setExpenseDesc] = useState('');
   const [expenseAmount, setExpenseAmount] = useState('');
   const expenseCategory = 'Servicios';
 
-  const [cart, setCart] = useState<{ id: string; name: string; price: number; quantity: number }[]>([]);
+  // Modal Visibility states
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+  const [isAperturaModalOpen, setIsAperturaModalOpen] = useState(false);
+  const [isEgresoModalOpen, setIsEgresoModalOpen] = useState(false);
+  const [isCierreModalOpen, setIsCierreModalOpen] = useState(false);
+  const [isHistorialModalOpen, setIsHistorialModalOpen] = useState(false);
+
+  // Cart States
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.EFECTIVO);
+
+  // Ticket Printing State
+  const [lastCompletedSale, setLastCompletedSale] = useState<any | null>(null);
+  const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+
+  // Variant selector states
+  const [selectedProductForModal, setSelectedProductForModal] = useState<any | null>(null);
+  const [isVariantModalOpen, setIsVariantModalOpen] = useState(false);
+
+  const optionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (optionsRef.current && !optionsRef.current.contains(event.target as Node)) {
+        setIsOptionsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredProducts = useMemo(() => {
+    if (!products) return [];
+    if (!selectedCategoryId) return products;
+    return products.filter((p: any) => p.categoryId === selectedCategoryId);
+  }, [products, selectedCategoryId]);
+
+  const activeSessionSales = useMemo(() => {
+    if (!activeSession || !sales) return [];
+    return sales.filter((s: any) => s.cashSessionId === activeSession.id);
+  }, [sales, activeSession]);
 
   const handleOpenSession = async () => {
     const branch = selectedBranchId || (branches[0] && branches[0].id);
-    if (!branch) return;
+    if (!branch) {
+      toast.warning('Por favor selecciona una sucursal activa.');
+      return;
+    }
     try {
       const res = await openSession({
         branchId: branch,
         openingBalance: parseFloat(openingBalance),
       });
       setActiveSession(res);
+      setIsAperturaModalOpen(false);
+      toast.success('¡Caja registradora abierta con éxito!');
     } catch (err: any) {
-      alert(err.message || 'Error opening session');
+      toast.error(err.message || 'Error al abrir la caja.');
     }
   };
 
@@ -65,254 +146,385 @@ export const POSView: React.FC<POSViewProps> = ({
       });
       setActiveSession(null);
       setLocalExpenses([]);
-    } catch (err) {
-      setActiveSession(null);
-      setLocalExpenses([]);
+      setIsCierreModalOpen(false);
+      toast.success('¡Sesión de caja cerrada con éxito!');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al cerrar la caja.');
     }
   };
 
   const handleAddExpense = async () => {
     const branch = selectedBranchId || (branches[0] && branches[0].id);
-    if (!branch || !expenseDesc || !expenseAmount) return;
+    if (!branch) return;
+    if (!expenseDesc.trim()) {
+      toast.warning('Por favor ingresa una descripción para el egreso.');
+      return;
+    }
+    if (!expenseAmount || parseFloat(expenseAmount) <= 0) {
+      toast.warning('Por favor ingresa un monto válido.');
+      return;
+    }
     try {
       await apiRegisterExpense({
         branchId: branch,
         cashSessionId: activeSession?.id,
-        description: expenseDesc,
+        description: expenseDesc.trim(),
         amount: parseFloat(expenseAmount),
         category: expenseCategory
       });
       setLocalExpenses([...localExpenses, {
         id: Math.random().toString(),
-        desc: expenseDesc,
+        desc: expenseDesc.trim(),
         amount: parseFloat(expenseAmount),
         category: expenseCategory
       }]);
       setExpenseDesc('');
       setExpenseAmount('');
-    } catch (err) {
-      setLocalExpenses([...localExpenses, {
-        id: Math.random().toString(),
-        desc: expenseDesc,
-        amount: parseFloat(expenseAmount),
-        category: expenseCategory
-      }]);
-      setExpenseDesc('');
-      setExpenseAmount('');
+      setIsEgresoModalOpen(false);
+      toast.success('¡Egreso registrado con éxito!');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al registrar el egreso.');
     }
   };
 
-  const handleAddToCart = (prod: any) => {
-    const existing = cart.find(i => i.id === prod.id);
-    if (existing) {
-      setCart(cart.map(i => i.id === prod.id ? { ...i, quantity: i.quantity + 1 } : i));
-    } else {
-      setCart([...cart, { id: prod.id, name: prod.name, price: prod.variants[0]?.salePrice || 0, quantity: 1 }]);
+  const handleProductCardClick = (product: any) => {
+    if (!activeSession) {
+      toast.warning('Debes abrir la caja registradora para poder vender.');
+      setIsAperturaModalOpen(true);
+      return;
     }
+
+    const branch = selectedBranchId || (branches[0] && branches[0].id);
+    const variants = product.variants || [];
+    const isSimpleProduct = variants.length === 1 && (!variants[0].attributeValues || variants[0].attributeValues.length === 0);
+
+    if (isSimpleProduct) {
+      const v = variants[0];
+      const stockQty = v.stocks?.find((s: any) => s.branchId === branch)?.quantity || 0;
+      if (stockQty <= 0) {
+        toast.warning(`El producto "${product.name}" no tiene existencias en esta sucursal.`);
+        return;
+      }
+      addVariantToCart(product, v, stockQty);
+    } else {
+      setSelectedProductForModal(product);
+      setIsVariantModalOpen(true);
+    }
+  };
+
+  const addVariantToCart = (product: any, variant: any, maxStock: number) => {
+    const existing = cart.find(item => item.variantId === variant.id);
+    
+    if (existing) {
+      if (existing.quantity >= maxStock) {
+        toast.warning(`No puedes agregar más unidades. El stock máximo disponible es de ${maxStock} pzs.`);
+        return;
+      }
+      setCart(cart.map(item => 
+        item.variantId === variant.id 
+          ? { ...item, quantity: item.quantity + 1 } 
+          : item
+      ));
+    } else {
+      const combText = variant.attributeValues && variant.attributeValues.length > 0
+        ? variant.attributeValues.map((av: any) => `${av.attribute?.name || 'Attr'}: ${av.value}`).join(' / ')
+        : 'Estándar';
+
+      const imageUrl = (variant.images && variant.images.length > 0)
+        ? variant.images[0].url
+        : (product.images && product.images.length > 0) ? product.images[0].url : undefined;
+
+      setCart([...cart, {
+        variantId: variant.id,
+        productId: product.id,
+        productName: product.name,
+        variantSku: variant.sku,
+        combinationText: combText,
+        price: variant.salePrice || 0,
+        quantity: 1,
+        imageUrl,
+        maxStock
+      }]);
+    }
+    toast.success(`Se agregó al carrito: ${product.name} ${variant.sku}`);
+  };
+
+  const handleUpdateCartQty = (variantId: string, delta: number) => {
+    const item = cart.find(i => i.variantId === variantId);
+    if (!item) return;
+
+    const newQty = item.quantity + delta;
+    if (newQty <= 0) {
+      setCart(cart.filter(i => i.variantId !== variantId));
+      toast.info('Item removido del carrito.');
+      return;
+    }
+
+    if (newQty > item.maxStock) {
+      toast.warning(`Existencias insuficientes. El stock máximo es de ${item.maxStock} pzs.`);
+      return;
+    }
+
+    setCart(cart.map(i => i.variantId === variantId ? { ...i, quantity: newQty } : i));
+  };
+
+  const handleRemoveFromCart = (variantId: string) => {
+    setCart(cart.filter(i => i.variantId !== variantId));
+    toast.info('Item removido del carrito.');
   };
 
   const handleCheckout = async () => {
     const branch = selectedBranchId || (branches[0] && branches[0].id);
     if (!branch || !activeSession || cart.length === 0) return;
+    
+    const branchName = branches.find((b: any) => b.id === branch)?.name || 'Sucursal General';
+    const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
     try {
-      await processSale({
+      const res = await processSale({
         branchId: branch,
         cashSessionId: activeSession.id,
+        customerId: selectedCustomerId || undefined,
         items: cart.map(i => ({
-          variantId: i.id,
+          variantId: i.variantId,
           quantity: i.quantity,
-          unitPrice: i.price
+          price: i.price
         })),
         payments: [{
-          method: 'CASH',
-          amount: cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+          paymentMethod: paymentMethod,
+          amount: totalAmount
         }]
       });
+
+      const clientName = customers.find((c: any) => c.id === selectedCustomerId)?.name || 'Consumidor Final';
+      const clientIdentity = customers.find((c: any) => c.id === selectedCustomerId)?.identityNumber || '9999999999';
+
+      const saleDataForTicket = {
+        invoiceNumber: res.invoiceNumber || `FAC-${Math.floor(1000 + Math.random() * 9000)}`,
+        createdAt: new Date().toISOString(),
+        branchName,
+        clientName,
+        clientIdentity,
+        items: cart,
+        paymentMethod,
+        total: totalAmount
+      };
+
+      setLastCompletedSale(saleDataForTicket);
       setCart([]);
-      alert('¡Venta procesada con éxito y cargada en Kardex!');
-    } catch (err) {
-      setCart([]);
-      alert('¡Venta procesada con éxito y cargada en Kardex!');
+      setSelectedCustomerId('');
+      setPaymentMethod(PaymentMethod.EFECTIVO);
+      refetchProducts(); // refrescar stock
+
+      setIsTicketModalOpen(true);
+      toast.success('¡Venta procesada con éxito y cargada en Kardex!');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al procesar la venta.');
     }
   };
 
+  const cartTotal = useMemo(() => {
+    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  }, [cart]);
+
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 relative">
       
       {/* Product Catalog/Grid Selection */}
       <div className="xl:col-span-2 space-y-6">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-3.5 top-3 w-4 h-4 text-neutral" />
-            <input 
-              type="text" 
-              placeholder="Buscar producto..." 
-              className="w-full bg-bg-card border border-border-card rounded-xl py-2 pl-10 pr-4 text-xs text-secondary focus:outline-none focus:border-primary"
-            />
+        
+        {/* Catalog View Header with 3 dots and category filters */}
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-bg-card border border-border-card rounded-2xl p-4 shadow-sm">
+          <div className="flex items-center gap-3 w-full md:w-auto flex-1">
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-neutral" />
+              <input 
+                type="text" 
+                placeholder="Buscar por nombre o SKU..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-bg-dark border border-border-card rounded-xl py-2.5 pl-10 pr-4 text-xs text-secondary focus:outline-none focus:border-primary transition-all placeholder-neutral"
+              />
+            </div>
+
+            {/* Menu Options Button */}
+            <div className="relative" ref={optionsRef}>
+              <button
+                onClick={() => setIsOptionsOpen(!isOptionsOpen)}
+                className="p-2.5 bg-bg-dark border border-border-card rounded-xl text-neutral hover:text-secondary hover:border-primary/50 transition-all flex items-center justify-center"
+                title="Administración de Caja Chica"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+
+              {isOptionsOpen && (
+                <div className="absolute left-0 mt-2 w-52 bg-bg-card border border-border-card rounded-xl shadow-2xl z-20 py-2 animate-fade-in">
+                  <div className="px-3 pb-1 mb-1 border-b border-border-card text-[9px] uppercase tracking-wider font-bold text-neutral">Caja Chica</div>
+                  
+                  {!activeSession ? (
+                    <button
+                      onClick={() => {
+                        setIsAperturaModalOpen(true);
+                        setIsOptionsOpen(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-xs text-emerald-500 hover:bg-bg-dark font-semibold transition-colors flex items-center gap-2"
+                    >
+                      <Wallet className="w-3.5 h-3.5" />
+                      <span>Apertura de Caja</span>
+                    </button>
+                  ) : (
+                    <>
+                      <div className="px-4 py-1.5 text-[10px] text-emerald-500 font-bold bg-emerald-500/5 mx-2 rounded mb-2 border border-emerald-500/10 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span>Caja Abierta</span>
+                      </div>
+                      
+                      <button
+                        onClick={() => {
+                          setIsEgresoModalOpen(true);
+                          setIsOptionsOpen(false);
+                        }}
+                        className="w-full px-4 py-2 text-left text-xs text-secondary hover:bg-bg-dark font-medium transition-colors flex items-center gap-2"
+                      >
+                        <ArrowRightLeft className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Registrar Egreso (Gasto)</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setIsHistorialModalOpen(true);
+                          setIsOptionsOpen(false);
+                        }}
+                        className="w-full px-4 py-2 text-left text-xs text-secondary hover:bg-bg-dark font-medium transition-colors flex items-center gap-2"
+                      >
+                        <Receipt className="w-3.5 h-3.5 text-primary" />
+                        <span>Historial de la Sesión</span>
+                      </button>
+
+                      <div className="border-t border-border-card my-1.5" />
+                      
+                      <button
+                        onClick={() => {
+                          setIsCierreModalOpen(true);
+                          setIsOptionsOpen(false);
+                        }}
+                        className="w-full px-4 py-2 text-left text-xs text-rose-500 hover:bg-bg-dark font-semibold transition-colors flex items-center gap-2"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Cierre de Caja y Sesión</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex gap-2 w-full md:w-auto overflow-x-auto">
-            <button className="px-3.5 py-1.5 bg-primary text-white rounded-lg text-xs font-semibold shadow-sm">Todos</button>
+
+          <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+            <button 
+              onClick={() => setSelectedCategoryId(null)}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                !selectedCategoryId 
+                  ? 'bg-primary text-white shadow-sm' 
+                  : 'bg-bg-dark border border-border-card text-neutral hover:text-secondary'
+              }`}
+            >
+              Todos
+            </button>
             {categories.map((cat) => (
-              <button key={cat.id} className="px-3.5 py-1.5 bg-bg-card border border-border-card text-neutral rounded-lg text-xs font-semibold hover:text-secondary hover:bg-bg-dark">
+              <button 
+                key={cat.id} 
+                onClick={() => setSelectedCategoryId(cat.id)}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                  selectedCategoryId === cat.id
+                    ? 'bg-primary text-white shadow-sm' 
+                    : 'bg-bg-dark border border-border-card text-neutral hover:text-secondary'
+                }`}
+              >
                 {cat.name}
               </button>
             ))}
           </div>
         </div>
 
-        {isLoadingProducts ? (
-          <div className="text-center py-10 text-xs text-neutral">Cargando catálogo...</div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-10 text-xs text-neutral border-2 border-dashed border-border-card rounded-2xl">
-            No hay productos en el inventario. Crea uno en la pestaña de Catálogo.
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {products.map((prod) => (
-              <div 
-                key={prod.id} 
-                onClick={() => handleAddToCart(prod)}
-                className="p-4 bg-bg-card border border-border-card rounded-2xl hover:border-primary/50 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 group shadow-sm animate-fade-in"
-              >
-                <div className="text-3xl">📦</div>
-                <div>
-                  <h4 className="font-bold text-xs text-secondary group-hover:text-primary transition-colors truncate">{prod.name}</h4>
-                  <div className="flex justify-between items-center mt-1">
-                    <span className="text-xs font-bold text-primary">
-                      ${prod.variants[0]?.salePrice?.toFixed(2) || '0.00'}
-                    </span>
-                    <span className="text-[10px] text-neutral font-semibold">
-                      Stock: {prod.variants[0]?.stocks?.[0]?.quantity || 0}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <CatalogGrid 
+          products={filteredProducts}
+          isLoading={isLoadingProducts}
+          selectedBranchId={selectedBranchId}
+          branches={branches}
+          onProductClick={handleProductCardClick}
+        />
       </div>
 
-      {/* Checkout / Cart Panel & Petty Cash (Caja Chica) Controls */}
-      <div className="space-y-6">
-        {/* Petty Cash Controls */}
-        <div className="p-5 bg-bg-card border border-border-card rounded-2xl space-y-4 shadow-sm">
-          <h3 className="text-xs font-bold text-secondary uppercase tracking-wider border-b border-border-card pb-2">Controles de Caja Chica</h3>
-          
-          {!activeSession ? (
-            <div className="space-y-3">
-              <div>
-                <label className="block text-[10px] text-neutral mb-1">Monto Fondo de Apertura ($)</label>
-                <input 
-                  type="number" 
-                  value={openingBalance}
-                  onChange={(e) => setOpeningBalance(e.target.value)}
-                  className="w-full bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-xs text-secondary focus:outline-none"
-                />
-              </div>
-              <button 
-                onClick={handleOpenSession}
-                className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-colors shadow-sm"
-              >
-                Abrir Caja Registradora
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center text-xs text-secondary">
-                <span className="text-neutral">Fondo Inicial:</span>
-                <span className="font-bold">${openingBalance}</span>
-              </div>
-              
-              {/* Registrar Gasto */}
-              <div className="p-3 bg-bg-dark border border-border-card rounded-xl space-y-2">
-                <span className="text-[10px] font-bold text-amber-600 block">Registrar Egreso (Gasto Diario)</span>
-                <input 
-                  type="text" 
-                  placeholder="Descripción del gasto" 
-                  value={expenseDesc}
-                  onChange={(e) => setExpenseDesc(e.target.value)}
-                  className="w-full bg-bg-card border border-border-card rounded-lg py-1.5 px-2.5 text-xs text-secondary focus:outline-none"
-                />
-                <div className="flex gap-2">
-                  <input 
-                    type="number" 
-                    placeholder="Monto ($)" 
-                    value={expenseAmount}
-                    onChange={(e) => setExpenseAmount(e.target.value)}
-                    className="w-2/3 bg-bg-card border border-border-card rounded-lg py-1.5 px-2.5 text-xs text-secondary focus:outline-none"
-                  />
-                  <button 
-                    onClick={handleAddExpense}
-                    className="w-1/3 bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-bold rounded-lg transition-colors"
-                  >
-                    Agregar
-                  </button>
-                </div>
-              </div>
+      {/* Cart Summary Side panel */}
+      <CartSummary 
+        cart={cart}
+        customers={customers}
+        selectedCustomerId={selectedCustomerId}
+        setSelectedCustomerId={setSelectedCustomerId}
+        paymentMethod={paymentMethod}
+        setPaymentMethod={setPaymentMethod}
+        cartTotal={cartTotal}
+        onUpdateQty={handleUpdateCartQty}
+        onRemove={handleRemoveFromCart}
+        onCheckout={handleCheckout}
+        isProcessing={isProcessing}
+        activeSession={activeSession}
+      />
 
-              {/* Gastos Registrados */}
-              {localExpenses.length > 0 && (
-                <div className="max-h-24 overflow-y-auto space-y-1.5 pr-1">
-                  {localExpenses.map((exp) => (
-                    <div key={exp.id} className="flex justify-between items-center text-[10px] bg-bg-dark p-2 rounded border border-border-card text-secondary">
-                      <span className="text-neutral truncate">{exp.desc}</span>
-                      <span className="font-bold text-rose-600">-${exp.amount.toFixed(2)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+      {/* Modal for selecting variants */}
+      <VariantSelectorModal 
+        isOpen={isVariantModalOpen}
+        onClose={() => {
+          setIsVariantModalOpen(false);
+          setSelectedProductForModal(null);
+        }}
+        product={selectedProductForModal}
+        selectedBranchId={selectedBranchId}
+        branches={branches}
+        onSelectVariant={addVariantToCart}
+      />
 
-              <div className="space-y-2 border-t border-border-card pt-3">
-                <div>
-                  <label className="block text-[10px] text-neutral mb-1">Monto de Cierre ($)</label>
-                  <input 
-                    type="number" 
-                    value={closingBalance}
-                    onChange={(e) => setClosingBalance(e.target.value)}
-                    className="w-full bg-bg-dark border border-border-card rounded-xl py-1.5 px-2.5 text-xs text-secondary focus:outline-none"
-                  />
-                </div>
-                <button 
-                  onClick={handleCloseSession}
-                  className="w-full py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl transition-colors shadow-sm"
-                >
-                  Cierre de Caja y Sesión
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+      {/* Thermal Ticket Printer simulation */}
+      <ThermalTicketModal 
+        isOpen={isTicketModalOpen}
+        onClose={() => {
+          setIsTicketModalOpen(false);
+          setLastCompletedSale(null);
+        }}
+        saleData={lastCompletedSale}
+      />
 
-        {/* Cart Summary */}
-        <div className="p-5 bg-bg-card border border-border-card rounded-2xl space-y-4 shadow-sm">
-          <h3 className="text-xs font-bold text-secondary uppercase tracking-wider">Carrito de Compra</h3>
-          {cart.length === 0 ? (
-            <div className="h-40 border-2 border-dashed border-border-card rounded-xl flex items-center justify-center text-xs text-neutral">
-              Haga clic en un producto para añadirlo
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-              {cart.map((item) => (
-                <div key={item.id} className="flex justify-between items-center text-xs bg-bg-dark p-2 rounded border border-border-card text-secondary">
-                  <span className="font-semibold truncate">{item.name} x{item.quantity}</span>
-                  <span>${(item.price * item.quantity).toFixed(2)}</span>
-                </div>
-              ))}
-              <div className="border-t border-border-card pt-2 flex justify-between items-center text-xs font-bold text-secondary">
-                <span>Total:</span>
-                <span>${cart.reduce((sum, i) => sum + i.price * i.quantity, 0).toFixed(2)}</span>
-              </div>
-            </div>
-          )}
-          <button 
-            onClick={handleCheckout}
-            disabled={!activeSession || cart.length === 0}
-            className="w-full py-2.5 bg-primary hover:bg-primary-hover disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-lg transition-all"
-          >
-            Procesar Venta
-          </button>
-        </div>
-      </div>
+      {/* Caja Chica Control modals */}
+      <CashSessionModals 
+        isAperturaOpen={isAperturaModalOpen}
+        onCloseApertura={() => setIsAperturaModalOpen(false)}
+        openingBalance={openingBalance}
+        setOpeningBalance={setOpeningBalance}
+        onOpenSession={handleOpenSession}
+        isOpening={isOpening}
+
+        isEgresoOpen={isEgresoModalOpen}
+        onCloseEgreso={() => setIsEgresoModalOpen(false)}
+        expenseDesc={expenseDesc}
+        setExpenseDesc={setExpenseDesc}
+        expenseAmount={expenseAmount}
+        setExpenseAmount={setExpenseAmount}
+        onAddExpense={handleAddExpense}
+        isRegistering={isRegistering}
+
+        isCierreOpen={isCierreModalOpen}
+        onCloseCierre={() => setIsCierreModalOpen(false)}
+        closingBalance={closingBalance}
+        setClosingBalance={setClosingBalance}
+        onCloseSession={handleCloseSession}
+        isClosing={isClosing}
+
+        isHistorialOpen={isHistorialModalOpen}
+        onCloseHistorial={() => setIsHistorialModalOpen(false)}
+        activeSessionSales={activeSessionSales}
+      />
+
     </div>
   );
 };

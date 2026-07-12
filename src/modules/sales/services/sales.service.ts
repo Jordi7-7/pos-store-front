@@ -1,13 +1,22 @@
 import { apiClient } from '@/lib/apiClient';
 
+export const PaymentMethod = {
+  EFECTIVO: 'EFECTIVO',
+  TRANSFERENCIA: 'TRANSFERENCIA',
+  TARJETA: 'TARJETA',
+  BILLETERA_DIGITAL: 'BILLETERA_DIGITAL',
+} as const;
+
+export type PaymentMethod = typeof PaymentMethod[keyof typeof PaymentMethod];
+
 export interface SaleItem {
   variantId: string;
   quantity: number;
-  unitPrice: number;
+  price: number;
 }
 
 export interface SalePayment {
-  method: string; // CASH, CARD, etc.
+  paymentMethod: PaymentMethod;
   amount: number;
 }
 

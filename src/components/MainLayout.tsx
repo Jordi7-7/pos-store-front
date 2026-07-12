@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuthStore } from '../modules/auth/hooks/useAuthStore';
 import { useBranches } from '../modules/branches';
 import { useMediaUpload } from '../modules/media';
+import { Toaster, toast } from 'sonner';
 import { useSales, useActiveCashSession } from '../modules/sales';
 import { useSuppliers } from '../modules/purchases';
 
@@ -37,7 +38,7 @@ export const MainLayout: React.FC = () => {
   const { suppliers } = useSuppliers();
 
   // Media upload shared context hook
-  const { uploadImage, isUploading, deleteImage, isDeleting, isLoading: isLoadingMedia, uploadedImages } = useMediaUpload();
+  const { uploadImage, uploadImageByUrl, isUploading, deleteImage, isDeleting, isLoading: isLoadingMedia, uploadedImages } = useMediaUpload();
 
   // Selected Branch Context
   const [selectedBranchId, setSelectedBranchId] = useState('');
@@ -65,19 +66,31 @@ export const MainLayout: React.FC = () => {
   const handleUpload = async (file: File, description: string) => {
     try {
       await uploadImage({ file, description });
+      toast.success('¡Imagen subida con éxito!');
     } catch (err) {
       console.error(err);
-      alert('Error en la subida multimedia.');
+      toast.error('Error en la subida multimedia.');
+    }
+  };
+
+  const handleUploadByUrl = async (url: string, description: string) => {
+    try {
+      await uploadImageByUrl({ url, description });
+      toast.success('¡Imagen de internet descargada y registrada con éxito!');
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Error al procesar la imagen externa.');
     }
   };
 
   const handleDeleteImage = async (id: string) => {
     try {
       await deleteImage(id);
+      toast.success('Imagen eliminada de la galería.');
     } catch (err: any) {
       console.error(err);
       const message = err?.message || 'Error al eliminar la imagen.';
-      alert(message);
+      toast.error(message);
     }
   };
 
@@ -263,6 +276,7 @@ export const MainLayout: React.FC = () => {
               isDeleting={isDeleting}
               isLoading={isLoadingMedia}
               onUpload={handleUpload} 
+              onUploadByUrl={handleUploadByUrl}
               onDelete={handleDeleteImage}
             />
           )}
@@ -275,6 +289,7 @@ export const MainLayout: React.FC = () => {
 
         </main>
       </div>
+      <Toaster richColors closeButton theme="dark" position="top-right" />
     </div>
   );
 };

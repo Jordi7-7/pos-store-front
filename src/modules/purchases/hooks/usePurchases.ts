@@ -45,11 +45,29 @@ export const useRegisterPurchase = () => {
     onSuccess: () => {
       // Invalidate products inventory/stock after purchasing
       queryClient.invalidateQueries({ queryKey: ['products', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['purchases', tenantId] });
     },
   });
 
   return {
     registerPurchase: registerPurchaseMutation.mutateAsync,
     isRegistering: registerPurchaseMutation.isPending,
+  };
+};
+
+export const usePurchases = () => {
+  const { tenantId, isAuthenticated } = useAuthStore();
+
+  const purchasesQuery = useQuery({
+    queryKey: ['purchases', tenantId],
+    queryFn: () => purchasesService.getPurchases(),
+    enabled: isAuthenticated && !!tenantId,
+  });
+
+  return {
+    purchases: purchasesQuery.data || [],
+    isLoading: purchasesQuery.isLoading,
+    isError: purchasesQuery.isError,
+    refetchPurchases: purchasesQuery.refetch,
   };
 };

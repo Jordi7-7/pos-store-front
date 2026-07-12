@@ -24,7 +24,7 @@ export interface RegisterPurchaseInput {
   items: {
     variantId: string;
     quantity: number;
-    unitCost: number;
+    purchasePrice: number;
   }[];
 }
 
@@ -39,5 +39,9 @@ export const purchasesService = {
 
   registerPurchase: async (input: RegisterPurchaseInput): Promise<any> => {
     return apiClient.post<any>('/purchases', input);
+  },
+
+  getPurchases: async (): Promise<any[]> => {
+    return apiClient.get<any[]>('/purchases');
   }
 };
