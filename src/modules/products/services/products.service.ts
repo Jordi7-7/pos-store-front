@@ -73,5 +73,9 @@ export const productsService = {
 
   updateProduct: async (id: string, input: Partial<CreateProductInput>): Promise<Product> => {
     return apiClient.put<Product>(`/products/${id}`, input);
+  },
+
+  createVariant: async (productId: string, input: ProductVariant): Promise<ProductVariant> => {
+    return apiClient.post<ProductVariant>(`/products/${productId}/variants`, input);
   }
 };

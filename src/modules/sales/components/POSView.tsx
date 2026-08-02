@@ -11,7 +11,7 @@ import {
 } from '../hooks/useSales';
 import { useCustomers } from '../hooks/useCustomers';
 import { PaymentMethod } from '../services/sales.service';
-import { Search, MoreVertical, Wallet, ArrowRightLeft, Receipt, X } from 'lucide-react';
+import { Search, MoreVertical, Wallet, ArrowRightLeft, Receipt, X, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 
 // Subcomponents import
@@ -20,6 +20,7 @@ import { CartSummary } from './pos/CartSummary';
 import { VariantSelectorModal } from './pos/VariantSelectorModal';
 import { ThermalTicketModal } from './pos/ThermalTicketModal';
 import { CashSessionModals } from './pos/CashSessionModals';
+import { PaymentModal } from './pos/PaymentModal';
 
 interface POSViewProps {
   selectedBranchId: string;
@@ -85,8 +86,8 @@ export const POSView: React.FC<POSViewProps> = ({
   // Cart States
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.EFECTIVO);
 
+  // Ticket Printing State
   // Ticket Printing State
   const [lastCompletedSale, setLastCompletedSale] = useState<any | null>(null);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
@@ -94,6 +95,29 @@ export const POSView: React.FC<POSViewProps> = ({
   // Variant selector states
   const [selectedProductForModal, setSelectedProductForModal] = useState<any | null>(null);
   const [isVariantModalOpen, setIsVariantModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  // Clock & shift timer
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
+  const [shiftDuration, setShiftDuration] = useState('00h 00m 00s');
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      setCurrentTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }));
+      
+      if (activeSession && activeSession.createdAt) {
+        const diffMs = now.getTime() - new Date(activeSession.createdAt).getTime();
+        const diffHrs = Math.floor(diffMs / 3600000);
+        const diffMins = Math.floor((diffMs % 3600000) / 60000);
+        const diffSecs = Math.floor((diffMs % 60000) / 1000);
+        setShiftDuration(`${diffHrs}h ${diffMins}m ${diffSecs}s`);
+      } else {
+        setShiftDuration('00h 00m 00s');
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [activeSession]);
 
   const optionsRef = useRef<HTMLDivElement>(null);
 
@@ -117,6 +141,11 @@ export const POSView: React.FC<POSViewProps> = ({
     if (!activeSession || !sales) return [];
     return sales.filter((s: any) => s.cashSessionId === activeSession.id);
   }, [sales, activeSession]);
+
+  const activeSessionExpenses = useMemo(() => {
+    if (!activeSession || !localExpenses) return [];
+    return localExpenses.filter((e: any) => e.cashSessionId === activeSession.id);
+  }, [localExpenses, activeSession]);
 
   const handleOpenSession = async () => {
     const branch = selectedBranchId || (branches[0] && branches[0].id);
@@ -273,10 +302,16 @@ export const POSView: React.FC<POSViewProps> = ({
     toast.info('Item removido del carrito.');
   };
 
-  const handleCheckout = async () => {
+  const handleCheckoutClick = () => {
     const branch = selectedBranchId || (branches[0] && branches[0].id);
     if (!branch || !activeSession || cart.length === 0) return;
-    
+    setIsPaymentModalOpen(true);
+  };
+
+  const handleCompletePayment = async (payments: { paymentMethod: PaymentMethod; amount: number }[]) => {
+    const branch = selectedBranchId || (branches[0] && branches[0].id);
+    if (!branch || !activeSession || cart.length === 0) return;
+
     const branchName = branches.find((b: any) => b.id === branch)?.name || 'Sucursal General';
     const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -290,11 +325,14 @@ export const POSView: React.FC<POSViewProps> = ({
           quantity: i.quantity,
           price: i.price
         })),
-        payments: [{
-          paymentMethod: paymentMethod,
-          amount: totalAmount
-        }]
+        payments: payments
       });
+
+      const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+      const change = totalPaid - totalAmount;
+      if (change > 0) {
+        toast.info(`Cambio a entregar al cliente: $${change.toFixed(2)}`, { duration: 8000 });
+      }
 
       const clientName = customers.find((c: any) => c.id === selectedCustomerId)?.name || 'Consumidor Final';
       const clientIdentity = customers.find((c: any) => c.id === selectedCustomerId)?.identityNumber || '9999999999';
@@ -306,20 +344,21 @@ export const POSView: React.FC<POSViewProps> = ({
         clientName,
         clientIdentity,
         items: cart,
-        paymentMethod,
+        paymentMethod: payments[0]?.paymentMethod || PaymentMethod.EFECTIVO,
         total: totalAmount
       };
 
       setLastCompletedSale(saleDataForTicket);
       setCart([]);
       setSelectedCustomerId('');
-      setPaymentMethod(PaymentMethod.EFECTIVO);
       refetchProducts(); // refrescar stock
 
+      setIsPaymentModalOpen(false);
       setIsTicketModalOpen(true);
       toast.success('¡Venta procesada con éxito y cargada en Kardex!');
     } catch (err: any) {
       toast.error(err.message || 'Error al procesar la venta.');
+      throw err;
     }
   };
 
@@ -328,7 +367,68 @@ export const POSView: React.FC<POSViewProps> = ({
   }, [cart]);
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 relative">
+    <div className="space-y-6">
+      
+      {/* Premium POS Next Header Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-bg-card border border-border-card rounded-2xl p-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="bg-primary p-2.5 rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center">
+            <ShoppingBag className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-sm text-secondary tracking-tight">POS Next</span>
+              <span className="bg-primary/10 border border-primary/20 text-[9px] font-bold text-primary px-1.5 py-0.5 rounded-full">v1.6.1</span>
+            </div>
+            <span className="text-[10px] text-neutral">Demo / Sucursal Activa</span>
+          </div>
+        </div>
+
+        {/* Digital Clock & Shift Open Status */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-dark border border-border-card rounded-xl text-xs text-secondary font-mono font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <span>{currentTime}</span>
+          </div>
+
+          <div className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl text-xs font-semibold ${
+            activeSession 
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' 
+              : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${activeSession ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+            <span>
+              {activeSession ? `Shift Open: ${shiftDuration}` : 'Shift Closed'}
+            </span>
+          </div>
+        </div>
+
+        {/* Status Indicators & User Profile initials */}
+        <div className="flex items-center gap-3">
+          {/* Signal Indicator */}
+          <div className="p-2 bg-bg-dark border border-border-card rounded-lg text-neutral hover:text-secondary transition-all" title="Internet Connected">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h.01M12 12h.01M19 12h.01M8 12a4 4 0 0 1 8 0m-11-3a7 7 0 0 1 14 0m-17-3a10 10 0 0 1 20 0"/></svg>
+          </div>
+          {/* Database Connected */}
+          <div className="p-2 bg-bg-dark border border-border-card rounded-lg text-neutral hover:text-emerald-500 transition-all" title="Database Sync OK">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M12 2v9M8 5l4-3 4 3"/></svg>
+          </div>
+          {/* Printer status */}
+          <div className="p-2 bg-bg-dark border border-border-card rounded-lg text-neutral hover:text-secondary transition-all" title="Printer Online">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6zM6 2h12v4H6z"/></svg>
+          </div>
+          {/* Reload / Sync */}
+          <button onClick={() => refetchProducts()} className="p-2 bg-bg-dark border border-border-card rounded-lg text-neutral hover:text-secondary transition-all" title="Force Reload Catalog">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          </button>
+          
+          <div className="w-9 h-9 rounded-full bg-primary text-white border border-primary/30 flex items-center justify-center font-bold text-xs" title="User Initials">
+            US
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 relative">
       
       {/* Product Catalog/Grid Selection */}
       <div className="xl:col-span-2 space-y-6">
@@ -462,14 +562,21 @@ export const POSView: React.FC<POSViewProps> = ({
         customers={customers}
         selectedCustomerId={selectedCustomerId}
         setSelectedCustomerId={setSelectedCustomerId}
-        paymentMethod={paymentMethod}
-        setPaymentMethod={setPaymentMethod}
         cartTotal={cartTotal}
         onUpdateQty={handleUpdateCartQty}
         onRemove={handleRemoveFromCart}
-        onCheckout={handleCheckout}
+        onCheckout={handleCheckoutClick}
         isProcessing={isProcessing}
         activeSession={activeSession}
+      />
+
+      {/* Modal for completing payment */}
+      <PaymentModal 
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        totalAmount={cartTotal}
+        onCompletePayment={handleCompletePayment}
+        isProcessing={isProcessing}
       />
 
       {/* Modal for selecting variants */}
@@ -523,9 +630,11 @@ export const POSView: React.FC<POSViewProps> = ({
         isHistorialOpen={isHistorialModalOpen}
         onCloseHistorial={() => setIsHistorialModalOpen(false)}
         activeSessionSales={activeSessionSales}
+        activeSessionExpenses={activeSessionExpenses}
       />
 
     </div>
+  </div>
   );
 };
 export default POSView;

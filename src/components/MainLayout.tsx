@@ -3,7 +3,7 @@ import { useAuthStore } from '../modules/auth/hooks/useAuthStore';
 import { useBranches } from '../modules/branches';
 import { useMediaUpload } from '../modules/media';
 import { Toaster, toast } from 'sonner';
-import { useSales, useActiveCashSession } from '../modules/sales';
+import { useSales, useActiveCashSession, useExpenses } from '../modules/sales';
 import { useSuppliers } from '../modules/purchases';
 
 // Modular View Components
@@ -48,6 +48,7 @@ export const MainLayout: React.FC = () => {
   const [localExpenses, setLocalExpenses] = useState<any[]>([]);
 
   const { activeSession: fetchedSession } = useActiveCashSession(selectedBranchId);
+  const { expenses: fetchedExpenses } = useExpenses({ branchId: selectedBranchId });
 
   // Sync activeSession with backend query
   React.useEffect(() => {
@@ -55,6 +56,21 @@ export const MainLayout: React.FC = () => {
       setActiveSession(fetchedSession);
     }
   }, [fetchedSession]);
+
+  // Sync localExpenses with backend query
+  React.useEffect(() => {
+    if (fetchedExpenses) {
+      const mapped = fetchedExpenses.map((exp: any) => ({
+        id: exp.id,
+        desc: exp.description,
+        amount: Number(exp.amount),
+        category: exp.category,
+        cashSessionId: exp.cashSessionId,
+        createdAt: exp.createdAt
+      }));
+      setLocalExpenses(mapped);
+    }
+  }, [fetchedExpenses]);
 
   // Automatic Context Initialization
   React.useEffect(() => {

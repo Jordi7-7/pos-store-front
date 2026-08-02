@@ -37,7 +37,7 @@ export const useOpenCashSession = () => {
 export const useCloseCashSession = () => {
   const queryClient = useQueryClient();
   const closeCashMutation = useMutation({
-    mutationFn: ({ id, closingBalance }: { id: string; closingBalance: number }) => 
+    mutationFn: ({ id, closingBalance }: { id: string; closingBalance: number }) =>
       salesService.closeCashSession(id, closingBalance),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active-cash-session'] });
@@ -59,6 +59,7 @@ export const useRegisterExpense = () => {
     onSuccess: () => {
       // Invalidate sales metrics/expenses on success
       queryClient.invalidateQueries({ queryKey: ['sales', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['expenses', tenantId] });
     },
   });
 
@@ -98,5 +99,22 @@ export const useActiveCashSession = (branchId?: string) => {
     activeSession: activeSessionQuery.data || null,
     isLoading: activeSessionQuery.isLoading,
     refetchActiveSession: activeSessionQuery.refetch,
+  };
+};
+
+export const useExpenses = (params?: { cashSessionId?: string; branchId?: string }) => {
+  const { tenantId, isAuthenticated } = useAuthStore();
+
+  const expensesQuery = useQuery({
+    queryKey: ['expenses', tenantId, params?.cashSessionId, params?.branchId],
+    queryFn: () => salesService.getExpenses(params),
+    enabled: isAuthenticated && !!tenantId,
+  });
+
+  return {
+    expenses: expensesQuery.data || [],
+    isLoading: expensesQuery.isLoading,
+    isError: expensesQuery.isError,
+    refetchExpenses: expensesQuery.refetch,
   };
 };

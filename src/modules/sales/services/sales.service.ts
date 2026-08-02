@@ -65,5 +65,16 @@ export const salesService = {
   getActiveCashSession: async (branchId?: string): Promise<any> => {
     const url = branchId ? `/sales/cash-sessions/active?branchId=${branchId}` : '/sales/cash-sessions/active';
     return apiClient.get<any>(url);
+  },
+
+  getExpenses: async (params?: { cashSessionId?: string; branchId?: string }): Promise<any[]> => {
+    let url = '/sales/expenses';
+    const queryParams: string[] = [];
+    if (params?.cashSessionId) queryParams.push(`cashSessionId=${params.cashSessionId}`);
+    if (params?.branchId) queryParams.push(`branchId=${params.branchId}`);
+    if (queryParams.length > 0) {
+      url += `?${queryParams.join('&')}`;
+    }
+    return apiClient.get<any[]>(url);
   }
 };

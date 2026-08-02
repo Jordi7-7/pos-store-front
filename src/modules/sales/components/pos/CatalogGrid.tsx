@@ -48,35 +48,48 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({
               <div 
                 key={prod.id} 
                 onClick={() => onProductClick(prod)}
-                className={`p-4 bg-bg-card border border-border-card rounded-2xl hover:border-primary/50 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 group shadow-sm animate-fade-in relative ${
-                  isOutOfStock ? 'opacity-60' : ''
+                className={`bg-bg-card border border-border-card rounded-2xl hover:border-primary/50 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-2.5 group shadow-sm hover:shadow-md animate-fade-in relative overflow-hidden p-3 ${
+                  isOutOfStock ? 'opacity-65' : ''
                 }`}
               >
-                <div className="aspect-square w-full rounded-xl bg-bg-dark border border-border-card overflow-hidden flex items-center justify-center relative">
+                {/* Image Container with Stock Badge */}
+                <div className="aspect-square w-full rounded-xl bg-bg-dark/40 border border-border-card/50 overflow-hidden flex items-center justify-center relative">
                   {imgUrl ? (
                     <img src={imgUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" alt={prod.name} />
                   ) : (
-                    <Package className="w-8 h-8 text-neutral opacity-45" />
+                    <Package className="w-10 h-10 text-neutral opacity-40" />
                   )}
+                  
+                  {/* Stock Badge matching screenshot */}
+                  {!isOutOfStock && (
+                    <div className="absolute top-2 right-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
+                      {totalStock}
+                    </div>
+                  )}
+                  {isOutOfStock && (
+                    <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
+                      0
+                    </div>
+                  )}
+
                   {hasMultipleVars && (
-                    <div className="absolute bottom-2 right-2 bg-primary/95 text-white text-[9px] font-bold px-2 py-0.5 rounded-lg border border-primary/20 shadow">
+                    <div className="absolute bottom-2 left-2 bg-primary/90 text-white text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-primary/20 shadow">
                       Variantes
                     </div>
                   )}
                 </div>
 
-                <div>
-                  <h4 className="font-bold text-xs text-secondary group-hover:text-primary transition-colors truncate">{prod.name}</h4>
-                  <div className="flex justify-between items-center mt-1">
-                    <span className="text-xs font-bold text-primary">
+                {/* Info Area */}
+                <div className="px-1 pb-1">
+                  <h4 className="font-bold text-xs text-secondary group-hover:text-primary transition-colors truncate leading-tight">{prod.name}</h4>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="text-[11px] font-bold text-primary">
                       {hasMultipleVars 
                         ? `$${Math.min(...prod.variants.map((v: any) => v.salePrice)).toFixed(2)}`
                         : `$${(prod.variants?.[0]?.salePrice || 0).toFixed(2)}`
                       }
                     </span>
-                    <span className={`text-[10px] font-bold ${isOutOfStock ? 'text-rose-500' : 'text-neutral'}`}>
-                      {isOutOfStock ? 'Agotado' : `Stock: ${totalStock}`}
-                    </span>
+                    <span className="text-[9px] text-neutral">/ Nos</span>
                   </div>
                 </div>
               </div>

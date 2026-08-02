@@ -226,12 +226,13 @@ export const KardexTab: React.FC<KardexTabProps> = ({ products, isLoadingProduct
             ) : (
               <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1">
                 {movements.map((mov) => {
-                  const isInput = mov.type === 'INPUT';
+                  const isInput = mov.type === 'INPUT' || mov.type === 'IN';
                   
                   // Translate reason to readable spanish
                   let reasonText = mov.reason;
-                  if (mov.reason === 'PURCHASE') reasonText = 'Compra (Abastecimiento)';
-                  else if (mov.reason === 'SALE') reasonText = 'Venta (POS)';
+                  if (mov.reason === 'PURCHASE' || mov.reason === 'COMPRA') reasonText = 'Compra (Abastecimiento)';
+                  else if (mov.reason === 'SALE' || mov.reason === 'VENTA') reasonText = 'Venta (POS)';
+                  else if (mov.reason === 'REFUND' || mov.reason === 'DEVOLUCION') reasonText = 'Devolución';
                   else if (mov.reason === 'INITIAL_STOCK') reasonText = 'Stock de Apertura';
                   else if (mov.reason === 'ADJUSTMENT') reasonText = 'Ajuste de Stock';
 

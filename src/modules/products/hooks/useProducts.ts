@@ -75,3 +75,22 @@ export const useDeleteProduct = () => {
     isError: deleteProductMutation.isError,
   };
 };
+
+export const useCreateVariant = () => {
+  const queryClient = useQueryClient();
+  const { tenantId } = useAuthStore();
+
+  const createVariantMutation = useMutation({
+    mutationFn: ({ productId, input }: { productId: string; input: any }) =>
+      productsService.createVariant(productId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products', tenantId] });
+    },
+  });
+
+  return {
+    createVariant: createVariantMutation.mutateAsync,
+    isCreating: createVariantMutation.isPending,
+    isError: createVariantMutation.isError,
+  };
+};
