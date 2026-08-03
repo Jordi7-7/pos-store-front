@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsService } from '../services/products.service';
-import type { CreateProductInput } from '../services/products.service';
+import type { CreateProductInput, CreateSimpleProductInput } from '../services/products.service';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
 export const useProducts = (params?: { page?: number; limit?: number; search?: string }) => {
@@ -32,12 +32,31 @@ export const useCreateProduct = () => {
     },
   });
 
+  const createSimpleProductMutation = useMutation({
+    mutationFn: (input: CreateSimpleProductInput) => productsService.createSimpleProduct(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products', tenantId] });
+    },
+  });
+
+  const createVariableProductMutation = useMutation({
+    mutationFn: (input: CreateProductInput) => productsService.createVariableProduct(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products', tenantId] });
+    },
+  });
+
   return {
     createProduct: createProductMutation.mutateAsync,
     isCreating: createProductMutation.isPending,
+    createSimpleProduct: createSimpleProductMutation.mutateAsync,
+    isCreatingSimple: createSimpleProductMutation.isPending,
+    createVariableProduct: createVariableProductMutation.mutateAsync,
+    isCreatingVariable: createVariableProductMutation.isPending,
     isError: createProductMutation.isError,
   };
 };
+
 
 export const useUpdateProduct = () => {
   const queryClient = useQueryClient();

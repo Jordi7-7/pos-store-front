@@ -9,7 +9,8 @@ interface ProductCreateTabProps {
   categories: any[];
   uploadedImages: any[];
   selectedBranchId: string;
-  createProduct: (input: any) => Promise<any>;
+  createSimpleProduct: (input: any) => Promise<any>;
+  createVariableProduct: (input: any) => Promise<any>;
   onSuccess: () => void;
 }
 
@@ -63,9 +64,11 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
   categories,
   uploadedImages,
   selectedBranchId,
-  createProduct,
+  createSimpleProduct,
+  createVariableProduct,
   onSuccess
 }) => {
+
   const { attributes } = useAttributes();
   const { uploadImage, uploadImageByUrl, isUploading: isUploadingMedia } = useMediaUpload();
   const { createVariant } = useCreateVariant();
@@ -371,41 +374,41 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
       return;
     }
 
-    let finalVariants: any[] = [];
-
-    if (!hasVariants) {
-      if (!singleSku.trim()) {
-        toast.error('Por favor ingresa el SKU para el producto.');
-        return;
-      }
-      finalVariants = [{
-        sku: singleSku.trim(),
-        barcode: singleBarcode.trim(),
-        purchasePrice: parseFloat(singlePurchasePrice) || 0,
-        salePrice: parseFloat(singleSalePrice) || 0,
-        attributeValues: [],
-        imageIds: selectedImages, 
-        stocks: selectedBranchId ? [{
-          branchId: selectedBranchId,
-          quantity: parseInt(singleInitialStock) || 0
-        }] : []
-      }];
-    }
-
     try {
       const categoryId = prodCategory || undefined;
-      const res = await createProduct({
-        name: prodName.trim(),
-        description: prodDesc.trim(),
-        categoryId,
-        imageIds: selectedImages,
-        variants: finalVariants
-      });
 
       if (!hasVariants) {
-        toast.success('¡Producto e inventario registrados con éxito!');
+        if (!singleSku.trim()) {
+          toast.error('Por favor ingresa el SKU para el producto.');
+          return;
+        }
+
+        await createSimpleProduct({
+          name: prodName.trim(),
+          description: prodDesc.trim(),
+          categoryId,
+          imageIds: selectedImages,
+          sku: singleSku.trim(),
+          barcode: singleBarcode.trim(),
+          purchasePrice: parseFloat(singlePurchasePrice) || 0,
+          salePrice: parseFloat(singleSalePrice) || 0,
+          stocks: selectedBranchId ? [{
+            branchId: selectedBranchId,
+            quantity: parseInt(singleInitialStock) || 0
+          }] : []
+        });
+
+        toast.success('¡Producto simple e inventario registrados con éxito!');
         onSuccess();
       } else {
+        const res = await createVariableProduct({
+          name: prodName.trim(),
+          description: prodDesc.trim(),
+          categoryId,
+          imageIds: selectedImages,
+          variants: [] // Base product starts with no variants, added in step 2
+        });
+
         setCreatedProduct(res);
         setStep(2);
         toast.success('¡Ficha base del producto guardada! Procedamos a configurar las variantes.');
@@ -415,6 +418,7 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
       toast.error(err.message || 'Error al registrar el producto en el servidor.');
     }
   };
+
 
   const handleSaveAllVariants = async () => {
     if (!createdProduct) return;

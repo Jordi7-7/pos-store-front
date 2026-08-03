@@ -25,7 +25,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
 
   const { products, meta, isLoading: isLoadingProducts } = useProducts({ page, limit, search });
   const { categories } = useCategories();
-  const { createProduct } = useCreateProduct();
+  const { createSimpleProduct, createVariableProduct } = useCreateProduct();
 
   const [activeTab, setActiveTab] = useState<TabType>('list');
 
@@ -129,10 +129,12 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           categories={categories}
           uploadedImages={uploadedImages}
           selectedBranchId={selectedBranchId}
-          createProduct={createProduct}
+          createSimpleProduct={createSimpleProduct}
+          createVariableProduct={createVariableProduct}
           onSuccess={handleProductCreated}
         />
       )}
+
 
       {activeTab === 'categories' && (
         <CategoriesTab />

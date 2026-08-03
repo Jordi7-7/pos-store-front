@@ -28,6 +28,18 @@ export interface CreateProductInput {
   variants: ProductVariant[];
 }
 
+export interface CreateSimpleProductInput {
+  name: string;
+  description: string;
+  sku: string;
+  barcode?: string;
+  purchasePrice: number;
+  salePrice: number;
+  categoryId?: string;
+  imageIds?: string[];
+  stocks?: { branchId: string; quantity: number }[];
+}
+
 export interface AttributeValue {
   id: string;
   attributeId: string;
@@ -59,6 +71,14 @@ export const productsService = {
     return apiClient.post<Product>('/products', input);
   },
 
+  createSimpleProduct: async (input: CreateSimpleProductInput): Promise<Product> => {
+    return apiClient.post<Product>('/products/simple', input);
+  },
+
+  createVariableProduct: async (input: CreateProductInput): Promise<Product> => {
+    return apiClient.post<Product>('/products/variable', input);
+  },
+
   getAttributes: async (): Promise<Attribute[]> => {
     return apiClient.get<Attribute[]>('/products/attributes');
   },
@@ -79,3 +99,4 @@ export const productsService = {
     return apiClient.post<ProductVariant>(`/products/${productId}/variants`, input);
   }
 };
+
