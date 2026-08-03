@@ -4,14 +4,13 @@ import { useCategories } from '../hooks/useCategories';
 import { ProductListTab } from './ProductListTab';
 import { ProductCreateTab } from './ProductCreateTab';
 import { KardexTab } from './KardexTab';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, Layers, ClipboardList } from 'lucide-react';
 
 interface ProductsViewProps {
   selectedBranchId: string;
   uploadedImages: any[];
 }
-
-type TabType = 'list' | 'create' | 'kardex';
 
 export const ProductsView: React.FC<ProductsViewProps> = ({
   selectedBranchId,
@@ -20,12 +19,11 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState('list');
 
   const { products, meta, isLoading: isLoadingProducts } = useProducts({ page, limit, search });
   const { categories } = useCategories();
   const { createSimpleProduct } = useCreateProduct();
-
-  const [activeTab, setActiveTab] = useState<TabType>('list');
 
   const handleProductCreated = () => {
     setActiveTab('list');
@@ -33,59 +31,33 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
 
   return (
     <div className="space-y-6">
-      
-      {/* Tab Navigation Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-card pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h3 className="text-sm font-bold text-secondary">Catálogo General de Productos</h3>
           <p className="text-xs text-neutral mt-0.5">Gestiona tus artículos, precios y stock por sucursales.</p>
         </div>
-
-        <div className="flex bg-bg-card border border-border-card rounded-xl p-1 gap-1 self-start sm:self-auto overflow-x-auto max-w-full">
-          <button
-            onClick={() => setActiveTab('list')}
-            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap ${
-              activeTab === 'list' 
-                ? 'bg-primary text-white shadow-sm' 
-                : 'text-neutral hover:text-secondary'
-            }`}
-          >
-            <Eye className="w-3.5 h-3.5" />
-            <span>Productos</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('create')}
-            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap ${
-              activeTab === 'create' 
-                ? 'bg-primary text-white shadow-sm' 
-                : 'text-neutral hover:text-secondary'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Crear Producto</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('kardex')}
-            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap ${
-              activeTab === 'kardex' 
-                ? 'bg-primary text-white shadow-sm' 
-                : 'text-neutral hover:text-secondary'
-            }`}
-          >
-            <ClipboardList className="w-3.5 h-3.5" />
-            <span>Kardex / Existencias</span>
-          </button>
-        </div>
       </div>
 
-      {/* Tab Contents */}
-      {activeTab === 'list' && (
-        <div className="space-y-6 animate-fade-in">
-          <ProductListTab 
-            products={products} 
-            isLoading={isLoadingProducts} 
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="list" className="flex items-center gap-1.5">
+            <Eye className="w-3.5 h-3.5" />
+            Productos
+          </TabsTrigger>
+          <TabsTrigger value="create" className="flex items-center gap-1.5">
+            <Layers className="w-3.5 h-3.5" />
+            Crear Producto
+          </TabsTrigger>
+          <TabsTrigger value="kardex" className="flex items-center gap-1.5">
+            <ClipboardList className="w-3.5 h-3.5" />
+            Kardex / Existencias
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list">
+          <ProductListTab
+            products={products}
+            isLoading={isLoadingProducts}
             categories={categories}
             uploadedImages={uploadedImages}
             selectedBranchId={selectedBranchId}
@@ -95,26 +67,25 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
             search={search}
             onSearchChange={setSearch}
           />
-        </div>
-      )}
+        </TabsContent>
 
-      {activeTab === 'create' && (
-        <ProductCreateTab 
-          categories={categories}
-          uploadedImages={uploadedImages}
-          selectedBranchId={selectedBranchId}
-          createSimpleProduct={createSimpleProduct}
-          onSuccess={handleProductCreated}
-        />
-      )}
+        <TabsContent value="create">
+          <ProductCreateTab
+            categories={categories}
+            uploadedImages={uploadedImages}
+            selectedBranchId={selectedBranchId}
+            createSimpleProduct={createSimpleProduct}
+            onSuccess={handleProductCreated}
+          />
+        </TabsContent>
 
-      {activeTab === 'kardex' && (
-        <KardexTab 
-          products={products}
-          isLoadingProducts={isLoadingProducts}
-        />
-      )}
-
+        <TabsContent value="kardex">
+          <KardexTab
+            products={products}
+            isLoadingProducts={isLoadingProducts}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

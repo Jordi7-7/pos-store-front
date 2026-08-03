@@ -3,7 +3,6 @@ import { Check, X, Upload, Loader2, Save, AlertTriangle, Plus } from 'lucide-rea
 import { useMediaUpload } from '../../media/hooks/useMedia';
 import { useUpdateProduct, useDeleteProduct } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
-
 import {
   Combobox,
   ComboboxContent,
@@ -12,10 +11,13 @@ import {
   ComboboxItem,
   ComboboxList,
 } from '@/components/ui/combobox';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-
-
-
 
 interface ProductEditDrawerProps {
   product: any;
@@ -32,9 +34,7 @@ const extractImageUrlFromDataTransfer = (dataTransfer: DataTransfer): string | n
     const lines = uriList.split('\n');
     for (const line of lines) {
       const cleanLine = line.trim();
-      if (cleanLine && !cleanLine.startsWith('#')) {
-        return cleanLine;
-      }
+      if (cleanLine && !cleanLine.startsWith('#')) return cleanLine;
     }
   }
 
@@ -59,9 +59,7 @@ const extractImageUrlFromDataTransfer = (dataTransfer: DataTransfer): string | n
       const parser = new DOMParser();
       const doc = parser.parseFromString(htmlData, 'text/html');
       const img = doc.querySelector('img');
-      if (img && img.src) {
-        return img.src;
-      }
+      if (img && img.src) return img.src;
     } catch (e) {}
   }
 
@@ -79,7 +77,6 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
   const { uploadImage, uploadImageByUrl, isUploading: isUploadingMedia } = useMediaUpload();
   const { createCategory, isCreating: isCreatingCategory } = useCategories();
 
-  // Inline Category states
   const [isCreatingCategoryInline, setIsCreatingCategoryInline] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
 
@@ -99,36 +96,29 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
     }
   };
 
-
   const { updateProduct, isUpdating } = useUpdateProduct();
   const { deleteProduct, isDeleting } = useDeleteProduct();
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  // Core Product States
   const [prodName, setProdName] = useState('');
   const [prodDesc, setProdDesc] = useState('');
   const [prodCategory, setProdCategory] = useState('');
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
 
-  // Single Variant (SKU and Barcode are unified)
   const [singleCode, setSingleCode] = useState('');
   const [singlePurchasePrice, setSinglePurchasePrice] = useState('10.00');
   const [singleSalePrice, setSingleSalePrice] = useState('19.99');
   const [singleInitialStock, setSingleInitialStock] = useState('50');
 
-  // Drag and drop for quick upload modal
   const [dragActiveQuick, setDragActiveQuick] = useState(false);
   const [quickUploadUrl, setQuickUploadUrl] = useState<string | null>(null);
-
-  // Quick Upload Modal States
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [quickUploadDesc, setQuickUploadDesc] = useState('');
   const [quickUploadFile, setQuickUploadFile] = useState<File | null>(null);
   const [quickUploadPreview, setQuickUploadPreview] = useState<string | null>(null);
   const quickFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load product data when opened
   useEffect(() => {
     if (product) {
       setProdName(product.name || '');
@@ -136,7 +126,7 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
       setProdCategory(product.categoryId || '');
       const initialImageIds = product.images ? product.images.map((img: any) => img.id) : [];
       setSelectedImages(initialImageIds);
-      
+
       const vList = product.variants || [];
       if (vList.length > 0) {
         const sv = vList[0];
@@ -172,7 +162,7 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
     const finalVariants = [{
       id: sv.id,
       sku: singleCode.trim(),
-      barcode: singleCode.trim(), // SKU and Barcode unified
+      barcode: singleCode.trim(),
       purchasePrice: parseFloat(singlePurchasePrice) || 0,
       salePrice: parseFloat(singleSalePrice) || 0,
       attributeValues: [],
@@ -217,10 +207,6 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
     }
   };
 
-  const handleCloseDeleteConfirm = () => {
-    setShowDeleteConfirm(false);
-  };
-
   const handleQuickFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -233,11 +219,8 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
   const handleDragQuick = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActiveQuick(true);
-    } else if (e.type === "dragleave") {
-      setDragActiveQuick(false);
-    }
+    if (e.type === "dragenter" || e.type === "dragover") setDragActiveQuick(true);
+    else if (e.type === "dragleave") setDragActiveQuick(false);
   };
 
   const handleDropQuick = (e: React.DragEvent) => {
@@ -283,8 +266,6 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
       }
 
       setSelectedImages([...selectedImages, savedImage.id]);
-
-      // Reset modal state
       setQuickUploadFile(null);
       setQuickUploadUrl(null);
       setQuickUploadPreview(null);
@@ -301,59 +282,62 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
 
   return (
     <>
+      {/* Backdrop */}
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity" onClick={onClose} />
-      
-      <div className="fixed right-0 top-0 bottom-0 w-full max-w-2xl bg-bg-card border-l border-border-card z-45 shadow-2xl flex flex-col justify-between animate-slide-left text-secondary">
-        
+
+      {/* Drawer */}
+      <div className="fixed right-0 top-0 bottom-0 w-full max-w-2xl bg-background border-l border-border z-[45] shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="p-6 border-b border-border-card flex items-center justify-between">
+        <div className="p-6 border-b border-border flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-bold text-secondary">Editar Producto</h3>
-            <p className="text-xs text-neutral mt-0.5">Modifica los detalles generales, precios y stock del artículo.</p>
+            <h3 className="text-sm font-bold">Editar Producto</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Modifica los detalles generales, precios y stock del artículo.</p>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-bg-dark text-neutral hover:text-secondary">
+          <Button variant="ghost" size="icon-sm" onClick={onClose}>
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          <form id="edit-product-form" onSubmit={handleSaveProduct} className="space-y-6">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-[10px] text-neutral font-bold uppercase tracking-wider mb-1">Nombre del Producto *</label>
-                <input 
-                  type="text" 
-                  required
-                  value={prodName}
-                  onChange={(e) => setProdName(e.target.value)}
-                  placeholder="Ej. Coca Cola 500ml" 
-                  className="w-full bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-primary"
-                />
-              </div>
+          <form id="edit-product-form" onSubmit={handleSaveProduct} className="space-y-5">
 
-              <div>
-                <label className="block text-[10px] text-neutral font-bold uppercase tracking-wider mb-1">Descripción</label>
-                <textarea 
-                  value={prodDesc}
-                  onChange={(e) => setProdDesc(e.target.value)}
-                  placeholder="Ingresa la descripción del artículo..." 
-                  className="w-full bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-primary h-20 resize-none"
-                />
-              </div>
+            {/* Product Name */}
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase tracking-wider">Nombre del Producto *</Label>
+              <Input
+                type="text"
+                required
+                value={prodName}
+                onChange={(e) => setProdName(e.target.value)}
+                placeholder="Ej. Coca Cola 500ml"
+                className="text-xs"
+              />
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2 space-y-2">
-                  <div className="flex gap-2 items-end">
-                    <div className="flex-1">
-                      <label className="block text-[10px] text-neutral font-bold uppercase tracking-wider mb-1">Categoría</label>
+            {/* Description */}
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase tracking-wider">Descripción</Label>
+              <Textarea
+                value={prodDesc}
+                onChange={(e) => setProdDesc(e.target.value)}
+                placeholder="Ingresa la descripción del artículo..."
+                className="text-xs h-20 resize-none"
+              />
+            </div>
+
+            {/* Category */}
+            <div className="space-y-2">
+              <div className="flex gap-2 items-end">
+                <div className="flex-1 space-y-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider">Categoría</Label>
                   <Combobox
                     value={prodCategory || 'none'}
                     onValueChange={(val) => setProdCategory(val === 'none' || !val ? '' : (val as string))}
                   >
-                    <ComboboxInput 
-                      placeholder="Buscar o seleccionar categoría..." 
-                      className="w-full bg-bg-dark border border-border-card rounded-xl text-xs text-secondary text-left focus:outline-none focus:border-primary shadow-none" 
+                    <ComboboxInput
+                      placeholder="Buscar o seleccionar categoría..."
+                      className="text-xs shadow-none"
                       showTrigger={true}
                     />
                     <ComboboxContent>
@@ -368,69 +352,72 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
                       </ComboboxList>
                     </ComboboxContent>
                   </Combobox>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsCreatingCategoryInline(!isCreatingCategoryInline)}
-                      className="p-2.5 bg-bg-dark hover:bg-bg-dark/85 border border-border-card rounded-xl text-primary hover:text-primary-hover flex items-center justify-center h-[38px] w-[38px]"
-                      title="Crear Nueva Categoría"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  {isCreatingCategoryInline && (
-                    <div className="bg-bg-dark/30 border border-border-card/60 rounded-xl p-3 space-y-2 animate-fade-in">
-                      <label className="block text-[9px] text-neutral font-bold uppercase tracking-wider">Nombre de Nueva Categoría</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={newCategoryName}
-                          onChange={(e) => setNewCategoryName(e.target.value)}
-                          placeholder="Ej. Bebidas, Snacks"
-                          className="flex-1 bg-bg-dark border border-border-card rounded-lg py-1.5 px-2.5 text-xs text-secondary focus:outline-none focus:border-primary"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleCreateCategoryInline}
-                          disabled={isCreatingCategory}
-                          className="py-1.5 px-3.5 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50"
-                        >
-                          {isCreatingCategory && <Loader2 className="w-3 h-3 animate-spin" />}
-                          <span>Crear</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsCreatingCategoryInline(!isCreatingCategoryInline)}
+                  title="Crear Nueva Categoría"
+                  className="shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
               </div>
+
+              {isCreatingCategoryInline && (
+                <div className="bg-muted/30 border border-border/60 rounded-xl p-3 space-y-2">
+                  <Label className="text-[9px] uppercase tracking-wider">Nombre de Nueva Categoría</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="Ej. Bebidas, Snacks"
+                      className="flex-1 text-xs"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleCreateCategoryInline}
+                      disabled={isCreatingCategory}
+                    >
+                      {isCreatingCategory && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
+                      Crear
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
-
-            {/* Images selection */}
-            <div className="space-y-2.5">
+            {/* Images */}
+            <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <label className="block text-[10px] text-neutral font-bold uppercase tracking-wider">Asociar Imágenes de la Galería ({selectedImages.length} seleccionadas)</label>
-                <button
+                <Label className="text-[10px] uppercase tracking-wider">
+                  Imágenes de la Galería ({selectedImages.length} seleccionadas)
+                </Label>
+                <Button
                   type="button"
+                  variant="link"
+                  size="sm"
                   onClick={() => setIsUploadModalOpen(true)}
-                  className="text-[10px] text-primary hover:underline font-bold flex items-center gap-1"
+                  className="text-[10px] h-auto p-0 gap-1"
                 >
                   <Upload className="w-3.5 h-3.5" />
-                  <span>+ Subir Nueva Imagen</span>
-                </button>
+                  + Subir Nueva Imagen
+                </Button>
               </div>
 
               {uploadedImages.length > 0 ? (
-                <div className="flex gap-2.5 overflow-x-auto pb-1.5 border border-border-card/50 rounded-xl p-3 bg-bg-dark/20">
+                <div className="flex gap-2.5 overflow-x-auto pb-1.5 border border-border/50 rounded-xl p-3 bg-muted/10">
                   {uploadedImages.map((img) => {
                     const isSelected = selectedImages.includes(img.id);
                     return (
-                      <div 
+                      <div
                         key={img.id}
                         onClick={() => handleToggleImageSelection(img.id)}
                         className={`relative w-14 h-14 rounded-lg border-2 overflow-hidden cursor-pointer shrink-0 transition-all ${
-                          isSelected ? 'border-primary scale-95 shadow-md shadow-primary/20' : 'border-border-card opacity-70 hover:opacity-100'
+                          isSelected ? 'border-primary scale-95 shadow-md shadow-primary/20' : 'border-border opacity-70 hover:opacity-100'
                         }`}
                         title={img.description}
                       >
@@ -445,61 +432,62 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
                   })}
                 </div>
               ) : (
-                <div className="h-16 border border-dashed border-border-card rounded-xl flex items-center justify-center text-neutral text-[10px]">
+                <div className="h-16 border border-dashed border-border rounded-xl flex items-center justify-center text-muted-foreground text-[10px]">
                   No tienes imágenes subidas aún.
                 </div>
               )}
             </div>
 
-            {/* Price and Inventory Section */}
-            <div className="pt-4 border-t border-border-card/50 space-y-4">
-              <h5 className="text-[11px] font-bold text-secondary uppercase tracking-wider">Detalles de Precio e Inventario</h5>
-              
+            <Separator />
+
+            {/* Price & Inventory */}
+            <div className="space-y-4">
+              <h5 className="text-[11px] font-bold uppercase tracking-wider">Detalles de Precio e Inventario</h5>
               <div className="grid grid-cols-2 gap-3.5">
-                <div className="col-span-2">
-                  <label className="block text-[10px] text-neutral mb-1">Código (SKU / Barras) *</label>
-                  <input 
-                    type="text" 
+                <div className="col-span-2 space-y-1.5">
+                  <Label className="text-[10px]">Código (SKU / Barras) *</Label>
+                  <Input
+                    type="text"
                     required
                     value={singleCode}
                     onChange={(e) => setSingleCode(e.target.value)}
-                    placeholder="Código SKU o de Barras" 
-                    className="w-full bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-primary"
+                    placeholder="Código SKU o de Barras"
+                    className="text-xs"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[10px] text-neutral mb-1">Precio Compra ($) *</label>
-                  <input 
-                    type="number" 
+                <div className="space-y-1.5">
+                  <Label className="text-[10px]">Precio Compra ($) *</Label>
+                  <Input
+                    type="number"
                     step="0.01"
                     required
                     value={singlePurchasePrice}
                     onChange={(e) => setSinglePurchasePrice(e.target.value)}
-                    className="w-full bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-primary"
+                    className="text-xs"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[10px] text-neutral mb-1">Precio Venta ($) *</label>
-                  <input 
-                    type="number" 
+                <div className="space-y-1.5">
+                  <Label className="text-[10px]">Precio Venta ($) *</Label>
+                  <Input
+                    type="number"
                     step="0.01"
                     required
                     value={singleSalePrice}
                     onChange={(e) => setSingleSalePrice(e.target.value)}
-                    className="w-full bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-primary"
+                    className="text-xs"
                   />
                 </div>
 
-                <div className="col-span-2">
-                  <label className="block text-[10px] text-neutral mb-1">Stock de Sucursal *</label>
-                  <input 
-                    type="number" 
+                <div className="col-span-2 space-y-1.5">
+                  <Label className="text-[10px]">Stock de Sucursal *</Label>
+                  <Input
+                    type="number"
                     required
                     value={singleInitialStock}
                     onChange={(e) => setSingleInitialStock(e.target.value)}
-                    className="w-full bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-primary"
+                    className="text-xs"
                   />
                 </div>
               </div>
@@ -507,174 +495,161 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
           </form>
         </div>
 
-        {/* Footer actions */}
-        <div className="p-6 border-t border-border-card bg-bg-dark/20 flex justify-between gap-4">
-          <button
+        {/* Footer */}
+        <div className="p-6 border-t border-border bg-muted/10 flex justify-between gap-4">
+          <Button
             type="button"
+            variant="destructive"
             disabled={isDeleting}
             onClick={() => setShowDeleteConfirm(true)}
-            className="py-2.5 px-4 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-600/40 text-white text-xs font-bold rounded-xl transition-all shadow-sm"
+            className="text-xs"
           >
             Eliminar Producto
-          </button>
-          
+          </Button>
+
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={onClose}
-              className="py-2.5 px-4 border border-border-card bg-bg-card hover:bg-bg-dark text-neutral text-xs font-bold rounded-xl transition-all"
+              className="text-xs"
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               form="edit-product-form"
               disabled={isUpdating}
-              className="py-2.5 px-5 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5"
+              className="text-xs gap-1.5"
             >
               {isUpdating && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <Save className="w-3.5 h-3.5" />
-              <span>Guardar Cambios</span>
-            </button>
+              Guardar Cambios
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* DELETE CONFIRMATION MODAL */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-bg-card border border-border-card rounded-2xl w-full max-w-sm p-6 shadow-2xl relative animate-scale-up text-secondary">
-            <div className="flex flex-col items-center justify-center text-center gap-3">
-              <div className="w-12 h-12 bg-rose-500/10 rounded-full flex items-center justify-center text-rose-500">
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center text-destructive">
                 <AlertTriangle className="w-6 h-6" />
               </div>
-              <div>
-                <h4 className="text-sm font-bold text-secondary">¿Estás seguro de eliminar el producto?</h4>
-                <p className="text-xs text-neutral mt-1">Esta acción es irreversible y eliminará todo el historial de inventario (Kardex) asociado a este artículo.</p>
-              </div>
+              <DialogTitle className="text-sm">¿Estás seguro de eliminar el producto?</DialogTitle>
+              <DialogDescription className="text-xs">
+                Esta acción es irreversible y eliminará todo el historial de inventario (Kardex) asociado a este artículo.
+              </DialogDescription>
             </div>
-
-            <div className="flex gap-2.5 mt-5">
-              <button
-                onClick={handleCloseDeleteConfirm}
-                className="flex-1 py-2 bg-bg-dark border border-border-card text-neutral text-xs font-bold rounded-xl transition-all"
-              >
-                No, Cancelar
-              </button>
-              <button
-                onClick={handleDeleteProductSubmit}
-                disabled={isDeleting}
-                className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-600/40 text-white text-xs font-bold rounded-xl transition-all shadow"
-              >
-                {isDeleting ? 'Eliminando...' : 'Sí, Eliminar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* QUICK UPLOAD MEDIA MODAL */}
-      {isUploadModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-bg-card border border-border-card rounded-2xl w-full max-w-md p-5 shadow-2xl relative animate-scale-up text-secondary">
-            <button 
-              onClick={() => {
-                setIsUploadModalOpen(false);
-                setQuickUploadPreview(null);
-                setQuickUploadFile(null);
-                setQuickUploadUrl(null);
-              }}
-              className="absolute right-4 top-4 text-neutral hover:text-secondary"
+          </DialogHeader>
+          <div className="flex gap-2.5 mt-2">
+            <Button
+              variant="outline"
+              className="flex-1 text-xs"
+              onClick={() => setShowDeleteConfirm(false)}
             >
-              <X className="w-4 h-4" />
-            </button>
+              No, Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1 text-xs"
+              onClick={handleDeleteProductSubmit}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Eliminando...' : 'Sí, Eliminar'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-            <h4 className="text-xs font-bold text-secondary uppercase tracking-wider mb-1.5">Subir Nueva Imagen</h4>
-            <p className="text-[10px] text-neutral mb-4">Arrastra una imagen de internet, selecciona un archivo o pega una URL.</p>
+      {/* Quick Upload Dialog */}
+      <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Subir Nueva Imagen</DialogTitle>
+            <DialogDescription className="text-[10px]">
+              Arrastra una imagen de internet, selecciona un archivo o pega una URL.
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="space-y-4">
-              <div 
-                onDragEnter={handleDragQuick}
-                onDragOver={handleDragQuick}
-                onDragLeave={handleDragQuick}
-                onDrop={handleDropQuick}
-                onClick={() => quickFileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all ${
-                  dragActiveQuick ? 'border-primary bg-primary/5' : 'border-border-card hover:border-neutral/35'
-                }`}
+          <div className="space-y-4">
+            <div
+              onDragEnter={handleDragQuick}
+              onDragOver={handleDragQuick}
+              onDragLeave={handleDragQuick}
+              onDrop={handleDropQuick}
+              onClick={() => quickFileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-xl p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all ${
+                dragActiveQuick ? 'border-primary bg-primary/5' : 'border-border hover:border-muted-foreground/40'
+              }`}
+            >
+              <input ref={quickFileInputRef} type="file" accept="image/*" onChange={handleQuickFileChange} className="hidden" />
+              {quickUploadPreview ? (
+                <div className="relative w-28 h-28 rounded-lg overflow-hidden border border-border bg-muted">
+                  <img src={quickUploadPreview} className="w-full h-full object-cover" alt="Vista previa rápida" />
+                </div>
+              ) : (
+                <>
+                  <Upload className="w-6 h-6 text-muted-foreground" />
+                  <span className="text-[10px] font-semibold text-center">Haz click para seleccionar o arrastra una imagen</span>
+                  <span className="text-[9px] text-muted-foreground">Formatos aceptados: PNG, JPG, WebP o URL directa</span>
+                </>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-[9px] uppercase tracking-wider">O Pega una URL de Imagen Directa</Label>
+              <Input
+                type="text"
+                value={quickUploadUrl || ''}
+                onChange={(e) => {
+                  setQuickUploadUrl(e.target.value);
+                  setQuickUploadFile(null);
+                  setQuickUploadPreview(e.target.value || null);
+                }}
+                placeholder="https://ejemplo.com/imagen.jpg"
+                className="text-xs"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-[9px] uppercase tracking-wider">Descripción o Etiqueta</Label>
+              <Input
+                type="text"
+                value={quickUploadDesc}
+                onChange={(e) => setQuickUploadDesc(e.target.value)}
+                placeholder="Ej. Vista Frontal, Coca Cola"
+                className="text-xs"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1 text-xs"
+                onClick={() => {
+                  setIsUploadModalOpen(false);
+                  setQuickUploadPreview(null);
+                  setQuickUploadFile(null);
+                  setQuickUploadUrl(null);
+                }}
               >
-                <input 
-                  ref={quickFileInputRef}
-                  type="file" 
-                  accept="image/*"
-                  onChange={handleQuickFileChange}
-                  className="hidden" 
-                />
-                
-                {quickUploadPreview ? (
-                  <div className="relative w-28 h-28 rounded-lg overflow-hidden border border-border-card bg-bg-dark">
-                    <img src={quickUploadPreview} className="w-full h-full object-cover" alt="Vista previa rápida" />
-                  </div>
-                ) : (
-                  <>
-                    <Upload className="w-6 h-6 text-neutral" />
-                    <span className="text-[10px] text-secondary font-semibold">Haz click para seleccionar o arrastra una imagen</span>
-                    <span className="text-[9px] text-neutral">Formatos aceptados: PNG, JPG, WebP o URL directa</span>
-                  </>
-                )}
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-[9px] text-neutral uppercase tracking-wider">O Pega una URL de Imagen Directa</label>
-                <input 
-                  type="text" 
-                  value={quickUploadUrl || ''}
-                  onChange={(e) => {
-                    setQuickUploadUrl(e.target.value);
-                    setQuickUploadFile(null);
-                    setQuickUploadPreview(e.target.value || null);
-                  }}
-                  placeholder="https://ejemplo.com/imagen.jpg" 
-                  className="w-full bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-[10px] text-secondary placeholder-gray-400 focus:outline-none focus:border-primary"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-[9px] text-neutral uppercase tracking-wider">Descripción o Etiqueta</label>
-                <input 
-                  type="text" 
-                  value={quickUploadDesc}
-                  onChange={(e) => setQuickUploadDesc(e.target.value)}
-                  placeholder="Ej. Vista Frontal, Coca Cola" 
-                  className="w-full bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-[10px] text-secondary placeholder-gray-400 focus:outline-none focus:border-primary"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={() => {
-                    setIsUploadModalOpen(false);
-                    setQuickUploadPreview(null);
-                    setQuickUploadFile(null);
-                    setQuickUploadUrl(null);
-                  }}
-                  className="flex-1 py-2 bg-bg-dark border border-border-card text-neutral text-[10px] font-bold rounded-lg transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleSaveQuickImage}
-                  disabled={isUploadingMedia}
-                  className="flex-1 py-2 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white text-[10px] font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5"
-                >
-                  {isUploadingMedia && <Loader2 className="w-3 h-3 animate-spin" />}
-                  <span>Subir Imagen</span>
-                </button>
-              </div>
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleSaveQuickImage}
+                disabled={isUploadingMedia}
+                className="flex-1 text-xs"
+              >
+                {isUploadingMedia && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
+                Subir Imagen
+              </Button>
             </div>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
