@@ -1,8 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Check, X, Upload, Loader2, Save, AlertTriangle } from 'lucide-react';
+import { Check, X, Upload, Loader2, Save, AlertTriangle, Plus } from 'lucide-react';
 import { useMediaUpload } from '../../media/hooks/useMedia';
 import { useUpdateProduct, useDeleteProduct } from '../hooks/useProducts';
+import { useCategories } from '../hooks/useCategories';
+import { CustomSelect } from '../../../components/ui/CustomSelect';
 import { toast } from 'sonner';
+
+
 
 interface ProductEditDrawerProps {
   product: any;
@@ -64,6 +68,28 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
   selectedBranchId
 }) => {
   const { uploadImage, uploadImageByUrl, isUploading: isUploadingMedia } = useMediaUpload();
+  const { createCategory, isCreating: isCreatingCategory } = useCategories();
+
+  // Inline Category states
+  const [isCreatingCategoryInline, setIsCreatingCategoryInline] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
+  const handleCreateCategoryInline = async () => {
+    if (!newCategoryName.trim()) {
+      toast.warning('Por favor ingresa un nombre para la categoría.');
+      return;
+    }
+    try {
+      const newCat = await createCategory(newCategoryName.trim());
+      setProdCategory(newCat.id);
+      setNewCategoryName('');
+      setIsCreatingCategoryInline(false);
+      toast.success('¡Categoría creada e incorporada al producto!');
+    } catch (e: any) {
+      toast.error(e.message || 'Error al crear la categoría.');
+    }
+  };
+
 
   const { updateProduct, isUpdating } = useUpdateProduct();
   const { deleteProduct, isDeleting } = useDeleteProduct();
@@ -308,21 +334,55 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-[10px] text-neutral font-bold uppercase tracking-wider mb-1">Categoría</label>
-                  <select 
-                    value={prodCategory}
-                    onChange={(e) => setProdCategory(e.target.value)}
-                    className="w-full bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-primary"
-                  >
-                    <option value="">Seleccione una categoría</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
+                <div className="col-span-2 space-y-2">
+                  <div className="flex gap-2 items-end">
+                    <div className="flex-1">
+                      <label className="block text-[10px] text-neutral font-bold uppercase tracking-wider mb-1">Categoría</label>
+                      <CustomSelect
+                        options={categories}
+                        value={prodCategory}
+                        onChange={(val) => setProdCategory(val)}
+                        placeholder="Ninguna (Opcional)"
+                        emptyMessage="Categoría no encontrada"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatingCategoryInline(!isCreatingCategoryInline)}
+                      className="p-2.5 bg-bg-dark hover:bg-bg-dark/85 border border-border-card rounded-xl text-primary hover:text-primary-hover flex items-center justify-center h-[38px] w-[38px]"
+                      title="Crear Nueva Categoría"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {isCreatingCategoryInline && (
+                    <div className="bg-bg-dark/30 border border-border-card/60 rounded-xl p-3 space-y-2 animate-fade-in">
+                      <label className="block text-[9px] text-neutral font-bold uppercase tracking-wider">Nombre de Nueva Categoría</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newCategoryName}
+                          onChange={(e) => setNewCategoryName(e.target.value)}
+                          placeholder="Ej. Bebidas, Snacks"
+                          className="flex-1 bg-bg-dark border border-border-card rounded-lg py-1.5 px-2.5 text-xs text-secondary focus:outline-none focus:border-primary"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleCreateCategoryInline}
+                          disabled={isCreatingCategory}
+                          className="py-1.5 px-3.5 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                        >
+                          {isCreatingCategory && <Loader2 className="w-3 h-3 animate-spin" />}
+                          <span>Crear</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
+
 
             {/* Images selection */}
             <div className="space-y-2.5">

@@ -3,16 +3,15 @@ import { useProducts, useCreateProduct } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
 import { ProductListTab } from './ProductListTab';
 import { ProductCreateTab } from './ProductCreateTab';
-import { CategoriesTab } from './CategoriesTab';
 import { KardexTab } from './KardexTab';
-import { Eye, Layers, Folder, ClipboardList } from 'lucide-react';
+import { Eye, Layers, ClipboardList } from 'lucide-react';
 
 interface ProductsViewProps {
   selectedBranchId: string;
   uploadedImages: any[];
 }
 
-type TabType = 'list' | 'create' | 'categories' | 'kardex';
+type TabType = 'list' | 'create' | 'kardex';
 
 export const ProductsView: React.FC<ProductsViewProps> = ({
   selectedBranchId,
@@ -25,7 +24,6 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
   const { products, meta, isLoading: isLoadingProducts } = useProducts({ page, limit, search });
   const { categories } = useCategories();
   const { createSimpleProduct } = useCreateProduct();
-
 
   const [activeTab, setActiveTab] = useState<TabType>('list');
 
@@ -66,18 +64,6 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           >
             <Layers className="w-3.5 h-3.5" />
             <span>Crear Producto</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('categories')}
-            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap ${
-              activeTab === 'categories' 
-                ? 'bg-primary text-white shadow-sm' 
-                : 'text-neutral hover:text-secondary'
-            }`}
-          >
-            <Folder className="w-3.5 h-3.5" />
-            <span>Categorías</span>
           </button>
 
           <button
@@ -122,10 +108,6 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
         />
       )}
 
-      {activeTab === 'categories' && (
-        <CategoriesTab />
-      )}
-
       {activeTab === 'kardex' && (
         <KardexTab 
           products={products}
@@ -137,4 +119,3 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
   );
 };
 export default ProductsView;
-
