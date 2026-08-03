@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Package, Edit, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Package, Edit, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product } from '../services/products.service';
 import { ProductEditDrawer } from './ProductEditDrawer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -7,6 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface ProductListTabProps {
   products: Product[];
@@ -38,17 +46,11 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
   search,
   onSearchChange
 }) => {
-  const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const [selectedProductToEdit, setSelectedProductToEdit] = useState<any | null>(null);
   const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
   const [searchInput, setSearchInput] = useState(search);
 
-  const toggleExpand = (productId: string) => {
-    setExpandedProductId(expandedProductId === productId ? null : productId);
-  };
-
-  const handleOpenEditDrawer = (e: React.MouseEvent, product: any) => {
-    e.stopPropagation();
+  const handleOpenEditDrawer = (product: any) => {
     setSelectedProductToEdit(product);
     setIsEditDrawerOpen(true);
   };
@@ -71,12 +73,12 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
   };
 
   return (
-    <Card>
+    <Card className="border border-border/80 shadow-xs">
       <CardHeader className="pb-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <CardTitle className="text-sm">Productos Registrados ({meta.total})</CardTitle>
-            <CardDescription className="text-xs">Consulta, despliega existencias o edita tus productos.</CardDescription>
+            <CardTitle className="text-sm font-bold">Catálogo de Productos ({meta.total})</CardTitle>
+            <CardDescription className="text-xs">Visualiza y edita los productos de tu inventario.</CardDescription>
           </div>
 
           <form onSubmit={handleSearchSubmit} className="flex gap-2 w-full md:max-w-md">
@@ -86,8 +88,8 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Buscar por nombre o SKU..."
-                className="pl-9 pr-8 text-xs"
+                placeholder="Buscar por nombre, SKU o código de barras..."
+                className="pl-9 pr-8 text-xs h-9"
               />
               {searchInput && (
                 <button
@@ -99,20 +101,24 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                 </button>
               )}
             </div>
-            <Button type="submit" size="sm" className="text-xs">
+            <Button type="submit" size="sm" className="text-xs h-9">
               Buscar
             </Button>
           </form>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-3">
+      <CardContent>
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="space-y-2.5 py-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="p-4 border border-border rounded-xl space-y-2">
-                <Skeleton className="h-4 w-48" />
-                <Skeleton className="h-3 w-72" />
+              <div key={i} className="flex items-center gap-4 p-3 border border-border rounded-xl">
+                <Skeleton className="h-10 w-10 rounded-lg" />
+                <div className="space-y-1.5 flex-1">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-3 w-60" />
+                </div>
+                <Skeleton className="h-5 w-20" />
               </div>
             ))}
           </div>
@@ -127,152 +133,133 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
             )}
           </div>
         ) : (
-          <div className="space-y-3">
-            {products.map((product) => {
-              const isExpanded = expandedProductId === product.id;
-              const hasMultipleVariants = product.variants.length > 1;
-              const totalStock = product.variants.reduce((sum, v) => sum + (v.stocks?.reduce((sSum, s) => sSum + s.quantity, 0) || 0), 0);
+          <div className="overflow-x-auto rounded-xl border border-border bg-card">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="w-[80px]"></TableHead>
+                  <TableHead className="font-semibold text-xs">Producto</TableHead>
+                  <TableHead className="font-semibold text-xs">SKU Propio</TableHead>
+                  <TableHead className="font-semibold text-xs">Cód. Barras</TableHead>
+                  <TableHead className="font-semibold text-xs text-right">Compra</TableHead>
+                  <TableHead className="font-semibold text-xs text-right">Venta</TableHead>
+                  <TableHead className="font-semibold text-xs text-center">Stock Sucursal</TableHead>
+                  <TableHead className="w-[60px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {products.map((product) => {
+                  const defaultVariant = product.variants?.[0];
+                  const purchasePrice = defaultVariant?.purchasePrice ?? 0;
+                  const salePrice = defaultVariant?.salePrice ?? 0;
+                  const sku = defaultVariant?.sku ?? 'N/A';
+                  const barcode = defaultVariant?.barcode ?? 'N/A';
+                  const currentStock = defaultVariant?.stocks?.find(s => s.branchId === selectedBranchId)?.quantity ?? 0;
 
-              return (
-                <div
-                  key={product.id}
-                  className={`border rounded-xl overflow-hidden transition-all duration-200 ${
-                    isExpanded ? 'border-primary/40 bg-muted/30' : 'hover:border-border/80'
-                  }`}
-                >
-                  {/* Product Header Row */}
-                  <div
-                    onClick={() => toggleExpand(product.id)}
-                    className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer select-none"
-                  >
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <div className="w-10 h-10 rounded-lg bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0">
-                        {(product as any).images && (product as any).images.length > 0 ? (
-                          <img src={(product as any).images[0].url} className="w-full h-full object-cover" alt={product.name} />
-                        ) : (
-                          <Package className="w-5 h-5 text-muted-foreground" />
+                  return (
+                    <TableRow key={product.id} className="hover:bg-muted/30">
+                      {/* Image Thumbnail */}
+                      <TableCell className="py-2.5">
+                        <div className="w-9 h-9 rounded-lg bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0">
+                          {product.imageIds && product.imageIds.length > 0 ? (
+                            (() => {
+                              const imgObj = uploadedImages.find(img => img.id === product.imageIds[0]);
+                              return imgObj ? (
+                                <img src={imgObj.url} className="w-full h-full object-cover" alt={product.name} />
+                              ) : (
+                                <Package className="w-4 h-4 text-muted-foreground" />
+                              );
+                            })()
+                          ) : (
+                            <Package className="w-4 h-4 text-muted-foreground" />
+                          )}
+                        </div>
+                      </TableCell>
+
+                      {/* Product details */}
+                      <TableCell className="py-2.5">
+                        <div className="font-semibold text-xs text-foreground leading-tight truncate max-w-[200px]" title={product.name}>
+                          {product.name}
+                        </div>
+                        {product.description && (
+                          <div className="text-[10px] text-muted-foreground truncate max-w-[200px]" title={product.description}>
+                            {product.description}
+                          </div>
                         )}
-                      </div>
-                      <div className="min-w-0">
-                        <h5 className="text-xs font-bold text-secondary truncate">{product.name}</h5>
-                        <p className="text-[10px] text-muted-foreground truncate max-w-md mt-0.5">{product.description || 'Sin descripción'}</p>
-                      </div>
-                    </div>
+                      </TableCell>
 
-                    <div className="flex items-center justify-between sm:justify-end gap-4 text-[11px]">
-                      <div className="text-right">
-                        <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">Variantes</span>
-                        <span className="font-semibold">{product.variants.length}</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">Stock Total</span>
-                        <Badge variant={totalStock > 0 ? 'secondary' : 'destructive'} className="text-[10px] font-bold h-5">
-                          {totalStock} pzs
+                      {/* SKU */}
+                      <TableCell className="py-2.5 font-mono text-[11px] text-primary font-bold">
+                        {sku}
+                      </TableCell>
+
+                      {/* Barcode */}
+                      <TableCell className="py-2.5 font-mono text-[11px] text-muted-foreground">
+                        {barcode}
+                      </TableCell>
+
+                      {/* Purchase Price */}
+                      <TableCell className="py-2.5 text-right font-mono text-xs">
+                        ${purchasePrice.toFixed(2)}
+                      </TableCell>
+
+                      {/* Sale Price */}
+                      <TableCell className="py-2.5 text-right font-mono text-xs font-semibold text-foreground">
+                        ${salePrice.toFixed(2)}
+                      </TableCell>
+
+                      {/* Stock */}
+                      <TableCell className="py-2.5 text-center">
+                        <Badge
+                          variant={currentStock > 0 ? 'secondary' : 'destructive'}
+                          className="font-bold font-mono text-[10px]"
+                        >
+                          {currentStock} pzs
                         </Badge>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-muted-foreground block text-[9px] uppercase tracking-wider">Precio</span>
-                        <span className="font-bold text-primary text-xs">
-                          {hasMultipleVariants
-                            ? `$${Math.min(...product.variants.map(v => v.salePrice)).toFixed(2)} – $${Math.max(...product.variants.map(v => v.salePrice)).toFixed(2)}`
-                            : `$${(product.variants[0]?.salePrice || 0).toFixed(2)}`
-                          }
-                        </span>
-                      </div>
+                      </TableCell>
 
-                      <div className="flex items-center gap-2 pl-2">
+                      {/* Actions */}
+                      <TableCell className="py-2.5 text-center">
                         <Button
                           variant="ghost"
-                          size="icon-sm"
-                          onClick={(e) => handleOpenEditDrawer(e, product)}
+                          size="icon"
+                          onClick={() => handleOpenEditDrawer(product)}
                           title="Editar Ficha de Producto"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <div className="text-muted-foreground">
-                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Product Variants Details */}
-                  {isExpanded && (
-                    <div className="border-t border-border bg-muted/20 p-4 space-y-3">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-[10px] text-left">
-                          <thead>
-                            <tr className="text-muted-foreground border-b border-border/50">
-                              <th className="pb-2 font-semibold">SKU</th>
-                              <th className="pb-2 font-semibold">Código de Barras</th>
-                              <th className="pb-2 font-semibold">Precios</th>
-                              <th className="pb-2 font-semibold">Atributos / Variación</th>
-                              <th className="pb-2 font-semibold text-right">Stock</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border/30">
-                            {product.variants.map((v, idx) => {
-                              const varStock = v.stocks?.find(s => s.branchId === selectedBranchId)?.quantity || 0;
-                              return (
-                                <tr key={idx} className="hover:bg-muted/30">
-                                  <td className="py-2.5 font-mono text-foreground">{v.sku}</td>
-                                  <td className="py-2.5 font-mono text-foreground">{v.barcode || 'N/A'}</td>
-                                  <td className="py-2.5">
-                                    <span className="block text-muted-foreground text-[9px]">Compra: ${v.purchasePrice.toFixed(2)}</span>
-                                    <span className="block text-primary font-bold">Venta: ${v.salePrice.toFixed(2)}</span>
-                                  </td>
-                                  <td className="py-2.5">
-                                    {v.attributeValues && v.attributeValues.length > 0 ? (
-                                      <div className="flex flex-wrap gap-1">
-                                        {v.attributeValues.map((av: any, aIdx: number) => (
-                                          <Badge key={aIdx} variant="outline" className="text-[9px] h-4 px-1">
-                                            {av.attribute?.name || 'Attr'}: {av.value || av.attributeValueId}
-                                          </Badge>
-                                        ))}
-                                      </div>
-                                    ) : (
-                                      <span className="italic text-muted-foreground/70 text-[10px]">Estándar</span>
-                                    )}
-                                  </td>
-                                  <td className="py-2.5 font-bold text-right">
-                                    <Badge variant={varStock > 0 ? 'secondary' : 'destructive'} className="text-[9px] h-4">
-                                      {varStock} pzs
-                                    </Badge>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
         )}
 
         {/* Pagination Footer */}
         {meta.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-border pt-4 mt-2">
+          <div className="flex items-center justify-between border-t border-border pt-4 mt-4">
             <span className="text-[11px] text-muted-foreground">
               Página <span className="font-bold text-foreground">{page}</span> de <span className="font-bold text-foreground">{meta.totalPages}</span> ({meta.total} productos)
             </span>
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                size="icon-sm"
+                size="icon"
                 onClick={() => onPageChange(Math.max(1, page - 1))}
                 disabled={page === 1}
+                className="h-8 w-8"
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <Button
                 variant="outline"
-                size="icon-sm"
+                size="icon"
                 onClick={() => onPageChange(Math.min(meta.totalPages, page + 1))}
                 disabled={page === meta.totalPages}
+                className="h-8 w-8"
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>

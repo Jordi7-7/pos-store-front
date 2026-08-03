@@ -81,7 +81,8 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
       name: product.name ?? '',
       description: product.description ?? '',
       categoryId: product.categoryId ?? '',
-      sku: sv.sku ?? sv.barcode ?? '',
+      sku: sv.sku ?? '',
+      barcode: sv.barcode ?? '',
       purchasePrice: sv.purchasePrice ?? 0,
       salePrice: sv.salePrice ?? 0,
       initialStock: stockQty,
@@ -137,10 +138,9 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
             {
               id: sv.id,
               sku: data.sku.trim(),
-              barcode: data.sku.trim(),
+              barcode: data.barcode?.trim() || undefined,
               purchasePrice: data.purchasePrice,
               salePrice: data.salePrice,
-              attributeValues: [],
               imageIds: selectedImages,
               stocks: selectedBranchId
                 ? [{ branchId: selectedBranchId, quantity: data.initialStock }]

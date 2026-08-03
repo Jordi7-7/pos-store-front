@@ -15,8 +15,12 @@ export const productFormSchema = z.object({
   categoryId: z.string().optional(),
   sku: z
     .string()
-    .min(1, 'El código SKU / Barras es requerido.')
-    .max(60, 'El código no puede superar los 60 caracteres.'),
+    .min(1, 'El código SKU es requerido.')
+    .max(60, 'El SKU no puede superar los 60 caracteres.'),
+  barcode: z
+    .string()
+    .max(60, 'El código de barras no puede superar los 60 caracteres.')
+    .optional(),
   purchasePrice: z
     .number({ error: 'Ingresa un precio válido.' })
     .min(0, 'El precio de compra no puede ser negativo.'),
@@ -39,6 +43,7 @@ export const productFormDefaults: ProductFormValues = {
   description: '',
   categoryId: '',
   sku: '',
+  barcode: '',
   purchasePrice: 10.0,
   salePrice: 19.99,
   initialStock: 50,

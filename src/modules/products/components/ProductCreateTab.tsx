@@ -90,7 +90,7 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
         categoryId: data.categoryId || undefined,
         imageIds: selectedImages,
         sku: data.sku.trim(),
-        barcode: data.sku.trim(),
+        barcode: data.barcode?.trim() || undefined,
         purchasePrice: data.purchasePrice,
         salePrice: data.salePrice,
         stocks: selectedBranchId

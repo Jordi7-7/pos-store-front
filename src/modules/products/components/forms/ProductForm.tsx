@@ -213,14 +213,38 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor={`${formId}-sku`} className="text-[11px] font-bold uppercase tracking-wider">
-                  Código SKU / Barras <span className="text-destructive">*</span>
+                  Código SKU Propio <span className="text-destructive">*</span>
                 </FieldLabel>
                 <div className="relative">
                   <Tag className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
                   <Input
                     {...field}
                     id={`${formId}-sku`}
-                    placeholder="Escribe el SKU o escanea barras"
+                    placeholder="HM-1230 (Para etiquetas propias)"
+                    aria-invalid={fieldState.invalid}
+                    className="pl-8 text-xs h-9"
+                  />
+                </div>
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          {/* Código de Barras Proveedor */}
+          <Controller
+            name="barcode"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={`${formId}-barcode`} className="text-[11px] font-bold uppercase tracking-wider">
+                  Código de Barras Proveedor
+                </FieldLabel>
+                <div className="relative">
+                  <Tag className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input
+                    {...field}
+                    id={`${formId}-barcode`}
+                    placeholder="Código de barras original (Opcional)"
                     aria-invalid={fieldState.invalid}
                     className="pl-8 text-xs h-9"
                   />
