@@ -3,17 +3,16 @@ import { useProducts, useCreateProduct } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
 import { ProductListTab } from './ProductListTab';
 import { ProductCreateTab } from './ProductCreateTab';
-import { AttributesTab } from './AttributesTab';
 import { CategoriesTab } from './CategoriesTab';
 import { KardexTab } from './KardexTab';
-import { Eye, Tag, Layers, Folder, ClipboardList } from 'lucide-react';
+import { Eye, Layers, Folder, ClipboardList } from 'lucide-react';
 
 interface ProductsViewProps {
   selectedBranchId: string;
   uploadedImages: any[];
 }
 
-type TabType = 'list' | 'create' | 'categories' | 'attributes' | 'kardex';
+type TabType = 'list' | 'create' | 'categories' | 'kardex';
 
 export const ProductsView: React.FC<ProductsViewProps> = ({
   selectedBranchId,
@@ -25,7 +24,8 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
 
   const { products, meta, isLoading: isLoadingProducts } = useProducts({ page, limit, search });
   const { categories } = useCategories();
-  const { createSimpleProduct, createVariableProduct } = useCreateProduct();
+  const { createSimpleProduct } = useCreateProduct();
+
 
   const [activeTab, setActiveTab] = useState<TabType>('list');
 
@@ -40,7 +40,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-card pb-4">
         <div>
           <h3 className="text-sm font-bold text-secondary">Catálogo General de Productos</h3>
-          <p className="text-xs text-neutral mt-0.5">Gestiona tus artículos, variaciones de precios y stock por sucursales.</p>
+          <p className="text-xs text-neutral mt-0.5">Gestiona tus artículos, precios y stock por sucursales.</p>
         </div>
 
         <div className="flex bg-bg-card border border-border-card rounded-xl p-1 gap-1 self-start sm:self-auto overflow-x-auto max-w-full">
@@ -81,18 +81,6 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           </button>
 
           <button
-            onClick={() => setActiveTab('attributes')}
-            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap ${
-              activeTab === 'attributes' 
-                ? 'bg-primary text-white shadow-sm' 
-                : 'text-neutral hover:text-secondary'
-            }`}
-          >
-            <Tag className="w-3.5 h-3.5" />
-            <span>Variantes</span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('kardex')}
             className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap ${
               activeTab === 'kardex' 
@@ -130,18 +118,12 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           uploadedImages={uploadedImages}
           selectedBranchId={selectedBranchId}
           createSimpleProduct={createSimpleProduct}
-          createVariableProduct={createVariableProduct}
           onSuccess={handleProductCreated}
         />
       )}
 
-
       {activeTab === 'categories' && (
         <CategoriesTab />
-      )}
-
-      {activeTab === 'attributes' && (
-        <AttributesTab />
       )}
 
       {activeTab === 'kardex' && (
@@ -155,3 +137,4 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
   );
 };
 export default ProductsView;
+

@@ -17,10 +17,10 @@ import { toast } from 'sonner';
 // Subcomponents import
 import { CatalogGrid } from './pos/CatalogGrid';
 import { CartSummary } from './pos/CartSummary';
-import { VariantSelectorModal } from './pos/VariantSelectorModal';
 import { ThermalTicketModal } from './pos/ThermalTicketModal';
 import { CashSessionModals } from './pos/CashSessionModals';
 import { PaymentModal } from './pos/PaymentModal';
+
 
 interface POSViewProps {
   selectedBranchId: string;
@@ -92,10 +92,8 @@ export const POSView: React.FC<POSViewProps> = ({
   const [lastCompletedSale, setLastCompletedSale] = useState<any | null>(null);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
 
-  // Variant selector states
-  const [selectedProductForModal, setSelectedProductForModal] = useState<any | null>(null);
-  const [isVariantModalOpen, setIsVariantModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
 
   // Clock & shift timer
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
@@ -225,9 +223,8 @@ export const POSView: React.FC<POSViewProps> = ({
 
     const branch = selectedBranchId || (branches[0] && branches[0].id);
     const variants = product.variants || [];
-    const isSimpleProduct = variants.length === 1 && (!variants[0].attributeValues || variants[0].attributeValues.length === 0);
 
-    if (isSimpleProduct) {
+    if (variants.length > 0) {
       const v = variants[0];
       const stockQty = v.stocks?.find((s: any) => s.branchId === branch)?.quantity || 0;
       if (stockQty <= 0) {
@@ -236,10 +233,10 @@ export const POSView: React.FC<POSViewProps> = ({
       }
       addVariantToCart(product, v, stockQty);
     } else {
-      setSelectedProductForModal(product);
-      setIsVariantModalOpen(true);
+      toast.warning(`El producto "${product.name}" no tiene variantes configuradas.`);
     }
   };
+
 
   const addVariantToCart = (product: any, variant: any, maxStock: number) => {
     const existing = cart.find(item => item.variantId === variant.id);
@@ -579,18 +576,7 @@ export const POSView: React.FC<POSViewProps> = ({
         isProcessing={isProcessing}
       />
 
-      {/* Modal for selecting variants */}
-      <VariantSelectorModal 
-        isOpen={isVariantModalOpen}
-        onClose={() => {
-          setIsVariantModalOpen(false);
-          setSelectedProductForModal(null);
-        }}
-        product={selectedProductForModal}
-        selectedBranchId={selectedBranchId}
-        branches={branches}
-        onSelectVariant={addVariantToCart}
-      />
+
 
       {/* Thermal Ticket Printer simulation */}
       <ThermalTicketModal 

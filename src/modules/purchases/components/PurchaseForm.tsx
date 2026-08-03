@@ -31,36 +31,15 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
 
   // Local single item inputs to add to the table
   const [selectedProductId, setSelectedProductId] = useState('');
-  const [selectedVariantId, setSelectedVariantId] = useState('');
   const [purQty, setPurQty] = useState('10');
   const [purCost, setPurCost] = useState('10.00');
 
   // Purchase items table state
   const [purchaseItems, setPurchaseItems] = useState<PurchaseItemInput[]>([]);
 
-  // Get selected product's variants list
-  const currentProductVariants = useMemo(() => {
-    if (!selectedProductId || !products) return [];
-    const prod = products.find((p: any) => p.id === selectedProductId);
-    return prod?.variants || [];
-  }, [selectedProductId, products]);
-
-  // Set first variant automatically on product change
-  React.useEffect(() => {
-    if (currentProductVariants.length > 0) {
-      setSelectedVariantId((currentProductVariants[0] as any).id || '');
-    } else {
-      setSelectedVariantId('');
-    }
-  }, [currentProductVariants]);
-
   const handleAddItemToPurchase = () => {
     if (!selectedProductId) {
       toast.warning('Selecciona un producto primero.');
-      return;
-    }
-    if (!selectedVariantId) {
-      toast.warning('Selecciona la variante a abastecer.');
       return;
     }
 
@@ -76,23 +55,21 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
       return;
     }
 
-    // Check if variant already added to aggregate quantity
-    const existingIndex = purchaseItems.findIndex(i => i.variantId === selectedVariantId);
-    
     const prod = products?.find((p: any) => p.id === selectedProductId);
     if (!prod) {
       toast.warning('Producto no encontrado.');
       return;
     }
-    const variant = prod.variants?.find((v: any) => v.id === selectedVariantId);
+    const variant = prod.variants?.[0];
     if (!variant) {
-      toast.warning('Variante no encontrada.');
+      toast.warning('Este producto no tiene variantes registradas.');
       return;
     }
-    
-    const combText = variant.attributeValues && variant.attributeValues.length > 0
-      ? variant.attributeValues.map((av: any) => `${av.attribute?.name || 'Attr'}: ${av.value}`).join(' / ')
-      : 'Estándar';
+
+    const variantId = variant.id || '';
+
+    // Check if variant already added to aggregate quantity
+    const existingIndex = purchaseItems.findIndex(i => i.variantId === variantId);
 
     if (existingIndex > -1) {
       const updated = [...purchaseItems];
@@ -101,10 +78,10 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
       setPurchaseItems(updated);
     } else {
       setPurchaseItems([...purchaseItems, {
-        variantId: selectedVariantId,
+        variantId,
         variantSku: variant.sku,
         productName: prod.name,
-        combinationText: combText,
+        combinationText: 'Estándar',
         quantity: qty,
         unitCost: cost
       }]);
@@ -112,6 +89,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
 
     toast.success(`Añadido: ${prod.name} (${variant.sku}) x ${qty}`);
   };
+
 
   const handleRemoveItem = (index: number) => {
     setPurchaseItems(purchaseItems.filter((_, idx) => idx !== index));
@@ -219,7 +197,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
         <div className="border border-border-card rounded-xl p-4 bg-bg-dark space-y-3.5">
           <span className="text-[10px] font-bold text-primary block uppercase tracking-wider">Añadir Artículo al Abastecimiento</span>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-1 gap-3.5">
             <div>
               <label className="text-[9px] text-neutral font-bold uppercase tracking-wider block mb-1">Producto</label>
               <select 
@@ -229,28 +207,12 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
               >
                 <option value="">Selecciona un producto</option>
                 {products.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
+                  <option key={p.id} value={p.id}>{p.name} ({p.variants?.[0]?.sku || 'Sin SKU'})</option>
                 ))}
               </select>
             </div>
-            <div>
-              <label className="text-[9px] text-neutral font-bold uppercase tracking-wider block mb-1">Variación Específica</label>
-              <select 
-                value={selectedVariantId}
-                onChange={(e) => setSelectedVariantId(e.target.value)}
-                disabled={!selectedProductId}
-                className="w-full bg-bg-card border border-border-card rounded-lg py-1.5 px-2.5 text-xs text-secondary focus:outline-none disabled:opacity-40"
-              >
-                <option value="">Seleccione variante</option>
-                {currentProductVariants.map((v: any) => {
-                  const comb = v.attributeValues && v.attributeValues.length > 0
-                    ? v.attributeValues.map((av: any) => `${av.attribute?.name || 'Attr'}: ${av.value}`).join(' / ')
-                    : 'Estándar';
-                  return <option key={v.id} value={v.id}>{v.sku} ({comb})</option>;
-                })}
-              </select>
-            </div>
           </div>
+
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3.5 items-end">
             <div>
