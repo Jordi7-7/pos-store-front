@@ -2,13 +2,15 @@ import React, { useState, useRef } from 'react';
 import { Tag, Check, Upload, Loader2, X, Plus } from 'lucide-react';
 import { useMediaUpload } from '../../media/hooks/useMedia';
 import { useCategories } from '../hooks/useCategories';
+
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from '@/components/ui/combobox';
 import { toast } from 'sonner';
 
 
@@ -275,20 +277,27 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
               <div className="flex gap-2 items-end">
                 <div className="flex-1">
                   <label className="block text-[10px] text-neutral font-bold uppercase tracking-wider mb-1">Categoría</label>
-                  <Select
+                  <Combobox
                     value={prodCategory || 'none'}
-                    onValueChange={(val: string | null) => setProdCategory(val === 'none' || !val ? '' : val)}
+                    onValueChange={(val) => setProdCategory(val === 'none' || !val ? '' : (val as string))}
                   >
-                    <SelectTrigger className="w-full bg-bg-dark border border-border-card rounded-xl py-2.5 px-3.5 text-xs text-secondary text-left focus:outline-none focus:border-primary">
-                      <SelectValue placeholder="Ninguna (Opcional)" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-bg-card border border-border-card text-secondary">
-                      <SelectItem value="none">Ninguna (Opcional)</SelectItem>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <ComboboxInput 
+                      placeholder="Buscar o seleccionar categoría..." 
+                      className="w-full bg-bg-dark border border-border-card rounded-xl text-xs text-secondary text-left focus:outline-none focus:border-primary shadow-none" 
+                      showTrigger={true}
+                    />
+                    <ComboboxContent>
+                      <ComboboxEmpty>No se encontraron categorías.</ComboboxEmpty>
+                      <ComboboxList>
+                        <ComboboxItem value="none">Ninguna (Opcional)</ComboboxItem>
+                        {categories.map((cat) => (
+                          <ComboboxItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </ComboboxItem>
+                        ))}
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
                 </div>
 
                 <button
