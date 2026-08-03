@@ -238,7 +238,7 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
   // Generate dynamic list of combinations based on selected pills (Cartesian Product)
   const selectedPillsCombinations = useMemo(() => {
     const activePools = Object.entries(selectedPillValues)
-      .filter(([_, valueIds]) => valueIds.length > 0)
+      .filter(([attrId, valueIds]) => activeAttributeIds.includes(attrId) && valueIds.length > 0)
       .map(([attrId, valueIds]) => {
         const attr = attributes.find(a => a.id === attrId);
         return {
@@ -274,7 +274,8 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
     };
 
     return cartesian(activePools);
-  }, [selectedPillValues, attributes]);
+  }, [selectedPillValues, activeAttributeIds, attributes]);
+
 
   const isCombinationAdded = (comb: any[]) => {
     const keyToCheck = comb.map(c => c.attributeValueId).sort().join(',');
@@ -800,44 +801,90 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
                 <p className="text-[11px] text-neutral mt-0.5">Selecciona los valores de atributos para generar combinaciones masivamente.</p>
               </div>
 
+              {/* Step 2.1: Select Active Attributes for Product */}
+              <div className="bg-bg-dark/30 border border-border-card rounded-xl p-4 space-y-4">
+                <div className="pb-2 border-b border-border-card/30">
+                  <span className="text-[11px] font-bold text-secondary uppercase tracking-wider block">1. Atributos Activos para este Producto</span>
+                  <span className="text-[9px] text-neutral">Selecciona qué características definen las variaciones de este producto (ej. Color, Talla).</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {attributes.map(attr => {
+                    const isActive = activeAttributeIds.includes(attr.id);
+                    return (
+                      <button
+                        key={attr.id}
+                        type="button"
+                        onClick={() => {
+                          if (isActive) {
+                            setActiveAttributeIds(activeAttributeIds.filter(id => id !== attr.id));
+                            const updatedPillValues = { ...selectedPillValues };
+                            delete updatedPillValues[attr.id];
+                            setSelectedPillValues(updatedPillValues);
+                          } else {
+                            setActiveAttributeIds([...activeAttributeIds, attr.id]);
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                          isActive 
+                            ? 'bg-primary text-white border-primary shadow-sm shadow-primary/30' 
+                            : 'bg-bg-card text-neutral border-border-card hover:border-neutral/40 hover:text-secondary'
+                        }`}
+                      >
+                        {attr.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Step 2.2: Select values for active attributes */}
               <div className="bg-bg-dark/30 border border-border-card rounded-xl p-4 space-y-4">
                 <div className="flex items-center justify-between pb-2 border-b border-border-card/30">
                   <div>
-                    <span className="text-[11px] font-bold text-secondary uppercase tracking-wider block">Valores de Atributos</span>
+                    <span className="text-[11px] font-bold text-secondary uppercase tracking-wider block">2. Valores de Atributos</span>
                     <span className="text-[9px] text-neutral">Toca las píldoras para seleccionar los valores que deseas combinar.</span>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  {attributes.map(attr => {
-                    const selectedVals = selectedPillValues[attr.id] || [];
-                    return (
-                      <div key={attr.id} className="space-y-1.5">
-                        <label className="block text-[10px] font-bold text-secondary uppercase tracking-wide">{attr.name}</label>
-                        <div className="flex flex-wrap gap-1.5">
-                          {attr.values.map(val => {
-                            const isSelected = selectedVals.includes(val.id);
-                            return (
-                              <button
-                                key={val.id}
-                                type="button"
-                                onClick={() => handleTogglePill(attr.id, val.id)}
-                                className={`px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-all ${
-                                  isSelected 
-                                    ? 'bg-primary text-white border-primary shadow-sm shadow-primary/30' 
-                                    : 'bg-bg-card text-neutral border-border-card hover:border-neutral/40 hover:text-secondary'
-                                }`}
-                              >
-                                {val.value}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {activeAttributeIds.length > 0 ? (
+                    attributes
+                      .filter(attr => activeAttributeIds.includes(attr.id))
+                      .map(attr => {
+                        const selectedVals = selectedPillValues[attr.id] || [];
+                        return (
+                          <div key={attr.id} className="space-y-1.5 animate-fade-in">
+                            <label className="block text-[10px] font-bold text-secondary uppercase tracking-wide">{attr.name}</label>
+                            <div className="flex flex-wrap gap-1.5">
+                              {attr.values.map(val => {
+                                const isSelected = selectedVals.includes(val.id);
+                                return (
+                                  <button
+                                    key={val.id}
+                                    type="button"
+                                    onClick={() => handleTogglePill(attr.id, val.id)}
+                                    className={`px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-all ${
+                                      isSelected 
+                                        ? 'bg-primary text-white border-primary shadow-sm shadow-primary/30' 
+                                        : 'bg-bg-card text-neutral border-border-card hover:border-neutral/40 hover:text-secondary'
+                                    }`}
+                                  >
+                                    {val.value}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })
+                  ) : (
+                    <div className="text-center py-4 text-[10px] text-neutral">
+                      Selecciona al menos un atributo en el paso anterior para empezar a configurar sus valores.
+                    </div>
+                  )}
                 </div>
               </div>
+
 
               {selectedPillsCombinations.length > 0 && (
                 <div className="space-y-4">

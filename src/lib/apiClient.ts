@@ -1,6 +1,6 @@
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
-const API_URL = 'http://localhost:3000'; // Default port for NestJS dev server
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export const apiClient = {
   request: async <T>(path: string, options: RequestInit = {}): Promise<T> => {

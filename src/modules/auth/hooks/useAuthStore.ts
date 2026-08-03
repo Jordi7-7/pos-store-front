@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-const API_URL = 'http://localhost:3000'; // Default NestJS backend address
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 interface User {
   name: string;
