@@ -666,36 +666,48 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
               )}
             </div>
 
-            {/* Toggle Variants */}
-            <div className="pt-3 border-t border-border-card/50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-bold text-secondary block">¿Este producto se vende en múltiples variantes?</span>
-                  <span className="text-[10px] text-neutral block mt-0.5">Habilita esta opción si se manejan diferentes tallas, colores, materiales, etc.</span>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={hasVariants}
-                    onChange={(e) => {
-                      const checked = e.target.checked;
-                      setHasVariants(checked);
-                      if (checked) {
-                        setBuilderPurchasePrice(singlePurchasePrice);
-                        setBuilderSalePrice(singleSalePrice);
-                        setBuilderInitialStock(singleInitialStock);
-                      } else {
-                        setVariantsList([]);
-                        setActiveAttributeIds([]);
-                        setSelectedPillValues({});
-                      }
-                    }}
-                    className="sr-only peer"
-                  />
-                  <div className="w-10 h-5 bg-bg-dark border border-border-card peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-neutral after:border-border-card after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
-                </label>
+            {/* Toggle Variants (Premium Segmented Control) */}
+            <div className="pt-3 border-t border-border-card/50 space-y-2">
+              <label className="block text-[10px] text-neutral font-bold uppercase tracking-wider">Tipo de Producto</label>
+              <div className="grid grid-cols-2 gap-2 p-1 bg-bg-dark border border-border-card rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHasVariants(false);
+                    setVariantsList([]);
+                    setActiveAttributeIds([]);
+                    setSelectedPillValues({});
+                  }}
+                  className={`flex flex-col items-center justify-center gap-1 py-2.5 rounded-lg border transition-all ${
+                    !hasVariants 
+                      ? 'bg-primary text-white border-primary shadow-sm' 
+                      : 'bg-transparent text-neutral border-transparent hover:text-secondary'
+                  }`}
+                >
+                  <span className="text-xs font-bold">Producto Estándar</span>
+                  <span className="text-[9px] opacity-80">Precio, SKU y stock directo</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHasVariants(true);
+                    setBuilderPurchasePrice(singlePurchasePrice);
+                    setBuilderSalePrice(singleSalePrice);
+                    setBuilderInitialStock(singleInitialStock);
+                  }}
+                  className={`flex flex-col items-center justify-center gap-1 py-2.5 rounded-lg border transition-all ${
+                    hasVariants 
+                      ? 'bg-primary text-white border-primary shadow-sm' 
+                      : 'bg-transparent text-neutral border-transparent hover:text-secondary'
+                  }`}
+                >
+                  <span className="text-xs font-bold">Producto Variable</span>
+                  <span className="text-[9px] opacity-80">Variantes (tallas, colores, etc.)</span>
+                </button>
               </div>
             </div>
+
 
             {/* Single Product standard fields */}
             {!hasVariants && (
