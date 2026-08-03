@@ -3,8 +3,15 @@ import { Check, X, Upload, Loader2, Save, AlertTriangle, Plus } from 'lucide-rea
 import { useMediaUpload } from '../../media/hooks/useMedia';
 import { useUpdateProduct, useDeleteProduct } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
-import { CustomSelect } from '../../../components/ui/CustomSelect';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
+
 
 
 
@@ -338,13 +345,20 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
                   <div className="flex gap-2 items-end">
                     <div className="flex-1">
                       <label className="block text-[10px] text-neutral font-bold uppercase tracking-wider mb-1">Categoría</label>
-                      <CustomSelect
-                        options={categories}
-                        value={prodCategory}
-                        onChange={(val) => setProdCategory(val)}
-                        placeholder="Ninguna (Opcional)"
-                        emptyMessage="Categoría no encontrada"
-                      />
+                      <Select
+                        value={prodCategory || 'none'}
+                        onValueChange={(val: string | null) => setProdCategory(val === 'none' || !val ? '' : val)}
+                      >
+                        <SelectTrigger className="w-full bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-xs text-secondary text-left focus:outline-none focus:border-primary">
+                          <SelectValue placeholder="Ninguna (Opcional)" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-bg-card border border-border-card text-secondary">
+                          <SelectItem value="none">Ninguna (Opcional)</SelectItem>
+                          {categories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <button
                       type="button"

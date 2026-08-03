@@ -2,8 +2,15 @@ import React, { useState, useRef } from 'react';
 import { Tag, Check, Upload, Loader2, X, Plus } from 'lucide-react';
 import { useMediaUpload } from '../../media/hooks/useMedia';
 import { useCategories } from '../hooks/useCategories';
-import { CustomSelect } from '../../../components/ui/CustomSelect';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
+
 
 
 
@@ -268,13 +275,20 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
               <div className="flex gap-2 items-end">
                 <div className="flex-1">
                   <label className="block text-[10px] text-neutral font-bold uppercase tracking-wider mb-1">Categoría</label>
-                  <CustomSelect
-                    options={categories}
-                    value={prodCategory}
-                    onChange={(val) => setProdCategory(val)}
-                    placeholder="Ninguna (Opcional)"
-                    emptyMessage="Categoría no encontrada"
-                  />
+                  <Select
+                    value={prodCategory || 'none'}
+                    onValueChange={(val: string | null) => setProdCategory(val === 'none' || !val ? '' : val)}
+                  >
+                    <SelectTrigger className="w-full bg-bg-dark border border-border-card rounded-xl py-2.5 px-3.5 text-xs text-secondary text-left focus:outline-none focus:border-primary">
+                      <SelectValue placeholder="Ninguna (Opcional)" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-bg-card border border-border-card text-secondary">
+                      <SelectItem value="none">Ninguna (Opcional)</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <button
@@ -286,6 +300,7 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
+
 
               {isCreatingCategoryInline && (
                 <div className="bg-bg-dark/30 border border-border-card/60 rounded-xl p-3 space-y-2 animate-fade-in">
