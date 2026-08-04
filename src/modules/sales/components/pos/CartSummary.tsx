@@ -46,7 +46,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
   };
 
   return (
-    <div className="p-5 bg-bg-card border border-border-card rounded-2xl space-y-4 shadow-sm flex flex-col justify-between min-h-[500px]">
+    <div className="p-5 bg-bg-card border border-border-card rounded-2xl space-y-4 shadow-sm flex flex-col justify-between min-h-125">
       <div>
         
         {/* WALK-IN CUSTOMER CARD HEADER */}
@@ -156,8 +156,8 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
                     </div>
 
                     {/* Unit Selector */}
-                    <div className="bg-bg-card border border-border-card/50 rounded-lg px-2.5 py-1 text-[9px] text-neutral font-semibold select-none cursor-pointer">
-                      Nos ▾
+                    <div className="bg-bg-card border border-border-card/50 rounded-lg px-2.5 py-1 text-[9px] text-neutral font-semibold select-none">
+                      Nos
                     </div>
 
                     {/* Calculated Total for item */}
@@ -203,15 +203,6 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
           >
             {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-4 h-4" />}
             <span>Checkout</span>
-          </button>
-          
-          <button 
-            type="button"
-            disabled={cart.length === 0}
-            className="w-full py-2.5 bg-bg-dark border border-border-card hover:border-neutral/40 hover:bg-bg-dark/80 disabled:opacity-50 disabled:cursor-not-allowed text-neutral hover:text-secondary text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            <span>Hold Order</span>
           </button>
         </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useProducts } from '../../products/hooks/useProducts';
 import { useCategories } from '../../products/hooks/useCategories';
 import { useBranches } from '../../branches/hooks/useBranches';
@@ -13,6 +13,12 @@ import { useCustomers } from '../hooks/useCustomers';
 import { PaymentMethod } from '../services/sales.service';
 import { Search, MoreVertical, Wallet, ArrowRightLeft, Receipt, X, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 // Subcomponents import
 import { CatalogGrid } from './pos/CatalogGrid';
@@ -77,11 +83,11 @@ export const POSView: React.FC<POSViewProps> = ({
   const expenseCategory = 'Servicios';
 
   // Modal Visibility states
-  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const [isAperturaModalOpen, setIsAperturaModalOpen] = useState(false);
   const [isEgresoModalOpen, setIsEgresoModalOpen] = useState(false);
   const [isCierreModalOpen, setIsCierreModalOpen] = useState(false);
   const [isHistorialModalOpen, setIsHistorialModalOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Cart States
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -116,18 +122,6 @@ export const POSView: React.FC<POSViewProps> = ({
     }, 1000);
     return () => clearInterval(timer);
   }, [activeSession]);
-
-  const optionsRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (optionsRef.current && !optionsRef.current.contains(event.target as Node)) {
-        setIsOptionsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
@@ -402,20 +396,8 @@ export const POSView: React.FC<POSViewProps> = ({
 
         {/* Status Indicators & User Profile initials */}
         <div className="flex items-center gap-3">
-          {/* Signal Indicator */}
-          <div className="p-2 bg-bg-dark border border-border-card rounded-lg text-neutral hover:text-secondary transition-all" title="Internet Connected">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h.01M12 12h.01M19 12h.01M8 12a4 4 0 0 1 8 0m-11-3a7 7 0 0 1 14 0m-17-3a10 10 0 0 1 20 0"/></svg>
-          </div>
-          {/* Database Connected */}
-          <div className="p-2 bg-bg-dark border border-border-card rounded-lg text-neutral hover:text-emerald-500 transition-all" title="Database Sync OK">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M12 2v9M8 5l4-3 4 3"/></svg>
-          </div>
-          {/* Printer status */}
-          <div className="p-2 bg-bg-dark border border-border-card rounded-lg text-neutral hover:text-secondary transition-all" title="Printer Online">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6zM6 2h12v4H6z"/></svg>
-          </div>
           {/* Reload / Sync */}
-          <button onClick={() => refetchProducts()} className="p-2 bg-bg-dark border border-border-card rounded-lg text-neutral hover:text-secondary transition-all" title="Force Reload Catalog">
+          <button onClick={() => refetchProducts()} className="p-2 bg-bg-dark border border-border-card rounded-lg text-neutral hover:text-secondary transition-all cursor-pointer" title="Force Reload Catalog">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
           </button>
           
@@ -445,76 +427,77 @@ export const POSView: React.FC<POSViewProps> = ({
             </div>
 
             {/* Menu Options Button */}
-            <div className="relative" ref={optionsRef}>
-              <button
-                onClick={() => setIsOptionsOpen(!isOptionsOpen)}
-                className="p-2.5 bg-bg-dark border border-border-card rounded-xl text-neutral hover:text-secondary hover:border-primary/50 transition-all flex items-center justify-center"
-                title="Administración de Caja Chica"
-              >
-                <MoreVertical className="w-4 h-4" />
-              </button>
-
-              {isOptionsOpen && (
-                <div className="absolute left-0 mt-2 w-52 bg-bg-card border border-border-card rounded-xl shadow-2xl z-20 py-2 animate-fade-in">
-                  <div className="px-3 pb-1 mb-1 border-b border-border-card text-[9px] uppercase tracking-wider font-bold text-neutral">Caja Chica</div>
-                  
-                  {!activeSession ? (
+            {/* Menu Options Button using shadcn Popover */}
+            <Popover open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+              <PopoverTrigger
+                render={
+                  <button
+                    className="p-2.5 bg-bg-dark border border-border-card rounded-xl text-neutral hover:text-secondary hover:border-primary/50 transition-all flex items-center justify-center cursor-pointer animate-fade-in"
+                    title="Administración de Caja Chica"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                }
+              />
+              <PopoverContent align="start" className="w-52 bg-bg-card border border-border-card rounded-xl shadow-2xl z-20 py-2">
+                <div className="px-3 pb-1 mb-1 border-b border-border-card text-[9px] uppercase tracking-wider font-bold text-neutral">Caja Chica</div>
+                
+                {!activeSession ? (
+                  <button
+                    onClick={() => {
+                      setIsAperturaModalOpen(true);
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-xs text-emerald-500 hover:bg-bg-dark font-semibold transition-colors flex items-center gap-2 cursor-pointer"
+                  >
+                    <Wallet className="w-3.5 h-3.5" />
+                    <span>Apertura de Caja</span>
+                  </button>
+                ) : (
+                  <>
+                    <div className="px-4 py-1.5 text-[10px] text-emerald-500 font-bold bg-emerald-500/5 mx-2 rounded mb-2 border border-emerald-500/10 flex items-center gap-1.5 select-none">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Caja Abierta</span>
+                    </div>
+                    
                     <button
                       onClick={() => {
-                        setIsAperturaModalOpen(true);
-                        setIsOptionsOpen(false);
+                        setIsEgresoModalOpen(true);
+                        setIsMenuOpen(false);
                       }}
-                      className="w-full px-4 py-2 text-left text-xs text-emerald-500 hover:bg-bg-dark font-semibold transition-colors flex items-center gap-2"
+                      className="w-full px-4 py-2 text-left text-xs text-secondary hover:bg-bg-dark font-medium transition-colors flex items-center gap-2 cursor-pointer"
                     >
-                      <Wallet className="w-3.5 h-3.5" />
-                      <span>Apertura de Caja</span>
+                      <ArrowRightLeft className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Registrar Egreso (Gasto)</span>
                     </button>
-                  ) : (
-                    <>
-                      <div className="px-4 py-1.5 text-[10px] text-emerald-500 font-bold bg-emerald-500/5 mx-2 rounded mb-2 border border-emerald-500/10 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span>Caja Abierta</span>
-                      </div>
-                      
-                      <button
-                        onClick={() => {
-                          setIsEgresoModalOpen(true);
-                          setIsOptionsOpen(false);
-                        }}
-                        className="w-full px-4 py-2 text-left text-xs text-secondary hover:bg-bg-dark font-medium transition-colors flex items-center gap-2"
-                      >
-                        <ArrowRightLeft className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Registrar Egreso (Gasto)</span>
-                      </button>
 
-                      <button
-                        onClick={() => {
-                          setIsHistorialModalOpen(true);
-                          setIsOptionsOpen(false);
-                        }}
-                        className="w-full px-4 py-2 text-left text-xs text-secondary hover:bg-bg-dark font-medium transition-colors flex items-center gap-2"
-                      >
-                        <Receipt className="w-3.5 h-3.5 text-primary" />
-                        <span>Historial de la Sesión</span>
-                      </button>
+                    <button
+                      onClick={() => {
+                        setIsHistorialModalOpen(true);
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-xs text-secondary hover:bg-bg-dark font-medium transition-colors flex items-center gap-2 cursor-pointer"
+                    >
+                      <Receipt className="w-3.5 h-3.5 text-primary" />
+                      <span>Historial de la Sesión</span>
+                    </button>
 
-                      <div className="border-t border-border-card my-1.5" />
-                      
-                      <button
-                        onClick={() => {
-                          setIsCierreModalOpen(true);
-                          setIsOptionsOpen(false);
-                        }}
-                        className="w-full px-4 py-2 text-left text-xs text-rose-500 hover:bg-bg-dark font-semibold transition-colors flex items-center gap-2"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                        <span>Cierre de Caja y Sesión</span>
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
+                    <div className="border-t border-border-card my-1.5" />
+                    
+                    <button
+                      onClick={() => {
+                        setIsCierreModalOpen(true);
+                        setIsMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-xs text-rose-500 hover:bg-bg-dark font-semibold transition-colors flex items-center gap-2 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Cierre de Caja y Sesión</span>
+                    </button>
+                  </>
+                )}
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
