@@ -13,7 +13,7 @@ import { PaymentMethod } from '../services/sales.service';
 import { 
   Search, MoreVertical, Wallet, ArrowRightLeft, Receipt, X, ShoppingBag, 
   ShoppingCart, Trash2, Minus, Plus, CreditCard, Loader2, Package, 
-  Percent, DollarSign, Check, Banknote, User 
+  Percent, DollarSign, Check, Banknote 
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -23,6 +23,16 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
+  ComboboxEmpty,
+  ComboboxTrigger,
+} from '@/components/ui/combobox';
+import { Button } from '@/components/ui/button';
 
 // Subcomponents import
 import { ThermalTicketModal } from './pos/ThermalTicketModal';
@@ -134,7 +144,20 @@ export const POSView: React.FC<POSViewProps> = ({
     return () => clearInterval(timer);
   }, [activeSession]);
 
-
+  // Pre-select CONSUMIDOR FINAL by default
+  useEffect(() => {
+    if (customers && customers.length > 0 && !selectedCustomerId) {
+      const defaultCust = customers.find(
+        (c: any) =>
+          c.name.toUpperCase() === 'CONSUMIDOR FINAL' ||
+          c.identityNumber === '9999999999999' ||
+          c.identityNumber === '9999999999'
+      );
+      if (defaultCust) {
+        setSelectedCustomerId(defaultCust.id);
+      }
+    }
+  }, [customers, selectedCustomerId]);
 
   const activeSessionSales = useMemo(() => {
     if (!activeSession || !sales) return [];
@@ -809,35 +832,57 @@ export const POSView: React.FC<POSViewProps> = ({
             Detalles de Pago y Cierre
           </h3>
 
-          {/* Customer selector card */}
-          <div className="flex items-center justify-between p-3 bg-blue-500/10 border border-blue-500/20 text-blue-500 rounded-xl relative">
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              <span className="text-xs font-bold">
-                {selectedCustomerId ? customers.find(c => c.id === selectedCustomerId)?.name : 'Walk-In Customer / Consumidor Final'}
-              </span>
-            </div>
-            {selectedCustomerId ? (
-              <button 
-                onClick={() => setSelectedCustomerId('')}
-                className="p-1 hover:bg-rose-500/10 hover:text-rose-500 rounded-lg transition-all cursor-pointer z-10"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            ) : (
-              <select
-                value={selectedCustomerId}
-                onChange={(e) => setSelectedCustomerId(e.target.value)}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              >
-                <option value="">Consumidor Final (General)</option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} ({c.identityNumber})
-                  </option>
-                ))}
-              </select>
-            )}
+          {/* Customer selector (Shadcn Combobox with integrated search) */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold text-neutral uppercase tracking-wider block">Cliente Facturación</span>
+            <Combobox 
+              items={customers}
+              value={customers.find(c => c.id === selectedCustomerId) || null} 
+              onValueChange={(val: any) => setSelectedCustomerId(val?.id || '')}
+            >
+              <ComboboxTrigger 
+                render={
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-between font-normal bg-bg-dark border-border-card text-xs text-secondary rounded-xl py-2 px-3 h-12 hover:bg-bg-dark/80 hover:text-secondary flex items-center"
+                  >
+                    {(() => {
+                      const activeCust = customers.find(c => c.id === selectedCustomerId);
+                      return activeCust ? (
+                        <div className="flex flex-col items-start leading-tight">
+                          <span className="font-extrabold text-[11px] text-secondary">{activeCust.name}</span>
+                          <span className="text-[9px] text-neutral font-mono mt-0.5">{activeCust.identityNumber}</span>
+                        </div>
+                      ) : (
+                        <span className="text-neutral text-[11px]">Seleccionar cliente...</span>
+                      );
+                    })()}
+                  </Button>
+                }
+              />
+              <ComboboxContent className="bg-bg-card border border-border-card rounded-xl shadow-2xl z-30 w-72 max-h-60 overflow-y-auto">
+                <ComboboxInput 
+                  showTrigger={false} 
+                  placeholder="Buscar por nombre o cédula..." 
+                  className="w-full border-b border-border-card bg-transparent px-3 py-2 text-xs text-secondary focus:outline-none placeholder-neutral"
+                />
+                <ComboboxEmpty className="p-3 text-center text-xs text-neutral">
+                  No se encontraron clientes
+                </ComboboxEmpty>
+                <ComboboxList>
+                  {(c: any) => (
+                    <ComboboxItem 
+                      key={c.id} 
+                      value={c}
+                      className="px-3 py-2 hover:bg-bg-dark text-xs text-secondary rounded-lg transition-colors cursor-pointer flex flex-col items-start gap-0.5"
+                    >
+                      <span className="font-bold text-[11px] text-secondary">{c.name}</span>
+                      <span className="text-[9.5px] text-neutral font-mono">{c.identityNumber}</span>
+                    </ComboboxItem>
+                  )}
+                </ComboboxList>
+              </ComboboxContent>
+            </Combobox>
           </div>
 
           {/* Global Discount Block */}
