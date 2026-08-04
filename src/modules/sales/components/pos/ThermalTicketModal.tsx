@@ -1,6 +1,10 @@
 import React from 'react';
-import { X, Printer } from 'lucide-react';
+import { Printer } from 'lucide-react';
 import { PaymentMethod } from '../../services/sales.service';
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog';
 
 interface ThermalTicketModalProps {
   isOpen: boolean;
@@ -22,24 +26,16 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
   onClose,
   saleData
 }) => {
-  if (!isOpen || !saleData) return null;
+  if (!saleData) return null;
 
   const handlePrint = () => {
     window.print();
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in print:p-0 print:bg-white print:absolute print:inset-0">
-      <div className="bg-white text-black p-6 w-full max-w-sm rounded-2xl shadow-2xl relative border border-gray-200 print:border-none print:shadow-none print:p-0 print:w-full">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent showCloseButton={false} className="sm:max-w-sm max-h-[95vh] overflow-y-auto bg-white text-black p-6 border border-gray-200 print:border-none print:shadow-none print:p-0 print:w-full print:bg-white">
         
-        {/* Close Button (Hidden in Print) */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 text-gray-500 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition-all print:hidden"
-        >
-          <X className="w-4 h-4" />
-        </button>
-
         {/* Embedded styles for printing */}
         <style dangerouslySetInnerHTML={{__html: `
           @media print {
@@ -147,21 +143,21 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
         <div className="flex gap-3 mt-6 print-hidden">
           <button
             onClick={handlePrint}
-            className="flex-1 bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow"
+            className="flex-1 bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow cursor-pointer"
           >
             <Printer className="w-4 h-4" />
             <span>Imprimir Ticket</span>
           </button>
           <button
             onClick={onClose}
-            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold py-2.5 rounded-xl border border-gray-200 transition-colors"
+            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold py-2.5 rounded-xl border border-gray-200 transition-colors cursor-pointer"
           >
             Finalizar
           </button>
         </div>
 
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 export default ThermalTicketModal;

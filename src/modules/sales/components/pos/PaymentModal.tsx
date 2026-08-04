@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, CreditCard, Banknote, ArrowRightLeft, Smartphone, Trash2 } from 'lucide-react';
+import { Check, CreditCard, Banknote, ArrowRightLeft, Smartphone, Trash2 } from 'lucide-react';
 import { PaymentMethod } from '../../services/sales.service';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -91,18 +96,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-bg-card border border-border-card rounded-2xl w-full max-w-xl shadow-2xl relative overflow-hidden flex flex-col justify-between max-h-[90vh]">
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col justify-between p-0 overflow-hidden">
         
         {/* Header */}
         <div className="p-5 border-b border-border-card flex items-center justify-between shrink-0">
-          <h3 className="text-sm font-bold text-secondary uppercase tracking-wider">Complete Payment</h3>
-          <button 
-            onClick={onClose}
-            className="p-1 hover:bg-bg-dark rounded-lg text-neutral hover:text-secondary transition-all"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <DialogTitle className="text-sm font-bold text-secondary uppercase tracking-wider">Complete Payment</DialogTitle>
         </div>
 
         {/* Scrollable Content */}
@@ -243,7 +242,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleAddPayment()}
-                  className="px-5 py-2 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold shadow-md transition-all"
+                  className="px-5 py-2 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold shadow-md transition-all animate-none cursor-pointer"
                 >
                   Add
                 </button>
@@ -258,7 +257,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 bg-bg-card border border-border-card hover:border-neutral/30 text-neutral hover:text-secondary rounded-xl text-xs font-bold transition-all"
+            className="px-4 py-2.5 bg-bg-card border border-border-card hover:border-neutral/30 text-neutral hover:text-secondary rounded-xl text-xs font-bold transition-all cursor-pointer"
           >
             Cancel
           </button>
@@ -266,7 +265,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             type="button"
             onClick={handleComplete}
             disabled={isProcessing || (addedPayments.length > 0 && amountPaid < totalAmount)}
-            className="px-4 py-2.5 bg-primary hover:bg-primary-hover disabled:bg-neutral/20 disabled:text-neutral/60 text-white rounded-xl text-xs font-bold shadow-lg transition-all flex items-center gap-1.5"
+            className="px-4 py-2.5 bg-primary hover:bg-primary-hover disabled:bg-neutral/20 disabled:text-neutral/60 text-white rounded-xl text-xs font-bold shadow-lg transition-all flex items-center gap-1.5 cursor-pointer"
           >
             {isProcessing ? (
               <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -277,7 +276,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           </button>
         </div>
 
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

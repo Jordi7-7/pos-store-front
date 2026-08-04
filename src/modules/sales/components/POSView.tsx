@@ -24,8 +24,11 @@ import {
 import { CatalogGrid } from './pos/CatalogGrid';
 import { CartSummary } from './pos/CartSummary';
 import { ThermalTicketModal } from './pos/ThermalTicketModal';
-import { CashSessionModals } from './pos/CashSessionModals';
 import { PaymentModal } from './pos/PaymentModal';
+import { AperturaModal } from './pos/AperturaModal';
+import { EgresoModal } from './pos/EgresoModal';
+import { CierreModal } from './pos/CierreModal';
+import { HistorialModal } from './pos/HistorialModal';
 
 
 interface POSViewProps {
@@ -572,32 +575,38 @@ export const POSView: React.FC<POSViewProps> = ({
       />
 
       {/* Caja Chica Control modals */}
-      <CashSessionModals 
-        isAperturaOpen={isAperturaModalOpen}
-        onCloseApertura={() => setIsAperturaModalOpen(false)}
+      <AperturaModal 
+        isOpen={isAperturaModalOpen}
+        onClose={() => setIsAperturaModalOpen(false)}
         openingBalance={openingBalance}
         setOpeningBalance={setOpeningBalance}
         onOpenSession={handleOpenSession}
         isOpening={isOpening}
+      />
 
-        isEgresoOpen={isEgresoModalOpen}
-        onCloseEgreso={() => setIsEgresoModalOpen(false)}
+      <EgresoModal 
+        isOpen={isEgresoModalOpen}
+        onClose={() => setIsEgresoModalOpen(false)}
         expenseDesc={expenseDesc}
         setExpenseDesc={setExpenseDesc}
         expenseAmount={expenseAmount}
         setExpenseAmount={setExpenseAmount}
         onAddExpense={handleAddExpense}
         isRegistering={isRegistering}
+      />
 
-        isCierreOpen={isCierreModalOpen}
-        onCloseCierre={() => setIsCierreModalOpen(false)}
+      <CierreModal 
+        isOpen={isCierreModalOpen}
+        onClose={() => setIsCierreModalOpen(false)}
         closingBalance={closingBalance}
         setClosingBalance={setClosingBalance}
         onCloseSession={handleCloseSession}
         isClosing={isClosing}
+      />
 
-        isHistorialOpen={isHistorialModalOpen}
-        onCloseHistorial={() => setIsHistorialModalOpen(false)}
+      <HistorialModal 
+        isOpen={isHistorialModalOpen}
+        onClose={() => setIsHistorialModalOpen(false)}
         activeSessionSales={activeSessionSales}
         activeSessionExpenses={activeSessionExpenses}
       />
