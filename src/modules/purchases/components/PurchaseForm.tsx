@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useSuppliers, useRegisterPurchase } from '../hooks/usePurchases';
+import { useRegisterPurchase } from '../hooks/usePurchases';
 import { useBranches } from '../../branches/hooks/useBranches';
 import { useProducts } from '../../products/hooks/useProducts';
 import { ClipboardList, Trash2, Loader2 } from 'lucide-react';
@@ -21,11 +21,9 @@ interface PurchaseFormProps {
 export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
   const { branches } = useBranches();
   const { products } = useProducts({ page: 1, limit: 100 });
-  const { suppliers } = useSuppliers();
   const { registerPurchase, isRegistering } = useRegisterPurchase();
 
   // Local Purchase Order general inputs
-  const [purSupplier, setPurSupplier] = useState('');
   const [purBranch, setPurBranch] = useState('');
   const [purInvoice, setPurInvoice] = useState('');
 
@@ -93,35 +91,23 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
 
   const handleRemoveItem = (index: number) => {
     setPurchaseItems(purchaseItems.filter((_, idx) => idx !== index));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  };  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const sup = purSupplier || (suppliers[0] && suppliers[0].id);
     const branch = purBranch || (branches[0] && branches[0].id);
     
-    if (!sup) {
-      toast.warning('Por favor selecciona un proveedor.');
-      return;
-    }
     if (!branch) {
       toast.warning('Por favor selecciona una sucursal de destino.');
       return;
     }
-    if (!purInvoice.trim()) {
-      toast.warning('Por favor introduce el número de factura de compra.');
-      return;
-    }
     if (purchaseItems.length === 0) {
-      toast.warning('Debes añadir al menos un artículo a la compra.');
+      toast.warning('Debes añadir al menos un artículo.');
       return;
     }
 
     try {
       await registerPurchase({
-        supplierId: sup,
         branchId: branch,
-        invoiceNumber: purInvoice.trim(),
+        invoiceNumber: purInvoice.trim() || undefined,
         items: purchaseItems.map(i => ({
           variantId: i.variantId,
           quantity: i.quantity,
@@ -129,12 +115,12 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
         }))
       });
 
-      toast.success('¡Compra registrada en Kardex y stock incrementado!');
+      toast.success('¡Ingreso registrado en Kardex y stock incrementado!');
       setPurInvoice('');
       setPurchaseItems([]);
       onSuccess();
     } catch (err: any) {
-      toast.error(err.message || 'Error al registrar la compra.');
+      toast.error(err.message || 'Error al registrar el ingreso.');
     }
   };
 
@@ -143,36 +129,23 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
   }, [purchaseItems]);
 
   return (
-    <div className="bg-bg-card border border-border-card rounded-2xl p-6 space-y-5 shadow-sm animate-fade-in">
-      <div className="border-b border-border-card pb-3">
-        <h4 className="text-xs font-bold text-secondary uppercase tracking-wide flex items-center gap-1.5">
+    <div className="bg-card border border-border rounded-2xl p-6 space-y-5 shadow-sm animate-fade-in text-secondary">
+      <div className="border-b border-border pb-3">
+        <h4 className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
           <ClipboardList className="w-4 h-4 text-primary" />
-          <span>Registrar Factura de Compra (Abastecimiento)</span>
+          <span>Registrar Ingreso de Mercancía</span>
         </h4>
-        <p className="text-[10px] text-neutral mt-0.5">Ingresa mercadería al inventario. Afectará positivamente el Kardex de existencias.</p>
+        <p className="text-[10px] text-muted-foreground mt-0.5">Ingresa mercancía al inventario para incrementar el stock disponible.</p>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[10px] text-neutral uppercase tracking-wider font-bold mb-1">Proveedor *</label>
-            <select 
-              value={purSupplier}
-              onChange={(e) => setPurSupplier(e.target.value)}
-              className="w-full bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-xs text-secondary focus:outline-none"
-            >
-              <option value="">Seleccione proveedor</option>
-              {suppliers.map((s: any) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-[10px] text-neutral uppercase tracking-wider font-bold mb-1">Destino *</label>
+            <label className="block text-[10px] uppercase tracking-wider font-bold mb-1">Sucursal Destino *</label>
             <select 
               value={purBranch}
               onChange={(e) => setPurBranch(e.target.value)}
-              className="w-full bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-xs text-secondary focus:outline-none"
+              className="w-full bg-muted/30 border border-border rounded-xl py-2 px-3 text-xs text-foreground focus:outline-none"
             >
               <option value="">Seleccione sucursal</option>
               {branches.map((b: any) => (
@@ -181,29 +154,28 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
             </select>
           </div>
           <div>
-            <label className="block text-[10px] text-neutral uppercase tracking-wider font-bold mb-1">Número de Factura *</label>
+            <label className="block text-[10px] uppercase tracking-wider font-bold mb-1">Referencia / Factura (Opcional)</label>
             <input 
               type="text" 
-              required
               value={purInvoice}
               onChange={(e) => setPurInvoice(e.target.value)}
-              placeholder="FAC-001-002-12345" 
-              className="w-full bg-bg-dark border border-border-card rounded-xl py-2 px-3.5 text-xs text-secondary placeholder-neutral focus:outline-none" 
+              placeholder="Ej. Guía, Proveedor, FAC-123" 
+              className="w-full bg-muted/30 border border-border rounded-xl py-2 px-3 text-xs text-foreground placeholder-muted-foreground focus:outline-none" 
             />
           </div>
         </div>
 
         {/* Add item interface */}
-        <div className="border border-border-card rounded-xl p-4 bg-bg-dark space-y-3.5">
-          <span className="text-[10px] font-bold text-primary block uppercase tracking-wider">Añadir Artículo al Abastecimiento</span>
+        <div className="border border-border rounded-xl p-4 bg-muted/20 space-y-3.5">
+          <span className="text-[10px] font-bold text-primary block uppercase tracking-wider">Añadir Artículo al Ingreso</span>
           
           <div className="grid grid-cols-1 gap-3.5">
             <div>
-              <label className="text-[9px] text-neutral font-bold uppercase tracking-wider block mb-1">Producto</label>
+              <label className="text-[9px] font-bold uppercase tracking-wider block mb-1">Producto</label>
               <select 
                 value={selectedProductId}
                 onChange={(e) => setSelectedProductId(e.target.value)}
-                className="w-full bg-bg-card border border-border-card rounded-lg py-1.5 px-2.5 text-xs text-secondary focus:outline-none"
+                className="w-full bg-card border border-border rounded-lg py-1.5 px-2.5 text-xs text-foreground focus:outline-none"
               >
                 <option value="">Selecciona un producto</option>
                 {products.map(p => (
@@ -213,31 +185,30 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
             </div>
           </div>
 
-
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3.5 items-end">
             <div>
-              <label className="text-[9px] text-neutral font-bold uppercase tracking-wider block mb-1">Cantidad a Comprar</label>
+              <label className="text-[9px] font-bold uppercase tracking-wider block mb-1">Cantidad a Ingresar</label>
               <input 
                 type="number" 
                 value={purQty} 
                 onChange={(e) => setPurQty(e.target.value)}
-                className="w-full bg-bg-card border border-border-card rounded-lg py-1.5 px-2.5 text-xs text-secondary focus:outline-none" 
+                className="w-full bg-card border border-border rounded-lg py-1.5 px-2.5 text-xs text-foreground focus:outline-none" 
               />
             </div>
             <div>
-              <label className="text-[9px] text-neutral font-bold uppercase tracking-wider block mb-1">Costo Unitario ($)</label>
+              <label className="text-[9px] font-bold uppercase tracking-wider block mb-1">Costo Unitario ($)</label>
               <input 
                 type="number" 
                 step="0.01"
                 value={purCost} 
                 onChange={(e) => setPurCost(e.target.value)}
-                className="w-full bg-bg-card border border-border-card rounded-lg py-1.5 px-2.5 text-xs text-secondary focus:outline-none" 
+                className="w-full bg-card border border-border rounded-lg py-1.5 px-2.5 text-xs text-foreground focus:outline-none" 
               />
             </div>
             <button 
               type="button" 
               onClick={handleAddItemToPurchase}
-              className="col-span-2 md:col-span-1 py-1.5 bg-primary/20 hover:bg-primary/30 border border-primary/30 text-primary hover:text-primary-hover text-[11px] font-bold rounded-lg transition-all"
+              className="col-span-2 md:col-span-1 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary text-[11px] font-bold rounded-lg transition-all"
             >
               Agregar Fila
             </button>
@@ -280,24 +251,24 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
                 ))}
               </tbody>
             </table>
-            <div className="p-3 bg-bg-dark/40 flex justify-between items-center text-xs font-bold text-secondary">
-              <span>Total de Compra:</span>
+            <div className="p-3 bg-muted/20 flex justify-between items-center text-xs font-bold">
+              <span>Total de Ingreso:</span>
               <span className="text-sm text-primary font-mono">${totalCostOfPurchase.toFixed(2)}</span>
             </div>
           </div>
         ) : (
-          <div className="border-2 border-dashed border-border-card rounded-xl p-6 text-center text-xs text-neutral">
-            Agrega artículos arriba para comenzar a estructurar la orden de compra.
+          <div className="border-2 border-dashed border-border rounded-xl p-6 text-center text-xs text-muted-foreground">
+            Agrega artículos arriba para comenzar a estructurar el ingreso de mercancía.
           </div>
         )}
 
         <button 
           type="submit" 
           disabled={isRegistering || purchaseItems.length === 0}
-          className="w-full py-3 bg-primary hover:bg-primary-hover disabled:bg-neutral/20 disabled:text-neutral/60 text-white text-xs font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5"
+          className="w-full py-3 bg-primary hover:bg-primary/95 disabled:bg-muted disabled:text-muted-foreground text-white text-xs font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5"
         >
           {isRegistering ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-          <span>Cargar Abastecimiento (Kardex)</span>
+          <span>Registrar Ingreso (Kardex)</span>
         </button>
       </form>
     </div>

@@ -18,9 +18,9 @@ export interface CreateSupplierInput {
 }
 
 export interface RegisterPurchaseInput {
-  supplierId: string;
+  supplierId?: string;
   branchId: string;
-  invoiceNumber: string;
+  invoiceNumber?: string;
   items: {
     variantId: string;
     quantity: number;
