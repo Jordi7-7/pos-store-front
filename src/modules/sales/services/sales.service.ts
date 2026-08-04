@@ -2,9 +2,7 @@ import { apiClient } from '@/lib/apiClient';
 
 export const PaymentMethod = {
   EFECTIVO: 'EFECTIVO',
-  TRANSFERENCIA: 'TRANSFERENCIA',
   TARJETA: 'TARJETA',
-  BILLETERA_DIGITAL: 'BILLETERA_DIGITAL',
 } as const;
 
 export type PaymentMethod = typeof PaymentMethod[keyof typeof PaymentMethod];
@@ -13,6 +11,9 @@ export interface SaleItem {
   variantId: string;
   quantity: number;
   price: number;
+  discountType?: string;
+  discountRate?: number;
+  discountAmount?: number;
 }
 
 export interface SalePayment {
@@ -24,6 +25,9 @@ export interface ProcessSaleInput {
   branchId: string;
   cashSessionId: string;
   customerId?: string;
+  discountType?: string;
+  discountRate?: number;
+  discountAmount?: number;
   items: SaleItem[];
   payments: SalePayment[];
 }

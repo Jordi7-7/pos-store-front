@@ -18,6 +18,7 @@ interface ThermalTicketModalProps {
     items: any[];
     paymentMethod: PaymentMethod;
     total: number;
+    discountAmount?: number;
   } | null;
 }
 
@@ -102,30 +103,42 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
               <span className="col-span-4 text-right">TOTAL</span>
             </div>
             
-            {saleData.items.map((item: any) => (
-              <div key={item.variantId} className="grid grid-cols-12 leading-snug">
-                <div className="col-span-6">
-                  <div className="truncate font-semibold">{item.productName}</div>
-                  <div className="text-[9px] text-gray-500 truncate">{item.combinationText}</div>
+            {saleData.items.map((item: any) => {
+              const itemDiscount = item.discountAmount || 0;
+              const lineTotal = (item.price - itemDiscount) * item.quantity;
+              return (
+                <div key={item.variantId} className="grid grid-cols-12 leading-snug">
+                  <div className="col-span-6">
+                    <div className="truncate font-semibold">{item.productName}</div>
+                    <div className="text-[9px] text-gray-500 truncate">{item.combinationText}</div>
+                    {itemDiscount > 0 && (
+                      <div className="text-[8px] text-emerald-600">Desc. -${itemDiscount.toFixed(2)}/u</div>
+                    )}
+                  </div>
+                  <span className="col-span-2 text-center">{item.quantity}</span>
+                  <span className="col-span-4 text-right">${lineTotal.toFixed(2)}</span>
                 </div>
-                <span className="col-span-2 text-center">{item.quantity}</span>
-                <span className="col-span-4 text-right">${(item.price * item.quantity).toFixed(2)}</span>
-              </div>
-            ))}
+              );
+            })}
             
             <div className="border-b border-dashed border-gray-300 my-2" />
           </div>
 
           {/* Summary Totals */}
           <div className="text-[11px] space-y-1">
+            {saleData.discountAmount !== undefined && saleData.discountAmount > 0 && (
+              <div className="flex justify-between text-emerald-600">
+                <span>DESC. GLOBAL:</span>
+                <span>-${Number(saleData.discountAmount).toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span>PAGO CON:</span>
               <span className="font-bold uppercase">{
-                saleData.paymentMethod === PaymentMethod.EFECTIVO ? 'EFECTIVO' :
-                saleData.paymentMethod === PaymentMethod.TARJETA ? 'TARJETA' : 'TRANSFERENCIA'
+                saleData.paymentMethod === PaymentMethod.EFECTIVO ? 'EFECTIVO' : 'TARJETA'
               }</span>
             </div>
-            <div className="flex justify-between text-xs font-bold text-gray-900 pt-1">
+            <div className="flex justify-between text-xs font-bold text-gray-900 pt-1 border-t border-dashed border-gray-200">
               <span>TOTAL A PAGAR:</span>
               <span>${Number(saleData.total || 0).toFixed(2)}</span>
             </div>
