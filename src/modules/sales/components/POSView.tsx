@@ -1144,6 +1144,8 @@ export const POSView: React.FC<POSViewProps> = ({
         onClose={() => setIsHistorialModalOpen(false)}
         activeSessionSales={activeSessionSales}
         activeSessionExpenses={activeSessionExpenses}
+        activeSession={activeSession}
+        branchId={selectedBranchId}
       />
 
     </div>

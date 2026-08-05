@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { salesService } from '../services/sales.service';
-import type { ProcessSaleInput, OpenCashSessionInput, RegisterExpenseInput } from '../services/sales.service';
+import type { ProcessSaleInput, OpenCashSessionInput, RegisterExpenseInput, ProcessRefundInput } from '../services/sales.service';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
 export const useSales = () => {
@@ -116,5 +116,39 @@ export const useExpenses = (params?: { cashSessionId?: string; branchId?: string
     isLoading: expensesQuery.isLoading,
     isError: expensesQuery.isError,
     refetchExpenses: expensesQuery.refetch,
+  };
+};
+
+export const useProcessRefund = () => {
+  const queryClient = useQueryClient();
+  const { tenantId } = useAuthStore();
+
+  const processRefundMutation = useMutation({
+    mutationFn: (input: ProcessRefundInput) => salesService.processRefund(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['products', tenantId] }); // restore stock
+    },
+  });
+
+  return {
+    processRefund: processRefundMutation.mutateAsync,
+    isProcessing: processRefundMutation.isPending,
+  };
+};
+
+export const useRefunds = (params?: { cashSessionId?: string; saleId?: string }) => {
+  const { tenantId, isAuthenticated } = useAuthStore();
+
+  const refundsQuery = useQuery({
+    queryKey: ['refunds', tenantId, params?.cashSessionId, params?.saleId],
+    queryFn: () => salesService.getRefunds(params),
+    enabled: isAuthenticated && !!tenantId,
+  });
+
+  return {
+    refunds: refundsQuery.data || [],
+    isLoading: refundsQuery.isLoading,
+    refetchRefunds: refundsQuery.refetch,
   };
 };

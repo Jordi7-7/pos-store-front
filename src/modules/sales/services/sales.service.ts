@@ -45,6 +45,19 @@ export interface RegisterExpenseInput {
   category: string;
 }
 
+export interface RefundItem {
+  variantId: string;
+  quantity: number;
+}
+
+export interface ProcessRefundInput {
+  branchId: string;
+  saleId: string;
+  cashSessionId: string;
+  reason: string;
+  items: RefundItem[];
+}
+
 export const salesService = {
   getSales: async (): Promise<any[]> => {
     return apiClient.get<any[]>('/sales');
@@ -80,5 +93,18 @@ export const salesService = {
       url += `?${queryParams.join('&')}`;
     }
     return apiClient.get<any[]>(url);
-  }
+  },
+
+  processRefund: async (input: ProcessRefundInput): Promise<any> => {
+    return apiClient.post<any>('/sales/refunds', input);
+  },
+
+  getRefunds: async (params?: { cashSessionId?: string; saleId?: string }): Promise<any[]> => {
+    let url = '/sales/refunds';
+    const queryParams: string[] = [];
+    if (params?.cashSessionId) queryParams.push(`cashSessionId=${params.cashSessionId}`);
+    if (params?.saleId) queryParams.push(`saleId=${params.saleId}`);
+    if (queryParams.length > 0) url += `?${queryParams.join('&')}`;
+    return apiClient.get<any[]>(url);
+  },
 };
