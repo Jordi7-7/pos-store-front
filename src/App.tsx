@@ -1,16 +1,14 @@
 import React from 'react'
-import { LoginScreen } from '@/modules/auth'
+import { LoginScreen, CashierPinScreen } from '@/modules/auth'
 import { MainLayout } from '@/components/MainLayout'
 import { useAuthStore } from '@/modules/auth'
 
 const App: React.FC = () => {
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, needsPinSelection } = useAuthStore()
 
-  return (
-    <>
-      {isAuthenticated ? <MainLayout /> : <LoginScreen />}
-    </>
-  )
+  if (needsPinSelection) return <CashierPinScreen />
+  if (isAuthenticated) return <MainLayout />
+  return <LoginScreen />
 }
 
 export default App

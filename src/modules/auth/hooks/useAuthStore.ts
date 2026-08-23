@@ -16,9 +16,15 @@ interface AuthState {
   user: User | null;
   activeTab: string;
   isAuthenticated: boolean;
-  
+  // PIN handoff — true after admin login, false after cashier PIN entry
+  needsPinSelection: boolean;
+  // Temporarily holds admin JWT during PIN selection phase
+  _adminAccessToken: string | null;
+
   // Actions
   login: (email: string, password: string) => Promise<boolean>;
+  pinLogin: (pin: string) => Promise<boolean>;
+  skipPinSelection: () => void;
   onboard: (data: any) => Promise<boolean>;
   logout: () => void;
   setActiveTab: (tab: string) => void;
@@ -34,6 +40,8 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       activeTab: 'dashboard',
       isAuthenticated: false,
+      needsPinSelection: false,
+      _adminAccessToken: null,
 
       login: async (email, password) => {
         try {
@@ -49,6 +57,46 @@ export const useAuthStore = create<AuthState>()(
           const response = await res.json();
 
           if (response && response.accessToken) {
+            // After admin login → go to PIN selection screen, hold admin JWT temporarily
+            set({
+              _adminAccessToken: response.accessToken,
+              refreshToken: response.refreshToken,
+              tenantId: response.user.tenantId,
+              role: response.user.role,
+              user: {
+                name: response.user.name,
+                email: response.user.email,
+              },
+              isAuthenticated: false,       // not yet — need cashier PIN
+              needsPinSelection: true,
+              activeTab: 'dashboard',
+            });
+            return true;
+          }
+          return false;
+        } catch (error) {
+          console.error('Error de login en backend:', error);
+          return false;
+        }
+      },
+
+      // Cashier PIN handoff
+      pinLogin: async (pin) => {
+        const state = useAuthStore.getState();
+        const adminToken = state._adminAccessToken;
+        if (!adminToken) return false;
+        try {
+          const res = await fetch(`${API_URL}/auth/pin-login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${adminToken}`,
+            },
+            body: JSON.stringify({ pin }),
+          });
+          if (!res.ok) return false;
+          const response = await res.json();
+          if (response && response.accessToken) {
             set({
               accessToken: response.accessToken,
               refreshToken: response.refreshToken,
@@ -59,15 +107,29 @@ export const useAuthStore = create<AuthState>()(
                 email: response.user.email,
               },
               isAuthenticated: true,
+              needsPinSelection: false,
+              _adminAccessToken: null,
               activeTab: 'dashboard',
             });
             return true;
           }
           return false;
         } catch (error) {
-          console.error('Error de login en backend:', error);
+          console.error('Error de PIN login:', error);
           return false;
         }
+      },
+
+      // Skip PIN selection (for OWNER/ADMIN who want to go directly)
+      skipPinSelection: () => {
+        const state = useAuthStore.getState();
+        if (!state._adminAccessToken) return;
+        set({
+          accessToken: state._adminAccessToken,
+          needsPinSelection: false,
+          _adminAccessToken: null,
+          isAuthenticated: true,
+        });
       },
 
       onboard: async (data) => {
@@ -127,6 +189,8 @@ export const useAuthStore = create<AuthState>()(
           role: null,
           user: null,
           isAuthenticated: false,
+          needsPinSelection: false,
+          _adminAccessToken: null,
           activeTab: 'dashboard',
         });
       },

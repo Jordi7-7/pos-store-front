@@ -10,5 +10,11 @@ export interface CreateUserInput {
 export const usersService = {
   createUser: async (input: CreateUserInput): Promise<any> => {
     return apiClient.post<any>('/users', input);
+  },
+  generatePin: async (userId: string): Promise<{ pin: string; userId: string }> => {
+    return apiClient.post<{ pin: string; userId: string }>(`/users/${userId}/generate-pin`, {});
+  },
+  getUsers: async (): Promise<any[]> => {
+    return apiClient.get<any[]>('/users');
   }
 };

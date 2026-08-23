@@ -205,9 +205,7 @@ export const MainLayout: React.FC = () => {
               )}
 
               {activeTab === 'users' && (
-                <UsersView 
-                  selectedBranchId={selectedBranchId} 
-                />
+                <UsersView />
               )}
 
             </main>
