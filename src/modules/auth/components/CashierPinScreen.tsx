@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 const DOTS = 6;
 
 export const CashierPinScreen: React.FC = () => {
-  const { user, pinLogin, logout } = useAuthStore();
+  const { user, role, pinLogin, skipPinSelection, logout } = useAuthStore();
   const [pin, setPin] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -143,6 +143,15 @@ export const CashierPinScreen: React.FC = () => {
 
         {/* Logout only */}
         <div className="flex flex-col items-center gap-3 pt-2 w-full">
+          {(role === 'OWNER' || role === 'ADMIN') && (
+            <button
+              type="button"
+              onClick={skipPinSelection}
+              className="flex items-center gap-1.5 text-xs text-primary hover:underline transition-colors cursor-pointer mb-2 font-semibold"
+            >
+              <span>Ingresar directo al Panel (Administrador)</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={logout}

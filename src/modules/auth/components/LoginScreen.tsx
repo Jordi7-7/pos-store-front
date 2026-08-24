@@ -11,6 +11,7 @@ export const LoginScreen: React.FC = () => {
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [isLoginLoading, setIsLoginLoading] = useState(false);
+  const [workflowMode, setWorkflowMode] = useState<'admin' | 'store'>('store');
 
   // Onboarding Form State
   const [businessName, setBusinessName] = useState('');
@@ -34,7 +35,7 @@ export const LoginScreen: React.FC = () => {
     setLoginError('');
     setIsLoginLoading(true);
     try {
-      const success = await login(loginEmail, loginPassword);
+      const success = await login(loginEmail, loginPassword, workflowMode);
       if (!success) {
         setLoginError('Credenciales incorrectas.');
       }
@@ -188,6 +189,50 @@ export const LoginScreen: React.FC = () => {
                       placeholder="••••••••"
                       className="w-full bg-bg-dark border border-border-card rounded-xl py-2.5 pl-10 pr-4 text-sm text-secondary placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200"
                     />
+                  </div>
+                </div>
+
+                {/* Workflow mode selector */}
+                <div className="pt-2">
+                  <label className="block text-xs font-medium text-neutral mb-2">Destino de Ingreso</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <label 
+                      className={`flex flex-col p-3 rounded-xl border cursor-pointer select-none transition-all ${
+                        workflowMode === 'store' 
+                          ? 'border-primary bg-primary/5 text-secondary' 
+                          : 'border-border-card hover:border-neutral/40 text-neutral'
+                      }`}
+                    >
+                      <input 
+                        type="radio" 
+                        name="workflow" 
+                        value="store" 
+                        checked={workflowMode === 'store'}
+                        onChange={() => setWorkflowMode('store')}
+                        className="sr-only"
+                      />
+                      <span className="text-xs font-bold text-secondary">Modo Tienda (POS)</span>
+                      <span className="text-[10px] text-neutral/70 mt-0.5">Habilita PIN de Cajeros</span>
+                    </label>
+
+                    <label 
+                      className={`flex flex-col p-3 rounded-xl border cursor-pointer select-none transition-all ${
+                        workflowMode === 'admin' 
+                          ? 'border-primary bg-primary/5 text-secondary' 
+                          : 'border-border-card hover:border-neutral/40 text-neutral'
+                      }`}
+                    >
+                      <input 
+                        type="radio" 
+                        name="workflow" 
+                        value="admin" 
+                        checked={workflowMode === 'admin'}
+                        onChange={() => setWorkflowMode('admin')}
+                        className="sr-only"
+                      />
+                      <span className="text-xs font-bold text-secondary">Panel Control</span>
+                      <span className="text-[10px] text-neutral/70 mt-0.5">Acceso administrativo directo</span>
+                    </label>
                   </div>
                 </div>
               </div>

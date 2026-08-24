@@ -22,9 +22,10 @@ interface AuthState {
   _adminAccessToken: string | null;
 
   // Actions
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string, targetWorkflow?: 'admin' | 'store') => Promise<boolean>;
   pinLogin: (pin: string) => Promise<boolean>;
   skipPinSelection: () => void;
+  lockScreen: () => void;
   onboard: (data: any) => Promise<boolean>;
   logout: () => void;
   setActiveTab: (tab: string) => void;
@@ -43,7 +44,7 @@ export const useAuthStore = create<AuthState>()(
       needsPinSelection: false,
       _adminAccessToken: null,
 
-      login: async (email, password) => {
+      login: async (email, password, targetWorkflow = 'store') => {
         try {
           const res = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
@@ -56,8 +57,26 @@ export const useAuthStore = create<AuthState>()(
           if (!res.ok) return false;
           const response = await res.json();
 
-          if (response && response.accessToken) {
-            // After admin login → go to PIN selection screen, hold admin JWT temporarily
+          const isPosAdmin = response.user.role === 'OWNER' || response.user.role === 'ADMIN';
+
+          if (isPosAdmin && targetWorkflow === 'admin') {
+            // Direct Admin Login Workflow: Bypass PIN completely
+            set({
+              accessToken: response.accessToken,
+              refreshToken: response.refreshToken,
+              tenantId: response.user.tenantId,
+              role: response.user.role,
+              user: {
+                name: response.user.name,
+                email: response.user.email,
+              },
+              isAuthenticated: true,
+              needsPinSelection: false,
+              _adminAccessToken: null,
+              activeTab: 'dashboard',
+            });
+          } else {
+            // Store / Cashier Workflow (Even for admin): Hold admin token temporarily, require Cashier PIN
             set({
               _adminAccessToken: response.accessToken,
               refreshToken: response.refreshToken,
@@ -67,12 +86,12 @@ export const useAuthStore = create<AuthState>()(
                 name: response.user.name,
                 email: response.user.email,
               },
-              isAuthenticated: false,       // not yet — need cashier PIN
+              isAuthenticated: false,
               needsPinSelection: true,
               activeTab: 'dashboard',
             });
-            return true;
           }
+          return true;
           return false;
         } catch (error) {
           console.error('Error de login en backend:', error);
@@ -108,7 +127,7 @@ export const useAuthStore = create<AuthState>()(
               },
               isAuthenticated: true,
               needsPinSelection: false,
-              _adminAccessToken: null,
+              _adminAccessToken: adminToken,
               activeTab: 'dashboard',
             });
             return true;
@@ -129,6 +148,17 @@ export const useAuthStore = create<AuthState>()(
           needsPinSelection: false,
           _adminAccessToken: null,
           isAuthenticated: true,
+        });
+      },
+
+      // Lock current cashier session and return to PIN keyboard
+      lockScreen: () => {
+        set({
+          accessToken: null,
+          role: null,
+          user: null,
+          isAuthenticated: false,
+          needsPinSelection: true,
         });
       },
 

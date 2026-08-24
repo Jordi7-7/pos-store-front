@@ -7,7 +7,8 @@ import {
   Users, 
   Image as ImageIcon,
   LogOut,
-  ShieldCheck
+  ShieldCheck,
+  Lock
 } from "lucide-react"
 
 import {
@@ -29,7 +30,7 @@ import {
 } from "@/components/ui/avatar"
 
 export function AppSidebar() {
-  const { user, role, tenantId, activeTab, setActiveTab, logout } = useAuthStore()
+  const { user, role, tenantId, activeTab, setActiveTab, logout, lockScreen } = useAuthStore()
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['OWNER', 'ADMIN', 'MANAGER', 'CASHIER'] },
@@ -101,13 +102,25 @@ export function AppSidebar() {
           </div>
         </div>
 
-        <button 
-          onClick={logout}
-          className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-600 text-xs font-semibold rounded-xl transition-all duration-150"
-        >
-          <LogOut className="w-3.5 h-3.5 shrink-0" />
-          <span className="group-data-[collapsible=icon]:hidden">Cerrar Sesión</span>
-        </button>
+        <div className="flex flex-col gap-2">
+          {role === 'CASHIER' && (
+            <button 
+              onClick={lockScreen}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary text-xs font-semibold rounded-xl transition-all duration-150"
+            >
+              <Lock className="w-3.5 h-3.5 shrink-0" />
+              <span className="group-data-[collapsible=icon]:hidden">Bloquear Caja</span>
+            </button>
+          )}
+
+          <button 
+            onClick={logout}
+            className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-600 text-xs font-semibold rounded-xl transition-all duration-150"
+          >
+            <LogOut className="w-3.5 h-3.5 shrink-0" />
+            <span className="group-data-[collapsible=icon]:hidden">Cerrar Sesión de Admin</span>
+          </button>
+        </div>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
