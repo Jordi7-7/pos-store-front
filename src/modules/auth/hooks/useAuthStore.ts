@@ -23,7 +23,7 @@ interface AuthState {
 
   // Actions
   login: (email: string, password: string, targetWorkflow?: 'admin' | 'store') => Promise<boolean>;
-  pinLogin: (pin: string) => Promise<boolean>;
+  pinLogin: (pin: string) => Promise<'SUCCESS' | 'INVALID' | 'EXPIRED'>;
   skipPinSelection: () => void;
   lockScreen: () => void;
   onboard: (data: any) => Promise<boolean>;
@@ -103,7 +103,7 @@ export const useAuthStore = create<AuthState>()(
       pinLogin: async (pin) => {
         const state = useAuthStore.getState();
         const adminToken = state._adminAccessToken;
-        if (!adminToken) return false;
+        if (!adminToken) return 'EXPIRED';
         try {
           const res = await fetch(`${API_URL}/auth/pin-login`, {
             method: 'POST',
@@ -113,7 +113,10 @@ export const useAuthStore = create<AuthState>()(
             },
             body: JSON.stringify({ pin }),
           });
-          if (!res.ok) return false;
+          if (res.status === 401) {
+            return 'EXPIRED';
+          }
+          if (!res.ok) return 'INVALID';
           const response = await res.json();
           if (response && response.accessToken) {
             set({
@@ -130,12 +133,12 @@ export const useAuthStore = create<AuthState>()(
               _adminAccessToken: adminToken,
               activeTab: 'dashboard',
             });
-            return true;
+            return 'SUCCESS';
           }
-          return false;
+          return 'INVALID';
         } catch (error) {
           console.error('Error de PIN login:', error);
-          return false;
+          return 'INVALID';
         }
       },
 

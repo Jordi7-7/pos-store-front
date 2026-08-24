@@ -16,16 +16,24 @@ export const CashierPinScreen: React.FC = () => {
     if (submittedPin.length !== DOTS) return;
     setIsLoading(true);
     setError(false);
-    const ok = await pinLogin(submittedPin);
+    const result = await pinLogin(submittedPin);
     setIsLoading(false);
-    if (!ok) {
+    
+    if (result === 'SUCCESS') {
+      return;
+    } else if (result === 'EXPIRED') {
+      toast.error('La sesión de la tienda ha expirado. Por favor ingresa credenciales de admin de nuevo.');
+      setTimeout(() => {
+        logout();
+      }, 2500);
+    } else {
       setError(true);
       setShake(true);
       setPin('');
       toast.error('PIN incorrecto. Intenta de nuevo.');
       setTimeout(() => setShake(false), 600);
     }
-  }, [pinLogin]);
+  }, [pinLogin, logout]);
 
   const handleKey = useCallback((digit: string) => {
     if (isLoading) return;
