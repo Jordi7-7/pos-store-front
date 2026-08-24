@@ -74,8 +74,8 @@ export function AppSidebar() {
                     tooltip={item.label}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                       isActive 
-                        ? 'bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/10' 
-                        : 'text-neutral hover:text-secondary hover:bg-bg-dark'
+                        ? 'bg-primary text-white hover:text-white hover:bg-primary/90 shadow-md shadow-primary/10' 
+                        : 'text-neutral'
                     }`}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
