@@ -6,6 +6,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 interface User {
   name: string;
   email: string;
+  timezone?: string;
 }
 
 interface AuthState {
@@ -13,6 +14,7 @@ interface AuthState {
   refreshToken: string | null;
   tenantId: string | null;
   role: 'OWNER' | 'ADMIN' | 'CASHIER' | 'MANAGER' | null;
+  timezone: string | null;
   user: User | null;
   activeTab: string;
   isAuthenticated: boolean;
@@ -38,6 +40,7 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       tenantId: null,
       role: null,
+      timezone: null,
       user: null,
       activeTab: 'dashboard',
       isAuthenticated: false,
@@ -66,9 +69,11 @@ export const useAuthStore = create<AuthState>()(
               refreshToken: response.refreshToken,
               tenantId: response.user.tenantId,
               role: response.user.role,
+              timezone: response.user.timezone || 'America/Guayaquil',
               user: {
                 name: response.user.name,
                 email: response.user.email,
+                timezone: response.user.timezone,
               },
               isAuthenticated: true,
               needsPinSelection: false,
@@ -82,9 +87,11 @@ export const useAuthStore = create<AuthState>()(
               refreshToken: response.refreshToken,
               tenantId: response.user.tenantId,
               role: response.user.role,
+              timezone: response.user.timezone || 'America/Guayaquil',
               user: {
                 name: response.user.name,
                 email: response.user.email,
+                timezone: response.user.timezone,
               },
               isAuthenticated: false,
               needsPinSelection: true,
@@ -124,9 +131,11 @@ export const useAuthStore = create<AuthState>()(
               refreshToken: response.refreshToken,
               tenantId: response.user.tenantId,
               role: response.user.role,
+              timezone: response.user.timezone || 'America/Guayaquil',
               user: {
                 name: response.user.name,
                 email: response.user.email,
+                timezone: response.user.timezone,
               },
               isAuthenticated: true,
               needsPinSelection: false,

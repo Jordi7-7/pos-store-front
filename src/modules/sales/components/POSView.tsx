@@ -23,6 +23,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
+import { DateTime } from 'luxon';
 import {
   Combobox,
   ComboboxInput,
@@ -123,20 +124,25 @@ export const POSView: React.FC<POSViewProps> = ({
 
 
   // Clock & shift timer
-  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
+  const [currentTime, setCurrentTime] = useState('');
   const [shiftDuration, setShiftDuration] = useState('00h 00m 00s');
 
   useEffect(() => {
     const timer = setInterval(() => {
-      const now = new Date();
-      setCurrentTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }));
+      const now = DateTime.now();
+      setCurrentTime(now.toFormat('HH:mm:ss'));
       
       if (activeSession && activeSession.createdAt) {
-        const diffMs = now.getTime() - new Date(activeSession.createdAt).getTime();
-        const diffHrs = Math.floor(diffMs / 3600000);
-        const diffMins = Math.floor((diffMs % 3600000) / 60000);
-        const diffSecs = Math.floor((diffMs % 60000) / 1000);
-        setShiftDuration(`${diffHrs}h ${diffMins}m ${diffSecs}s`);
+        const openedAt = DateTime.fromISO(activeSession.createdAt);
+        if (openedAt.isValid) {
+          const diff = now.diff(openedAt, ['hours', 'minutes', 'seconds']);
+          const diffHrs = Math.floor(diff.hours);
+          const diffMins = Math.floor(diff.minutes);
+          const diffSecs = Math.floor(diff.seconds);
+          setShiftDuration(`${diffHrs}h ${diffMins}m ${diffSecs}s`);
+        } else {
+          setShiftDuration('00h 00m 00s');
+        }
       } else {
         setShiftDuration('00h 00m 00s');
       }
@@ -571,7 +577,7 @@ export const POSView: React.FC<POSViewProps> = ({
           }`}>
             <span className={`w-1.5 h-1.5 rounded-full ${activeSession ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
             <span>
-              {activeSession ? `Shift Open: ${shiftDuration}` : 'Shift Closed'}
+              {activeSession ? `Caja Abierta: ${shiftDuration}` : 'Caja Cerrada'}
             </span>
           </div>
         </div>

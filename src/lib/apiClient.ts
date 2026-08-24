@@ -5,7 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 export const apiClient = {
   request: async <T>(path: string, options: RequestInit = {}): Promise<T> => {
     // Obtiene de forma directa las variables de sesión del store de Zustand (fuera del ciclo React)
-    const { accessToken, tenantId } = useAuthStore.getState();
+    const { accessToken } = useAuthStore.getState();
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -14,9 +14,6 @@ export const apiClient = {
 
     if (accessToken) {
       headers['Authorization'] = `Bearer ${accessToken}`;
-    }
-    if (tenantId) {
-      headers['x-tenant-id'] = tenantId;
     }
 
     const response = await fetch(`${API_URL}${path}`, {

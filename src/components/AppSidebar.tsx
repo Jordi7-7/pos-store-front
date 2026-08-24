@@ -8,7 +8,8 @@ import {
   Image as ImageIcon,
   LogOut,
   ShieldCheck,
-  Lock
+  Lock,
+  Settings
 } from "lucide-react"
 
 import {
@@ -39,6 +40,7 @@ export function AppSidebar() {
     { id: 'purchases', label: 'Ingresos de Mercancía', icon: Truck, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
     { id: 'media', label: 'Multimedia / Galería', icon: ImageIcon, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
     { id: 'users', label: 'Personal / Usuarios', icon: Users, roles: ['OWNER', 'ADMIN'] },
+    { id: 'tenant-settings', label: 'Configuración Negocio', icon: Settings, roles: ['OWNER', 'ADMIN'] },
   ]
 
   const visibleMenuItems = menuItems.filter(item => item.roles.includes(role || ''))

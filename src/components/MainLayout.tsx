@@ -17,6 +17,7 @@ import { ProductsView } from '../modules/products/components/ProductsView';
 import { PurchasesView } from '../modules/purchases/components/PurchasesView';
 import { MediaView } from '../modules/media/components/MediaView';
 import { UsersView } from '../modules/users/components/UsersView';
+import { TenantSettings } from '../modules/dashboard/components/TenantSettings';
 
 import { Building } from 'lucide-react';
 
@@ -111,6 +112,7 @@ export const MainLayout: React.FC = () => {
     { id: 'purchases', label: 'Compras y Proveedores' },
     { id: 'media', label: 'Multimedia / Galería' },
     { id: 'users', label: 'Personal / Usuarios' },
+    { id: 'tenant-settings', label: 'Configuración' },
   ];
 
 
@@ -135,7 +137,7 @@ export const MainLayout: React.FC = () => {
 
               <div className="flex items-center gap-3">
                 {/* Branch Selector */}
-                {branches.length > 0 && (
+                {branches && branches.length > 0 && (
                   <div className="flex items-center gap-2 bg-bg-dark border border-border-card rounded-xl px-3 py-1">
                     <Building className="w-3.5 h-3.5 text-neutral" />
                     <select
@@ -206,6 +208,10 @@ export const MainLayout: React.FC = () => {
 
               {activeTab === 'users' && (
                 <UsersView />
+              )}
+
+              {activeTab === 'tenant-settings' && (
+                <TenantSettings />
               )}
 
             </main>
