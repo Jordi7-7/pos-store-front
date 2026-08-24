@@ -33,7 +33,7 @@ export const PurchaseHistory: React.FC = () => {
                   <span className="text-xs font-mono font-bold text-primary">{pur.invoiceNumber}</span>
                   <span className="text-[10px] text-neutral flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5" />
-                    {new Date(pur.createdAt).toLocaleString()}
+                    {new Date(pur.createdAt).toLocaleString(undefined, { timeZone: 'UTC' })}
                   </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">

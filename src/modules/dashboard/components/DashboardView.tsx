@@ -103,7 +103,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <td className="py-3 font-semibold text-emerald-600">
                       ${sale.total?.toFixed(2) || '0.00'}
                     </td>
-                    <td className="py-3">{new Date(sale.createdAt || sale.date).toLocaleDateString()}</td>
+                    <td className="py-3">{new Date(sale.createdAt).toLocaleDateString(undefined, { timeZone: 'UTC' })}</td>
                     <td className="py-3">
                       <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-semibold border border-emerald-200">
                         Completada

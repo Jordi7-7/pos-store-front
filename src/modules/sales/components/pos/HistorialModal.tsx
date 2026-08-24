@@ -180,7 +180,7 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
                           <span className="text-[10px] font-bold font-mono">{sale.invoiceNumber}</span>
                           <SaleStatusBadge status={sale.status} />
                         </div>
-                        <div className="text-[9px] text-neutral mt-0.5">{new Date(sale.createdAt).toLocaleTimeString()}</div>
+                        <div className="text-[9px] text-neutral mt-0.5">{new Date(sale.createdAt).toLocaleTimeString(undefined, { timeZone: 'UTC' })}</div>
                         <div className="text-[9px] text-neutral">{(sale.items || []).length} artículo(s)</div>
                       </div>
                       <div className="text-right shrink-0">
@@ -195,7 +195,7 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
                           title="Procesar devolución"
                           className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 transition-all cursor-pointer"
                         >
-                          <RotateCcw className="w-3 h-3" />
+                          <RotateCcw className="w-3.5 h-3.5" />
                           Devolver
                         </button>
                       )}
@@ -213,7 +213,7 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
                     <div key={exp.id} className="flex justify-between items-center bg-bg-dark/40 border border-border-card p-3 rounded-xl text-secondary animate-fade-in">
                       <div>
                         <div className="text-[11px] font-bold text-secondary">{exp.desc}</div>
-                        <div className="text-[9px] text-neutral mt-0.5">{exp.createdAt ? new Date(exp.createdAt).toLocaleTimeString() : 'Hace un momento'}</div>
+                        <div className="text-[9px] text-neutral mt-0.5">{exp.createdAt ? new Date(exp.createdAt).toLocaleTimeString(undefined, { timeZone: 'UTC' }) : 'Hace un momento'}</div>
                       </div>
                       <div className="text-right">
                         <div className="text-xs font-bold text-amber-500">-${Number(exp.amount || 0).toFixed(2)}</div>
@@ -239,7 +239,7 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
                           <div className="flex items-center gap-1.5">
                             <RotateCcw className="w-3 h-3 text-rose-500 shrink-0" />
                             <span className="text-[10px] font-bold text-rose-400">
-                              Venta del {new Date(refund.createdAt).toLocaleDateString()} • {new Date(refund.createdAt).toLocaleTimeString()}
+                              Venta del {new Date(refund.createdAt).toLocaleDateString(undefined, { timeZone: 'UTC' })} • {new Date(refund.createdAt).toLocaleTimeString(undefined, { timeZone: 'UTC' })}
                             </span>
                           </div>
                           <span className="text-xs font-extrabold text-rose-500 font-mono">
@@ -261,7 +261,7 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
                         <div className="flex justify-between items-end">
                           <span className="text-[9px] text-neutral italic truncate max-w-[60%]">"{refund.reason}"</span>
                           <span className="text-[9px] text-neutral shrink-0">
-                            {new Date(refund.createdAt).toLocaleTimeString()}
+                            {new Date(refund.createdAt).toLocaleTimeString(undefined, { timeZone: 'UTC' })}
                           </span>
                         </div>
                       </div>

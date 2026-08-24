@@ -82,7 +82,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
             </div>
             <div className="flex justify-between">
               <span>FECHA:</span>
-              <span>{new Date(saleData.createdAt).toLocaleString()}</span>
+              <span>{new Date(saleData.createdAt).toLocaleString(undefined, { timeZone: 'UTC' })}</span>
             </div>
             <div className="flex justify-between">
               <span>CLIENTE:</span>
