@@ -23,7 +23,7 @@ import { ReportsView } from '../modules/dashboard/components/ReportsView';
 import { Building } from 'lucide-react';
 
 export const MainLayout: React.FC = () => {
-  const { user, activeTab } = useAuthStore();
+  const { user, activeTab, selectedBranchId, setSelectedBranchId } = useAuthStore();
 
 
 
@@ -35,15 +35,12 @@ export const MainLayout: React.FC = () => {
   // Media upload shared context hook
   const { uploadImage, uploadImageByUrl, isUploading, deleteImage, isDeleting, isLoading: isLoadingMedia, uploadedImages } = useMediaUpload();
 
-  // Selected Branch Context
-  const [selectedBranchId, setSelectedBranchId] = useState('');
-
   // Shared Petty Cash Session State
   const [activeSession, setActiveSession] = useState<any>(null); 
   const [localExpenses, setLocalExpenses] = useState<any[]>([]);
 
-  const { activeSession: fetchedSession } = useActiveCashSession(selectedBranchId);
-  const { expenses: fetchedExpenses } = useExpenses({ branchId: selectedBranchId });
+  const { activeSession: fetchedSession } = useActiveCashSession(selectedBranchId || undefined);
+  const { expenses: fetchedExpenses } = useExpenses({ branchId: selectedBranchId || undefined });
 
   // Sync activeSession with backend query
   React.useEffect(() => {
@@ -142,7 +139,7 @@ export const MainLayout: React.FC = () => {
                   <div className="flex items-center gap-2 bg-bg-dark border border-border-card rounded-xl px-3 py-1">
                     <Building className="w-3.5 h-3.5 text-neutral" />
                     <select
-                      value={selectedBranchId}
+                      value={selectedBranchId || ''}
                       onChange={(e) => setSelectedBranchId(e.target.value)}
                       className="bg-transparent text-xs text-secondary font-semibold focus:outline-none cursor-pointer"
                     >
@@ -176,7 +173,7 @@ export const MainLayout: React.FC = () => {
 
               {activeTab === 'pos' && (
                 <POSView 
-                  selectedBranchId={selectedBranchId} 
+                  selectedBranchId={selectedBranchId || ''} 
                   activeSession={activeSession} 
                   setActiveSession={setActiveSession} 
                   localExpenses={localExpenses} 
@@ -186,13 +183,13 @@ export const MainLayout: React.FC = () => {
 
               {activeTab === 'products' && (
                 <ProductsView 
-                  selectedBranchId={selectedBranchId} 
+                  selectedBranchId={selectedBranchId || ''} 
                   uploadedImages={uploadedImages} 
                 />
               )}
 
               {activeTab === 'purchases' && (
-                <PurchasesView />
+                <PurchasesView selectedBranchId={selectedBranchId || ''} />
               )}
 
               {activeTab === 'media' && (

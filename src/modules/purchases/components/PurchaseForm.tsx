@@ -1,9 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useRegisterPurchase } from '../hooks/usePurchases';
 import { useBranches } from '../../branches/hooks/useBranches';
 import { useProducts } from '../../products/hooks/useProducts';
 import { ClipboardList, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { 
+  Combobox, 
+  ComboboxInput, 
+  ComboboxContent, 
+  ComboboxEmpty, 
+  ComboboxList, 
+  ComboboxItem 
+} from '@/components/ui/combobox';
 
 interface PurchaseItemInput {
   variantId: string;
@@ -15,25 +23,47 @@ interface PurchaseItemInput {
 }
 
 interface PurchaseFormProps {
+  selectedBranchId?: string;
   onSuccess: () => void;
 }
 
-export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
+export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, onSuccess }) => {
   const { branches } = useBranches();
-  const { products } = useProducts({ page: 1, limit: 100 });
+  const { products = [] } = useProducts({ page: 1, limit: 100 });
   const { registerPurchase, isRegistering } = useRegisterPurchase();
 
   // Local Purchase Order general inputs
-  const [purBranch, setPurBranch] = useState('');
+  const [purBranch, setPurBranch] = useState(selectedBranchId || '');
   const [purInvoice, setPurInvoice] = useState('');
 
   // Local single item inputs to add to the table
   const [selectedProductId, setSelectedProductId] = useState('');
   const [purQty, setPurQty] = useState('10');
-  const [purCost, setPurCost] = useState('10.00');
+  const [purCost, setPurCost] = useState('0.00');
 
   // Purchase items table state
   const [purchaseItems, setPurchaseItems] = useState<PurchaseItemInput[]>([]);
+
+  // Sync with parent selected branch ID
+  useEffect(() => {
+    if (selectedBranchId) {
+      setPurBranch(selectedBranchId);
+    }
+  }, [selectedBranchId]);
+
+  const handleProductSelect = (prodId: string | null) => {
+    const idVal = prodId || '';
+    setSelectedProductId(idVal);
+    if (!idVal) {
+      setPurCost('0.00');
+      return;
+    }
+    const prod = products?.find((p: any) => p.id === idVal);
+    if (prod) {
+      const price = prod.variants?.[0]?.purchasePrice || 0;
+      setPurCost(Number(price).toFixed(2));
+    }
+  };
 
   const handleAddItemToPurchase = () => {
     if (!selectedProductId) {
@@ -172,16 +202,32 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
           <div className="grid grid-cols-1 gap-3.5">
             <div>
               <label className="text-[9px] font-bold uppercase tracking-wider block mb-1">Producto</label>
-              <select 
-                value={selectedProductId}
-                onChange={(e) => setSelectedProductId(e.target.value)}
-                className="w-full bg-card border border-border rounded-lg py-1.5 px-2.5 text-xs text-foreground focus:outline-none"
+              <Combobox 
+                value={selectedProductId} 
+                onValueChange={handleProductSelect}
+                items={products || []}
               >
-                <option value="">Selecciona un producto</option>
-                {products.map(p => (
-                  <option key={p.id} value={p.id}>{p.name} ({p.variants?.[0]?.sku || 'Sin SKU'})</option>
-                ))}
-              </select>
+                <ComboboxInput
+                  placeholder="Buscar y seleccionar producto..."
+                  className="text-xs h-9 w-full bg-bg-card border border-border-card rounded-xl px-3 py-2 text-xs text-secondary font-medium"
+                />
+                <ComboboxContent className="bg-popover border border-border rounded-xl shadow-2xl z-30 w-full max-h-60 overflow-y-auto">
+                  <ComboboxEmpty className="p-3 text-center text-xs text-neutral">
+                    No se encontraron productos.
+                  </ComboboxEmpty>
+                  <ComboboxList className="p-1">
+                    {(p: any) => (
+                      <ComboboxItem 
+                        key={p.id} 
+                        value={p.name}
+                        className="px-3 py-2 hover:bg-accent hover:text-accent-foreground text-xs text-secondary rounded-lg transition-colors cursor-pointer"
+                      >
+                        {p.name} ({p.variants?.[0]?.sku || 'Sin SKU'})
+                      </ComboboxItem>
+                    )}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
             </div>
           </div>
 

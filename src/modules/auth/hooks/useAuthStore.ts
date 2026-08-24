@@ -31,6 +31,8 @@ interface AuthState {
   onboard: (data: any) => Promise<boolean>;
   logout: () => void;
   setActiveTab: (tab: string) => void;
+  selectedBranchId: string | null;
+  setSelectedBranchId: (branchId: string | null) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -46,6 +48,8 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       needsPinSelection: false,
       _adminAccessToken: null,
+
+      selectedBranchId: null,
 
       login: async (email, password, targetWorkflow = 'store') => {
         try {
@@ -234,10 +238,12 @@ export const useAuthStore = create<AuthState>()(
           needsPinSelection: false,
           _adminAccessToken: null,
           activeTab: 'dashboard',
+          selectedBranchId: null,
         });
       },
 
       setActiveTab: (tab) => set({ activeTab: tab }),
+      setSelectedBranchId: (branchId) => set({ selectedBranchId: branchId }),
     }),
     {
       name: 'aura-pos-auth', // Clave en localStorage

@@ -3,7 +3,11 @@ import { PurchaseForm } from './PurchaseForm';
 import { PurchaseHistory } from './PurchaseHistory';
 import { ClipboardList, History } from 'lucide-react';
 
-export const PurchasesView: React.FC = () => {
+interface PurchasesViewProps {
+  selectedBranchId?: string;
+}
+
+export const PurchasesView: React.FC<PurchasesViewProps> = ({ selectedBranchId }) => {
   const [activeTab, setActiveTab] = useState<'register' | 'history'>('register');
 
   return (
@@ -38,7 +42,7 @@ export const PurchasesView: React.FC = () => {
 
       {/* Tab contents */}
       {activeTab === 'register' && (
-        <PurchaseForm onSuccess={() => setActiveTab('history')} />
+        <PurchaseForm selectedBranchId={selectedBranchId} onSuccess={() => setActiveTab('history')} />
       )}
 
       {activeTab === 'history' && (
