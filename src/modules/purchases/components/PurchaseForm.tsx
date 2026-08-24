@@ -2,6 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useRegisterPurchase } from '../hooks/usePurchases';
 import { useBranches } from '../../branches/hooks/useBranches';
 import { useProducts } from '../../products/hooks/useProducts';
+import type { Product } from '../../products/services/products.service';
+import type { Branch } from '../../branches/services/branches.service';
 import { ClipboardList, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -38,6 +40,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
 
   // Local single item inputs to add to the table
   const [selectedProductId, setSelectedProductId] = useState('');
+  const [selectedProductName, setSelectedProductName] = useState('');
   const [purQty, setPurQty] = useState('10');
   const [purCost, setPurCost] = useState('0.00');
 
@@ -51,17 +54,23 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
     }
   }, [selectedBranchId]);
 
-  const handleProductSelect = (prodId: string | null) => {
-    const idVal = prodId || '';
-    setSelectedProductId(idVal);
-    if (!idVal) {
+  const handleProductSelect = (prodName: string | null) => {
+    const nameVal = prodName || '';
+    if (!nameVal) {
+      setSelectedProductId('');
+      setSelectedProductName('');
       setPurCost('0.00');
       return;
     }
-    const prod = products?.find((p: any) => p.id === idVal);
+    const prod = products?.find((p: Product) => p.id === nameVal || p.name === nameVal);
     if (prod) {
+      setSelectedProductId(prod.id);
+      setSelectedProductName(prod.name);
       const price = prod.variants?.[0]?.purchasePrice || 0;
       setPurCost(Number(price).toFixed(2));
+    } else {
+      setSelectedProductId('');
+      setSelectedProductName(nameVal);
     }
   };
 
@@ -83,7 +92,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
       return;
     }
 
-    const prod = products?.find((p: any) => p.id === selectedProductId);
+    const prod = products?.find((p: Product) => p.id === selectedProductId);
     if (!prod) {
       toast.warning('Producto no encontrado.');
       return;
@@ -178,7 +187,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
               className="w-full bg-muted/30 border border-border rounded-xl py-2 px-3 text-xs text-foreground focus:outline-none"
             >
               <option value="">Seleccione sucursal</option>
-              {branches.map((b: any) => (
+              {branches.map((b: Branch) => (
                 <option key={b.id} value={b.id}>{b.name}</option>
               ))}
             </select>
@@ -203,20 +212,20 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
             <div>
               <label className="text-[9px] font-bold uppercase tracking-wider block mb-1">Producto</label>
               <Combobox 
-                value={selectedProductId} 
+                value={selectedProductName} 
                 onValueChange={handleProductSelect}
                 items={products || []}
               >
                 <ComboboxInput
                   placeholder="Buscar y seleccionar producto..."
-                  className="text-xs h-9 w-full bg-bg-card border border-border-card rounded-xl px-3 py-2 text-xs text-secondary font-medium"
+                  className="text-xs h-9 w-full bg-bg-card border border-border-card rounded-xl px-3 py-2 text-secondary font-medium"
                 />
                 <ComboboxContent className="bg-popover border border-border rounded-xl shadow-2xl z-30 w-full max-h-60 overflow-y-auto">
                   <ComboboxEmpty className="p-3 text-center text-xs text-neutral">
                     No se encontraron productos.
                   </ComboboxEmpty>
                   <ComboboxList className="p-1">
-                    {(p: any) => (
+                    {(p: Product) => (
                       <ComboboxItem 
                         key={p.id} 
                         value={p.name}
