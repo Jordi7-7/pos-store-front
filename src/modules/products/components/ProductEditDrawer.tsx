@@ -217,6 +217,7 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
             onNewCategoryNameChange={setNewCategoryName}
             onCreateCategory={handleCreateCategory}
             isCreatingCategory={isCreatingCategory}
+            isEdit={true}
           />
         </div>
 

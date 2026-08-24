@@ -51,6 +51,7 @@ export interface ProductFormProps {
   onNewCategoryNameChange: (val: string) => void;
   onCreateCategory: () => void;
   isCreatingCategory: boolean;
+  isEdit?: boolean;
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({
@@ -68,6 +69,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   onNewCategoryNameChange,
   onCreateCategory,
   isCreatingCategory,
+  isEdit = false,
 }) => {
   return (
     <form
@@ -310,7 +312,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor={`${formId}-stock`} className="text-[11px] font-bold uppercase tracking-wider">
-                  Stock Inicial <span className="text-destructive">*</span>
+                  {isEdit ? 'Stock' : 'Stock Inicial'} <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Input
                   id={`${formId}-stock`}
@@ -320,6 +322,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   value={field.value}
                   onChange={(e) => field.onChange(parseInt(e.target.value))}
                   onBlur={field.onBlur}
+                  disabled={isEdit}
                 />
                 {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
               </Field>
