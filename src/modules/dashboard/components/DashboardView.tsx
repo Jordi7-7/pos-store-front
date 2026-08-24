@@ -105,9 +105,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </td>
                     <td className="py-3">{new Date(sale.createdAt).toLocaleDateString(undefined, { timeZone: 'UTC' })}</td>
                     <td className="py-3">
-                      <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-semibold border border-emerald-200">
-                        Completada
-                      </span>
+                      {sale.status === 'REFUNDED' ? (
+                        <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 text-[10px] font-semibold border border-rose-200">
+                          Reembolsada
+                        </span>
+                      ) : sale.status === 'PARTIALLY_REFUNDED' ? (
+                        <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-semibold border border-amber-200">
+                          Parcial
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-semibold border border-emerald-200">
+                          Completada
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}
