@@ -18,6 +18,7 @@ import { PurchasesView } from '../modules/purchases/components/PurchasesView';
 import { MediaView } from '../modules/media/components/MediaView';
 import { UsersView } from '../modules/users/components/UsersView';
 import { TenantSettings } from '../modules/dashboard/components/TenantSettings';
+import { ReportsView } from '../modules/dashboard/components/ReportsView';
 
 import { Building } from 'lucide-react';
 
@@ -208,6 +209,10 @@ export const MainLayout: React.FC = () => {
 
               {activeTab === 'users' && (
                 <UsersView />
+              )}
+
+              {activeTab === 'reports' && (
+                <ReportsView />
               )}
 
               {activeTab === 'tenant-settings' && (
