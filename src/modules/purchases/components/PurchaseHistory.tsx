@@ -1,9 +1,11 @@
 import React from 'react';
 import { usePurchases } from '../hooks/usePurchases';
+import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { ClipboardList, Calendar, User, MapPin, Loader2 } from 'lucide-react';
 
 export const PurchaseHistory: React.FC = () => {
   const { purchases, isLoading } = usePurchases();
+  const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
 
   return (
     <div className="bg-bg-card border border-border-card rounded-2xl p-6 shadow-sm space-y-4 animate-fade-in">
@@ -33,7 +35,7 @@ export const PurchaseHistory: React.FC = () => {
                   <span className="text-xs font-mono font-bold text-primary">{pur.invoiceNumber}</span>
                   <span className="text-[10px] text-neutral flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5" />
-                    {new Date(pur.createdAt).toLocaleString(undefined, { timeZone: 'UTC' })}
+                    {new Date(pur.createdAt).toLocaleString(undefined, { timeZone: timezone })}
                   </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">

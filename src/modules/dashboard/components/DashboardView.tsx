@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { 
   TrendingUp, 
   ShoppingCart, 
@@ -21,6 +22,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   suppliers,
   localExpenses
 }) => {
+  const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
   return (
     <div className="space-y-6">
       {/* Welcome message */}
@@ -103,7 +105,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <td className="py-3 font-semibold text-emerald-600">
                       ${sale.total?.toFixed(2) || '0.00'}
                     </td>
-                    <td className="py-3">{new Date(sale.createdAt).toLocaleDateString(undefined, { timeZone: 'UTC' })}</td>
+                    <td className="py-3">{new Date(sale.createdAt).toLocaleDateString(undefined, { timeZone: timezone })}</td>
                     <td className="py-3">
                       {sale.status === 'REFUNDED' ? (
                         <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 text-[10px] font-semibold border border-rose-200">

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { apiClient } from '@/lib/apiClient';
 import { useBranches } from '../../branches/hooks/useBranches';
 import {
@@ -29,6 +30,7 @@ interface InventoryMovement {
 
 export const KardexTab: React.FC<KardexTabProps> = ({ products, isLoadingProducts }) => {
   const { branches } = useBranches();
+  const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVariantForMovements, setSelectedVariantForMovements] = useState<any | null>(null);
@@ -251,7 +253,7 @@ export const KardexTab: React.FC<KardexTabProps> = ({ products, isLoadingProduct
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground mt-0.5">
                             <span className="flex items-center gap-1">
                               <Calendar className="w-3.5 h-3.5" />
-                              {new Date(mov.createdAt).toLocaleString(undefined, { timeZone: 'UTC' })}
+                              {new Date(mov.createdAt).toLocaleString(undefined, { timeZone: timezone })}
                             </span>
                             {(mov.originBranch || mov.destinationBranch) && (
                               <span className="flex items-center gap-1">

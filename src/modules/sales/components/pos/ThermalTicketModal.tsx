@@ -6,6 +6,7 @@ import {
   Dialog,
   DialogContent,
 } from '@/components/ui/dialog';
+import { useAuthStore } from '../../../auth/hooks/useAuthStore';
 
 interface ThermalTicketModalProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
   tenantName,
   currencyCode
 }) => {
+  const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
   if (!saleData) return null;
 
   let moneda = 'PESOS';
@@ -143,7 +145,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
             </div>
             <div class="flex justify-between">
               <span>FECHA:</span>
-              <span>${new Date(saleData.createdAt).toLocaleString('es-EC', { timeZone: 'UTC' })}</span>
+              <span>${new Date(saleData.createdAt).toLocaleString(undefined, { timeZone: timezone })}</span>
             </div>
             <div class="flex justify-between">
               <span>CLIENTE:</span>
@@ -227,7 +229,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
             </div>
             <div className="flex justify-between">
               <span>FECHA:</span>
-              <span className="text-black">{new Date(saleData.createdAt).toLocaleString('es-EC', { timeZone: 'UTC' })}</span>
+              <span className="text-black">{new Date(saleData.createdAt).toLocaleString(undefined, { timeZone: timezone })}</span>
             </div>
             <div className="flex justify-between">
               <span>CLIENTE:</span>
