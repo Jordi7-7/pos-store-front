@@ -950,42 +950,28 @@ export const POSView: React.FC<POSViewProps> = ({
           {cart.length > 0 && (
             <div className="bg-bg-dark/40 border border-border-card rounded-xl p-3 space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-neutral uppercase tracking-wider">Descuento Global Venta</span>
+                <span className="text-[10px] font-bold text-neutral uppercase tracking-wider">Descuento Global Venta (%)</span>
                 {globalDiscountAmount > 0 && (
                   <span className="text-[10px] font-bold text-emerald-500">-${globalDiscountAmount.toFixed(2)}</span>
                 )}
               </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const nextType = globalDiscountType === 'PERCENTAGE' ? 'AMOUNT' : 'PERCENTAGE';
-                    setGlobalDiscountType(nextType);
-                  }}
-                  className="px-3 bg-bg-card border border-border-card rounded-xl text-neutral hover:text-secondary text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer"
-                >
-                  {globalDiscountType === 'PERCENTAGE' ? (
-                    <>
-                      <Percent className="w-3 h-3 text-blue-400" />
-                      <span>%</span>
-                    </>
-                  ) : (
-                    <>
-                      <DollarSign className="w-3 h-3 text-emerald-400" />
-                      <span>$</span>
-                    </>
-                  )}
-                </button>
-                <input
+              <div className="flex gap-2 items-center">
+                <div className="px-3 h-9 bg-bg-card/50 border border-border-card/60 rounded-xl text-blue-400 text-xs font-extrabold flex items-center justify-center gap-1 select-none">
+                  <Percent className="w-3 h-3" />
+                  <span>Porcentaje</span>
+                </div>
+                <Input
                   type="number"
                   placeholder="0"
                   min="0"
-                  value={globalDiscountRate || ''}
+                  max="100"
+                  step="1"
+                  value={globalDiscountRate === 0 ? '' : globalDiscountRate}
                   onChange={(e) => {
                     const val = Math.max(0, parseFloat(e.target.value) || 0);
                     handleSetGlobalDiscountRate(val);
                   }}
-                  className="flex-1 bg-bg-card border border-border-card rounded-xl py-1.5 px-3 text-xs text-secondary text-right focus:outline-none focus:border-primary font-mono"
+                  className="flex-1 h-9 rounded-xl py-1.5 px-3 text-xs text-secondary text-right font-mono bg-bg-card border-border-card focus-visible:border-primary"
                 />
               </div>
             </div>
