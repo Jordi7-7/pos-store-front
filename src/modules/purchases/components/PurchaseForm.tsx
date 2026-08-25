@@ -4,16 +4,18 @@ import { useBranches } from '../../branches/hooks/useBranches';
 import { useProducts } from '../../products/hooks/useProducts';
 import type { Product } from '../../products/services/products.service';
 import type { Branch } from '../../branches/services/branches.service';
-import { ClipboardList, Trash2, Loader2 } from 'lucide-react';
+import { ClipboardList, Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
-import { 
-  Combobox, 
-  ComboboxInput, 
-  ComboboxContent, 
-  ComboboxEmpty, 
-  ComboboxList, 
-  ComboboxItem 
-} from '@/components/ui/combobox';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+  TableFooter
+} from "@/components/ui/table";
+import { PurchaseFormRow } from './PurchaseFormRow';
 
 interface PurchaseItemInput {
   variantId: string;
@@ -38,14 +40,17 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
   const [purBranch, setPurBranch] = useState(selectedBranchId || '');
   const [purInvoice, setPurInvoice] = useState('');
 
-  // Local single item inputs to add to the table
-  const [selectedProductId, setSelectedProductId] = useState('');
-  const [selectedProductName, setSelectedProductName] = useState('');
-  const [purQty, setPurQty] = useState('10');
-  const [purCost, setPurCost] = useState('0.00');
-
-  // Purchase items table state
-  const [purchaseItems, setPurchaseItems] = useState<PurchaseItemInput[]>([]);
+  // Purchase items table state, initialized with one empty row
+  const [purchaseItems, setPurchaseItems] = useState<PurchaseItemInput[]>([
+    {
+      variantId: '',
+      variantSku: '',
+      productName: '',
+      combinationText: '',
+      quantity: 1,
+      unitCost: 0
+    }
+  ]);
 
   // Sync with parent selected branch ID
   useEffect(() => {
@@ -54,83 +59,151 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
     }
   }, [selectedBranchId]);
 
-  const handleProductSelect = (prodName: string | null) => {
-    const nameVal = prodName || '';
-    if (!nameVal) {
-      setSelectedProductId('');
-      setSelectedProductName('');
-      setPurCost('0.00');
-      return;
-    }
-    const prod = products?.find((p: Product) => p.id === nameVal || p.name === nameVal);
-    if (prod) {
-      setSelectedProductId(prod.id);
-      setSelectedProductName(prod.name);
-      const price = prod.variants?.[0]?.purchasePrice || 0;
-      setPurCost(Number(price).toFixed(2));
-    } else {
-      setSelectedProductId('');
-      setSelectedProductName(nameVal);
-    }
+  const updateRow = (index: number, fields: Partial<PurchaseItemInput>) => {
+    const updated = [...purchaseItems];
+    updated[index] = { ...updated[index], ...fields };
+    setPurchaseItems(updated);
   };
 
-  const handleAddItemToPurchase = () => {
-    if (!selectedProductId) {
-      toast.warning('Selecciona un producto primero.');
+  const handleRowProductSelect = (index: number, skuVal: string | null) => {
+    if (!skuVal) {
+      updateRow(index, {
+        variantId: '',
+        variantSku: '',
+        productName: '',
+        combinationText: '',
+        unitCost: 0,
+      });
       return;
     }
 
-    const qty = parseInt(purQty);
-    const cost = parseFloat(purCost);
+    const trimmed = skuVal.trim();
+    // Search for the variant with this SKU or matching product name
+    let foundProduct: Product | undefined;
+    let foundVariant: any | undefined;
 
-    if (isNaN(qty) || qty <= 0) {
-      toast.warning('La cantidad debe ser mayor a 0.');
-      return;
-    }
-    if (isNaN(cost) || cost < 0) {
-      toast.warning('El costo unitario no puede ser negativo.');
-      return;
-    }
-
-    const prod = products?.find((p: Product) => p.id === selectedProductId);
-    if (!prod) {
-      toast.warning('Producto no encontrado.');
-      return;
-    }
-    const variant = prod.variants?.[0];
-    if (!variant) {
-      toast.warning('Este producto no tiene variantes registradas.');
-      return;
+    for (const p of products) {
+      const variant = p.variants?.find(
+        v => v.sku.toLowerCase() === trimmed.toLowerCase() || p.name.toLowerCase() === trimmed.toLowerCase()
+      );
+      if (variant) {
+        foundProduct = p;
+        foundVariant = variant;
+        break;
+      }
     }
 
-    const variantId = variant.id || '';
-
-    // Check if variant already added to aggregate quantity
-    const existingIndex = purchaseItems.findIndex(i => i.variantId === variantId);
-
-    if (existingIndex > -1) {
-      const updated = [...purchaseItems];
-      updated[existingIndex].quantity += qty;
-      updated[existingIndex].unitCost = cost; // update to latest cost
-      setPurchaseItems(updated);
-    } else {
-      setPurchaseItems([...purchaseItems, {
-        variantId,
-        variantSku: variant.sku,
-        productName: prod.name,
+    if (foundProduct && foundVariant) {
+      updateRow(index, {
+        variantId: foundVariant.id,
+        variantSku: foundVariant.sku,
+        productName: foundProduct.name,
         combinationText: 'Estándar',
-        quantity: qty,
-        unitCost: cost
-      }]);
+        unitCost: Number(foundVariant.purchasePrice || 0),
+      });
+      // Move focus to quantity
+      setTimeout(() => {
+        const qtyInput = document.querySelector(`[data-row="${index}"][data-col="quantity"]`) as HTMLInputElement | null;
+        qtyInput?.focus();
+        qtyInput?.select();
+      }, 50);
+    } else {
+      // Fallback/typing state
+      updateRow(index, {
+        variantSku: trimmed,
+      });
     }
-
-    toast.success(`Añadido: ${prod.name} (${variant.sku}) x ${qty}`);
   };
 
+  const handleAddRow = () => {
+    setPurchaseItems([
+      ...purchaseItems,
+      {
+        variantId: '',
+        variantSku: '',
+        productName: '',
+        combinationText: '',
+        quantity: 1,
+        unitCost: 0,
+      }
+    ]);
+  };
 
-  const handleRemoveItem = (index: number) => {
-    setPurchaseItems(purchaseItems.filter((_, idx) => idx !== index));
-  };  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRemoveRow = (index: number) => {
+    if (purchaseItems.length === 1) {
+      // Reset the single row instead of deleting it
+      setPurchaseItems([
+        {
+          variantId: '',
+          variantSku: '',
+          productName: '',
+          combinationText: '',
+          quantity: 1,
+          unitCost: 0,
+        }
+      ]);
+    } else {
+      setPurchaseItems(purchaseItems.filter((_, idx) => idx !== index));
+    }
+  };
+
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>, 
+    rowIndex: number, 
+    field: 'sku' | 'quantity' | 'unitCost'
+  ) => {
+    if (field === 'sku') {
+      const isComboboxOpen = e.currentTarget.getAttribute('aria-expanded') === 'true';
+      if (isComboboxOpen) {
+        // Let the combobox library handle list navigation and selection natively
+        return;
+      }
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const nextInput = document.querySelector(`[data-row="${rowIndex + 1}"][data-col="${field}"]`) as HTMLInputElement | null;
+      if (nextInput) {
+        nextInput.focus();
+        nextInput.select();
+      } else if (rowIndex === purchaseItems.length - 1) {
+        handleAddRow();
+        setTimeout(() => {
+          const newInput = document.querySelector(`[data-row="${rowIndex + 1}"][data-col="sku"]`) as HTMLInputElement | null;
+          newInput?.focus();
+        }, 50);
+      }
+    } else if (e.key === 'ArrowUp' && rowIndex > 0) {
+      e.preventDefault();
+      const prevInput = document.querySelector(`[data-row="${rowIndex - 1}"][data-col="${field}"]`) as HTMLInputElement | null;
+      if (prevInput) {
+        prevInput.focus();
+        prevInput.select();
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (field === 'sku') {
+        handleRowProductSelect(rowIndex, purchaseItems[rowIndex].variantSku);
+      } else if (field === 'quantity') {
+        const costInput = document.querySelector(`[data-row="${rowIndex}"][data-col="unitCost"]`) as HTMLInputElement | null;
+        costInput?.focus();
+        costInput?.select();
+      } else if (field === 'unitCost') {
+        if (rowIndex === purchaseItems.length - 1) {
+          handleAddRow();
+          setTimeout(() => {
+            const newInput = document.querySelector(`[data-row="${rowIndex + 1}"][data-col="sku"]`) as HTMLInputElement | null;
+            newInput?.focus();
+          }, 50);
+        } else {
+          const nextSkuInput = document.querySelector(`[data-row="${rowIndex + 1}"][data-col="sku"]`) as HTMLInputElement | null;
+          nextSkuInput?.focus();
+        }
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const branch = purBranch || (branches[0] && branches[0].id);
     
@@ -138,8 +211,10 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
       toast.warning('Por favor selecciona una sucursal de destino.');
       return;
     }
-    if (purchaseItems.length === 0) {
-      toast.warning('Debes añadir al menos un artículo.');
+    
+    const validItems = purchaseItems.filter(i => i.variantId !== '');
+    if (validItems.length === 0) {
+      toast.warning('Debes añadir al menos un artículo válido (selecciona un producto de la lista).');
       return;
     }
 
@@ -147,7 +222,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
       await registerPurchase({
         branchId: branch,
         invoiceNumber: purInvoice.trim() || undefined,
-        items: purchaseItems.map(i => ({
+        items: validItems.map(i => ({
           variantId: i.variantId,
           quantity: i.quantity,
           purchasePrice: i.unitCost
@@ -156,7 +231,16 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
 
       toast.success('¡Ingreso registrado en Kardex y stock incrementado!');
       setPurInvoice('');
-      setPurchaseItems([]);
+      setPurchaseItems([
+        {
+          variantId: '',
+          variantSku: '',
+          productName: '',
+          combinationText: '',
+          quantity: 1,
+          unitCost: 0
+        }
+      ]);
       onSuccess();
     } catch (err: any) {
       toast.error(err.message || 'Error al registrar el ingreso.');
@@ -164,7 +248,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
   };
 
   const totalCostOfPurchase = useMemo(() => {
-    return purchaseItems.reduce((sum, item) => sum + item.quantity * item.unitCost, 0);
+    return purchaseItems.reduce((sum, item) => sum + (item.quantity || 0) * (item.unitCost || 0), 0);
   }, [purchaseItems]);
 
   return (
@@ -174,7 +258,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
           <ClipboardList className="w-4 h-4 text-primary" />
           <span>Registrar Ingreso de Mercancía</span>
         </h4>
-        <p className="text-[10px] text-muted-foreground mt-0.5">Ingresa mercancía al inventario para incrementar el stock disponible.</p>
+        <p className="text-[10px] text-muted-foreground mt-0.5">Ingresa mercancía al inventario indicando el SKU del producto. El sistema te mostrará sugerencias a medida que escribes.</p>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -184,7 +268,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
             <select 
               value={purBranch}
               onChange={(e) => setPurBranch(e.target.value)}
-              className="w-full bg-muted/30 border border-border rounded-xl py-2 px-3 text-xs text-foreground focus:outline-none"
+              className="w-full bg-muted/30 border border-border rounded-xl py-2 px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="">Seleccione sucursal</option>
               {branches.map((b: Branch) => (
@@ -199,128 +283,64 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
               value={purInvoice}
               onChange={(e) => setPurInvoice(e.target.value)}
               placeholder="Ej. Guía, Proveedor, FAC-123" 
-              className="w-full bg-muted/30 border border-border rounded-xl py-2 px-3 text-xs text-foreground placeholder-muted-foreground focus:outline-none" 
+              className="w-full bg-muted/30 border border-border rounded-xl py-2 px-3 text-xs text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary" 
             />
           </div>
         </div>
 
-        {/* Add item interface */}
-        <div className="border border-border rounded-xl p-4 bg-muted/20 space-y-3.5">
-          <span className="text-[10px] font-bold text-primary block uppercase tracking-wider">Añadir Artículo al Ingreso</span>
-          
-          <div className="grid grid-cols-1 gap-3.5">
-            <div>
-              <label className="text-[9px] font-bold uppercase tracking-wider block mb-1">Producto</label>
-              <Combobox 
-                value={selectedProductName} 
-                onValueChange={handleProductSelect}
-                items={products || []}
-              >
-                <ComboboxInput
-                  placeholder="Buscar y seleccionar producto..."
-                  className="text-xs h-9 w-full bg-bg-card border border-border-card rounded-xl px-3 py-2 text-secondary font-medium"
+        {/* Tabular Input Area */}
+        <div className="border border-border rounded-xl overflow-hidden shadow-sm">
+          <Table>
+            <TableHeader className="bg-muted/30">
+              <TableRow>
+                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground w-1/4">SKU / Código</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground w-1/3">Nombre del Producto</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-right w-24">Cant.</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-right w-28">Costo U.</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-right w-28">Subtotal</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-center w-12">Acción</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {purchaseItems.map((item, index) => (
+                <PurchaseFormRow
+                  key={index}
+                  index={index}
+                  item={item}
+                  products={products}
+                  onUpdateRow={updateRow}
+                  onRemoveRow={handleRemoveRow}
+                  onProductSelect={handleRowProductSelect}
+                  onKeyDown={handleKeyDown}
                 />
-                <ComboboxContent className="bg-popover border border-border rounded-xl shadow-2xl z-30 w-full max-h-60 overflow-y-auto">
-                  <ComboboxEmpty className="p-3 text-center text-xs text-neutral">
-                    No se encontraron productos.
-                  </ComboboxEmpty>
-                  <ComboboxList className="p-1">
-                    {(p: Product) => (
-                      <ComboboxItem 
-                        key={p.id} 
-                        value={p.name}
-                        className="px-3 py-2 hover:bg-accent hover:text-accent-foreground text-xs text-secondary rounded-lg transition-colors cursor-pointer"
-                      >
-                        {p.name} ({p.variants?.[0]?.sku || 'Sin SKU'})
-                      </ComboboxItem>
-                    )}
-                  </ComboboxList>
-                </ComboboxContent>
-              </Combobox>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3.5 items-end">
-            <div>
-              <label className="text-[9px] font-bold uppercase tracking-wider block mb-1">Cantidad a Ingresar</label>
-              <input 
-                type="number" 
-                value={purQty} 
-                onChange={(e) => setPurQty(e.target.value)}
-                className="w-full bg-card border border-border rounded-lg py-1.5 px-2.5 text-xs text-foreground focus:outline-none" 
-              />
-            </div>
-            <div>
-              <label className="text-[9px] font-bold uppercase tracking-wider block mb-1">Costo Unitario ($)</label>
-              <input 
-                type="number" 
-                step="0.01"
-                value={purCost} 
-                onChange={(e) => setPurCost(e.target.value)}
-                className="w-full bg-card border border-border rounded-lg py-1.5 px-2.5 text-xs text-foreground focus:outline-none" 
-              />
-            </div>
-            <button 
-              type="button" 
-              onClick={handleAddItemToPurchase}
-              className="col-span-2 md:col-span-1 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary text-[11px] font-bold rounded-lg transition-all"
-            >
-              Agregar Fila
-            </button>
-          </div>
+              ))}
+            </TableBody>
+            <TableFooter className="bg-muted/20 border-t border-border">
+              <TableRow>
+                <TableCell colSpan={4} className="text-right text-xs font-bold text-muted-foreground">Total de Ingreso:</TableCell>
+                <TableCell className="text-right text-sm font-extrabold text-primary font-mono">${totalCostOfPurchase.toFixed(2)}</TableCell>
+                <TableCell />
+              </TableRow>
+            </TableFooter>
+          </Table>
         </div>
 
-        {/* Items Table Grid */}
-        {purchaseItems.length > 0 ? (
-          <div className="border border-border-card rounded-xl overflow-hidden shadow-sm">
-            <table className="w-full text-left text-xs text-secondary border-collapse">
-              <thead>
-                <tr className="bg-bg-dark border-b border-border-card text-[9px] font-bold uppercase tracking-wider text-neutral">
-                  <th className="p-3">Artículo</th>
-                  <th className="p-3 text-center">Cant.</th>
-                  <th className="p-3 text-right">Costo U.</th>
-                  <th className="p-3 text-right">Subtotal</th>
-                  <th className="p-3 text-center">Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {purchaseItems.map((item, index) => (
-                  <tr key={item.variantId} className="border-b border-border-card/60 bg-bg-card/30">
-                    <td className="p-3">
-                      <span className="font-bold block">{item.productName}</span>
-                      <span className="text-[10px] text-neutral font-mono">{item.variantSku} - {item.combinationText}</span>
-                    </td>
-                    <td className="p-3 text-center font-bold">{item.quantity}</td>
-                    <td className="p-3 text-right font-mono">${item.unitCost.toFixed(2)}</td>
-                    <td className="p-3 text-right font-bold text-primary font-mono">${(item.quantity * item.unitCost).toFixed(2)}</td>
-                    <td className="p-3 text-center">
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveItem(index)}
-                        className="text-neutral hover:text-rose-500 p-1 rounded"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="p-3 bg-muted/20 flex justify-between items-center text-xs font-bold">
-              <span>Total de Ingreso:</span>
-              <span className="text-sm text-primary font-mono">${totalCostOfPurchase.toFixed(2)}</span>
-            </div>
-          </div>
-        ) : (
-          <div className="border-2 border-dashed border-border rounded-xl p-6 text-center text-xs text-muted-foreground">
-            Agrega artículos arriba para comenzar a estructurar el ingreso de mercancía.
-          </div>
-        )}
+        {/* Add row manually button */}
+        <div className="flex justify-start">
+          <button
+            type="button"
+            onClick={handleAddRow}
+            className="flex items-center gap-1 px-3 py-1.5 border border-dashed border-border hover:border-primary/50 text-xs font-semibold rounded-lg text-muted-foreground hover:text-primary transition-all bg-card/50"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Agregar Fila</span>
+          </button>
+        </div>
 
         <button 
           type="submit" 
-          disabled={isRegistering || purchaseItems.length === 0}
-          className="w-full py-3 bg-primary hover:bg-primary/95 disabled:bg-muted disabled:text-muted-foreground text-white text-xs font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5"
+          disabled={isRegistering || purchaseItems.every(i => i.variantId === '')}
+          className="w-full py-3 bg-primary hover:bg-primary/95 disabled:bg-muted disabled:text-muted-foreground text-white text-xs font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
         >
           {isRegistering ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
           <span>Registrar Ingreso (Kardex)</span>
