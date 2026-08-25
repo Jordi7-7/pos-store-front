@@ -33,6 +33,7 @@ interface AuthState {
   setActiveTab: (tab: string) => void;
   selectedBranchId: string | null;
   setSelectedBranchId: (branchId: string | null) => void;
+  fetchProfile: () => Promise<boolean>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -240,6 +241,39 @@ export const useAuthStore = create<AuthState>()(
           activeTab: 'dashboard',
           selectedBranchId: null,
         });
+      },
+
+      fetchProfile: async () => {
+        const state = useAuthStore.getState();
+        const token = state.accessToken;
+        if (!token) return false;
+        try {
+          const res = await fetch(`${API_URL}/auth/profile`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+          if (!res.ok) {
+            if (res.status === 401) {
+              set({ isAuthenticated: false, accessToken: null, user: null });
+            }
+            return false;
+          }
+          const profile = await res.json();
+          set({
+            timezone: profile.tenant.timezone || 'America/Guayaquil',
+            user: {
+              name: profile.name,
+              email: profile.email,
+              timezone: profile.tenant.timezone,
+            }
+          });
+          return true;
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+          return false;
+        }
       },
 
       setActiveTab: (tab) => set({ activeTab: tab }),

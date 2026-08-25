@@ -23,7 +23,14 @@ import { ReportsView } from '../modules/reports/components/ReportsView';
 import { Building } from 'lucide-react';
 
 export const MainLayout: React.FC = () => {
-  const { user, activeTab, selectedBranchId, setSelectedBranchId } = useAuthStore();
+  const { user, activeTab, selectedBranchId, setSelectedBranchId, fetchProfile, accessToken } = useAuthStore();
+
+  // Load real-time profile configuration (timezone/tenant info)
+  React.useEffect(() => {
+    if (accessToken) {
+      fetchProfile();
+    }
+  }, [accessToken]);
 
 
 
