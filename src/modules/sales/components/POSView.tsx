@@ -10,6 +10,8 @@ import {
 } from '../hooks/useSales';
 import { useCustomers } from '../hooks/useCustomers';
 import { PaymentMethod } from '../services/sales.service';
+import { apiClient } from '@/lib/apiClient';
+import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { 
   Search, MoreVertical, Wallet, ArrowRightLeft, Receipt, X, ShoppingBag, 
   ShoppingCart, Trash2, Minus, Plus, CreditCard, Loader2, Package, 
@@ -121,6 +123,48 @@ export const POSView: React.FC<POSViewProps> = ({
   // Ticket Printing State
   const [lastCompletedSale, setLastCompletedSale] = useState<any | null>(null);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+  const [reprintSaleData, setReprintSaleData] = useState<any | null>(null);
+  const [isReprintModalOpen, setIsReprintModalOpen] = useState(false);
+  const [currentTenant, setCurrentTenant] = useState<any>(null);
+
+  const currentUser = useAuthStore((state) => state.user);
+
+  useEffect(() => {
+    apiClient.request('/tenants/current')
+      .then((t) => setCurrentTenant(t))
+      .catch((e) => console.error('Error fetching tenant details for ticket:', e));
+  }, []);
+
+  const handlePrintSale = (sale: any) => {
+    const branchName = sale.branch?.name || 'Sucursal General';
+    const branchAddress = sale.branch?.address || '';
+    const clientName = sale.customer?.name || 'Consumidor Final';
+    const clientIdentity = sale.customer?.identityNumber || '9999999999';
+    const invoiceNumber = sale.invoiceNumber || `FAC-${sale.id.replace(/-/g, '').slice(0, 8).toUpperCase()}`;
+
+    setReprintSaleData({
+      invoiceNumber,
+      createdAt: sale.createdAt,
+      branchName,
+      branchAddress,
+      clientName,
+      clientIdentity,
+      items: (sale.items || []).map((item: any) => ({
+        variantId: item.variantId,
+        variantSku: item.variant?.sku || '',
+        productName: item.variant?.product?.name || item.variantName || 'Producto',
+        combinationText: item.variant?.attributeValues?.map((av: any) => av.value).join(' / ') || 'Estándar',
+        quantity: Number(item.quantity),
+        price: Number(item.price),
+        discountAmount: Number(item.discountAmount || 0),
+      })),
+      paymentMethod: sale.payments?.[0]?.paymentMethod || PaymentMethod.EFECTIVO,
+      discountAmount: Number(sale.discountAmount || 0),
+      total: Number(sale.total || 0),
+      userName: sale.user?.name || 'Vendedor',
+    });
+    setIsReprintModalOpen(true);
+  };
 
 
   // Clock & shift timer
@@ -512,13 +556,15 @@ export const POSView: React.FC<POSViewProps> = ({
       const clientIdentity = customers.find((c: any) => c.id === selectedCustomerId)?.identityNumber || '9999999999';
 
       const saleDataForTicket = {
-        invoiceNumber: res.invoiceNumber || `FAC-${Math.floor(1000 + Math.random() * 9000)}`,
-        createdAt: new Date().toISOString(),
+        invoiceNumber: res.invoiceNumber || `FAC-${res.id ? res.id.replace(/-/g, '').slice(0, 8).toUpperCase() : Math.floor(1000 + Math.random() * 9000)}`,
+        createdAt: res.createdAt || new Date().toISOString(),
         branchName,
+        branchAddress: branches.find((b: any) => b.id === branch)?.address || '',
         clientName,
         clientIdentity,
         items: cart.map(i => ({
           variantId: i.variantId,
+          variantSku: i.variantSku || '',
           productName: i.productName,
           combinationText: i.combinationText,
           quantity: i.quantity,
@@ -527,7 +573,8 @@ export const POSView: React.FC<POSViewProps> = ({
         })),
         paymentMethod: addedPayments[0]?.paymentMethod || PaymentMethod.EFECTIVO,
         discountAmount: globalDiscountAmount,
-        total: cartTotal
+        total: cartTotal,
+        userName: currentUser?.name || 'Vendedor'
       };
 
       setLastCompletedSale(saleDataForTicket);
@@ -1113,6 +1160,9 @@ export const POSView: React.FC<POSViewProps> = ({
           setLastCompletedSale(null);
         }}
         saleData={lastCompletedSale}
+        tenantRuc={currentTenant?.ruc || ''}
+        tenantName={currentTenant?.name || ''}
+        currencyCode={currentTenant?.currencyCode || ''}
       />
 
       {/* Caja Chica Control modals */}
@@ -1152,6 +1202,19 @@ export const POSView: React.FC<POSViewProps> = ({
         activeSessionExpenses={activeSessionExpenses}
         activeSession={activeSession}
         branchId={selectedBranchId}
+        onPrintSale={handlePrintSale}
+      />
+
+      <ThermalTicketModal 
+        isOpen={isReprintModalOpen}
+        onClose={() => {
+          setIsReprintModalOpen(false);
+          setReprintSaleData(null);
+        }}
+        saleData={reprintSaleData}
+        tenantRuc={currentTenant?.ruc || ''}
+        tenantName={currentTenant?.name || ''}
+        currencyCode={currentTenant?.currencyCode || ''}
       />
 
     </div>

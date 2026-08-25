@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Receipt, RotateCcw, ArrowLeft, Minus, Plus, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Receipt, RotateCcw, ArrowLeft, Minus, Plus, CheckCircle, AlertCircle, Loader2, Printer } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,7 @@ interface HistorialModalProps {
   activeSessionExpenses: any[];
   activeSession: any | null;
   branchId: string;
+  onPrintSale?: (sale: any) => void;
 }
 
 type ModalView = 'list' | 'refund';
@@ -53,6 +54,7 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
   activeSessionExpenses,
   activeSession,
   branchId,
+  onPrintSale,
 }) => {
   const [historyTab, setHistoryTab] = useState<HistoryTab>('sales');
   const [view, setView] = useState<ModalView>('list');
@@ -177,7 +179,9 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
                     <div key={sale.id} className="flex justify-between items-center bg-bg-dark/40 border border-border-card p-3 rounded-xl text-secondary animate-fade-in gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] font-bold font-mono">{sale.invoiceNumber}</span>
+                          <span className="text-[10px] font-bold font-mono">
+                            {sale.invoiceNumber || `FAC-${sale.id.replace(/-/g, '').slice(0, 8).toUpperCase()}`}
+                          </span>
                           <SaleStatusBadge status={sale.status} />
                         </div>
                         <div className="text-[9px] text-neutral mt-0.5">{new Date(sale.createdAt).toLocaleTimeString(undefined, { timeZone: 'UTC' })}</div>
@@ -189,16 +193,25 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
                           {sale.payments?.[0]?.paymentMethod || 'Efectivo'}
                         </span>
                       </div>
-                      {activeSession && sale.status !== 'REFUNDED' && (sale.items || []).length > 0 && (
+                      <div className="flex gap-1.5 shrink-0">
                         <button
-                          onClick={() => openRefundView(sale)}
-                          title="Procesar devolución"
-                          className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 transition-all cursor-pointer"
+                          onClick={() => onPrintSale?.(sale)}
+                          title="Reimprimir ticket"
+                          className="flex items-center justify-center p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all cursor-pointer"
                         >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          Devolver
+                          <Printer className="w-3.5 h-3.5" />
                         </button>
-                      )}
+                        {activeSession && sale.status !== 'REFUNDED' && (sale.items || []).length > 0 && (
+                          <button
+                            onClick={() => openRefundView(sale)}
+                            title="Procesar devolución"
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 transition-all cursor-pointer"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            Devolver
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))
                 )

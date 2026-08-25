@@ -35,6 +35,9 @@ importers:
       luxon:
         specifier: ^3.7.2
         version: 3.7.2
+      numero-a-letras-es:
+        specifier: ^1.0.0
+        version: 1.0.0
       react:
         specifier: ^19.2.7
         version: 19.2.7
@@ -1971,6 +1974,9 @@ packages:
   npm-run-path@6.0.0:
     resolution: {integrity: sha512-9qny7Z9DsQU8Ou39ERsPU4OZQlSTP47ShQzuKZ6PRXpYLtIFgl/DEBYEXKlvcEa+9tHVcK8CF81Y2V72qaZhWA==}
     engines: {node: '>=18'}
+
+  numero-a-letras-es@1.0.0:
+    resolution: {integrity: sha512-34TjhlN9Fy7o15p6CasHZSHb1kOC6RhC2aH9LnY1oCU3JakOOjVNWG+fdhsRuq7eoa1CPJ94mJH0khtjnUSVFg==}
 
   object-assign@4.1.1:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
@@ -4066,6 +4072,8 @@ snapshots:
     dependencies:
       path-key: 4.0.0
       unicorn-magic: 0.3.0
+
+  numero-a-letras-es@1.0.0: {}
 
   object-assign@4.1.1: {}
 
