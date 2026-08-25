@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { Globe, DollarSign, Clock, Building, Save, AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuthStore } from '../../auth/hooks/useAuthStore';
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -105,6 +106,7 @@ export const TenantSettings: React.FC = () => {
           timezone,
         }),
       });
+      useAuthStore.setState({ timezone });
       toast.success('Configuración del negocio actualizada con éxito');
     } catch (error) {
       console.error('Error updating tenant:', error);

@@ -5,12 +5,13 @@ import { apiClient } from '@/lib/apiClient';
 import { useBranches } from '../../branches/hooks/useBranches';
 import {
   Package, Search, ArrowUpRight, ArrowDownLeft, Calendar,
-  MapPin, Loader2, ClipboardList
+  MapPin, Loader2, ClipboardList, Plus
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { StockAdjustmentModal } from './StockAdjustmentModal';
 
 interface KardexTabProps {
   products: any[];
@@ -35,6 +36,7 @@ export const KardexTab: React.FC<KardexTabProps> = ({ products, isLoadingProduct
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVariantForMovements, setSelectedVariantForMovements] = useState<any | null>(null);
   const [isMovementsModalOpen, setIsMovementsModalOpen] = useState(false);
+  const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
 
   const variantRows = React.useMemo(() => {
     if (!products) return [];
@@ -100,9 +102,19 @@ export const KardexTab: React.FC<KardexTabProps> = ({ products, isLoadingProduct
                 className="pl-10 text-xs"
               />
             </div>
-            <Badge variant="secondary" className="text-[10px] whitespace-nowrap">
-              {filteredVariantRows.length} variante(s) en almacén
-            </Badge>
+            <div className="flex gap-3 w-full md:w-auto items-center justify-between md:justify-end">
+              <Badge variant="secondary" className="text-[10px] whitespace-nowrap">
+                {filteredVariantRows.length} variante(s) en almacén
+              </Badge>
+              <button
+                type="button"
+                onClick={() => setIsAdjustmentModalOpen(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:bg-primary/95 text-white text-xs font-semibold rounded-xl shadow-md transition-all cursor-pointer whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Ajuste / Merma</span>
+              </button>
+            </div>
           </div>
         </CardHeader>
       </Card>
@@ -231,6 +243,10 @@ export const KardexTab: React.FC<KardexTabProps> = ({ products, isLoadingProduct
                   else if (mov.reason === 'REFUND' || mov.reason === 'DEVOLUCION') reasonText = 'Devolución';
                   else if (mov.reason === 'INITIAL_STOCK') reasonText = 'Stock de Apertura';
                   else if (mov.reason === 'ADJUSTMENT') reasonText = 'Ajuste de Stock';
+                  else if (mov.reason === 'ROBBERY') reasonText = 'Robo / Pérdida';
+                  else if (mov.reason === 'DAMAGE') reasonText = 'Daño / Defecto';
+                  else if (mov.reason === 'EXPIRED') reasonText = 'Expirado / Caducado';
+                  else if (mov.reason === 'INTERNAL_USE') reasonText = 'Uso / Consumo Interno';
 
                   return (
                     <div
@@ -281,6 +297,12 @@ export const KardexTab: React.FC<KardexTabProps> = ({ products, isLoadingProduct
           </div>
         </DialogContent>
       </Dialog>
+
+      <StockAdjustmentModal
+        isOpen={isAdjustmentModalOpen}
+        onClose={() => setIsAdjustmentModalOpen(false)}
+        products={products}
+      />
     </div>
   );
 };

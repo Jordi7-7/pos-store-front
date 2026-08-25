@@ -9,7 +9,7 @@ import {
   useSales
 } from '../hooks/useSales';
 import { useCustomers } from '../hooks/useCustomers';
-import { PaymentMethod } from '../services/sales.service';
+import { PaymentMethod, salesService } from '../services/sales.service';
 import { apiClient } from '@/lib/apiClient';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { 
@@ -40,6 +40,7 @@ import { Input } from '@/components/ui/input';
 
 // Subcomponents import
 import { ThermalTicketModal } from './pos/ThermalTicketModal';
+import { ThermalClosingTicketModal } from './pos/ThermalClosingTicketModal';
 import { AperturaModal } from './pos/AperturaModal';
 import { EgresoModal } from './pos/EgresoModal';
 import { CierreModal } from './pos/CierreModal';
@@ -115,7 +116,7 @@ export const POSView: React.FC<POSViewProps> = ({
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
 
   // Global Discount States
-  const [globalDiscountType, setGlobalDiscountType] = useState<'PERCENTAGE' | 'AMOUNT'>('PERCENTAGE');
+  const [globalDiscountType] = useState<'PERCENTAGE' | 'AMOUNT'>('PERCENTAGE');
   const [globalDiscountRate, setGlobalDiscountRate] = useState<number>(0);
 
   // Payment states (previously in PaymentModal)
@@ -128,9 +129,12 @@ export const POSView: React.FC<POSViewProps> = ({
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [reprintSaleData, setReprintSaleData] = useState<any | null>(null);
   const [isReprintModalOpen, setIsReprintModalOpen] = useState(false);
+  const [closingSessionToPrint, setClosingSessionToPrint] = useState<any | null>(null);
+  const [isClosingTicketOpen, setIsClosingTicketOpen] = useState(false);
   const [currentTenant, setCurrentTenant] = useState<any>(null);
 
   const currentUser = useAuthStore((state) => state.user);
+  const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
 
   useEffect(() => {
     apiClient.request('/tenants/current')
@@ -176,11 +180,11 @@ export const POSView: React.FC<POSViewProps> = ({
 
   useEffect(() => {
     const timer = setInterval(() => {
-      const now = DateTime.now();
+      const now = DateTime.now().setZone(timezone);
       setCurrentTime(now.toFormat('HH:mm:ss'));
       
       if (activeSession && activeSession.createdAt) {
-        const openedAt = DateTime.fromISO(activeSession.createdAt);
+        const openedAt = DateTime.fromISO(activeSession.createdAt).setZone(timezone);
         if (openedAt.isValid) {
           const diff = now.diff(openedAt, ['hours', 'minutes', 'seconds']);
           const diffHrs = Math.floor(diff.hours);
@@ -195,7 +199,7 @@ export const POSView: React.FC<POSViewProps> = ({
       }
     }, 1000);
     return () => clearInterval(timer);
-  }, [activeSession]);
+  }, [activeSession, timezone]);
 
   // Pre-select CONSUMIDOR FINAL by default
   useEffect(() => {
@@ -257,13 +261,102 @@ export const POSView: React.FC<POSViewProps> = ({
   const handleCloseSession = async () => {
     if (!activeSession) return;
     try {
+      const openingBalance = Number(activeSession.openingBalance);
+      const salesTotal = activeSessionSales.reduce((sum: number, s: any) => sum + Number(s.total || 0), 0);
+      const expensesTotal = activeSessionExpenses.reduce((sum: number, e: any) => sum + Number(e.amount || 0), 0);
+      const expectedBalance = openingBalance + salesTotal - expensesTotal;
+
+      // Group products sold
+      const productsSummary: { [sku: string]: { name: string; quantity: number; total: number } } = {};
+      activeSessionSales.forEach((sale: any) => {
+        (sale.items || []).forEach((item: any) => {
+          const sku = item.variantSku || 'S/SKU';
+          if (!productsSummary[sku]) {
+            productsSummary[sku] = {
+              name: item.productName || 'Producto',
+              quantity: 0,
+              total: 0,
+            };
+          }
+          productsSummary[sku].quantity += Number(item.quantity || 0);
+          const itemDiscount = item.discountAmount || 0;
+          productsSummary[sku].total += (Number(item.price || 0) - itemDiscount) * Number(item.quantity || 0);
+        });
+      });
+
+      const productsList = Object.entries(productsSummary).map(([sku, data]) => ({
+        sku,
+        ...data,
+      }));
+
+      // Group payments by method
+      const paymentsBreakdown: { [method: string]: number } = {};
+      activeSessionSales.forEach((sale: any) => {
+        (sale.payments || []).forEach((p: any) => {
+          const method = p.paymentMethod || 'EFECTIVO';
+          paymentsBreakdown[method] = (paymentsBreakdown[method] || 0) + Number(p.amount || 0);
+        });
+      });
+
+      // Fetch refunds for this session
+      let refundsList: any[] = [];
+      try {
+        const resRefunds = await salesService.getRefunds({ cashSessionId: activeSession.id });
+        refundsList = (resRefunds || []).map((ref: any) => ({
+          id: ref.id,
+          reason: ref.reason,
+          items: (ref.items || []).map((ri: any) => ({
+            name: ri.variant?.product?.name || 'Producto',
+            sku: ri.variant?.sku || 'SKU',
+            quantity: ri.quantity,
+          })),
+        }));
+      } catch (err) {
+        console.error('Error fetching refunds for closing print:', err);
+      }
+
+      const salesList = activeSessionSales.map((s: any) => ({
+        invoiceNumber: s.invoiceNumber || 'S/Ref',
+        createdAt: s.createdAt,
+        total: Number(s.total || 0),
+        paymentMethods: (s.payments || []).map((p: any) => p.paymentMethod),
+      }));
+
+      const dataToPrint = {
+        id: activeSession.id,
+        openedAt: activeSession.openedAt,
+        closedAt: new Date().toISOString(),
+        openingBalance,
+        closingBalance: parseFloat(closingBalance) || 0,
+        expectedBalance,
+        salesTotal,
+        expensesTotal,
+        expensesList: activeSessionExpenses.map((e: any) => ({
+          description: e.description,
+          amount: e.amount,
+          createdAt: e.createdAt
+        })),
+        productsList,
+        paymentsBreakdown,
+        refundsList,
+        salesList,
+        userName: currentUser?.name || 'Vendedor',
+        branchName: branches.find((b: any) => b.id === selectedBranchId)?.name || 'Principal',
+        branchAddress: branches.find((b: any) => b.id === selectedBranchId)?.address || '',
+      };
+
       await closeSession({
         id: activeSession.id,
-        closingBalance: parseFloat(closingBalance),
+        closingBalance: parseFloat(closingBalance) || 0,
       });
+
       setActiveSession(null);
       setLocalExpenses([]);
       setIsCierreModalOpen(false);
+
+      setClosingSessionToPrint(dataToPrint);
+      setIsClosingTicketOpen(true);
+
       toast.success('¡Sesión de caja cerrada con éxito!');
     } catch (err: any) {
       toast.error(err.message || 'Error al cerrar la caja.');
@@ -1208,6 +1301,9 @@ export const POSView: React.FC<POSViewProps> = ({
         setClosingBalance={setClosingBalance}
         onCloseSession={handleCloseSession}
         isClosing={isClosing}
+        activeSession={activeSession}
+        activeSessionSales={activeSessionSales}
+        activeSessionExpenses={activeSessionExpenses}
       />
 
       <HistorialModal 
@@ -1230,6 +1326,17 @@ export const POSView: React.FC<POSViewProps> = ({
         tenantRuc={currentTenant?.ruc || ''}
         tenantName={currentTenant?.name || ''}
         currencyCode={currentTenant?.currencyCode || ''}
+      />
+
+      <ThermalClosingTicketModal
+        isOpen={isClosingTicketOpen}
+        onClose={() => {
+          setIsClosingTicketOpen(false);
+          setClosingSessionToPrint(null);
+        }}
+        sessionData={closingSessionToPrint}
+        tenantRuc={currentTenant?.ruc || ''}
+        tenantName={currentTenant?.name || ''}
       />
 
     </div>
