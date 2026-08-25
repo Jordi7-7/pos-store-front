@@ -67,6 +67,19 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
     activeSession ? { cashSessionId: activeSession.id } : undefined
   );
 
+  const totalSalesSum = activeSessionSales.reduce((sum, sale) => sum + Number(sale.total || sale.totalAmount || 0), 0);
+  const totalExpensesSum = activeSessionExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+  const totalRefundsSum = (refunds || []).reduce((sum, ref) => sum + Number(ref.totalRefunded || 0), 0);
+
+  const cashSalesSum = activeSessionSales.reduce((sum, sale) => {
+    const isCash = (sale.payments || []).some(
+      (p: { paymentMethod: string }) => p.paymentMethod.toUpperCase() === 'EFECTIVO'
+    );
+    return sum + (isCash ? Number(sale.total || sale.totalAmount || 0) : 0);
+  }, 0);
+
+  const currentCashBalance = Number(activeSession?.openingBalance || 0) + cashSalesSum - totalExpensesSum - totalRefundsSum;
+
   const openRefundView = (sale: any) => {
     setSelectedSale(sale);
     const initQtys: RefundQtyMap = {};
@@ -143,10 +156,23 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
         {view === 'list' ? (
           <>
             <DialogHeader>
-              <DialogTitle className="text-xs font-bold text-secondary uppercase tracking-wider flex items-center gap-2 mb-3">
+              <DialogTitle className="text-xs font-bold text-secondary uppercase tracking-wider flex items-center gap-2 mb-2">
                 <Receipt className="w-4 h-4 text-primary" />
                 <span>Historial de la Sesión Activa</span>
               </DialogTitle>
+
+              {/* Cash Box Status Widget */}
+              <div className="bg-bg-dark/40 border border-border-card p-3.5 rounded-xl mb-4 flex justify-between items-center text-xs">
+                <div>
+                  <div className="text-neutral text-[9px] uppercase tracking-wider font-bold">Efectivo en Caja</div>
+                  <div className="text-primary font-extrabold text-base mt-0.5">${currentCashBalance.toFixed(2)}</div>
+                </div>
+                <div className="text-right text-[10px] text-neutral space-y-0.5">
+                  <div>Apertura: <strong className="text-secondary">${Number(activeSession?.openingBalance || 0).toFixed(2)}</strong></div>
+                  <div>Ventas Totales: <strong className="text-secondary">${totalSalesSum.toFixed(2)}</strong></div>
+                </div>
+              </div>
+
               <div className="flex gap-2 pb-2 flex-wrap">
                 <button
                   onClick={() => setHistoryTab('sales')}
@@ -281,6 +307,28 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
                     );
                   })
                 )
+              )}
+            </div>
+
+            {/* Summary Footer Bar */}
+            <div className="mt-4 pt-3 border-t border-border-card flex justify-between items-center text-xs font-bold bg-bg-dark/20 p-3 rounded-xl">
+              {historyTab === 'sales' && (
+                <>
+                  <span className="text-neutral">Total Ventas:</span>
+                  <span className="text-primary text-sm">${totalSalesSum.toFixed(2)}</span>
+                </>
+              )}
+              {historyTab === 'expenses' && (
+                <>
+                  <span className="text-neutral">Total Gastos:</span>
+                  <span className="text-amber-500 text-sm">-${totalExpensesSum.toFixed(2)}</span>
+                </>
+              )}
+              {historyTab === 'refunds' && (
+                <>
+                  <span className="text-neutral">Total Reembolsado:</span>
+                  <span className="text-rose-500 text-sm">-${totalRefundsSum.toFixed(2)}</span>
+                </>
               )}
             </div>
           </>
