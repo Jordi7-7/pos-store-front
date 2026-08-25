@@ -36,6 +36,7 @@ import {
   ComboboxTrigger,
 } from '@/components/ui/combobox';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 // Subcomponents import
 import { ThermalTicketModal } from './pos/ThermalTicketModal';
@@ -288,40 +289,43 @@ export const POSView: React.FC<POSViewProps> = ({
     }
   };
 
-  const handleUpdateItemDiscount = (variantId: string, type: 'PERCENTAGE' | 'AMOUNT', rate: number) => {
+  const handleUpdateItemDiscount = (variantId: string, type: 'PERCENTAGE' | 'AMOUNT', inputVal: number) => {
     setCart(prevCart => prevCart.map(item => {
       if (item.variantId !== variantId) return item;
       
-      let finalRate = Number(rate.toFixed(2));
-      if (isNaN(finalRate) || finalRate < 0) {
-        finalRate = 0;
-      }
-
-      if (type === 'PERCENTAGE') {
-        if (finalRate > 100) {
-          finalRate = 100;
-          toast.warning('El descuento por producto no puede superar el 100%');
-        }
-      } else {
-        if (finalRate > item.price) {
-          finalRate = item.price;
-          toast.warning(`El descuento no puede superar el precio del producto ($${item.price.toFixed(2)})`);
-        }
+      let val = Number(inputVal.toFixed(2));
+      if (isNaN(val) || val < 0) {
+        val = 0;
       }
 
       let calculatedAmount = 0;
+      let displayRate = val;
+
       if (type === 'PERCENTAGE') {
-        calculatedAmount = Number(((item.price * finalRate) / 100).toFixed(2));
+        if (val > 100) {
+          val = 100;
+          displayRate = 100;
+          toast.warning('El descuento por producto no puede superar el 100%');
+        }
+        calculatedAmount = Number(((item.price * val) / 100).toFixed(2));
       } else {
-        calculatedAmount = finalRate;
+        // En modo AMOUNT (Moneda), el inputVal representa el PRECIO FINAL de venta.
+        // Si el precio de venta es mayor al precio original, no aplicamos descuento.
+        if (val > item.price) {
+          val = item.price;
+          displayRate = item.price;
+          toast.warning(`El precio de venta no puede superar el precio original del producto ($${item.price.toFixed(2)})`);
+        }
+        // El descuento real (calculatedAmount) es el precio original menos el precio final deseado.
+        calculatedAmount = Number((item.price - val).toFixed(2));
       }
-      calculatedAmount = Math.min(item.price, calculatedAmount);
+      calculatedAmount = Math.max(0, Math.min(item.price, calculatedAmount));
 
       return {
         ...item,
         discountType: type,
-        discountRate: finalRate,
-        discountAmount: calculatedAmount
+        discountRate: displayRate, // guardamos el valor ingresado para que se muestre correctamente en el input
+        discountAmount: calculatedAmount // este es el descuento total restado al precio unitario
       };
     }));
   };
@@ -837,17 +841,20 @@ export const POSView: React.FC<POSViewProps> = ({
 
                     {/* Inline Discount Control */}
                     <div className="flex items-center justify-between bg-bg-dark/20 border border-border-card/30 rounded-lg p-1.5 mt-1">
-                      <span className="text-[8.5px] font-bold uppercase tracking-wider text-neutral">Descuento de Línea:</span>
+                      <span className="text-[8.5px] font-bold uppercase tracking-wider text-neutral">
+                        {currentItemDiscountType === 'PERCENTAGE' ? 'Descuento (%)' : 'Precio Especial ($)'}:
+                      </span>
                       <div className="flex items-center gap-1.5">
                         {/* Toggle button */}
                         <button
                           type="button"
                           onClick={() => {
                             const nextType = currentItemDiscountType === 'PERCENTAGE' ? 'AMOUNT' : 'PERCENTAGE';
-                            handleUpdateItemDiscount(item.variantId, nextType, currentItemDiscountRate);
+                            const nextValue = nextType === 'AMOUNT' ? item.price : 0;
+                            handleUpdateItemDiscount(item.variantId, nextType, nextValue);
                           }}
                           className="p-1 rounded bg-bg-card border border-border-card text-[9px] hover:text-secondary transition-all flex items-center justify-center cursor-pointer"
-                          title={currentItemDiscountType === 'PERCENTAGE' ? 'Cambiar a Cantidad ($)' : 'Cambiar a Porcentaje (%)'}
+                          title={currentItemDiscountType === 'PERCENTAGE' ? 'Cambiar a Precio de Venta ($)' : 'Cambiar a Porcentaje (%)'}
                         >
                           {currentItemDiscountType === 'PERCENTAGE' ? (
                             <Percent className="w-2.5 h-2.5 text-blue-400" />
@@ -855,17 +862,18 @@ export const POSView: React.FC<POSViewProps> = ({
                             <DollarSign className="w-2.5 h-2.5 text-emerald-400" />
                           )}
                         </button>
-                        {/* Discount rate input */}
-                        <input
+                        {/* Shadcn Input component */}
+                        <Input
                           type="number"
-                          placeholder="0"
+                          placeholder={currentItemDiscountType === 'PERCENTAGE' ? "0" : item.price.toFixed(2)}
                           min="0"
-                          value={currentItemDiscountRate || ''}
+                          step={currentItemDiscountType === 'PERCENTAGE' ? "1" : "0.01"}
+                          value={currentItemDiscountRate === 0 ? '' : currentItemDiscountRate}
                           onChange={(e) => {
                             const val = Math.max(0, parseFloat(e.target.value) || 0);
                             handleUpdateItemDiscount(item.variantId, currentItemDiscountType, val);
                           }}
-                          className="w-14 bg-bg-card border border-border-card rounded px-1.5 py-0.5 text-[10px] text-secondary text-right focus:outline-none focus:border-primary/50"
+                          className="w-20 h-6 px-1.5 text-[10px] text-secondary text-right font-mono bg-bg-card border-border-card focus-visible:border-primary/50"
                         />
                       </div>
                     </div>
