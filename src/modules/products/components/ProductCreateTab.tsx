@@ -14,6 +14,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useCategories } from '../hooks/useCategories';
+import { useTags } from '../hooks/useTags';
 import { productFormSchema, productFormDefaults, type ProductFormValues } from '../schemas/product.schema';
 import { ProductForm } from './forms/ProductForm';
 import { ImageUploadModal } from './forms/ImageUploadModal';
@@ -42,6 +43,7 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
   onSuccess,
 }) => {
   const { createCategory, isCreating: isCreatingCategory } = useCategories();
+  const { tags: allTags, createTag, isCreating: isCreatingTag, updateVariantTags } = useTags();
 
   // ── Form instance ────────────────────────────────────────────────────────
   const form = useForm<ProductFormValues>({
@@ -52,6 +54,14 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
   // ── Image selection ──────────────────────────────────────────────────────
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  // ── Tag selection ────────────────────────────────────────────────────────
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+
+  const handleToggleTag = (tagId: string) =>
+    setSelectedTagIds((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    );
 
   const handleToggleImage = (id: string) =>
     setSelectedImages((prev) =>
@@ -84,7 +94,7 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
   // ── Submit ───────────────────────────────────────────────────────────────
   const onSubmit = async (data: ProductFormValues) => {
     try {
-      await createSimpleProduct({
+      const newProduct = await createSimpleProduct({
         name: data.name.trim(),
         description: data.description?.trim() ?? '',
         categoryId: data.categoryId || undefined,
@@ -97,9 +107,15 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
           ? [{ branchId: selectedBranchId, quantity: data.initialStock }]
           : [],
       });
+      // Assign tags to the first variant of the newly created product
+      const newVariantId = newProduct?.variants?.[0]?.id;
+      if (newVariantId && selectedTagIds.length > 0) {
+        await updateVariantTags({ variantId: newVariantId, tagIds: selectedTagIds });
+      }
       toast.success('¡Producto e inventario registrados con éxito!');
       form.reset(productFormDefaults);
       setSelectedImages([]);
+      setSelectedTagIds([]);
       onSuccess();
     } catch (err: any) {
       console.error(err);
@@ -134,6 +150,11 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
             onNewCategoryNameChange={setNewCategoryName}
             onCreateCategory={handleCreateCategory}
             isCreatingCategory={isCreatingCategory}
+            allTags={allTags}
+            selectedTagIds={selectedTagIds}
+            onToggleTag={handleToggleTag}
+            onCreateTag={createTag}
+            isCreatingTag={isCreatingTag}
           />
 
           <Button

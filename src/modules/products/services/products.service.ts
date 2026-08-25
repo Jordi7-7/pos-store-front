@@ -9,6 +9,12 @@ export interface ProductVariant {
   imageIds?: string[];
   attributeValues: { attributeValueId: string }[];
   stocks?: { branchId: string; quantity: number }[];
+  tags?: Tag[];
+}
+
+export interface Tag {
+  id: string;
+  name: string;
 }
 
 export interface Product {
@@ -97,6 +103,18 @@ export const productsService = {
 
   createVariant: async (productId: string, input: ProductVariant): Promise<ProductVariant> => {
     return apiClient.post<ProductVariant>(`/products/${productId}/variants`, input);
-  }
+  },
+
+  getTags: async (): Promise<Tag[]> => {
+    return apiClient.get<Tag[]>('/products/tags');
+  },
+
+  createTag: async (name: string): Promise<Tag> => {
+    return apiClient.post<Tag>('/products/tags', { name });
+  },
+
+  updateVariantTags: async (variantId: string, tagIds: string[]): Promise<void> => {
+    return apiClient.put(`/products/variants/${variantId}/tags`, { tagIds });
+  },
 };
 

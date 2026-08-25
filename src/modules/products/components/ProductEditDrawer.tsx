@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 
 import { useCategories } from '../hooks/useCategories';
 import { useUpdateProduct, useDeleteProduct } from '../hooks/useProducts';
+import { useTags } from '../hooks/useTags';
 import { productFormSchema, type ProductFormValues } from '../schemas/product.schema';
 import { ProductForm } from './forms/ProductForm';
 import { ImageUploadModal } from './forms/ImageUploadModal';
@@ -55,6 +56,7 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
   const { createCategory, isCreating: isCreatingCategory } = useCategories();
   const { updateProduct, isUpdating } = useUpdateProduct();
   const { deleteProduct, isDeleting } = useDeleteProduct();
+  const { tags: allTags, createTag, isCreating: isCreatingTag, updateVariantTags } = useTags();
 
   // ── Form instance ────────────────────────────────────────────────────────
   const form = useForm<ProductFormValues>({
@@ -70,12 +72,22 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
     },
   });
 
+  // ── Image selection / Tag selection state (must be before useEffect) ─────
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+
+  const handleToggleTag = (tagId: string) =>
+    setSelectedTagIds((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    );
+
   // ── Populate form when product prop changes ──────────────────────────────
   useEffect(() => {
     if (!product) return;
     const sv = product.variants?.[0] ?? {};
     const stockQty =
-      sv.stocks?.find((s: any) => s.branchId === selectedBranchId)?.quantity ?? 0;
+      sv.stocks?.find((s: { branchId: string; quantity: number }) => s.branchId === selectedBranchId)?.quantity ?? 0;
 
     form.reset({
       name: product.name ?? '',
@@ -88,12 +100,9 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
       initialStock: stockQty,
     });
 
-    setSelectedImages(product.images?.map((img: any) => img.id) ?? []);
+    setSelectedImages(product.images?.map((img: { id: string }) => img.id) ?? []);
+    setSelectedTagIds(sv.tags?.map((t: { id: string }) => t.id) ?? []);
   }, [product, selectedBranchId, form]);
-
-  // ── Image selection ──────────────────────────────────────────────────────
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   const handleToggleImage = (id: string) =>
     setSelectedImages((prev) =>
@@ -149,6 +158,10 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
           ],
         },
       });
+      // Sync tags on variant
+      if (sv.id) {
+        await updateVariantTags({ variantId: sv.id, tagIds: selectedTagIds });
+      }
       toast.success('¡Producto actualizado con éxito!');
       onClose();
     } catch (err) {
@@ -218,6 +231,11 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
             onCreateCategory={handleCreateCategory}
             isCreatingCategory={isCreatingCategory}
             isEdit={true}
+            allTags={allTags}
+            selectedTagIds={selectedTagIds}
+            onToggleTag={handleToggleTag}
+            onCreateTag={createTag}
+            isCreatingTag={isCreatingTag}
           />
         </div>
 
