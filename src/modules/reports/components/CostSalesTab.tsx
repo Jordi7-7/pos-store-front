@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { 
-  Printer,
+  FileSpreadsheet,
+  FileText,
   Loader2,
   CalendarIcon
 } from 'lucide-react';
@@ -236,6 +237,50 @@ export const CostSalesTab: React.FC = () => {
     }, 200);
   };
 
+  const handleExportExcel = () => {
+    if (salesCostData.length === 0) {
+      toast.warning('No hay datos para exportar');
+      return;
+    }
+
+    const headers = ['Factura', 'Fecha', 'Cliente', 'Pzas', 'Precio de venta', 'Precio de costo', 'Diferencia'];
+    const rows = salesCostData.map((row) => [
+      row.invoiceNumber,
+      formatReportDate(row.createdAt),
+      row.clientName,
+      Math.floor(row.pieces),
+      Number(row.salePrice).toFixed(2),
+      Number(row.costPrice).toFixed(2),
+      Number(row.difference).toFixed(2)
+    ]);
+
+    rows.push([
+      'Gran total...',
+      '',
+      '',
+      Math.floor(totals.pieces),
+      Number(totals.sales).toFixed(2),
+      Number(totals.cost).toFixed(2),
+      Number(totals.difference).toFixed(2)
+    ]);
+
+    const csvContent = [
+      headers.join(';'),
+      ...rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(';'))
+    ].join('\n');
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `cogs_report_${format(dateRange?.from || new Date(), 'yyyyMMdd')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-4 animate-fadeIn">
       {/* Filter Panel Bar */}
@@ -293,12 +338,22 @@ export const CostSalesTab: React.FC = () => {
               Consultar
             </Button>
             <button
+              type="button"
               onClick={handlePrintCostReport}
               disabled={salesCostData.length === 0}
-              className="flex items-center gap-1.5 bg-bg-dark border border-border-card hover:bg-muted text-secondary disabled:opacity-40 text-xs font-bold py-2 px-3 rounded-xl transition-all cursor-pointer shadow-sm"
+              title="Exportar a PDF / Imprimir"
+              className="flex items-center justify-center bg-bg-dark border border-border-card hover:bg-muted text-secondary disabled:opacity-40 w-9 h-9 rounded-xl transition-all cursor-pointer shadow-sm"
             >
-              <Printer className="w-4 h-4 text-primary" />
-              <span>Imprimir</span>
+              <FileText className="w-4 h-4 text-rose-500" />
+            </button>
+            <button
+              type="button"
+              onClick={handleExportExcel}
+              disabled={salesCostData.length === 0}
+              title="Exportar a Excel"
+              className="flex items-center justify-center bg-bg-dark border border-border-card hover:bg-muted text-secondary disabled:opacity-40 w-9 h-9 rounded-xl transition-all cursor-pointer shadow-sm"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
             </button>
           </div>
         </div>
