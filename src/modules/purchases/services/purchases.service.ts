@@ -28,6 +28,34 @@ export interface RegisterPurchaseInput {
   }[];
 }
 
+export interface PurchaseItem {
+  id: string;
+  quantity: number;
+  purchasePrice: number;
+  unitCost?: number;
+  variant: {
+    id: string;
+    sku: string;
+    product: {
+      name: string;
+    };
+  };
+}
+
+export interface Purchase {
+  id: string;
+  invoiceNumber?: string;
+  createdAt: string;
+  status: string;
+  totalAmount: number;
+  supplier?: Supplier | null;
+  branch?: {
+    id: string;
+    name: string;
+  } | null;
+  items: PurchaseItem[];
+}
+
 export const purchasesService = {
   getSuppliers: async (): Promise<Supplier[]> => {
     return apiClient.get<Supplier[]>('/purchases/suppliers');
@@ -37,11 +65,11 @@ export const purchasesService = {
     return apiClient.post<Supplier>('/purchases/suppliers', input);
   },
 
-  registerPurchase: async (input: RegisterPurchaseInput): Promise<any> => {
-    return apiClient.post<any>('/purchases', input);
+  registerPurchase: async (input: RegisterPurchaseInput): Promise<Purchase> => {
+    return apiClient.post<Purchase>('/purchases', input);
   },
 
-  getPurchases: async (): Promise<any[]> => {
-    return apiClient.get<any[]>('/purchases');
+  getPurchases: async (): Promise<Purchase[]> => {
+    return apiClient.get<Purchase[]>('/purchases');
   }
 };

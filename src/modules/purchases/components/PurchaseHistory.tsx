@@ -2,6 +2,7 @@ import React from 'react';
 import { usePurchases } from '../hooks/usePurchases';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { ClipboardList, Calendar, User, MapPin, Loader2 } from 'lucide-react';
+import type { Purchase, PurchaseItem } from '../services/purchases.service';
 
 export const PurchaseHistory: React.FC = () => {
   const { purchases, isLoading } = usePurchases();
@@ -28,11 +29,11 @@ export const PurchaseHistory: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {purchases.map((pur: any) => (
+          {purchases.map((pur: Purchase) => (
             <div key={pur.id} className="bg-bg-dark/40 border border-border-card rounded-2xl p-4.5 text-secondary space-y-3 shadow-sm hover:border-primary/30 transition-all">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-card/60 pb-2.5">
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-xs font-mono font-bold text-primary">{pur.invoiceNumber}</span>
+                  <span className="text-xs font-mono font-bold text-primary">{pur.invoiceNumber || 'S/Ref'}</span>
                   <span className="text-[10px] text-neutral flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5" />
                     {new Date(pur.createdAt).toLocaleString(undefined, { timeZone: timezone })}
@@ -68,7 +69,7 @@ export const PurchaseHistory: React.FC = () => {
               <div className="border-t border-border-card/40 pt-2.5">
                 <span className="text-[9.5px] font-bold text-neutral uppercase tracking-wider block mb-1.5">Desglose de Artículos</span>
                 <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                  {(pur.items || []).map((item: any) => (
+                  {(pur.items || []).map((item: PurchaseItem) => (
                     <div key={item.id} className="flex justify-between items-center text-[11px] bg-bg-card border border-border-card/60 p-2 rounded-xl">
                       <div>
                         <span className="font-bold">{item.variant?.product?.name || 'Producto'}</span>
@@ -76,7 +77,7 @@ export const PurchaseHistory: React.FC = () => {
                       </div>
                       <div className="text-right">
                         <span className="font-bold block">x{item.quantity}</span>
-                        <span className="text-[9.5px] text-neutral font-mono block">Costo U: ${Number(item.unitCost || 0).toFixed(2)}</span>
+                        <span className="text-[9.5px] text-neutral font-mono block">Costo U: ${Number(item.purchasePrice || item.unitCost || 0).toFixed(2)}</span>
                       </div>
                     </div>
                   ))}
