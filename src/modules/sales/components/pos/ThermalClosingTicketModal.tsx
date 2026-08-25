@@ -141,15 +141,15 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
           <style>
             @page {
               margin: 0;
-              size: 58mm auto;
+              size: 80mm auto;
             }
             body {
               margin: 0;
               padding: 4mm;
-              width: 50mm;
+              width: 72mm;
               font-family: 'Courier New', Courier, monospace;
-              font-size: 9px;
-              line-height: 1.35;
+              font-size: 10.5px;
+              line-height: 1.4;
               color: #000;
               background-color: #fff;
             }
