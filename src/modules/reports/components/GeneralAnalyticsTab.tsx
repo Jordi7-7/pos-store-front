@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { apiClient } from '@/lib/apiClient';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -7,45 +6,20 @@ import {
   ShoppingBag, 
   CreditCard, 
   Loader2, 
-  ArrowUpRight
+  ArrowUpRight 
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { toast } from 'sonner';
+import { useReportsSummary } from '../hooks/useReports';
 
-interface SummaryData {
-  totalSales: number;
-  totalCOGS: number;
-  grossProfit: number;
-  totalPurchases: number;
-  totalExpenses: number;
-  netProfit: number;
-}
-
-interface BreakdownDay {
-  date: string;
-  sales: number;
-  purchases: number;
-  expenses: number;
-  profit: number;
-}
-
-interface ReportsResponse {
-  summary: SummaryData;
-  breakdown: BreakdownDay[];
-}
-
-export const ReportsView: React.FC = () => {
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<ReportsResponse | null>(null);
+export const GeneralAnalyticsTab: React.FC = () => {
+  const { loading, data, fetchSummary } = useReportsSummary();
   
-  // Date states
   const [rangeType, setRangeType] = useState<'month' | 'last-month' | 'last-3' | 'custom'>('month');
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
 
-  // Helper to format Date to YYYY-MM-DD
   const formatISODate = (d: Date) => {
     return d.toISOString().split('T')[0];
   };
@@ -63,7 +37,6 @@ export const ReportsView: React.FC = () => {
     } else if (rangeType === 'last-3') {
       start = new Date(today.getFullYear(), today.getMonth() - 2, 1);
     } else {
-      // custom
       start = customStart ? new Date(customStart) : new Date(today.getFullYear(), today.getMonth(), 1);
       end = customEnd ? new Date(customEnd) : today;
     }
@@ -74,20 +47,9 @@ export const ReportsView: React.FC = () => {
     };
   };
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const { startDate, endDate } = getDatesForRange();
-      const res = await apiClient.request<ReportsResponse>(
-        `/reports/summary?startDate=${startDate}&endDate=${endDate}`
-      );
-      setData(res);
-    } catch (error) {
-      console.error('Error loading reports:', error);
-      toast.error('Error al cargar reporte de estadísticas');
-    } finally {
-      setLoading(false);
-    }
+  const loadData = () => {
+    const { startDate, endDate } = getDatesForRange();
+    fetchSummary(startDate, endDate);
   };
 
   useEffect(() => {
@@ -104,15 +66,13 @@ export const ReportsView: React.FC = () => {
   const summary = data?.summary;
   const breakdown = data?.breakdown || [];
 
-  // SVG Chart Calculations
   const maxVal = Math.max(...breakdown.map(b => Math.max(b.sales, b.purchases, b.expenses))) || 10;
   const chartHeight = 150;
   const chartWidth = 500;
   const padding = 20;
 
   return (
-    <div className="space-y-6">
-      
+    <div className="space-y-6 animate-fadeIn">
       {/* Header Panel */}
       <div className="p-6 rounded-2xl bg-gradient-to-r from-primary/5 to-bg-card border border-primary/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm">
         <div>
@@ -167,8 +127,6 @@ export const ReportsView: React.FC = () => {
         <>
           {/* KPI Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            
-            {/* Ventas Totales */}
             <Card className="border border-border-card bg-bg-card rounded-2xl shadow-sm">
               <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
                 <div className="flex items-center justify-between">
@@ -184,7 +142,6 @@ export const ReportsView: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Costo Mercancía */}
             <Card className="border border-border-card bg-bg-card rounded-2xl shadow-sm">
               <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
                 <div className="flex items-center justify-between">
@@ -200,7 +157,6 @@ export const ReportsView: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Ganancia Bruta */}
             <Card className="border border-border-card bg-bg-card rounded-2xl shadow-sm">
               <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
                 <div className="flex items-center justify-between">
@@ -216,7 +172,6 @@ export const ReportsView: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Egresos/Gastos */}
             <Card className="border border-border-card bg-bg-card rounded-2xl shadow-sm">
               <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
                 <div className="flex items-center justify-between">
@@ -232,7 +187,6 @@ export const ReportsView: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Ganancia Neta */}
             <Card className="border border-border-card bg-bg-card rounded-2xl shadow-sm">
               <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
                 <div className="flex items-center justify-between">
@@ -247,18 +201,14 @@ export const ReportsView: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-
           </div>
 
           {/* SVG Trend Chart & Table */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* SVG Chart Card */}
             <Card className="lg:col-span-2 border border-border-card bg-bg-card rounded-2xl shadow-sm p-6">
               <h3 className="text-sm font-bold text-secondary mb-4 flex items-center gap-1.5">
                 <TrendingUp className="w-4 h-4 text-primary" /> Tendencia de Ventas vs Compras
               </h3>
-              
               {breakdown.length === 0 ? (
                 <div className="h-40 flex items-center justify-center text-xs text-neutral">
                   No hay suficientes datos diarios para graficar en este rango.
@@ -270,17 +220,13 @@ export const ReportsView: React.FC = () => {
                     className="w-full h-auto overflow-visible"
                     style={{ maxHeight: '200px' }}
                   >
-                    {/* Grid lines */}
                     <line x1={padding} y1={padding} x2={chartWidth - padding} y2={padding} stroke="var(--border-card)" strokeDasharray="3,3" />
                     <line x1={padding} y1={chartHeight / 2} x2={chartWidth - padding} y2={chartHeight / 2} stroke="var(--border-card)" strokeDasharray="3,3" />
                     <line x1={padding} y1={chartHeight - padding} x2={chartWidth - padding} y2={chartHeight - padding} stroke="var(--border-card)" />
 
-                    {/* Rendering SVG Points */}
                     {(() => {
                       const numPoints = breakdown.length;
                       const step = (chartWidth - padding * 2) / (numPoints - 1 || 1);
-
-                      // Helper to generate path coordinates
                       const getPath = (key: 'sales' | 'purchases') => {
                         return breakdown.map((day, idx) => {
                           const x = padding + idx * step;
@@ -295,28 +241,12 @@ export const ReportsView: React.FC = () => {
 
                       return (
                         <>
-                          {/* Purchases Line */}
                           {purchasesPath && (
-                            <path 
-                              d={purchasesPath} 
-                              fill="none" 
-                              stroke="var(--color-primary)" 
-                              strokeWidth="2" 
-                              opacity="0.4"
-                            />
+                            <path d={purchasesPath} fill="none" stroke="var(--color-primary)" strokeWidth="2" opacity="0.4" />
                           )}
-                          
-                          {/* Sales Line */}
                           {salesPath && (
-                            <path 
-                              d={salesPath} 
-                              fill="none" 
-                              stroke="var(--color-emerald-500, #10b981)" 
-                              strokeWidth="2.5" 
-                            />
+                            <path d={salesPath} fill="none" stroke="var(--color-emerald-500, #10b981)" strokeWidth="2.5" />
                           )}
-
-                          {/* Data points */}
                           {breakdown.map((day, idx) => {
                             const x = padding + idx * step;
                             const salesY = chartHeight - padding - (day.sales / maxVal) * (chartHeight - padding * 2);
@@ -333,17 +263,14 @@ export const ReportsView: React.FC = () => {
                   </svg>
                 </div>
               )}
-              
               <div className="flex justify-center items-center gap-6 mt-4 text-[10px] font-bold text-neutral">
                 <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-emerald-500 rounded-full inline-block" /> Ventas</span>
                 <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-primary/40 rounded-full inline-block" /> Compras (Inversión)</span>
               </div>
             </Card>
 
-            {/* Daily breakdown Table */}
             <Card className="border border-border-card bg-bg-card rounded-2xl shadow-sm p-6 flex flex-col max-h-[300px]">
               <h3 className="text-sm font-bold text-secondary mb-3">Detalle Diario</h3>
-              
               <div className="overflow-y-auto flex-1 no-scrollbar pr-1">
                 <table className="w-full text-[11px] text-left">
                   <thead>
@@ -373,13 +300,9 @@ export const ReportsView: React.FC = () => {
                 </table>
               </div>
             </Card>
-
           </div>
         </>
       )}
-
     </div>
   );
 };
-
-export default ReportsView;
