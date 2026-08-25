@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useProducts } from '../../products/hooks/useProducts';
 import { useBranches } from '../../branches/hooks/useBranches';
 import { 
@@ -44,6 +44,7 @@ import { AperturaModal } from './pos/AperturaModal';
 import { EgresoModal } from './pos/EgresoModal';
 import { CierreModal } from './pos/CierreModal';
 import { HistorialModal } from './pos/HistorialModal';
+import { usePOSHotkeys } from '../hooks/usePOSHotkeys';
 
 
 interface POSViewProps {
@@ -82,6 +83,7 @@ export const POSView: React.FC<POSViewProps> = ({
 
   // Search input selection
   const [searchTerm, setSearchTerm] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const { products, refetch: refetchProducts } = useProducts({ 
     page: 1, 
@@ -209,6 +211,19 @@ export const POSView: React.FC<POSViewProps> = ({
       }
     }
   }, [customers, selectedCustomerId]);
+
+  // Global hotkeys hook integration
+  usePOSHotkeys({
+    onSearchFocus: () => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+        searchInputRef.current.select();
+      }
+    },
+    onCompletePayment: () => {
+      handleCompletePayment();
+    },
+  });
 
   const activeSessionSales = useMemo(() => {
     if (!activeSession || !sales) return [];
@@ -656,6 +671,7 @@ export const POSView: React.FC<POSViewProps> = ({
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-3 w-4 h-4 text-neutral" />
               <input 
+                ref={searchInputRef}
                 type="text" 
                 placeholder="Escanea código de barras o busca por SKU/Nombre y presiona Enter..." 
                 value={searchTerm}
@@ -1048,7 +1064,13 @@ export const POSView: React.FC<POSViewProps> = ({
               </div>
 
               {/* Payment Input custom amount */}
-              <div className="bg-bg-dark/30 border border-border-card/50 rounded-2xl p-3 space-y-3">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleAddPayment();
+                }}
+                className="bg-bg-dark/30 border border-border-card/50 rounded-2xl p-3 space-y-3"
+              >
                 {/* Cash suggestions for quick click */}
                 {quickAmounts.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
@@ -1075,14 +1097,13 @@ export const POSView: React.FC<POSViewProps> = ({
                     className="flex-1 bg-bg-dark border border-border-card rounded-xl py-1.5 px-3 text-xs text-secondary font-mono focus:outline-none focus:border-primary placeholder-neutral"
                   />
                   <button
-                    type="button"
-                    onClick={() => handleAddPayment()}
+                    type="submit"
                     className="px-4 py-1.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold shadow transition-all cursor-pointer"
                   >
                     Agregar
                   </button>
                 </div>
-              </div>
+              </form>
 
               {/* Added Payments List */}
               {addedPayments.length > 0 && (
