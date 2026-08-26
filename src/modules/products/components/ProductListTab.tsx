@@ -138,8 +138,8 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
                   <TableHead className="w-[80px]"></TableHead>
-                  <TableHead className="font-semibold text-xs">Producto</TableHead>
                   <TableHead className="font-semibold text-xs">SKU Propio</TableHead>
+                  <TableHead className="font-semibold text-xs">Producto</TableHead>
                   <TableHead className="font-semibold text-xs">Cód. Barras</TableHead>
                   <TableHead className="font-semibold text-xs text-right">Compra</TableHead>
                   <TableHead className="font-semibold text-xs text-right">Venta</TableHead>
@@ -176,6 +176,11 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                         </div>
                       </TableCell>
 
+                      {/* SKU */}
+                      <TableCell className="py-2.5 font-mono text-[11px] text-primary font-bold">
+                        {sku}
+
+                      </TableCell>
                       {/* Product details */}
                       <TableCell className="py-2.5">
                         <div className="font-semibold text-xs text-foreground leading-tight truncate max-w-[200px]" title={product.name}>
@@ -186,11 +191,6 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                             {product.description}
                           </div>
                         )}
-                      </TableCell>
-
-                      {/* SKU */}
-                      <TableCell className="py-2.5 font-mono text-[11px] text-primary font-bold">
-                        {sku}
                       </TableCell>
 
                       {/* Barcode */}
