@@ -41,7 +41,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<any | null>(null);
   const [type, setType] = useState<'IN' | 'OUT'>('OUT');
-  const [reason, setReason] = useState<'ROBBERY' | 'DAMAGE' | 'EXPIRED' | 'ADJUSTMENT' | 'INTERNAL_USE'>('DAMAGE');
   const [quantity, setQuantity] = useState('1');
   const [comment, setComment] = useState('');
 
@@ -99,7 +98,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
       variantId: string;
       quantity: number;
       type: 'IN' | 'OUT';
-      reason: string;
       comment?: string;
     }) => {
       return apiClient.post('/products/stock-adjustments', data);
@@ -148,7 +146,6 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
       variantId: selectedVariant.id,
       quantity: qty,
       type,
-      reason,
       comment: comment.trim() || undefined,
     });
   };
@@ -239,44 +236,17 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            {/* Tipo */}
-            <div>
-              <label className="block text-[10px] uppercase tracking-wider font-bold mb-1">Tipo de Ajuste</label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value as any)}
-                className="w-full bg-muted/40 border border-border rounded-xl py-2 px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                <option value="OUT">Salida (Egreso/Merma)</option>
-                <option value="IN">Entrada (Ingreso manual)</option>
-              </select>
-            </div>
-
-            {/* Motivo */}
-            <div>
-              <label className="block text-[10px] uppercase tracking-wider font-bold mb-1">Motivo / Razón</label>
-              <select
-                value={reason}
-                onChange={(e) => setReason(e.target.value as any)}
-                className="w-full bg-muted/40 border border-border rounded-xl py-2 px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                {type === 'OUT' ? (
-                  <>
-                    <option value="DAMAGE">Daño / Defecto</option>
-                    <option value="ROBBERY">Robo / Pérdida</option>
-                    <option value="EXPIRED">Expirado / Caducado</option>
-                    <option value="INTERNAL_USE">Consumo Interno</option>
-                    <option value="ADJUSTMENT">Ajuste Físico</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="ADJUSTMENT">Ajuste Físico</option>
-                    <option value="INTERNAL_USE">Reingreso Manual</option>
-                  </>
-                )}
-              </select>
-            </div>
+          {/* Tipo de Ajuste */}
+          <div>
+            <label className="block text-[10px] uppercase tracking-wider font-bold mb-1">Tipo de Ajuste</label>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as any)}
+              className="w-full bg-muted/40 border border-border rounded-xl py-2 px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="OUT">Salida (Egreso/Merma)</option>
+              <option value="IN">Entrada (Ingreso manual)</option>
+            </select>
           </div>
 
           {/* Cantidad */}

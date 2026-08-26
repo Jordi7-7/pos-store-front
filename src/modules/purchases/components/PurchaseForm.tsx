@@ -203,6 +203,15 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
     }
   };
 
+  const preventEnterSubmit = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if (e.key === 'Enter') {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT') {
+        e.preventDefault();
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const branch = purBranch || (branches[0] && branches[0].id);
@@ -261,7 +270,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
         <p className="text-[10px] text-muted-foreground mt-0.5">Ingresa mercancía al inventario indicando el SKU del producto. El sistema te mostrará sugerencias a medida que escribes.</p>
       </div>
       
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} onKeyDown={preventEnterSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-[10px] uppercase tracking-wider font-bold mb-1">Sucursal Destino *</label>

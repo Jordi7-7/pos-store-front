@@ -71,3 +71,25 @@ export const usePurchases = () => {
     refetchPurchases: purchasesQuery.refetch,
   };
 };
+
+export const useCancelPurchase = () => {
+  const queryClient = useQueryClient();
+  const { tenantId } = useAuthStore();
+
+  const cancelMutation = useMutation({
+    mutationFn: (purchaseOrderId: string) =>
+      purchasesService.cancelPurchase(purchaseOrderId),
+    onSuccess: () => {
+      // Invalidate purchases list so isCancellable and status refresh
+      queryClient.invalidateQueries({ queryKey: ['purchases', tenantId] });
+      // Also invalidate products since stock was reversed
+      queryClient.invalidateQueries({ queryKey: ['products', tenantId] });
+    },
+  });
+
+  return {
+    cancelPurchase: cancelMutation.mutateAsync,
+    isCancelling: cancelMutation.isPending,
+    cancellingId: cancelMutation.variables,
+  };
+};

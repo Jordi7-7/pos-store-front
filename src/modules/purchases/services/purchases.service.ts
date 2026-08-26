@@ -48,6 +48,8 @@ export interface Purchase {
   createdAt: string;
   status: string;
   totalAmount: number;
+  /** True only if the order is COMPLETED and no units have been sold yet */
+  isCancellable: boolean;
   supplier?: Supplier | null;
   branch?: {
     id: string;
@@ -71,5 +73,9 @@ export const purchasesService = {
 
   getPurchases: async (): Promise<Purchase[]> => {
     return apiClient.get<Purchase[]>('/purchases');
-  }
+  },
+
+  cancelPurchase: async (id: string): Promise<void> => {
+    return apiClient.patch<void>(`/purchases/${id}/cancel`, {});
+  },
 };
