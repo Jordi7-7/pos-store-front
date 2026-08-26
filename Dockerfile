@@ -4,9 +4,7 @@ ENV CI=true
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
-# Si manejas variables de entorno para Vite (VITE_API_URL, etc.), decláralas como ARG
-ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_API_URL=/api
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml* ./
 RUN pnpm install --frozen-lockfile --config.strict-dep-builds=false --config.confirmModulesPurge=false
