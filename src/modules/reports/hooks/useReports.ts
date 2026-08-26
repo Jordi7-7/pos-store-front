@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { reportsService } from '../services/reports.service';
-import type { ReportsResponse, SalesCostReportRow } from '../types/reports.types';
+import type { ReportsResponse, SalesCostReportRow, ValuedInventoryRow } from '../types/reports.types';
 import { toast } from 'sonner';
 
 export const useReportsSummary = () => {
@@ -52,5 +52,31 @@ export const useSalesCostReport = () => {
     loading,
     data,
     fetchSalesCost
+  };
+};
+
+export const useValuedInventoryReport = () => {
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<ValuedInventoryRow[]>([]);
+
+  const fetchValuedInventory = async () => {
+    try {
+      setLoading(true);
+      const res = await reportsService.getValuedInventory();
+      setData(res);
+      return res;
+    } catch (error) {
+      console.error('Error fetching valued inventory report:', error);
+      toast.error('Error al generar el reporte de existencias valuadas');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    loading,
+    data,
+    fetchValuedInventory
   };
 };

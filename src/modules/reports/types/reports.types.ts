@@ -31,3 +31,11 @@ export interface SalesCostReportRow {
   difference: number;
   status: string;
 }
+
+export interface ValuedInventoryRow {
+  sku: string;
+  name: string;
+  quantity: number;
+  purchasePrice: number;
+  totalValue: number;
+}

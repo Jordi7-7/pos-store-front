@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/apiClient';
-import type { ReportsResponse, SalesCostReportRow } from '../types/reports.types';
+import type { ReportsResponse, SalesCostReportRow, ValuedInventoryRow } from '../types/reports.types';
 
 export const reportsService = {
   getSummary: async (startDate: string, endDate: string): Promise<ReportsResponse> => {
@@ -7,5 +7,8 @@ export const reportsService = {
   },
   getSalesCost: async (startDate: string, endDate: string): Promise<SalesCostReportRow[]> => {
     return apiClient.get<SalesCostReportRow[]>(`/reports/sales-cost?startDate=${startDate}&endDate=${endDate}`);
+  },
+  getValuedInventory: async (): Promise<ValuedInventoryRow[]> => {
+    return apiClient.get<ValuedInventoryRow[]>('/reports/valued-inventory');
   }
 };

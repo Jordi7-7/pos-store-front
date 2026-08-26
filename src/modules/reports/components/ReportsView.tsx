@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Layers, FileText } from 'lucide-react';
+import { Layers, FileText, Boxes } from 'lucide-react';
 import { GeneralAnalyticsTab } from './GeneralAnalyticsTab';
 import { CostSalesTab } from './CostSalesTab';
+import { ValuedInventoryTab } from './ValuedInventoryTab';
 
 export const ReportsView: React.FC = () => {
-  const [activeSubTab, setActiveSubTab] = useState<'general' | 'cost-sales'>('general');
+  const [activeSubTab, setActiveSubTab] = useState<'general' | 'cost-sales' | 'valued-inventory'>('general');
 
   return (
     <div className="space-y-6">
@@ -33,6 +34,17 @@ export const ReportsView: React.FC = () => {
           <FileText className="w-4 h-4" />
           <span>Costo de Ventas</span>
         </button>
+        <button
+          onClick={() => setActiveSubTab('valued-inventory')}
+          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-150 cursor-pointer ${
+            activeSubTab === 'valued-inventory'
+              ? 'bg-primary text-white shadow-md shadow-primary/10'
+              : 'text-neutral hover:text-secondary hover:bg-bg-card'
+          }`}
+        >
+          <Boxes className="w-4 h-4" />
+          <span>Existencias Valuadas</span>
+        </button>
       </div>
 
       {/* Dynamic Sub Tab Contents */}
@@ -42,6 +54,10 @@ export const ReportsView: React.FC = () => {
 
       {activeSubTab === 'cost-sales' && (
         <CostSalesTab />
+      )}
+
+      {activeSubTab === 'valued-inventory' && (
+        <ValuedInventoryTab />
       )}
 
     </div>
