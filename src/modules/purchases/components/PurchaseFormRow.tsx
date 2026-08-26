@@ -43,6 +43,9 @@ export const PurchaseFormRow: React.FC<PurchaseFormRowProps> = ({
   onProductSelect,
   onKeyDown,
 }) => {
+  const [isQtyFocused, setIsQtyFocused] = React.useState(false);
+  const [isCostFocused, setIsCostFocused] = React.useState(false);
+
   return (
     <TableRow className="hover:bg-muted/10 transition-colors">
       <TableCell className="p-2">
@@ -86,8 +89,18 @@ export const PurchaseFormRow: React.FC<PurchaseFormRowProps> = ({
       <TableCell className="p-2">
         <input
           type="number"
-          value={item.quantity}
-          onChange={(e) => onUpdateRow(index, { quantity: parseInt(e.target.value) || 0 })}
+          value={item.quantity === 0 && isQtyFocused ? '' : item.quantity}
+          onChange={(e) => {
+            const val = e.target.value;
+            onUpdateRow(index, { quantity: val === '' ? 0 : parseInt(val) || 0 });
+          }}
+          onFocus={() => setIsQtyFocused(true)}
+          onBlur={() => {
+            setIsQtyFocused(false);
+            if (item.quantity <= 0) {
+              onUpdateRow(index, { quantity: 1 });
+            }
+          }}
           onKeyDown={(e) => onKeyDown(e, index, 'quantity')}
           data-row={index}
           data-col="quantity"
@@ -99,8 +112,18 @@ export const PurchaseFormRow: React.FC<PurchaseFormRowProps> = ({
         <input
           type="number"
           step="0.01"
-          value={item.unitCost}
-          onChange={(e) => onUpdateRow(index, { unitCost: parseFloat(e.target.value) || 0 })}
+          value={item.unitCost === 0 && isCostFocused ? '' : item.unitCost}
+          onChange={(e) => {
+            const val = e.target.value;
+            onUpdateRow(index, { unitCost: val === '' ? 0 : parseFloat(val) || 0 });
+          }}
+          onFocus={() => setIsCostFocused(true)}
+          onBlur={() => {
+            setIsCostFocused(false);
+            if (item.unitCost < 0) {
+              onUpdateRow(index, { unitCost: 0 });
+            }
+          }}
           onKeyDown={(e) => onKeyDown(e, index, 'unitCost')}
           data-row={index}
           data-col="unitCost"

@@ -5,7 +5,8 @@ import { ProductListTab } from './ProductListTab';
 import { ProductCreateTab } from './ProductCreateTab';
 import { KardexTab } from './KardexTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Layers, ClipboardList } from 'lucide-react';
+import { Eye, Layers, ClipboardList, FileSpreadsheet } from 'lucide-react';
+import { BulkImportModal } from './BulkImportModal';
 
 interface ProductsViewProps {
   selectedBranchId: string;
@@ -20,6 +21,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
   const [limit] = useState(10);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('list');
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   const { products, meta, isLoading: isLoadingProducts } = useProducts({ page, limit, search });
   const { categories } = useCategories();
@@ -36,6 +38,14 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           <h3 className="text-sm font-bold text-secondary">Catálogo General de Productos</h3>
           <p className="text-xs text-neutral mt-0.5">Gestiona tus artículos, precios y stock por sucursales.</p>
         </div>
+        <button
+          type="button"
+          onClick={() => setIsImportOpen(true)}
+          className="flex items-center gap-1.5 text-xs text-primary font-bold border border-primary/20 hover:border-primary/40 bg-primary/5 hover:bg-primary/10 px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-sm self-start sm:self-center"
+        >
+          <FileSpreadsheet className="w-4 h-4" />
+          Importar Excel
+        </button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -86,6 +96,11 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           />
         </TabsContent>
       </Tabs>
+
+      <BulkImportModal 
+        isOpen={isImportOpen} 
+        onClose={() => setIsImportOpen(false)} 
+      />
     </div>
   );
 };

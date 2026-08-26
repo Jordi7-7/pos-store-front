@@ -4,8 +4,9 @@ import { useBranches } from '../../branches/hooks/useBranches';
 import { useProducts } from '../../products/hooks/useProducts';
 import type { Product } from '../../products/services/products.service';
 import type { Branch } from '../../branches/services/branches.service';
-import { ClipboardList, Loader2, Plus } from 'lucide-react';
+import { ClipboardList, Loader2, Plus, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
+import { BulkPurchaseModal } from './BulkPurchaseModal';
 import {
   Table,
   TableHeader,
@@ -39,6 +40,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
   // Local Purchase Order general inputs
   const [purBranch, setPurBranch] = useState(selectedBranchId || '');
   const [purInvoice, setPurInvoice] = useState('');
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
 
   // Purchase items table state, initialized with one empty row
   const [purchaseItems, setPurchaseItems] = useState<PurchaseItemInput[]>([
@@ -108,10 +110,38 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
         qtyInput?.select();
       }, 50);
     } else {
-      // Fallback/typing state
-      updateRow(index, {
-        variantSku: trimmed,
-      });
+      // Smart fallback: search for partial matches (SKU or product name containing query)
+      const partialMatches: { product: Product; variant: any }[] = [];
+      for (const p of products) {
+        const matchingVariants = p.variants?.filter(
+          v => v.sku.toLowerCase().includes(trimmed.toLowerCase()) || p.name.toLowerCase().includes(trimmed.toLowerCase())
+        ) || [];
+        for (const v of matchingVariants) {
+          partialMatches.push({ product: p, variant: v });
+        }
+      }
+
+      if (partialMatches.length === 1) {
+        const autoProduct = partialMatches[0].product;
+        const autoVariant = partialMatches[0].variant;
+        updateRow(index, {
+          variantId: autoVariant.id,
+          variantSku: autoVariant.sku,
+          productName: autoProduct.name,
+          combinationText: 'Estándar',
+          unitCost: Number(autoVariant.purchasePrice || 0),
+        });
+        setTimeout(() => {
+          const qtyInput = document.querySelector(`[data-row="${index}"][data-col="quantity"]`) as HTMLInputElement | null;
+          qtyInput?.focus();
+          qtyInput?.select();
+        }, 50);
+      } else {
+        // Fallback/typing state
+        updateRow(index, {
+          variantSku: trimmed,
+        });
+      }
     }
   };
 
@@ -152,7 +182,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
     rowIndex: number, 
     field: 'sku' | 'quantity' | 'unitCost'
   ) => {
-    if (field === 'sku') {
+    if (field === 'sku' && e.key !== 'Enter') {
       const isComboboxOpen = e.currentTarget.getAttribute('aria-expanded') === 'true';
       if (isComboboxOpen) {
         // Let the combobox library handle list navigation and selection natively
@@ -183,7 +213,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (field === 'sku') {
-        handleRowProductSelect(rowIndex, purchaseItems[rowIndex].variantSku);
+        handleRowProductSelect(rowIndex, e.currentTarget.value);
       } else if (field === 'quantity') {
         const costInput = document.querySelector(`[data-row="${rowIndex}"][data-col="unitCost"]`) as HTMLInputElement | null;
         costInput?.focus();
@@ -262,12 +292,22 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
 
   return (
     <div className="bg-card border border-border rounded-2xl p-6 space-y-5 shadow-sm animate-fade-in text-secondary">
-      <div className="border-b border-border pb-3">
-        <h4 className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
-          <ClipboardList className="w-4 h-4 text-primary" />
-          <span>Registrar Ingreso de Mercancía</span>
-        </h4>
-        <p className="text-[10px] text-muted-foreground mt-0.5">Ingresa mercancía al inventario indicando el SKU del producto. El sistema te mostrará sugerencias a medida que escribes.</p>
+      <div className="border-b border-border pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h4 className="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5">
+            <ClipboardList className="w-4 h-4 text-primary" />
+            <span>Registrar Ingreso de Mercancía</span>
+          </h4>
+          <p className="text-[10px] text-muted-foreground mt-0.5">Ingresa mercancía al inventario indicando el SKU del producto. El sistema te mostrará sugerencias a medida que escribes.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsBulkOpen(true)}
+          className="flex items-center gap-1.5 text-xs text-primary font-bold border border-primary/20 hover:border-primary/40 bg-primary/5 hover:bg-primary/10 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer shadow-sm self-start sm:self-center"
+        >
+          <FileSpreadsheet className="w-4 h-4" />
+          Carga Masiva (Excel)
+        </button>
       </div>
       
       <form onSubmit={handleSubmit} onKeyDown={preventEnterSubmit} className="space-y-5">
@@ -355,6 +395,10 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
           <span>Registrar Ingreso (Kardex)</span>
         </button>
       </form>
+      <BulkPurchaseModal
+        isOpen={isBulkOpen}
+        onClose={() => setIsBulkOpen(false)}
+      />
     </div>
   );
 };
