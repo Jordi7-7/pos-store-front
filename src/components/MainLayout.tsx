@@ -20,6 +20,7 @@ import { UsersView } from '../modules/users/components/UsersView';
 import { TenantSettings } from '../modules/dashboard/components/TenantSettings';
 import { ReportsView } from '../modules/reports/components/ReportsView';
 import { CustomersView } from '../modules/customers/components/CustomersView';
+import { CashSessionsHistoryView } from '../modules/cash-sessions/components/CashSessionsHistoryView';
 
 import { Building } from 'lucide-react';
 
@@ -120,6 +121,7 @@ export const MainLayout: React.FC = () => {
     { id: 'users', label: 'Personal / Usuarios' },
     { id: 'reports', label: 'Reportes y Utilidades' },
     { id: 'customers', label: 'Directorio de Clientes' },
+    { id: 'cash-sessions', label: 'Historial de Cajas' },
     { id: 'tenant-settings', label: 'Configuración' },
   ];
 
@@ -224,6 +226,10 @@ export const MainLayout: React.FC = () => {
 
               {activeTab === 'customers' && (
                 <CustomersView />
+              )}
+
+              {activeTab === 'cash-sessions' && (
+                <CashSessionsHistoryView />
               )}
 
               {activeTab === 'tenant-settings' && (
