@@ -19,6 +19,7 @@ import { MediaView } from '../modules/media/components/MediaView';
 import { UsersView } from '../modules/users/components/UsersView';
 import { TenantSettings } from '../modules/dashboard/components/TenantSettings';
 import { ReportsView } from '../modules/reports/components/ReportsView';
+import { CustomersView } from '../modules/customers/components/CustomersView';
 
 import { Building } from 'lucide-react';
 
@@ -117,6 +118,8 @@ export const MainLayout: React.FC = () => {
     { id: 'purchases', label: 'Compras y Proveedores' },
     { id: 'media', label: 'Multimedia / Galería' },
     { id: 'users', label: 'Personal / Usuarios' },
+    { id: 'reports', label: 'Reportes y Utilidades' },
+    { id: 'customers', label: 'Directorio de Clientes' },
     { id: 'tenant-settings', label: 'Configuración' },
   ];
 
@@ -217,6 +220,10 @@ export const MainLayout: React.FC = () => {
 
               {activeTab === 'reports' && (
                 <ReportsView />
+              )}
+
+              {activeTab === 'customers' && (
+                <CustomersView />
               )}
 
               {activeTab === 'tenant-settings' && (
