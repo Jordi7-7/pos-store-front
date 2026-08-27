@@ -286,7 +286,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
 
           <div class="border-dashed"></div>
 
-          {/* Reembolsos */}
+          {/* Devoluciones */}
           <div class="section-title">Desglose de Devoluciones</div>
           <div style="font-size: 8.5px;">
             ${refundsHtml}

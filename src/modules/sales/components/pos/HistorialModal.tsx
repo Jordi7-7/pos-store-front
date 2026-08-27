@@ -201,7 +201,7 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
                   onClick={() => setHistoryTab('refunds')}
                   className={TAB_STYLES(historyTab === 'refunds', 'bg-rose-500/20 text-rose-500 border-rose-500/30')}
                 >
-                  Reembolsos ({refunds.length})
+                  Devoluciones ({refunds.length})
                 </button>
               </div>
             </DialogHeader>
@@ -294,7 +294,7 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
               {/* ── REFUNDS TAB ── */}
               {historyTab === 'refunds' && (
                 refunds.length === 0 ? (
-                  <div className="py-12 text-center text-xs text-neutral">No se han procesado reembolsos en esta sesión.</div>
+                  <div className="py-12 text-center text-xs text-neutral">No se han procesado devoluciones en esta sesión.</div>
                 ) : (
                   refunds.map((refund: any) => {
                     return (

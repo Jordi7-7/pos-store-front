@@ -220,7 +220,7 @@ export const CashSessionsHistoryView: React.FC = () => {
                   <span className="text-sm font-bold text-rose-500 font-mono whitespace-nowrap mt-1">${financialSummary.totalExpenses.toFixed(2)}</span>
                 </div>
                 <div className="flex-1 min-w-[140px] p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl flex flex-col justify-between min-h-[64px]">
-                  <span className="text-[10px] text-amber-500 font-bold uppercase tracking-wider block">Reembolsos (-)</span>
+                  <span className="text-[10px] text-amber-500 font-bold uppercase tracking-wider block">Devoluciones (-)</span>
                   <span className="text-sm font-bold text-amber-500 font-mono whitespace-nowrap mt-1">${financialSummary.totalRefunds.toFixed(2)}</span>
                 </div>
                 <div className="flex-grow flex-shrink basis-[200px] min-w-[160px] p-3 bg-primary/5 border border-primary/10 rounded-xl flex flex-col justify-between min-h-[64px]">
