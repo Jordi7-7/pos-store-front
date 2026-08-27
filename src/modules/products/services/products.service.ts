@@ -116,5 +116,9 @@ export const productsService = {
   updateVariantTags: async (variantId: string, tagIds: string[]): Promise<void> => {
     return apiClient.put(`/products/variants/${variantId}/tags`, { tagIds });
   },
+
+  getVariantBySku: async (sku: string): Promise<{ id: string; sku: string; purchasePrice: number; productName: string }> => {
+    return apiClient.get(`/products/variant/sku/${sku}`);
+  },
 };
 

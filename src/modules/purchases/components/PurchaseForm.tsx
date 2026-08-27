@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRegisterPurchase } from '../hooks/usePurchases';
 import { useBranches } from '../../branches/hooks/useBranches';
-import { useProducts } from '../../products/hooks/useProducts';
-import type { Product } from '../../products/services/products.service';
+import { productsService } from '../../products/services/products.service';
 import type { Branch } from '../../branches/services/branches.service';
 import { ClipboardList, Loader2, Plus, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
@@ -34,7 +33,6 @@ interface PurchaseFormProps {
 
 export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, onSuccess }) => {
   const { branches } = useBranches();
-  const { products = [] } = useProducts({ page: 1, limit: 100 });
   const { registerPurchase, isRegistering } = useRegisterPurchase();
 
   // Local Purchase Order general inputs
@@ -67,7 +65,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
     setPurchaseItems(updated);
   };
 
-  const handleRowProductSelect = (index: number, skuVal: string | null) => {
+  const handleRowProductSelect = async (index: number, skuVal: string | null) => {
     if (!skuVal) {
       updateRow(index, {
         variantId: '',
@@ -80,68 +78,60 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
     }
 
     const trimmed = skuVal.trim();
-    // Search for the variant with this SKU or matching product name
-    let foundProduct: Product | undefined;
-    let foundVariant: any | undefined;
+    if (!trimmed) return;
 
-    for (const p of products) {
-      const variant = p.variants?.find(
-        v => v.sku.toLowerCase() === trimmed.toLowerCase() || p.name.toLowerCase() === trimmed.toLowerCase()
-      );
-      if (variant) {
-        foundProduct = p;
-        foundVariant = variant;
-        break;
-      }
-    }
+    try {
+      const variant = await productsService.getVariantBySku(trimmed);
+      if (variant && variant.id) {
+        const nextIndex = index + 1;
 
-    if (foundProduct && foundVariant) {
-      updateRow(index, {
-        variantId: foundVariant.id,
-        variantSku: foundVariant.sku,
-        productName: foundProduct.name,
-        combinationText: 'Estándar',
-        unitCost: Number(foundVariant.purchasePrice || 0),
-      });
-      // Move focus to quantity
-      setTimeout(() => {
-        const qtyInput = document.querySelector(`[data-row="${index}"][data-col="quantity"]`) as HTMLInputElement | null;
-        qtyInput?.focus();
-        qtyInput?.select();
-      }, 50);
-    } else {
-      // Smart fallback: search for partial matches (SKU or product name containing query)
-      const partialMatches: { product: Product; variant: any }[] = [];
-      for (const p of products) {
-        const matchingVariants = p.variants?.filter(
-          v => v.sku.toLowerCase().includes(trimmed.toLowerCase()) || p.name.toLowerCase().includes(trimmed.toLowerCase())
-        ) || [];
-        for (const v of matchingVariants) {
-          partialMatches.push({ product: p, variant: v });
-        }
-      }
+        setPurchaseItems((prevItems) => {
+          const updated = [...prevItems];
+          updated[index] = {
+            ...updated[index],
+            variantId: variant.id,
+            variantSku: variant.sku,
+            productName: variant.productName,
+            combinationText: 'Estándar',
+            unitCost: Number(variant.purchasePrice || 0),
+          };
 
-      if (partialMatches.length === 1) {
-        const autoProduct = partialMatches[0].product;
-        const autoVariant = partialMatches[0].variant;
-        updateRow(index, {
-          variantId: autoVariant.id,
-          variantSku: autoVariant.sku,
-          productName: autoProduct.name,
-          combinationText: 'Estándar',
-          unitCost: Number(autoVariant.purchasePrice || 0),
+          // If this is the last row, automatically append a new empty row
+          if (index === updated.length - 1) {
+            updated.push({
+              variantId: '',
+              variantSku: '',
+              productName: '',
+              combinationText: '',
+              quantity: 1,
+              unitCost: 0,
+            });
+          }
+          return updated;
         });
+
+        // Set focus to the SKU input of the next row after state updates
         setTimeout(() => {
-          const qtyInput = document.querySelector(`[data-row="${index}"][data-col="quantity"]`) as HTMLInputElement | null;
-          qtyInput?.focus();
-          qtyInput?.select();
-        }, 50);
+          const nextInput = document.querySelector(`[data-row="${nextIndex}"][data-col="sku"]`) as HTMLInputElement | null;
+          if (nextInput) {
+            nextInput.focus();
+            nextInput.select();
+          }
+        }, 80);
+
       } else {
-        // Fallback/typing state
-        updateRow(index, {
-          variantSku: trimmed,
-        });
+        throw new Error('Producto no encontrado');
       }
+    } catch (err: any) {
+      toast.error(`Error: El SKU "${trimmed}" no se encuentra en el catálogo.`);
+      // Focus back and select text on the same SKU input
+      setTimeout(() => {
+        const currentInput = document.querySelector(`[data-row="${index}"][data-col="sku"]`) as HTMLInputElement | null;
+        if (currentInput) {
+          currentInput.focus();
+          currentInput.select();
+        }
+      }, 50);
     }
   };
 
@@ -180,16 +170,8 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>, 
     rowIndex: number, 
-    field: 'sku' | 'quantity' | 'unitCost'
+    field: 'sku' | 'quantity'
   ) => {
-    if (field === 'sku' && e.key !== 'Enter') {
-      const isComboboxOpen = e.currentTarget.getAttribute('aria-expanded') === 'true';
-      if (isComboboxOpen) {
-        // Let the combobox library handle list navigation and selection natively
-        return;
-      }
-    }
-
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       const nextInput = document.querySelector(`[data-row="${rowIndex + 1}"][data-col="${field}"]`) as HTMLInputElement | null;
@@ -215,10 +197,6 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
       if (field === 'sku') {
         handleRowProductSelect(rowIndex, e.currentTarget.value);
       } else if (field === 'quantity') {
-        const costInput = document.querySelector(`[data-row="${rowIndex}"][data-col="unitCost"]`) as HTMLInputElement | null;
-        costInput?.focus();
-        costInput?.select();
-      } else if (field === 'unitCost') {
         if (rowIndex === purchaseItems.length - 1) {
           handleAddRow();
           setTimeout(() => {
@@ -356,7 +334,6 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
                   key={index}
                   index={index}
                   item={item}
-                  products={products}
                   onUpdateRow={updateRow}
                   onRemoveRow={handleRemoveRow}
                   onProductSelect={handleRowProductSelect}
