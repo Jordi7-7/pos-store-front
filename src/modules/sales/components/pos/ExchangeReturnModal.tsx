@@ -21,7 +21,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useProcessRefund, useProcessSale, useSaleByInvoice } from '../../hooks/useSales';
-import { useAuthStore } from '@/modules/auth';
 import { productsService } from '@/modules/products/services/products.service';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -90,11 +89,9 @@ function StepIndicator({ current, steps }: { current: number; steps: string[] })
 export function ExchangeReturnModal({
   isOpen,
   onClose,
-  activeSession,
   branchId,
   cashSessionId,
 }: ExchangeReturnModalProps) {
-  const { tenantId } = useAuthStore();
   const { fetchSale } = useSaleByInvoice();
   const { processRefund, isProcessing: isRefunding } = useProcessRefund();
   const { processSale, isProcessing: isSelling } = useProcessSale();

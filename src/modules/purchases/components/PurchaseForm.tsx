@@ -170,7 +170,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ selectedBranchId, on
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>, 
     rowIndex: number, 
-    field: 'sku' | 'quantity'
+    field: 'sku' | 'quantity' | 'unitCost'
   ) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
