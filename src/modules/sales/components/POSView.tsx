@@ -13,7 +13,7 @@ import { PaymentMethod } from '../services/sales.service';
 import { apiClient } from '@/lib/apiClient';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { 
-  Search, Wallet, ArrowRightLeft, Receipt, X, 
+  Search, Wallet, ArrowRightLeft, ArrowLeftRight, Receipt, X, 
   ShoppingCart, Trash2, Minus, Plus, CreditCard, Loader2, Package, 
   Percent, DollarSign, Check, Banknote 
 } from 'lucide-react';
@@ -40,6 +40,7 @@ import { AperturaModal } from './pos/AperturaModal';
 import { EgresoModal } from './pos/EgresoModal';
 import { CierreModal } from './pos/CierreModal';
 import { HistorialModal } from './pos/HistorialModal';
+import { ExchangeReturnModal } from './pos/ExchangeReturnModal';
 import { usePOSHotkeys } from '../hooks/usePOSHotkeys';
 
 
@@ -99,6 +100,7 @@ export const POSView: React.FC<POSViewProps> = ({
   const [isEgresoModalOpen, setIsEgresoModalOpen] = useState(false);
   const [isCierreModalOpen, setIsCierreModalOpen] = useState(false);
   const [isHistorialModalOpen, setIsHistorialModalOpen] = useState(false);
+  const [isExchangeReturnModalOpen, setIsExchangeReturnModalOpen] = useState(false);
 
   // Cart States
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -739,6 +741,14 @@ export const POSView: React.FC<POSViewProps> = ({
               </button>
 
               <button
+                onClick={() => setIsExchangeReturnModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-dark border border-border-card rounded-xl text-xs font-semibold text-secondary hover:border-indigo-500/30 hover:text-indigo-400 transition-all cursor-pointer shadow-sm"
+              >
+                <ArrowLeftRight className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Cambios</span>
+              </button>
+
+              <button
                 onClick={() => setIsCierreModalOpen(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-xs font-semibold text-rose-500 hover:bg-rose-500/20 transition-all cursor-pointer shadow-sm"
               >
@@ -1273,6 +1283,16 @@ export const POSView: React.FC<POSViewProps> = ({
         tenantRuc={currentTenant?.ruc || ''}
         tenantName={currentTenant?.name || ''}
       />
+
+      {isExchangeReturnModalOpen && (
+        <ExchangeReturnModal
+          isOpen={isExchangeReturnModalOpen}
+          onClose={() => setIsExchangeReturnModalOpen(false)}
+          activeSession={activeSession}
+          branchId={selectedBranchId}
+          cashSessionId={activeSession?.id || ''}
+        />
+      )}
 
     </div>
   );

@@ -151,3 +151,10 @@ export const useRefunds = (params?: { cashSessionId?: string; saleId?: string })
     refetchRefunds: refundsQuery.refetch,
   };
 };
+
+export const useSaleByInvoice = () => {
+  const fetchSale = async (invoiceNumber: string) => {
+    return salesService.getSaleByInvoice(invoiceNumber);
+  };
+  return { fetchSale };
+};

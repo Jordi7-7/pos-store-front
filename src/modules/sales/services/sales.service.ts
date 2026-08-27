@@ -127,4 +127,8 @@ export const salesService = {
     if (queryParams.length > 0) url += `?${queryParams.join('&')}`;
     return apiClient.get<any[]>(url);
   },
+
+  getSaleByInvoice: async (invoiceNumber: string): Promise<any> => {
+    return apiClient.get<any>(`/sales/invoice/${encodeURIComponent(invoiceNumber)}`);
+  },
 };
