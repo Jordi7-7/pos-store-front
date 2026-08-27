@@ -175,7 +175,7 @@ export const GeneralAnalyticsTab: React.FC = () => {
             <Card className="border border-border-card bg-bg-card rounded-2xl shadow-sm">
               <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-neutral uppercase tracking-widest font-semibold">Egresos / Gastos</span>
+                  <span className="text-[10px] text-neutral uppercase tracking-widest font-semibold">Gastos</span>
                   <div className="p-2 bg-amber-500/10 rounded-lg"><TrendingDown className="w-4 h-4 text-amber-500" /></div>
                 </div>
                 <div>

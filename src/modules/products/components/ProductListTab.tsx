@@ -138,7 +138,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
                   <TableHead className="w-[80px]"></TableHead>
-                  <TableHead className="font-semibold text-xs">SKU Propio</TableHead>
+                  <TableHead className="font-semibold text-xs">SKU</TableHead>
                   <TableHead className="font-semibold text-xs">Producto</TableHead>
                   <TableHead className="font-semibold text-xs">Cód. Barras</TableHead>
                   <TableHead className="font-semibold text-xs text-right">Compra</TableHead>

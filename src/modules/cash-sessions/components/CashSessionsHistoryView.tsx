@@ -328,7 +328,7 @@ export const CashSessionsHistoryView: React.FC = () => {
 
                 {detailTab === 'expenses' && (
                   details.expenses.length === 0 ? (
-                    <div className="text-center py-10 text-neutral text-xs italic">No se registraron egresos en esta sesión.</div>
+                    <div className="text-center py-10 text-neutral text-xs italic">No se registraron gastos en esta sesión.</div>
                   ) : (
                     <Table>
                       <TableHeader>

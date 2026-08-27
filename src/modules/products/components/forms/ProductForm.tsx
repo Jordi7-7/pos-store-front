@@ -253,7 +253,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor={`${formId}-sku`} className="text-[11px] font-bold uppercase tracking-wider">
-                  Código SKU Propio <span className="text-destructive">*</span>
+                  Código SKU <span className="text-destructive">*</span>
                 </FieldLabel>
                 <div className="relative">
                   <TagIcon className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground" />

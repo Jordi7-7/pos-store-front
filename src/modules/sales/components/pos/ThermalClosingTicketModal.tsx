@@ -113,7 +113,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
             </div>
           `;
         }).join('')
-      : '<div style="font-style: italic;">Sin egresos registrados</div>';
+      : '<div style="font-style: italic;">Sin gastos registrados</div>';
 
     // Build Refunds HTML
     const refundsHtml = sessionData.refundsList.length > 0
@@ -224,7 +224,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
               <span>$${Number(sessionData.salesTotal).toFixed(2)}</span>
             </div>
             <div class="flex justify-between">
-              <span>(-) EGRESOS/GASTOS:</span>
+              <span>(-) GASTOS:</span>
               <span>$${Number(sessionData.expensesTotal).toFixed(2)}</span>
             </div>
             
@@ -278,8 +278,9 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
 
           <div class="border-dashed"></div>
 
-          {/* Egresos */}
-          <div class="section-title">Desglose de Egresos</div>
+
+          {/* Gastos */}
+          <div class="section-title">Desglose de Gastos</div>
           <div style="font-size: 8.5px;">
             ${expensesHtml}
           </div>
@@ -351,7 +352,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
               <span className="text-black font-semibold">${Number(sessionData.salesTotal).toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
-              <span>(-) Egresos:</span>
+              <span>(-) Gastos:</span>
               <span className="text-black font-semibold">${Number(sessionData.expensesTotal).toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-black font-bold border-t border-dashed border-gray-200 pt-1.5 mt-1.5">
@@ -414,10 +415,11 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
             </div>
           </div>
 
-          {/* Egresos */}
+
+          {/* Gastos */}
           {sessionData.expensesList.length > 0 && (
             <div className="border-t border-dashed border-gray-200 pt-3">
-              <span className="text-[10px] text-gray-500 font-bold block mb-1 uppercase">Egresos:</span>
+              <span className="text-[10px] text-gray-500 font-bold block mb-1 uppercase">Gastos:</span>
               <div className="space-y-1 text-gray-700">
                 {sessionData.expensesList.map((exp, i) => (
                   <div key={i} className="flex justify-between gap-2">

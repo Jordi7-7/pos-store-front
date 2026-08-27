@@ -66,7 +66,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         <div className="p-5 bg-bg-card border border-border-card rounded-2xl shadow-sm flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-[10px] text-neutral uppercase tracking-widest font-semibold">Egresos / Caja Chica</span>
+            <span className="text-[10px] text-neutral uppercase tracking-widest font-semibold">Gastos / Caja Chica</span>
             <h3 className="text-2xl font-black text-secondary">
               ${localExpenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}
             </h3>

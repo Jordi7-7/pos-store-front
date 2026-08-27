@@ -100,7 +100,7 @@ export const CierreModal: React.FC<CierreModalProps> = ({
               </div>
               <div className="flex justify-between items-center text-muted-foreground">
                 <span className="flex items-center gap-1 text-rose-500">
-                  <ArrowDownLeft className="w-3.5 h-3.5" /> (-) Egresos / Gastos:
+                  <ArrowDownLeft className="w-3.5 h-3.5" /> (-) Gastos:
                 </span>
                 <span className="font-mono font-semibold text-rose-500 font-bold">${expensesTotal.toFixed(2)}</span>
               </div>
@@ -172,9 +172,9 @@ export const CierreModal: React.FC<CierreModalProps> = ({
 
               {/* List of Expenses */}
               <div className="border-t border-border/60 pt-2">
-                <span className="text-[9.5px] font-bold text-secondary uppercase tracking-wider block mb-1">Egresos / Gastos de Caja ({activeSessionExpenses.length})</span>
+                <span className="text-[9.5px] font-bold text-secondary uppercase tracking-wider block mb-1">Gastos de Caja ({activeSessionExpenses.length})</span>
                 {activeSessionExpenses.length === 0 ? (
-                  <span className="text-[10px] text-muted-foreground italic block">Sin egresos en este turno</span>
+                  <span className="text-[10px] text-muted-foreground italic block">Sin gastos en este turno</span>
                 ) : (
                   <div className="space-y-1.5 max-h-20 overflow-y-auto pr-1">
                     {activeSessionExpenses.map((exp) => {
