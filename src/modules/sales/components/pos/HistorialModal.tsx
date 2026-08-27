@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { useProcessRefund, useRefunds } from '../../hooks/useSales';
+import { useProcessRefund } from '../../hooks/useSales';
 import { useAuthStore } from '@/modules/auth';
 
 interface HistorialModalProps {
@@ -16,6 +16,7 @@ interface HistorialModalProps {
   onClose: () => void;
   activeSessionSales: any[];
   activeSessionExpenses: any[];
+  activeSessionRefunds: any[];
   activeSession: any | null;
   branchId: string;
   onPrintSale?: (sale: any) => void;
@@ -53,6 +54,7 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
   onClose,
   activeSessionSales,
   activeSessionExpenses,
+  activeSessionRefunds,
   activeSession,
   branchId,
   onPrintSale,
@@ -74,13 +76,10 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
   });
 
   const { processRefund, isProcessing } = useProcessRefund();
-  const { refunds, refetchRefunds } = useRefunds(
-    activeSession ? { cashSessionId: activeSession.id } : undefined
-  );
 
   const totalSalesSum = activeSessionSales.reduce((sum, sale) => sum + Number(sale.total || sale.totalAmount || 0), 0);
   const totalExpensesSum = activeSessionExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
-  const totalRefundsSum = (refunds || []).reduce((sum, ref) => sum + Number(ref.totalRefunded || 0), 0);
+  const totalRefundsSum = activeSessionRefunds.reduce((sum, ref) => sum + Number(ref.totalRefunded || ref.total || 0), 0);
 
   const cashSalesSum = activeSessionSales.reduce((sum, sale) => {
     const isCash = (sale.payments || []).some(
@@ -142,7 +141,6 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
         items: itemsToRefund,
       });
       toast.success(`Devolución procesada. Total reembolsado: $${calcRefundTotal().toFixed(2)}`);
-      refetchRefunds();
       closeRefundView();
     } catch (err: any) {
       toast.error(err?.message || 'Error al procesar la devolución.');
@@ -201,7 +199,7 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
                   onClick={() => setHistoryTab('refunds')}
                   className={TAB_STYLES(historyTab === 'refunds', 'bg-rose-500/20 text-rose-500 border-rose-500/30')}
                 >
-                  Devoluciones ({refunds.length})
+                  Devoluciones ({activeSessionRefunds.length})
                 </button>
               </div>
             </DialogHeader>
@@ -293,10 +291,10 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
 
               {/* ── REFUNDS TAB ── */}
               {historyTab === 'refunds' && (
-                refunds.length === 0 ? (
+                activeSessionRefunds.length === 0 ? (
                   <div className="py-12 text-center text-xs text-neutral">No se han procesado devoluciones en esta sesión.</div>
                 ) : (
-                  refunds.map((refund: any) => {
+                  activeSessionRefunds.map((refund: any) => {
                     return (
                       <div key={refund.id} className="bg-bg-dark/40 border border-rose-500/20 p-3 rounded-xl animate-fade-in space-y-2">
                         {/* Header */}

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useProducts } from '../../products/hooks/useProducts';
+import { productsService } from '../../products/services/products.service';
 import { useBranches } from '../../branches/hooks/useBranches';
 import { 
   useOpenCashSession, 
@@ -9,21 +9,16 @@ import {
 } from '../hooks/useSales';
 import { useCustomers } from '../hooks/useCustomers';
 import { useCashSessionDetailsQuery } from '../../cash-sessions/hooks/useCashSessions';
-import { PaymentMethod, salesService } from '../services/sales.service';
+import { PaymentMethod } from '../services/sales.service';
 import { apiClient } from '@/lib/apiClient';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { 
-  Search, MoreVertical, Wallet, ArrowRightLeft, Receipt, X, ShoppingBag, 
+  Search, Wallet, ArrowRightLeft, Receipt, X, 
   ShoppingCart, Trash2, Minus, Plus, CreditCard, Loader2, Package, 
   Percent, DollarSign, Check, Banknote 
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { DateTime } from 'luxon';
 import {
@@ -86,11 +81,6 @@ export const POSView: React.FC<POSViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const { products, refetch: refetchProducts } = useProducts({ 
-    page: 1, 
-    limit: 1000, 
-    search: '' 
-  });
 
   const { openSession, isOpening } = useOpenCashSession();
   const { closeSession, isClosing } = useCloseCashSession();
@@ -109,7 +99,6 @@ export const POSView: React.FC<POSViewProps> = ({
   const [isEgresoModalOpen, setIsEgresoModalOpen] = useState(false);
   const [isCierreModalOpen, setIsCierreModalOpen] = useState(false);
   const [isHistorialModalOpen, setIsHistorialModalOpen] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Cart States
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -526,33 +515,34 @@ export const POSView: React.FC<POSViewProps> = ({
     toast.info('Item removido del carrito.');
   };
 
-  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleSearchKeyPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       const code = searchTerm.trim();
       if (!code) return;
 
-      let foundVariant: any = null;
-      let foundProduct: any = null;
-
-      for (const p of products) {
-        const match = p.variants?.find((v: any) => v.sku === code || v.barcode === code);
-        if (match) {
-          foundVariant = match;
-          foundProduct = p;
-          break;
-        }
-      }
-
-      if (foundVariant && foundProduct) {
+      try {
         const branch = selectedBranchId || (branches[0] && branches[0].id);
-        const stockQty = foundVariant.stocks?.find((s: any) => s.branchId === branch)?.quantity || 0;
-        if (stockQty <= 0) {
-          toast.warning(`Aviso: El stock del producto "${foundProduct.name}" quedará en negativo (Stock disponible: ${stockQty} pzs.)`);
+        const res = await productsService.getPosVariantBySku(code, branch);
+        if (res) {
+          const fakeProduct = {
+            id: res.id,
+            name: res.productName,
+          };
+          const fakeVariant = {
+            id: res.id,
+            sku: res.sku,
+            salePrice: Number(res.salePrice || 0),
+            attributeValues: res.attributeValues || [],
+          };
+          const stockQty = Number(res.stock || 0);
+          if (stockQty <= 0) {
+            toast.warning(`Aviso: El stock del producto "${res.productName}" quedará en negativo (Stock disponible: ${stockQty} pzs.)`);
+          }
+          addVariantToCart(fakeProduct, fakeVariant, stockQty);
+          setSearchTerm('');
         }
-        addVariantToCart(foundProduct, foundVariant, stockQty);
-        setSearchTerm('');
-      } else {
+      } catch (err) {
         toast.error(`No se encontró ningún producto con el código: "${code}"`);
       }
     }
@@ -695,7 +685,6 @@ export const POSView: React.FC<POSViewProps> = ({
       setAddedPayments([]);
       setSelectedCustomerId('');
       setGlobalDiscountRate(0);
-      refetchProducts(); // refrescar stock
 
       setIsTicketModalOpen(true);
       toast.success('¡Venta procesada con éxito y cargada en Kardex!');
@@ -1249,15 +1238,18 @@ export const POSView: React.FC<POSViewProps> = ({
         activeSessionExpenses={activeSessionExpenses}
       />
 
-      <HistorialModal 
-        isOpen={isHistorialModalOpen}
-        onClose={() => setIsHistorialModalOpen(false)}
-        activeSessionSales={activeSessionSales}
-        activeSessionExpenses={activeSessionExpenses}
-        activeSession={activeSession}
-        branchId={selectedBranchId}
-        onPrintSale={handlePrintSale}
-      />
+      {isHistorialModalOpen && (
+        <HistorialModal 
+          isOpen={isHistorialModalOpen}
+          onClose={() => setIsHistorialModalOpen(false)}
+          activeSessionSales={activeSessionSales}
+          activeSessionExpenses={activeSessionExpenses}
+          activeSessionRefunds={sessionDetails?.refunds || []}
+          activeSession={activeSession}
+          branchId={selectedBranchId}
+          onPrintSale={handlePrintSale}
+        />
+      )}
 
       <ThermalTicketModal 
         isOpen={isReprintModalOpen}
