@@ -32,6 +32,26 @@ export interface ProcessSaleInput {
   payments: SalePayment[];
 }
 
+export interface Sale {
+  id: string;
+  tenantId: string;
+  branchId: string;
+  cashSessionId: string;
+  customerId: string | null;
+  subtotal: number;
+  total: number;
+  discountType: string | null;
+  discountRate: number | null;
+  discountAmount: number;
+  status: string;
+  userId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  invoiceNumber: string;
+  items?: any[];
+  payments?: any[];
+}
+
 export interface OpenCashSessionInput {
   branchId: string;
   openingBalance: number;
@@ -59,12 +79,12 @@ export interface ProcessRefundInput {
 }
 
 export const salesService = {
-  getSales: async (): Promise<any[]> => {
-    return apiClient.get<any[]>('/sales');
+  getSales: async (): Promise<Sale[]> => {
+    return apiClient.get<Sale[]>('/sales');
   },
 
-  processSale: async (input: ProcessSaleInput): Promise<any> => {
-    return apiClient.post<any>('/sales', input);
+  processSale: async (input: ProcessSaleInput): Promise<Sale> => {
+    return apiClient.post<Sale>('/sales', input);
   },
 
   openCashSession: async (input: OpenCashSessionInput): Promise<any> => {

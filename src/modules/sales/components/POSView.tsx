@@ -98,8 +98,8 @@ export const POSView: React.FC<POSViewProps> = ({
   const { processSale, isProcessing } = useProcessSale();
 
   // Session Balance & Expense Form fields
-  const [openingBalance, setOpeningBalance] = useState('150.00');
-  const [closingBalance, setClosingBalance] = useState('200.00');
+  const [openingBalance, setOpeningBalance] = useState('1000.00');
+  const [closingBalance, setClosingBalance] = useState('0.00');
   const [expenseDesc, setExpenseDesc] = useState('');
   const [expenseAmount, setExpenseAmount] = useState('');
   const expenseCategory = 'Servicios';
@@ -147,7 +147,7 @@ export const POSView: React.FC<POSViewProps> = ({
     const branchAddress = sale.branch?.address || '';
     const clientName = sale.customer?.name || 'Consumidor Final';
     const clientIdentity = sale.customer?.identityNumber || '9999999999';
-    const invoiceNumber = sale.invoiceNumber || `FAC-${sale.id.replace(/-/g, '').slice(0, 8).toUpperCase()}`;
+    const invoiceNumber = sale.invoiceNumber;
 
     setReprintSaleData({
       invoiceNumber,
@@ -668,7 +668,7 @@ export const POSView: React.FC<POSViewProps> = ({
       const clientIdentity = customers.find((c: any) => c.id === selectedCustomerId)?.identityNumber || '9999999999';
 
       const saleDataForTicket = {
-        invoiceNumber: res.invoiceNumber || `FAC-${res.id ? res.id.replace(/-/g, '').slice(0, 8).toUpperCase() : Math.floor(1000 + Math.random() * 9000)}`,
+        invoiceNumber: res.invoiceNumber,
         createdAt: res.createdAt || new Date().toISOString(),
         branchName,
         branchAddress: branches.find((b: any) => b.id === branch)?.address || '',

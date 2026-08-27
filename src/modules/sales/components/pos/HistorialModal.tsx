@@ -208,7 +208,7 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-[10px] font-bold font-mono">
-                            {sale.invoiceNumber || `FAC-${sale.id.replace(/-/g, '').slice(0, 8).toUpperCase()}`}
+                            {sale.invoiceNumber}
                           </span>
                           <SaleStatusBadge status={sale.status} />
                         </div>
