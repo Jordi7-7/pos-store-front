@@ -698,7 +698,7 @@ export const POSView: React.FC<POSViewProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex h-full min-h-0 flex-col gap-6 lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
       
       {/* Premium POS Next Header Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-bg-card border border-border-card rounded-2xl p-4 shadow-sm">
@@ -769,10 +769,10 @@ export const POSView: React.FC<POSViewProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 relative items-start">
+      <div className="grid min-h-0 grid-cols-1 lg:flex-1 lg:grid-cols-5 gap-6 relative items-stretch">
         
         {/* LEFT COLUMN: Barcode scan input & cart products list (3/5 width) */}
-        <div className="lg:col-span-3 space-y-4 bg-bg-card border border-border-card rounded-2xl p-5 shadow-sm min-h-[500px]">
+        <div className="lg:col-span-3 min-h-0 space-y-4 bg-bg-card border border-border-card rounded-2xl p-5 shadow-sm flex flex-col">
           
           {/* Barcode Search Header with Shift menu */}
           <div className="flex gap-3 items-center justify-between border-b border-border-card pb-4">
@@ -815,7 +815,7 @@ export const POSView: React.FC<POSViewProps> = ({
               <span className="text-[10px] text-neutral">No hay artículos cargados. Escanea un código de barras o escribe su SKU/Nombre arriba.</span>
             </div>
           ) : (
-            <div className="space-y-3 max-h-[550px] overflow-y-auto pr-1">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
               {cart.map((item) => {
                 const currentItemDiscountType = item.discountType || 'PERCENTAGE';
                 const currentItemDiscountRate = item.discountRate || 0;
@@ -847,6 +847,7 @@ export const POSView: React.FC<POSViewProps> = ({
                       {/* Info & Quantity controls */}
                       <div className="flex-1 min-w-0">
                         <h5 className="text-[11px] font-extrabold text-secondary truncate pr-6 leading-tight">{item.productName}</h5>
+                        <span className="text-[9px] text-neutral font-mono block mt-0.5 truncate">{item.variantSku || 'S/SKU'}</span>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-[10px] text-neutral font-bold">${item.price.toFixed(2)}</span>
                           {item.maxStock <= 0 ? (
@@ -939,95 +940,97 @@ export const POSView: React.FC<POSViewProps> = ({
         </div>
 
         {/* RIGHT COLUMN: Payments details, client selector, total breakdown (2/5 width) */}
-        <div className="lg:col-span-2 space-y-4 bg-bg-card border border-border-card rounded-2xl p-5 shadow-sm">
+        <div className="lg:col-span-2 min-h-0 flex flex-col overflow-hidden bg-bg-card border border-border-card rounded-2xl p-5 shadow-sm">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto -mr-5 pr-5">
           
           <h3 className="text-xs font-bold text-secondary uppercase tracking-wider border-b border-border-card pb-3">
             Detalles de Pago y Cierre
           </h3>
 
-          {/* Customer selector (Shadcn Combobox with integrated search) */}
-          <div className="space-y-1.5">
-            <span className="text-[10px] font-bold text-neutral uppercase tracking-wider block">Cliente Facturación</span>
-            <Combobox 
-              items={customers}
-              value={customers.find(c => c.id === selectedCustomerId) || null} 
-              onValueChange={(val: any) => setSelectedCustomerId(val?.id || '')}
-            >
-              <ComboboxTrigger 
-                render={
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-between font-normal bg-bg-dark border-border-card text-xs text-secondary rounded-xl py-2 px-3 h-12 hover:bg-bg-dark/80 hover:text-secondary flex items-center"
-                  >
-                    {(() => {
-                      const activeCust = customers.find(c => c.id === selectedCustomerId);
-                      return activeCust ? (
-                        <div className="flex flex-col items-start leading-tight">
-                          <span className="font-extrabold text-[11px] text-secondary">{activeCust.name}</span>
-                          <span className="text-[9px] text-neutral font-mono mt-0.5">{activeCust.identityNumber}</span>
-                        </div>
-                      ) : (
-                        <span className="text-neutral text-[11px]">Seleccionar cliente...</span>
-                      );
-                    })()}
-                  </Button>
-                }
-              />
-              <ComboboxContent className="bg-bg-card border border-border-card rounded-xl shadow-2xl z-30 w-72 max-h-60 overflow-y-auto">
-                <ComboboxInput 
-                  showTrigger={false} 
-                  placeholder="Buscar por nombre o cédula..." 
-                  className="w-full border-b border-border-card bg-transparent px-3 py-2 text-xs text-secondary focus:outline-none placeholder-neutral"
-                />
-                <ComboboxEmpty className="p-3 text-center text-xs text-neutral">
-                  No se encontraron clientes
-                </ComboboxEmpty>
-                <ComboboxList>
-                  {(c: any) => (
-                    <ComboboxItem 
-                      key={c.id} 
-                      value={c}
-                      className="px-3 py-2 hover:bg-bg-dark text-xs text-secondary rounded-lg transition-colors cursor-pointer flex flex-col items-start gap-0.5"
+          <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(145px,0.42fr)] gap-3 items-end">
+            {/* Customer selector (Shadcn Combobox with integrated search) */}
+            <div className="space-y-1.5 min-w-0">
+              <span className="text-[10px] font-bold text-neutral uppercase tracking-wider block">Cliente Facturación</span>
+              <Combobox 
+                items={customers}
+                value={customers.find(c => c.id === selectedCustomerId) || null} 
+                onValueChange={(val: any) => setSelectedCustomerId(val?.id || '')}
+              >
+                <ComboboxTrigger 
+                  render={
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-between font-normal bg-bg-dark border-border-card text-xs text-secondary rounded-xl py-2 px-3 h-12 hover:bg-bg-dark/80 hover:text-secondary flex items-center"
                     >
-                      <span className="font-bold text-[11px] text-secondary">{c.name}</span>
-                      <span className="text-[9.5px] text-neutral font-mono">{c.identityNumber}</span>
-                    </ComboboxItem>
-                  )}
-                </ComboboxList>
-              </ComboboxContent>
-            </Combobox>
-          </div>
-
-          {/* Global Discount Block */}
-          {cart.length > 0 && (
-            <div className="bg-bg-dark/40 border border-border-card rounded-xl p-3 space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-neutral uppercase tracking-wider">Descuento Global Venta (%)</span>
-                {globalDiscountAmount > 0 && (
-                  <span className="text-[10px] font-bold text-emerald-500">-${globalDiscountAmount.toFixed(2)}</span>
-                )}
-              </div>
-              <div className="flex gap-2 items-center">
-                <div className="px-3 h-9 bg-bg-card/50 border border-border-card/60 rounded-xl text-blue-400 text-xs font-extrabold flex items-center justify-center gap-1 select-none">
-                  <Percent className="w-3 h-3" />
-                  <span>Porcentaje</span>
-                </div>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value={globalDiscountRate === 0 ? '' : globalDiscountRate}
-                  onChange={(e) => {
-                    const val = Math.max(0, parseFloat(e.target.value) || 0);
-                    handleSetGlobalDiscountRate(val);
-                  }}
-                  className="flex-1 h-9 rounded-xl py-1.5 px-3 text-xs text-secondary text-right font-mono bg-bg-card border-border-card focus-visible:border-primary"
+                      {(() => {
+                        const activeCust = customers.find(c => c.id === selectedCustomerId);
+                        return activeCust ? (
+                          <div className="flex flex-col items-start leading-tight truncate">
+                            <span className="font-extrabold text-[11px] text-secondary truncate max-w-full">{activeCust.name}</span>
+                            <span className="text-[9px] text-neutral font-mono mt-0.5">{activeCust.identityNumber}</span>
+                          </div>
+                        ) : (
+                          <span className="text-neutral text-[11px]">Seleccionar cliente...</span>
+                        );
+                      })()}
+                    </Button>
+                  }
                 />
-              </div>
+                <ComboboxContent className="bg-bg-card border border-border-card rounded-xl shadow-2xl z-30 w-72 max-h-60 overflow-y-auto">
+                  <ComboboxInput 
+                    showTrigger={false} 
+                    placeholder="Buscar por nombre o cédula..." 
+                    className="w-full border-b border-border-card bg-transparent px-3 py-2 text-xs text-secondary focus:outline-none placeholder-neutral"
+                  />
+                  <ComboboxEmpty className="p-3 text-center text-xs text-neutral">
+                    No se encontraron clientes
+                  </ComboboxEmpty>
+                  <ComboboxList>
+                    {(c: any) => (
+                      <ComboboxItem 
+                        key={c.id} 
+                        value={c}
+                        className="px-3 py-2 hover:bg-bg-dark text-xs text-secondary rounded-lg transition-colors cursor-pointer flex flex-col items-start gap-0.5"
+                      >
+                        <span className="font-bold text-[11px] text-secondary">{c.name}</span>
+                        <span className="text-[9.5px] text-neutral font-mono">{c.identityNumber}</span>
+                      </ComboboxItem>
+                    )}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
             </div>
-          )}
+
+            {/* Global Discount Block */}
+            {cart.length > 0 && (
+              <div className="space-y-1.5 min-w-0">
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-[10px] font-bold text-neutral uppercase tracking-wider truncate">Descuento (%)</span>
+                  {globalDiscountAmount > 0 && (
+                    <span className="text-[10px] font-bold text-emerald-500 shrink-0">-${globalDiscountAmount.toFixed(2)}</span>
+                  )}
+                </div>
+                <div className="flex h-12 gap-2 items-center">
+                  <div className="h-full aspect-square bg-bg-dark border border-border-card rounded-xl text-blue-400 text-xs font-extrabold flex items-center justify-center gap-1 select-none">
+                    <Percent className="w-3 h-3" />
+                  </div>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={globalDiscountRate === 0 ? '' : globalDiscountRate}
+                    onChange={(e) => {
+                      const val = Math.max(0, parseFloat(e.target.value) || 0);
+                      handleSetGlobalDiscountRate(val);
+                    }}
+                    className="w-full h-full rounded-xl py-1.5 px-3 text-xs text-secondary text-right font-mono bg-bg-dark border-border-card focus-visible:border-primary"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Calculation Rows */}
           <div className="space-y-1.5 text-xs text-neutral border-t border-border-card/50 pt-3">
@@ -1145,7 +1148,7 @@ export const POSView: React.FC<POSViewProps> = ({
               {addedPayments.length > 0 && (
                 <div className="space-y-1.5">
                   <span className="text-[9px] font-bold text-neutral uppercase tracking-wider block">Pagos Registrados</span>
-                  <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                  <div className="h-24 space-y-1.5 overflow-y-auto pr-1">
                     {addedPayments.map((p, idx) => {
                       const details = getMethodDetails(p.paymentMethod);
                       const Icon = details.icon;
@@ -1187,8 +1190,10 @@ export const POSView: React.FC<POSViewProps> = ({
             </div>
           )}
 
+          </div>
+
           {/* ACTION SUBMIT BUTTON */}
-          <div className="pt-2">
+          <div className="shrink-0 border-t border-border-card/50 bg-bg-card pt-3">
             <button 
               onClick={handleCompletePayment}
               disabled={!activeSession || cart.length === 0 || isProcessing || amountPaid < cartTotal}
