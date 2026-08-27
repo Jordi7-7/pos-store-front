@@ -10,6 +10,7 @@ import {
 import { useCustomers } from '../hooks/useCustomers';
 import { useCashSessionDetailsQuery } from '../../cash-sessions/hooks/useCashSessions';
 import { PaymentMethod } from '../services/sales.service';
+import type { Sale, SaleItemResponse } from '../services/sales.service';
 import { apiClient } from '@/lib/apiClient';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { 
@@ -133,7 +134,7 @@ export const POSView: React.FC<POSViewProps> = ({
       .catch((e) => console.error('Error fetching tenant details for ticket:', e));
   }, []);
 
-  const handlePrintSale = (sale: any) => {
+  const handlePrintSale = (sale: Sale) => {
     const branchName = sale.branch?.name || 'Sucursal General';
     const branchAddress = sale.branch?.address || '';
     const clientName = sale.customer?.name || 'Consumidor Final';
@@ -147,11 +148,11 @@ export const POSView: React.FC<POSViewProps> = ({
       branchAddress,
       clientName,
       clientIdentity,
-      items: (sale.items || []).map((item: any) => ({
+      items: (sale.items || []).map((item: SaleItemResponse) => ({
         variantId: item.variantId,
-        variantSku: item.variant?.sku || '',
-        productName: item.variant?.product?.name || item.variantName || 'Producto',
-        combinationText: item.variant?.attributeValues?.map((av: any) => av.value).join(' / ') || 'Estándar',
+        variantSku: item.sku || item.variantSku || item.variant?.sku || '',
+        productName: item.productName || item.variantName || item.variant?.product?.name || 'Producto',
+        combinationText: item.attributes || item.variant?.attributeValues?.map((av) => av.value).join(' / ') || 'Estándar',
         quantity: Number(item.quantity),
         price: Number(item.price),
         discountAmount: Number(item.discountAmount || 0),

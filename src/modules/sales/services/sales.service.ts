@@ -16,6 +16,25 @@ export interface SaleItem {
   discountAmount?: number;
 }
 
+export interface SaleItemResponse {
+  id?: string;
+  variantId: string;
+  variant?: {
+    sku?: string;
+    product?: { name?: string };
+    attributeValues?: Array<{ value: string; attribute?: { name?: string } }>;
+  };
+  // These fields are returned by GET /sales/invoice/:invoiceNumber.
+  sku?: string;
+  variantSku?: string;
+  productName?: string;
+  variantName?: string;
+  attributes?: string;
+  quantity: number;
+  price: number;
+  discountAmount?: number;
+}
+
 export interface SalePayment {
   paymentMethod: PaymentMethod;
   amount: number;
@@ -48,8 +67,11 @@ export interface Sale {
   createdAt: string;
   updatedAt: string;
   invoiceNumber: string;
-  items?: any[];
-  payments?: any[];
+  items?: SaleItemResponse[];
+  payments?: SalePayment[];
+  branch?: { name?: string; address?: string };
+  customer?: { name?: string; identityNumber?: string } | null;
+  user?: { name?: string } | null;
 }
 
 export interface OpenCashSessionInput {
