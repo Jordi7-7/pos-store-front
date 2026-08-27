@@ -306,7 +306,7 @@ export const CashSessionsHistoryView: React.FC = () => {
                           return (
                             <TableRow key={sale.id} className="text-xs hover:bg-muted/5">
                               <TableCell className="py-2.5 pr-2 font-mono font-bold text-primary">
-                                FAC-{sale.id.replace(/-/g, '').slice(0, 8).toUpperCase()}
+                                {sale.invoiceNumber || 'Sin Folio'}
                               </TableCell>
                               <TableCell className="py-2.5 px-2 text-neutral">
                                 {new Date(sale.createdAt).toLocaleTimeString('es-EC', { timeZone: timezone, hour: '2-digit', minute: '2-digit' })}
@@ -382,7 +382,7 @@ export const CashSessionsHistoryView: React.FC = () => {
                               {new Date(ref.createdAt).toLocaleTimeString('es-EC', { timeZone: timezone, hour: '2-digit', minute: '2-digit' })}
                             </TableCell>
                             <TableCell className="py-2.5 px-2 font-mono font-bold text-primary">
-                              FAC-{ref.saleId.replace(/-/g, '').slice(0, 8).toUpperCase()}
+                              {ref.sale?.invoiceNumber || 'Sin Folio'}
                             </TableCell>
                             <TableCell className="py-2.5 pl-2 text-right font-mono font-bold text-amber-500">
                               -${Number(ref.totalRefunded || 0).toFixed(2)}

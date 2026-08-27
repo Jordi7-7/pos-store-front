@@ -62,7 +62,16 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
   const [selectedSale, setSelectedSale] = useState<any | null>(null);
   const [refundQtys, setRefundQtys] = useState<RefundQtyMap>({});
   const [refundReason, setRefundReason] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const timezone = useAuthStore((state: any) => state.timezone) || 'America/Guayaquil';
+
+  const filteredSales = activeSessionSales.filter((sale) => {
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase();
+    const invNo = (sale.invoiceNumber || '').toLowerCase();
+    const client = (sale.customer?.name || 'Consumidor Final').toLowerCase();
+    return invNo.includes(term) || client.includes(term);
+  });
 
   const { processRefund, isProcessing } = useProcessRefund();
   const { refunds, refetchRefunds } = useRefunds(
@@ -197,13 +206,28 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
               </div>
             </DialogHeader>
 
+            {/* Search Invoice Input */}
+            {historyTab === 'sales' && (
+              <div className="px-1 mb-1 mt-2 animate-fade-in">
+                <input
+                  type="text"
+                  placeholder="Buscar factura por folio o cliente..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full text-[11px] bg-bg-dark border border-border-card text-secondary placeholder-neutral rounded-xl px-3 py-1.5 outline-none focus:border-primary/50 transition-all font-mono"
+                />
+              </div>
+            )}
+
             <div className="space-y-3 max-h-80 overflow-y-auto pr-1 pt-2">
               {/* ── SALES TAB ── */}
               {historyTab === 'sales' && (
-                activeSessionSales.length === 0 ? (
-                  <div className="py-12 text-center text-xs text-neutral">No has registrado ninguna venta en esta sesión todavía.</div>
+                filteredSales.length === 0 ? (
+                  <div className="py-12 text-center text-xs text-neutral">
+                    {activeSessionSales.length === 0 ? 'No has registrado ninguna venta en esta sesión todavía.' : 'No se encontraron facturas con esa búsqueda.'}
+                  </div>
                 ) : (
-                  activeSessionSales.map((sale: any) => (
+                  filteredSales.map((sale: any) => (
                     <div key={sale.id} className="flex justify-between items-center bg-bg-dark/40 border border-border-card p-3 rounded-xl text-secondary animate-fade-in gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">

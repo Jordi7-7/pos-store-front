@@ -58,8 +58,7 @@ export const useRegisterExpense = () => {
     mutationFn: (input: RegisterExpenseInput) => salesService.registerExpense(input),
     onSuccess: () => {
       // Invalidate sales metrics/expenses on success
-      queryClient.invalidateQueries({ queryKey: ['sales', tenantId] });
-      queryClient.invalidateQueries({ queryKey: ['expenses', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['cash-session-details'] });
     },
   });
 
@@ -76,8 +75,8 @@ export const useProcessSale = () => {
   const processSaleMutation = useMutation({
     mutationFn: (input: ProcessSaleInput) => salesService.processSale(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sales', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['products', tenantId] }); // update stock
+      queryClient.invalidateQueries({ queryKey: ['cash-session-details'] });
     },
   });
 
@@ -126,8 +125,8 @@ export const useProcessRefund = () => {
   const processRefundMutation = useMutation({
     mutationFn: (input: ProcessRefundInput) => salesService.processRefund(input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sales', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['products', tenantId] }); // restore stock
+      queryClient.invalidateQueries({ queryKey: ['cash-session-details'] });
     },
   });
 

@@ -5,10 +5,10 @@ import {
   useOpenCashSession, 
   useCloseCashSession, 
   useRegisterExpense, 
-  useProcessSale,
-  useSales
+  useProcessSale
 } from '../hooks/useSales';
 import { useCustomers } from '../hooks/useCustomers';
+import { useCashSessionDetailsQuery } from '../../cash-sessions/hooks/useCashSessions';
 import { PaymentMethod, salesService } from '../services/sales.service';
 import { apiClient } from '@/lib/apiClient';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
@@ -80,7 +80,7 @@ export const POSView: React.FC<POSViewProps> = ({
 }) => {
   const { branches } = useBranches();
   const { customers } = useCustomers();
-  const { sales } = useSales();
+  const { details: sessionDetails } = useCashSessionDetailsQuery(activeSession?.id || null);
 
   // Search input selection
   const [searchTerm, setSearchTerm] = useState('');
@@ -230,14 +230,21 @@ export const POSView: React.FC<POSViewProps> = ({
   });
 
   const activeSessionSales = useMemo(() => {
-    if (!activeSession || !sales) return [];
-    return sales.filter((s: any) => s.cashSessionId === activeSession.id);
-  }, [sales, activeSession]);
+    if (!activeSession || !sessionDetails) return [];
+    return sessionDetails.sales || [];
+  }, [sessionDetails, activeSession]);
 
   const activeSessionExpenses = useMemo(() => {
-    if (!activeSession || !localExpenses) return [];
-    return localExpenses.filter((e: any) => e.cashSessionId === activeSession.id);
-  }, [localExpenses, activeSession]);
+    if (!activeSession || !sessionDetails) return [];
+    return (sessionDetails.expenses || []).map((exp: any) => ({
+      id: exp.id,
+      desc: exp.description,
+      amount: Number(exp.amount),
+      category: exp.category,
+      cashSessionId: exp.cashSessionId,
+      createdAt: exp.createdAt
+    }));
+  }, [sessionDetails, activeSession]);
 
   const handleOpenSession = async () => {
     const branch = selectedBranchId || (branches[0] && branches[0].id);
@@ -298,22 +305,16 @@ export const POSView: React.FC<POSViewProps> = ({
         });
       });
 
-      // Fetch refunds for this session
-      let refundsList: any[] = [];
-      try {
-        const resRefunds = await salesService.getRefunds({ cashSessionId: activeSession.id });
-        refundsList = (resRefunds || []).map((ref: any) => ({
-          id: ref.id,
-          reason: ref.reason,
-          items: (ref.items || []).map((ri: any) => ({
-            name: ri.variant?.product?.name || 'Producto',
-            sku: ri.variant?.sku || 'SKU',
-            quantity: ri.quantity,
-          })),
-        }));
-      } catch (err) {
-        console.error('Error fetching refunds for closing print:', err);
-      }
+      // Get refunds from sessionDetails
+      const refundsList = (sessionDetails?.refunds || []).map((ref: any) => ({
+        id: ref.id,
+        reason: ref.reason,
+        items: (ref.items || []).map((ri: any) => ({
+          name: ri.variant?.product?.name || 'Producto',
+          sku: ri.variant?.sku || 'SKU',
+          quantity: ri.quantity,
+        })),
+      }));
 
       const salesList = activeSessionSales.map((s: any) => ({
         invoiceNumber: s.invoiceNumber || 'S/Ref',
