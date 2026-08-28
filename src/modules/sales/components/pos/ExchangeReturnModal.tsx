@@ -89,7 +89,6 @@ function StepIndicator({ current, steps }: { current: number; steps: string[] })
 export function ExchangeReturnModal({
   isOpen,
   onClose,
-  activeSession,
   branchId,
   cashSessionId,
 }: ExchangeReturnModalProps) {

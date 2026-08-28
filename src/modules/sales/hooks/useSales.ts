@@ -84,7 +84,6 @@ export const useCloseCashSession = () => {
 
 export const useRegisterExpense = () => {
   const queryClient = useQueryClient();
-  const { tenantId } = useAuthStore();
 
   const expenseMutation = useMutation({
     mutationFn: (input: RegisterExpenseInput) => salesService.registerExpense(input),
