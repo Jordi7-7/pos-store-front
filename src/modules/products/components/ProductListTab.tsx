@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Package, Edit, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Package, Edit, Search } from 'lucide-react';
 import type { Product } from '../services/products.service';
 import { ProductEditDrawer } from './ProductEditDrawer';
+import { ProductDetailModal } from './ProductDetailModal';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ProductPagination } from './ProductPagination';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -28,8 +30,8 @@ interface ProductListTabProps {
     limit: number;
     totalPages: number;
   };
-  page: number;
   onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
   search: string;
   onSearchChange: (search: string) => void;
 }
@@ -41,14 +43,15 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
   uploadedImages,
   selectedBranchId,
   meta,
-  page,
   onPageChange,
+  onLimitChange,
   search,
   onSearchChange
 }) => {
   const [selectedProductToEdit, setSelectedProductToEdit] = useState<any | null>(null);
   const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
   const [searchInput, setSearchInput] = useState(search);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const handleOpenEditDrawer = (product: any) => {
     setSelectedProductToEdit(product);
@@ -109,6 +112,8 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
       </CardHeader>
 
       <CardContent>
+        <ProductPagination meta={meta} onPageChange={onPageChange} onLimitChange={onLimitChange} />
+
         {isLoading ? (
           <div className="space-y-2.5 py-4">
             {[1, 2, 3].map((i) => (
@@ -157,7 +162,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                   const currentStock = defaultVariant?.stocks?.find(s => s.branchId === selectedBranchId)?.quantity ?? 0;
 
                   return (
-                    <TableRow key={product.id} className="hover:bg-muted/30">
+                    <TableRow key={product.id} onClick={() => setSelectedProduct(product)} className="hover:bg-muted/30 cursor-pointer">
                       {/* Image Thumbnail */}
                       <TableCell className="py-2.5">
                         <div className="w-9 h-9 rounded-lg bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0">
@@ -223,7 +228,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleOpenEditDrawer(product)}
+                          onClick={(event) => { event.stopPropagation(); handleOpenEditDrawer(product); }}
                           title="Editar Ficha de Producto"
                           className="h-8 w-8 text-muted-foreground hover:text-foreground"
                         >
@@ -238,34 +243,6 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
           </div>
         )}
 
-        {/* Pagination Footer */}
-        {meta.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-border pt-4 mt-4">
-            <span className="text-[11px] text-muted-foreground">
-              Página <span className="font-bold text-foreground">{page}</span> de <span className="font-bold text-foreground">{meta.totalPages}</span> ({meta.total} productos)
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => onPageChange(Math.max(1, page - 1))}
-                disabled={page === 1}
-                className="h-8 w-8"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => onPageChange(Math.min(meta.totalPages, page + 1))}
-                disabled={page === meta.totalPages}
-                className="h-8 w-8"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        )}
       </CardContent>
 
       <ProductEditDrawer
@@ -273,6 +250,13 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
         isOpen={isEditDrawerOpen}
         onClose={handleCloseEditDrawer}
         categories={categories}
+        uploadedImages={uploadedImages}
+        selectedBranchId={selectedBranchId}
+      />
+      <ProductDetailModal
+        product={selectedProduct}
+        isOpen={!!selectedProduct}
+        onClose={() => setSelectedProduct(null)}
         uploadedImages={uploadedImages}
         selectedBranchId={selectedBranchId}
       />

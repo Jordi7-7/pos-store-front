@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsService } from '../services/products.service';
-import type { CreateProductInput, CreateSimpleProductInput } from '../services/products.service';
+import type { CreateProductInput, CreateSimpleProductInput, InventoryMovement, PaginatedResult, Product, ProductHistoryPurchase, ProductHistorySale } from '../services/products.service';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
 export const useProducts = (params?: { page?: number; limit?: number; search?: string }) => {
@@ -18,6 +18,69 @@ export const useProducts = (params?: { page?: number; limit?: number; search?: s
     isLoading: productsQuery.isLoading,
     isError: productsQuery.isError,
     refetch: productsQuery.refetch,
+  };
+};
+
+export const useInventoryMovementsByVariant = (variantId?: string, page = 1, limit = 10) => {
+  const { tenantId, isAuthenticated } = useAuthStore();
+  const movementsQuery = useQuery<PaginatedResult<InventoryMovement>>({
+    queryKey: ['variant-movements', tenantId, variantId, page, limit],
+    queryFn: () => productsService.getInventoryMovementsByVariant(variantId!, page, limit),
+    enabled: isAuthenticated && !!tenantId && !!variantId,
+  });
+
+  return {
+    movements: movementsQuery.data?.data || [],
+    meta: movementsQuery.data?.meta || { total: 0, page, limit, totalPages: 1 },
+    isLoading: movementsQuery.isLoading,
+    isError: movementsQuery.isError,
+  };
+};
+
+export const useProductDetail = (productId?: string, enabled = true) => {
+  const { tenantId, isAuthenticated } = useAuthStore();
+  const query = useQuery<Product>({
+    queryKey: ['product-detail', tenantId, productId],
+    queryFn: () => productsService.getProductById(productId!),
+    enabled: enabled && isAuthenticated && !!tenantId && !!productId,
+  });
+
+  return {
+    product: query.data,
+    isLoading: query.isLoading,
+    isError: query.isError,
+  };
+};
+
+export const useProductSales = (productId?: string, page = 1, limit = 10, enabled = true) => {
+  const { tenantId, isAuthenticated } = useAuthStore();
+  const query = useQuery<PaginatedResult<ProductHistorySale>>({
+    queryKey: ['product-sales', tenantId, productId, page, limit],
+    queryFn: () => productsService.getProductSales(productId!, page, limit),
+    enabled: enabled && isAuthenticated && !!tenantId && !!productId,
+  });
+
+  return {
+    sales: query.data?.data || [],
+    meta: query.data?.meta || { total: 0, page, limit, totalPages: 1 },
+    isLoading: query.isLoading,
+    isError: query.isError,
+  };
+};
+
+export const useProductPurchases = (productId?: string, page = 1, limit = 10, enabled = true) => {
+  const { tenantId, isAuthenticated } = useAuthStore();
+  const query = useQuery<PaginatedResult<ProductHistoryPurchase>>({
+    queryKey: ['product-purchases', tenantId, productId, page, limit],
+    queryFn: () => productsService.getProductPurchases(productId!, page, limit),
+    enabled: enabled && isAuthenticated && !!tenantId && !!productId,
+  });
+
+  return {
+    purchases: query.data?.data || [],
+    meta: query.data?.meta || { total: 0, page, limit, totalPages: 1 },
+    isLoading: query.isLoading,
+    isError: query.isError,
   };
 };
 

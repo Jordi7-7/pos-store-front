@@ -3,9 +3,8 @@ import { useProducts, useCreateProduct } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
 import { ProductListTab } from './ProductListTab';
 import { ProductCreateTab } from './ProductCreateTab';
-import { KardexTab } from './KardexTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, Layers, ClipboardList, FileSpreadsheet } from 'lucide-react';
+import { Eye, Layers, FileSpreadsheet } from 'lucide-react';
 import { BulkImportModal } from './BulkImportModal';
 
 interface ProductsViewProps {
@@ -18,7 +17,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
   uploadedImages
 }) => {
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('list');
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -58,10 +57,6 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
             <Layers className="w-3.5 h-3.5" />
             Crear Producto
           </TabsTrigger>
-          <TabsTrigger value="kardex" className="flex items-center gap-1.5">
-            <ClipboardList className="w-3.5 h-3.5" />
-            Kardex / Existencias
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="list">
@@ -72,8 +67,8 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
             uploadedImages={uploadedImages}
             selectedBranchId={selectedBranchId}
             meta={meta}
-            page={page}
             onPageChange={setPage}
+            onLimitChange={(nextLimit) => { setLimit(nextLimit); setPage(1); }}
             search={search}
             onSearchChange={setSearch}
           />
@@ -89,12 +84,6 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           />
         </TabsContent>
 
-        <TabsContent value="kardex">
-          <KardexTab
-            products={products}
-            isLoadingProducts={isLoadingProducts}
-          />
-        </TabsContent>
       </Tabs>
 
       <BulkImportModal 
