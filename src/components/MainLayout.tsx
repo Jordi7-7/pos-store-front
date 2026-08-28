@@ -13,6 +13,7 @@ import { useSuppliers } from '../modules/purchases';
 // Modular View Components
 import { DashboardView } from '../modules/dashboard/components/DashboardView';
 import { POSView } from '../modules/sales/components/POSView';
+import { SalesView } from '../modules/sales/components/SalesView';
 import { ProductsView } from '../modules/products/components/ProductsView';
 import { PurchasesView } from '../modules/purchases/components/PurchasesView';
 import { MediaView } from '../modules/media/components/MediaView';
@@ -115,6 +116,7 @@ export const MainLayout: React.FC = () => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'pos', label: 'Punto de Venta (POS)' },
+    { id: 'sales', label: 'Ventas' },
     { id: 'products', label: 'Catálogo de Productos' },
     { id: 'purchases', label: 'Compras y Proveedores' },
     { id: 'media', label: 'Multimedia / Galería' },
@@ -191,6 +193,10 @@ export const MainLayout: React.FC = () => {
                   localExpenses={localExpenses} 
                   setLocalExpenses={setLocalExpenses} 
                 />
+              )}
+
+              {activeTab === 'sales' && (
+                <SalesView />
               )}
 
               {activeTab === 'products' && (

@@ -21,7 +21,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useProcessRefund, useProcessSale, useSaleByInvoice } from '../../hooks/useSales';
-import { useAuthStore } from '@/modules/auth';
 import { productsService } from '@/modules/products/services/products.service';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -94,7 +93,6 @@ export function ExchangeReturnModal({
   branchId,
   cashSessionId,
 }: ExchangeReturnModalProps) {
-  const { tenantId } = useAuthStore();
   const { fetchSale } = useSaleByInvoice();
   const { processRefund, isProcessing: isRefunding } = useProcessRefund();
   const { processSale, isProcessing: isSelling } = useProcessSale();
@@ -419,7 +417,7 @@ export function ExchangeReturnModal({
                     }`}
                   >
                     {foundSale.status === 'COMPLETED' ? 'Completada' :
-                     foundSale.status === 'REFUNDED' ? 'Reembolsada' : 'Parcial'}
+                     foundSale.status === 'REFUNDED' ? 'Devuelta' : 'Parcial'}
                   </Badge>
                 </div>
               </div>
@@ -428,7 +426,7 @@ export function ExchangeReturnModal({
               {allItemsFullyRefunded && (
                 <div className="flex items-center gap-2 text-xs text-rose-500 bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3">
                   <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>Esta venta ya fue completamente reembolsada. No hay prendas disponibles para devolver.</span>
+                  <span>Esta venta ya fue completamente devuelta. No hay prendas disponibles para devolver.</span>
                 </div>
               )}
 
@@ -451,7 +449,7 @@ export function ExchangeReturnModal({
                           </p>
                           {item.refundedQty > 0 && (
                             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/25 shrink-0">
-                              {isFullyRefunded ? 'Reembolsada' : `${item.refundedQty} reembolsada(s)`}
+                              {isFullyRefunded ? 'Devuelta' : `${item.refundedQty} devuelta(s)`}
                             </span>
                           )}
                         </div>
@@ -530,7 +528,7 @@ export function ExchangeReturnModal({
                 <div>
                   <p className="text-sm font-semibold text-foreground">Solo Devolución</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Reembolso directo de {formatMoney(totalToReturn)} al cliente. Las prendas vuelven al inventario.
+                    Devolución directo de {formatMoney(totalToReturn)} al cliente. Las prendas vuelven al inventario.
                   </p>
                 </div>
               </button>
@@ -546,7 +544,7 @@ export function ExchangeReturnModal({
                 <div>
                   <p className="text-sm font-semibold text-foreground">Cambio de Prenda</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Devuelve las prendas seleccionadas y escanea las nuevas. Se calcula la diferencia a cobrar o reembolsar.
+                    Devuelve las prendas seleccionadas y escanea las nuevas. Se calcula la diferencia a cobrar o devolver.
                   </p>
                 </div>
               </button>
@@ -577,7 +575,7 @@ export function ExchangeReturnModal({
               </div>
 
               <div className="rounded-xl bg-rose-500/15 border border-rose-500/25 px-4 py-3 flex items-center justify-between">
-                <p className="text-sm font-semibold text-rose-400">Total a reembolsar</p>
+                <p className="text-sm font-semibold text-rose-400">Total a devolver</p>
                 <p className="text-xl font-bold text-rose-500">{formatMoney(totalToReturn)}</p>
               </div>
 
@@ -698,7 +696,7 @@ export function ExchangeReturnModal({
                   </div>
                   <div className="flex justify-between items-center border-t border-border pt-2">
                     <p className="text-sm font-semibold text-foreground">
-                      {exchangeDiff > 0 ? 'Cliente paga' : exchangeDiff < 0 ? 'Reembolsar al cliente' : 'Sin diferencia'}
+                      {exchangeDiff > 0 ? 'Cliente paga' : exchangeDiff < 0 ? 'Devolver al cliente' : 'Sin diferencia'}
                     </p>
                     <p className={`text-lg font-bold ${
                       exchangeDiff > 0 ? 'text-emerald-500' : exchangeDiff < 0 ? 'text-rose-500' : 'text-foreground'

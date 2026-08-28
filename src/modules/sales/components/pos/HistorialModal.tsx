@@ -28,7 +28,7 @@ function SaleStatusBadge({ status }: { status?: string }) {
   if (status === 'REFUNDED') {
     return (
       <Badge variant="destructive" className="text-[8px] h-4 px-1.5 leading-none font-extrabold">
-        REEMBOLSADA
+        DEVUELTA
       </Badge>
     );
   }
@@ -259,7 +259,7 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
           )}
           {historyTab === 'refunds' && (
             <>
-              <span className="text-neutral">Total Reembolsado:</span>
+              <span className="text-neutral">Total Devuelto:</span>
               <span className="text-rose-500 text-sm">-${totalRefundsSum.toFixed(2)}</span>
             </>
           )}

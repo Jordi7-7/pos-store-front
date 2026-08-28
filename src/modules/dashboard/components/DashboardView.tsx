@@ -109,7 +109,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <td className="py-3">
                       {sale.status === 'REFUNDED' ? (
                         <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 text-[10px] font-semibold border border-rose-200">
-                          Reembolsada
+                          Devueltos
                         </span>
                       ) : sale.status === 'PARTIALLY_REFUNDED' ? (
                         <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-semibold border border-amber-200">

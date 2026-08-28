@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { salesService } from '../services/sales.service';
-import type { ProcessSaleInput, OpenCashSessionInput, RegisterExpenseInput, ProcessRefundInput } from '../services/sales.service';
+import type { ProcessSaleInput, OpenCashSessionInput, RegisterExpenseInput, ProcessRefundInput, PaginatedSales, SaleDetail } from '../services/sales.service';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
 export const useSales = () => {
@@ -16,6 +16,38 @@ export const useSales = () => {
     sales: salesQuery.data || [],
     isLoading: salesQuery.isLoading,
     isError: salesQuery.isError,
+  };
+};
+
+export const usePaginatedSales = (params: { startDate?: string; endDate?: string; page: number; limit: number }) => {
+  const { tenantId, isAuthenticated } = useAuthStore();
+  const salesQuery = useQuery<PaginatedSales>({
+    queryKey: ['sales-paginated', tenantId, params.startDate, params.endDate, params.page, params.limit],
+    queryFn: () => salesService.getPaginatedSales(params),
+    enabled: isAuthenticated && !!tenantId,
+  });
+
+  return {
+    sales: salesQuery.data?.data || [],
+    meta: salesQuery.data?.meta || { total: 0, page: params.page, limit: params.limit, totalPages: 1 },
+    isLoading: salesQuery.isLoading,
+    isError: salesQuery.isError,
+  };
+};
+
+export const useSaleByInvoice = (invoiceNumber?: string, enabled = true) => {
+  const { tenantId, isAuthenticated } = useAuthStore();
+  const saleQuery = useQuery<SaleDetail>({
+    queryKey: ['sale-detail', tenantId, invoiceNumber],
+    queryFn: () => salesService.getSaleByInvoice(invoiceNumber!),
+    enabled: enabled && isAuthenticated && !!tenantId && !!invoiceNumber,
+  });
+
+  return {
+    sale: saleQuery.data,
+    isLoading: saleQuery.isLoading,
+    isError: saleQuery.isError,
+    fetchSale: (invoice: string) => salesService.getSaleByInvoice(invoice),
   };
 };
 
@@ -152,9 +184,3 @@ export const useRefunds = (params?: { cashSessionId?: string; saleId?: string })
   };
 };
 
-export const useSaleByInvoice = () => {
-  const fetchSale = async (invoiceNumber: string) => {
-    return salesService.getSaleByInvoice(invoiceNumber);
-  };
-  return { fetchSale };
-};

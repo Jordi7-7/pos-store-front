@@ -7,6 +7,21 @@ export const PaymentMethod = {
 
 export type PaymentMethod = typeof PaymentMethod[keyof typeof PaymentMethod];
 
+export interface PaginatedSaleSummary {
+  id: string;
+  invoiceNumber: string;
+  createdAt: string;
+  total: number;
+  discountAmount: number;
+  status: string;
+  customer?: { id?: string; name?: string } | null;
+}
+
+export interface PaginatedSales {
+  data: PaginatedSaleSummary[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
 export interface SaleItem {
   variantId: string;
   quantity: number;
@@ -36,8 +51,48 @@ export interface SaleItemResponse {
 }
 
 export interface SalePayment {
+  id?: string;
   paymentMethod: PaymentMethod;
   amount: number;
+}
+
+export interface SaleDetailItem {
+  saleItemId: string;
+  variantId: string;
+  productName: string;
+  sku: string;
+  attributes: string;
+  quantity: number;
+  refundedQty: number;
+  refundableQty: number;
+  price: number;
+  cost: number;
+  discountAmount: number;
+  lineTotal: number;
+}
+
+export interface SaleRefund {
+  id: string;
+  createdAt: string;
+  reason: string;
+  totalRefunded: number;
+  items: Array<{ id: string; variantId: string; sku: string; productName: string; quantity: number; priceRefunded: number }>;
+}
+
+export interface SaleDetail {
+  id: string;
+  invoiceNumber: string;
+  total: number;
+  subtotal: number;
+  discountAmount: number;
+  status: string;
+  branch?: { id: string; name: string; address?: string } | null;
+  customer?: { id: string; name: string } | null;
+  user?: { id: string; name: string } | null;
+  createdAt: string;
+  items: SaleDetailItem[];
+  payments: SalePayment[];
+  refunds: SaleRefund[];
 }
 
 export interface ProcessSaleInput {
@@ -105,6 +160,19 @@ export const salesService = {
     return apiClient.get<Sale[]>('/sales');
   },
 
+  getPaginatedSales: async (params: { startDate?: string; endDate?: string; page?: number; limit?: number }): Promise<PaginatedSales> => {
+    const query = new URLSearchParams();
+    if (params.startDate) query.set('startDate', params.startDate);
+    if (params.endDate) query.set('endDate', params.endDate);
+    query.set('page', String(params.page || 1));
+    query.set('limit', String(params.limit || 10));
+    return apiClient.get<PaginatedSales>(`/sales/paginated?${query.toString()}`);
+  },
+
+  getSaleByInvoice: async (invoiceNumber: string): Promise<SaleDetail> => {
+    return apiClient.get<SaleDetail>(`/sales/invoice/${encodeURIComponent(invoiceNumber)}`);
+  },
+
   processSale: async (input: ProcessSaleInput): Promise<Sale> => {
     return apiClient.post<Sale>('/sales', input);
   },
@@ -150,7 +218,4 @@ export const salesService = {
     return apiClient.get<any[]>(url);
   },
 
-  getSaleByInvoice: async (invoiceNumber: string): Promise<any> => {
-    return apiClient.get<any>(`/sales/invoice/${encodeURIComponent(invoiceNumber)}`);
-  },
 };

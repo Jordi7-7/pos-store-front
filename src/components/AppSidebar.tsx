@@ -2,6 +2,7 @@ import { useAuthStore } from "@/modules/auth/hooks/useAuthStore"
 import { 
   LayoutDashboard, 
   ShoppingBag, 
+  Receipt,
   Package, 
   Truck, 
   Users, 
@@ -37,8 +38,9 @@ export function AppSidebar() {
   const { user, role, tenantId, activeTab, setActiveTab, logout, lockScreen } = useAuthStore()
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['OWNER', 'ADMIN', 'MANAGER', 'CASHIER'] },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
     { id: 'pos', label: 'Punto de Venta (POS)', icon: ShoppingBag, roles: ['OWNER', 'ADMIN', 'MANAGER', 'CASHIER'] },
+    { id: 'sales', label: 'Ventas', icon: Receipt, roles: ['OWNER', 'ADMIN', 'MANAGER', 'CASHIER'] },
     { id: 'products', label: 'Catálogo de Productos', icon: Package, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
     { id: 'purchases', label: 'Ingresos de Mercancía', icon: Truck, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
     { id: 'media', label: 'Multimedia / Galería', icon: ImageIcon, roles: ['OWNER', 'ADMIN', 'MANAGER'] },

@@ -371,7 +371,7 @@ export const CashSessionsHistoryView: React.FC = () => {
                           <TableHead className="pr-2">Motivo</TableHead>
                           <TableHead className="px-2">Hora</TableHead>
                           <TableHead className="px-2">Folio Venta</TableHead>
-                          <TableHead className="pl-2 text-right">Reembolsado</TableHead>
+                          <TableHead className="pl-2 text-right">Devueltos</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
