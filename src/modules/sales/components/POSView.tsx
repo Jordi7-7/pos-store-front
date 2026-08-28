@@ -360,7 +360,7 @@ export const POSView: React.FC<POSViewProps> = ({
     const branch = selectedBranchId || (branches[0] && branches[0].id);
     if (!branch) return;
     if (!expenseDesc.trim()) {
-      toast.warning('Por favor ingresa una descripción para el egreso.');
+      toast.warning('Por favor ingresa una descripción para el gasto.');
       return;
     }
     if (!expenseAmount || parseFloat(expenseAmount) <= 0) {
@@ -384,9 +384,9 @@ export const POSView: React.FC<POSViewProps> = ({
       setExpenseDesc('');
       setExpenseAmount('');
       setIsEgresoModalOpen(false);
-      toast.success('¡Egreso registrado con éxito!');
+      toast.success('¡Gasto registrado con éxito!');
     } catch (err: any) {
-      toast.error(err.message || 'Error al registrar el egreso.');
+      toast.error(err.message || 'Error al registrar el gasto.');
     }
   };
 
@@ -730,7 +730,7 @@ export const POSView: React.FC<POSViewProps> = ({
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-dark border border-border-card rounded-xl text-xs font-semibold text-secondary hover:border-amber-500/30 hover:text-amber-500 transition-all cursor-pointer shadow-sm"
               >
                 <ArrowRightLeft className="w-3.5 h-3.5 text-amber-500" />
-                <span>Registrar Egreso</span>
+                <span>Registrar Gasto</span>
               </button>
 
               <button

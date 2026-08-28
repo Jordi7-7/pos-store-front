@@ -34,13 +34,13 @@ export const EgresoModal: React.FC<EgresoModalProps> = ({
         <DialogHeader>
           <DialogTitle className="text-xs font-bold text-secondary uppercase tracking-wider flex items-center gap-2">
             <ArrowRightLeft className="w-4 h-4 text-amber-500" />
-            <span>Registrar Egreso (Salida)</span>
+            <span>Registrar Gasto</span>
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3 pt-2">
           <div>
             <label className="block text-[10px] text-neutral mb-1 uppercase tracking-wider font-bold">
-              Descripción del Egreso
+              Descripción del Gasto
             </label>
             <input 
               type="text" 
@@ -68,7 +68,7 @@ export const EgresoModal: React.FC<EgresoModalProps> = ({
             className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white text-xs font-bold rounded-xl transition-all shadow flex items-center justify-center gap-1.5 cursor-pointer"
           >
             {isRegistering && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            <span>Guardar Egreso</span>
+            <span>Guardar Gasto</span>
           </button>
         </div>
       </DialogContent>

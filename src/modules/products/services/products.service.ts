@@ -26,6 +26,38 @@ export interface Product {
   categoryId: string;
 }
 
+export interface InventoryMovement {
+  id: string;
+  quantity: number;
+  type: string;
+  reason: string;
+  createdAt: string;
+  variant?: { sku: string; product?: { name: string } };
+  originBranch?: { name: string } | null;
+  destinationBranch?: { name: string } | null;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
+export interface ProductHistorySale {
+  id: string;
+  invoiceNumber?: string | null;
+  createdAt: string;
+  total: number;
+  customer?: { name?: string } | null;
+}
+
+export interface ProductHistoryPurchase {
+  id: string;
+  invoiceNumber?: string | null;
+  createdAt: string;
+  totalAmount: number;
+  supplier?: { name?: string } | null;
+}
+
 export interface CreateProductInput {
   name: string;
   description: string;
@@ -127,6 +159,22 @@ export const productsService = {
 
   getPosVariants: async (branchId: string): Promise<{ id: string; sku: string; purchasePrice: number; salePrice: number; productName: string; stock: number; attributeValues?: any[] }[]> => {
     return apiClient.get(`/products/pos/variants?branchId=${branchId}`);
+  },
+
+  getProductById: async (id: string): Promise<Product> => {
+    return apiClient.get<Product>(`/products/${id}`);
+  },
+
+  getProductSales: async (productId: string, page = 1, limit = 10): Promise<PaginatedResult<ProductHistorySale>> => {
+    return apiClient.get(`/sales/by-product/${productId}?page=${page}&limit=${limit}`);
+  },
+
+  getProductPurchases: async (productId: string, page = 1, limit = 10): Promise<PaginatedResult<ProductHistoryPurchase>> => {
+    return apiClient.get(`/purchases/by-product/${productId}?page=${page}&limit=${limit}`);
+  },
+
+  getInventoryMovementsByVariant: async (variantId: string, page = 1, limit = 10): Promise<PaginatedResult<InventoryMovement>> => {
+    return apiClient.get(`/products/inventory-movements-by-variant?variantId=${encodeURIComponent(variantId)}&page=${page}&limit=${limit}`);
   },
 };
 
