@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { productsService } from '../../products/services/products.service';
 import { useBranches } from '../../branches/hooks/useBranches';
-import { 
-  useOpenCashSession, 
-  useCloseCashSession, 
-  useRegisterExpense, 
+import {
+  useOpenCashSession,
+  useCloseCashSession,
+  useRegisterExpense,
   useProcessSale
 } from '../hooks/useSales';
 import { useCustomers } from '../hooks/useCustomers';
@@ -13,10 +13,10 @@ import { PaymentMethod } from '../services/sales.service';
 import type { Sale, SaleItemResponse } from '../services/sales.service';
 import { apiClient } from '@/lib/apiClient';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
-import { 
-  Search, Wallet, ArrowRightLeft, ArrowLeftRight, Receipt, X, 
-  ShoppingCart, Trash2, Minus, Plus, CreditCard, Loader2, Package, 
-  Percent, DollarSign, Check, Banknote 
+import {
+  Search, Wallet, ArrowRightLeft, ArrowLeftRight, Receipt, X,
+  ShoppingCart, Trash2, Minus, Plus, CreditCard, Loader2, Package,
+  Percent, DollarSign, Check, Banknote
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -91,7 +91,7 @@ export const POSView: React.FC<POSViewProps> = ({
 
   // Session Balance & Expense Form fields
   const [openingBalance, setOpeningBalance] = useState('1000.00');
-  const [closingBalance, setClosingBalance] = useState('0.00');
+  const [closingBalance, setClosingBalance] = useState('');
   const [expenseDesc, setExpenseDesc] = useState('');
   const [expenseAmount, setExpenseAmount] = useState('');
   const expenseCategory = 'Servicios';
@@ -174,7 +174,7 @@ export const POSView: React.FC<POSViewProps> = ({
     const timer = setInterval(() => {
       const now = DateTime.now().setZone(timezone);
       setCurrentTime(now.toFormat('HH:mm:ss'));
-      
+
       if (activeSession && activeSession.createdAt) {
         const openedAt = DateTime.fromISO(activeSession.createdAt).setZone(timezone);
         if (openedAt.isValid) {
@@ -259,6 +259,19 @@ export const POSView: React.FC<POSViewProps> = ({
 
   const handleCloseSession = async () => {
     if (!activeSession) return;
+
+    // Validación: verificar que no esté vacío, sea numérico y no negativo
+    const parsedClosing = parseFloat(closingBalance);
+    if (
+      closingBalance === '' ||
+      closingBalance === null ||
+      closingBalance === undefined ||
+      isNaN(parsedClosing) ||
+      parsedClosing < 0
+    ) {
+      toast.error('Debes ingresar el monto de efectivo físico para cerrar la caja.');
+      return;
+    }
     try {
       const openingBalance = Number(activeSession.openingBalance);
       const salesTotal = activeSessionSales.reduce((sum: number, s: any) => sum + Number(s.total || 0), 0);
@@ -393,7 +406,7 @@ export const POSView: React.FC<POSViewProps> = ({
   const handleUpdateItemDiscount = (variantId: string, type: 'PERCENTAGE' | 'AMOUNT', inputVal: number) => {
     setCart(prevCart => prevCart.map(item => {
       if (item.variantId !== variantId) return item;
-      
+
       let val = Number(inputVal.toFixed(2));
       if (isNaN(val) || val < 0) {
         val = 0;
@@ -453,15 +466,15 @@ export const POSView: React.FC<POSViewProps> = ({
 
   const addVariantToCart = (product: any, variant: any, maxStock: number) => {
     const existing = cart.find(item => item.variantId === variant.id);
-    
+
     if (existing) {
       const newQty = existing.quantity + 1;
       if (newQty > maxStock) {
         toast.warning(`Aviso: El stock del producto "${product.name}" quedará en negativo (Stock disponible: ${maxStock} pzs.)`);
       }
-      setCart(cart.map(item => 
-        item.variantId === variant.id 
-          ? { ...item, quantity: newQty } 
+      setCart(cart.map(item =>
+        item.variantId === variant.id
+          ? { ...item, quantity: newQty }
           : item
       ));
     } else {
@@ -570,7 +583,7 @@ export const POSView: React.FC<POSViewProps> = ({
     } else {
       amount = globalDiscountRate;
     }
-      return Math.min(netSubtotal, amount);
+    return Math.min(netSubtotal, amount);
   }, [netSubtotal, globalDiscountType, globalDiscountRate]);
 
   const cartTotal = useMemo(() => {
@@ -598,7 +611,7 @@ export const POSView: React.FC<POSViewProps> = ({
       toast.warning('Ingresa un monto de pago válido.');
       return;
     }
-    
+
     if (remaining <= 0) {
       toast.warning('La venta ya está totalmente pagada.');
       return;
@@ -699,7 +712,7 @@ export const POSView: React.FC<POSViewProps> = ({
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-6 lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
-      
+
       {/* Premium POS Next Header Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-bg-card border border-border-card rounded-2xl p-4 shadow-sm">
         {/* Digital Clock & Shift Open Status */}
@@ -709,11 +722,10 @@ export const POSView: React.FC<POSViewProps> = ({
             <span>{currentTime}</span>
           </div>
 
-          <div className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl text-xs font-semibold ${
-            activeSession 
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' 
+          <div className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl text-xs font-semibold ${activeSession
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
               : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
-          }`}>
+            }`}>
             <span className={`w-1.5 h-1.5 rounded-full ${activeSession ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
             <span>
               {activeSession ? `Caja Abierta: ${shiftDuration}` : 'Caja Cerrada'}
@@ -770,18 +782,18 @@ export const POSView: React.FC<POSViewProps> = ({
       </div>
 
       <div className="grid min-h-0 grid-cols-1 lg:flex-1 lg:grid-cols-5 gap-6 relative items-stretch">
-        
+
         {/* LEFT COLUMN: Barcode scan input & cart products list (3/5 width) */}
         <div className="lg:col-span-3 min-h-0 space-y-4 bg-bg-card border border-border-card rounded-2xl p-5 shadow-sm flex flex-col">
-          
+
           {/* Barcode Search Header with Shift menu */}
           <div className="flex gap-3 items-center justify-between border-b border-border-card pb-4">
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-3 w-4 h-4 text-neutral" />
-              <input 
+              <input
                 ref={searchInputRef}
-                type="text" 
-                placeholder="Escanea código de barras o busca por SKU/Nombre y presiona Enter..." 
+                type="text"
+                placeholder="Escanea código de barras o busca por SKU/Nombre y presiona Enter..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={handleSearchKeyPress}
@@ -798,7 +810,7 @@ export const POSView: React.FC<POSViewProps> = ({
               <span>Lista de Compra</span>
             </h3>
             {cart.length > 0 && (
-              <button 
+              <button
                 onClick={() => { setCart([]); setAddedPayments([]); toast.info('Carrito vaciado.'); }}
                 className="text-[10px] text-rose-500 hover:text-rose-600 font-bold flex items-center gap-1 transition-colors cursor-pointer"
               >
@@ -824,9 +836,9 @@ export const POSView: React.FC<POSViewProps> = ({
 
                 return (
                   <div key={item.variantId} className="bg-bg-dark/40 border border-border-card/60 rounded-xl p-3 flex flex-col gap-2 relative hover:border-primary/30 transition-all duration-150 group animate-fade-in">
-                    
+
                     {/* Remove button */}
-                    <button 
+                    <button
                       onClick={() => handleRemoveFromCart(item.variantId)}
                       className="absolute top-2.5 right-2.5 text-neutral hover:text-rose-500 opacity-60 hover:opacity-100 transition-all cursor-pointer"
                       title="Eliminar item"
@@ -942,259 +954,258 @@ export const POSView: React.FC<POSViewProps> = ({
         {/* RIGHT COLUMN: Payments details, client selector, total breakdown (2/5 width) */}
         <div className="lg:col-span-2 min-h-0 flex flex-col overflow-hidden bg-bg-card border border-border-card rounded-2xl p-5 shadow-sm">
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto -mr-5 pr-5">
-          
-          <h3 className="text-xs font-bold text-secondary uppercase tracking-wider border-b border-border-card pb-3">
-            Detalles de Pago y Cierre
-          </h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(145px,0.42fr)] gap-3 items-end">
-            {/* Customer selector (Shadcn Combobox with integrated search) */}
-            <div className="space-y-1.5 min-w-0">
-              <span className="text-[10px] font-bold text-neutral uppercase tracking-wider block">Cliente Facturación</span>
-              <Combobox 
-                items={customers}
-                value={customers.find(c => c.id === selectedCustomerId) || null} 
-                onValueChange={(val: any) => setSelectedCustomerId(val?.id || '')}
-              >
-                <ComboboxTrigger 
-                  render={
-                    <Button 
-                      variant="outline" 
-                      className="w-full justify-between font-normal bg-bg-dark border-border-card text-xs text-secondary rounded-xl py-2 px-3 h-12 hover:bg-bg-dark/80 hover:text-secondary flex items-center"
-                    >
-                      {(() => {
-                        const activeCust = customers.find(c => c.id === selectedCustomerId);
-                        return activeCust ? (
-                          <div className="flex flex-col items-start leading-tight truncate">
-                            <span className="font-extrabold text-[11px] text-secondary truncate max-w-full">{activeCust.name}</span>
-                            <span className="text-[9px] text-neutral font-mono mt-0.5">{activeCust.identityNumber}</span>
-                          </div>
-                        ) : (
-                          <span className="text-neutral text-[11px]">Seleccionar cliente...</span>
-                        );
-                      })()}
-                    </Button>
-                  }
-                />
-                <ComboboxContent className="bg-bg-card border border-border-card rounded-xl shadow-2xl z-30 w-72 max-h-60 overflow-y-auto">
-                  <ComboboxInput 
-                    showTrigger={false} 
-                    placeholder="Buscar por nombre o cédula..." 
-                    className="w-full border-b border-border-card bg-transparent px-3 py-2 text-xs text-secondary focus:outline-none placeholder-neutral"
-                  />
-                  <ComboboxEmpty className="p-3 text-center text-xs text-neutral">
-                    No se encontraron clientes
-                  </ComboboxEmpty>
-                  <ComboboxList>
-                    {(c: any) => (
-                      <ComboboxItem 
-                        key={c.id} 
-                        value={c}
-                        className="px-3 py-2 hover:bg-bg-dark text-xs text-secondary rounded-lg transition-colors cursor-pointer flex flex-col items-start gap-0.5"
-                      >
-                        <span className="font-bold text-[11px] text-secondary">{c.name}</span>
-                        <span className="text-[9.5px] text-neutral font-mono">{c.identityNumber}</span>
-                      </ComboboxItem>
-                    )}
-                  </ComboboxList>
-                </ComboboxContent>
-              </Combobox>
-            </div>
+            <h3 className="text-xs font-bold text-secondary uppercase tracking-wider border-b border-border-card pb-3">
+              Detalles de Pago y Cierre
+            </h3>
 
-            {/* Global Discount Block */}
-            {cart.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(145px,0.42fr)] gap-3 items-end">
+              {/* Customer selector (Shadcn Combobox with integrated search) */}
               <div className="space-y-1.5 min-w-0">
-                <div className="flex justify-between items-center gap-2">
-                  <span className="text-[10px] font-bold text-neutral uppercase tracking-wider truncate">Descuento (%)</span>
-                  {globalDiscountAmount > 0 && (
-                    <span className="text-[10px] font-bold text-emerald-500 shrink-0">-${globalDiscountAmount.toFixed(2)}</span>
-                  )}
-                </div>
-                <div className="flex h-12 gap-2 items-center">
-                  <div className="h-full aspect-square bg-bg-dark border border-border-card rounded-xl text-blue-400 text-xs font-extrabold flex items-center justify-center gap-1 select-none">
-                    <Percent className="w-3 h-3" />
-                  </div>
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    min="0"
-                    max="100"
-                    step="1"
-                    value={globalDiscountRate === 0 ? '' : globalDiscountRate}
-                    onChange={(e) => {
-                      const val = Math.max(0, parseFloat(e.target.value) || 0);
-                      handleSetGlobalDiscountRate(val);
-                    }}
-                    className="w-full h-full rounded-xl py-1.5 px-3 text-xs text-secondary text-right font-mono bg-bg-dark border-border-card focus-visible:border-primary"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Calculation Rows */}
-          <div className="space-y-1.5 text-xs text-neutral border-t border-border-card/50 pt-3">
-            <div className="flex justify-between items-center">
-              <span>Cantidad de Artículos</span>
-              <span className="font-bold text-secondary font-mono">{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>Subtotal Bruto</span>
-              <span className="font-bold text-secondary font-mono">${grossSubtotal.toFixed(2)}</span>
-            </div>
-            {totalItemDiscounts > 0 && (
-              <div className="flex justify-between items-center text-emerald-500">
-                <span>Descuento por Ítem</span>
-                <span className="font-bold font-mono">-${totalItemDiscounts.toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between items-center">
-              <span>Subtotal Neto</span>
-              <span className="font-bold text-secondary font-mono">${netSubtotal.toFixed(2)}</span>
-            </div>
-            {globalDiscountAmount > 0 && (
-              <div className="flex justify-between items-center text-emerald-500 font-semibold">
-                <span>Descuento Global Venta</span>
-                <span className="font-bold font-mono">-${globalDiscountAmount.toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between items-center text-sm font-extrabold text-secondary pt-2 border-t border-border-card/30">
-              <span>Monto Total a Cobrar</span>
-              <span className="text-lg text-primary font-mono">${cartTotal.toFixed(2)}</span>
-            </div>
-          </div>
-
-          {/* Payment Section */}
-          {cart.length > 0 && (
-            <div className="border-t border-border-card/50 pt-4 space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-neutral uppercase tracking-wider">Cargar Pagos</span>
-                <div className="text-right">
-                  <span className="text-[10px] text-amber-500 uppercase font-bold block">Por Pagar</span>
-                  <span className="text-sm font-extrabold text-amber-500 font-mono">${remaining.toFixed(2)}</span>
-                </div>
-              </div>
-
-              {/* Payment Methods selector grid */}
-              <div className="grid grid-cols-2 gap-2">
-                {Object.values(PaymentMethod).map((method) => {
-                  const details = getMethodDetails(method);
-                  const Icon = details.icon;
-                  const isSelected = selectedMethod === method;
-                  return (
-                    <div 
-                      key={method}
-                      onClick={() => setSelectedMethod(method)}
-                      className={`p-2.5 border rounded-xl cursor-pointer flex items-center gap-2.5 transition-all ${
-                        isSelected
-                          ? 'bg-primary/5 border-primary text-secondary'
-                          : 'bg-bg-dark border-border-card text-neutral hover:text-secondary hover:border-neutral/30'
-                      }`}
-                    >
-                      <div className={`p-1.5 rounded-lg ${isSelected ? details.colorClass : 'bg-bg-card text-neutral'}`}>
-                        <Icon className="w-3.5 h-3.5" />
-                      </div>
-                      <div>
-                        <span className="text-[11px] font-bold block leading-none">{details.label}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Payment Input custom amount */}
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleAddPayment();
-                }}
-                className="bg-bg-dark/30 border border-border-card/50 rounded-2xl p-3 space-y-3"
-              >
-                {/* Cash suggestions for quick click */}
-                {quickAmounts.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {quickAmounts.map((amt) => (
-                      <button
-                        key={amt}
-                        type="button"
-                        onClick={() => handleAddPayment(amt)}
-                        className="px-2 py-1 bg-bg-card border border-border-card hover:border-primary/40 hover:text-primary rounded-lg text-[10px] font-bold font-mono text-secondary transition-all cursor-pointer"
+                <span className="text-[10px] font-bold text-neutral uppercase tracking-wider block">Cliente Facturación</span>
+                <Combobox
+                  items={customers}
+                  value={customers.find(c => c.id === selectedCustomerId) || null}
+                  onValueChange={(val: any) => setSelectedCustomerId(val?.id || '')}
+                >
+                  <ComboboxTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        className="w-full justify-between font-normal bg-bg-dark border-border-card text-xs text-secondary rounded-xl py-2 px-3 h-12 hover:bg-bg-dark/80 hover:text-secondary flex items-center"
                       >
-                        ${amt.toFixed(2)}
-                      </button>
-                    ))}
+                        {(() => {
+                          const activeCust = customers.find(c => c.id === selectedCustomerId);
+                          return activeCust ? (
+                            <div className="flex flex-col items-start leading-tight truncate">
+                              <span className="font-extrabold text-[11px] text-secondary truncate max-w-full">{activeCust.name}</span>
+                              <span className="text-[9px] text-neutral font-mono mt-0.5">{activeCust.identityNumber}</span>
+                            </div>
+                          ) : (
+                            <span className="text-neutral text-[11px]">Seleccionar cliente...</span>
+                          );
+                        })()}
+                      </Button>
+                    }
+                  />
+                  <ComboboxContent className="bg-bg-card border border-border-card rounded-xl shadow-2xl z-30 w-72 max-h-60 overflow-y-auto">
+                    <ComboboxInput
+                      showTrigger={false}
+                      placeholder="Buscar por nombre o cédula..."
+                      className="w-full border-b border-border-card bg-transparent px-3 py-2 text-xs text-secondary focus:outline-none placeholder-neutral"
+                    />
+                    <ComboboxEmpty className="p-3 text-center text-xs text-neutral">
+                      No se encontraron clientes
+                    </ComboboxEmpty>
+                    <ComboboxList>
+                      {(c: any) => (
+                        <ComboboxItem
+                          key={c.id}
+                          value={c}
+                          className="px-3 py-2 hover:bg-bg-dark text-xs text-secondary rounded-lg transition-colors cursor-pointer flex flex-col items-start gap-0.5"
+                        >
+                          <span className="font-bold text-[11px] text-secondary">{c.name}</span>
+                          <span className="text-[9.5px] text-neutral font-mono">{c.identityNumber}</span>
+                        </ComboboxItem>
+                      )}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
+              </div>
+
+              {/* Global Discount Block */}
+              {cart.length > 0 && (
+                <div className="space-y-1.5 min-w-0">
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="text-[10px] font-bold text-neutral uppercase tracking-wider truncate">Descuento (%)</span>
+                    {globalDiscountAmount > 0 && (
+                      <span className="text-[10px] font-bold text-emerald-500 shrink-0">-${globalDiscountAmount.toFixed(2)}</span>
+                    )}
+                  </div>
+                  <div className="flex h-12 gap-2 items-center">
+                    <div className="h-full aspect-square bg-bg-dark border border-border-card rounded-xl text-blue-400 text-xs font-extrabold flex items-center justify-center gap-1 select-none">
+                      <Percent className="w-3 h-3" />
+                    </div>
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={globalDiscountRate === 0 ? '' : globalDiscountRate}
+                      onChange={(e) => {
+                        const val = Math.max(0, parseFloat(e.target.value) || 0);
+                        handleSetGlobalDiscountRate(val);
+                      }}
+                      className="w-full h-full rounded-xl py-1.5 px-3 text-xs text-secondary text-right font-mono bg-bg-dark border-border-card focus-visible:border-primary"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Calculation Rows */}
+            <div className="space-y-1.5 text-xs text-neutral border-t border-border-card/50 pt-3">
+              <div className="flex justify-between items-center">
+                <span>Cantidad de Artículos</span>
+                <span className="font-bold text-secondary font-mono">{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>Subtotal Bruto</span>
+                <span className="font-bold text-secondary font-mono">${grossSubtotal.toFixed(2)}</span>
+              </div>
+              {totalItemDiscounts > 0 && (
+                <div className="flex justify-between items-center text-emerald-500">
+                  <span>Descuento por Ítem</span>
+                  <span className="font-bold font-mono">-${totalItemDiscounts.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center">
+                <span>Subtotal Neto</span>
+                <span className="font-bold text-secondary font-mono">${netSubtotal.toFixed(2)}</span>
+              </div>
+              {globalDiscountAmount > 0 && (
+                <div className="flex justify-between items-center text-emerald-500 font-semibold">
+                  <span>Descuento Global Venta</span>
+                  <span className="font-bold font-mono">-${globalDiscountAmount.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center text-sm font-extrabold text-secondary pt-2 border-t border-border-card/30">
+                <span>Monto Total a Cobrar</span>
+                <span className="text-lg text-primary font-mono">${cartTotal.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Payment Section */}
+            {cart.length > 0 && (
+              <div className="border-t border-border-card/50 pt-4 space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-neutral uppercase tracking-wider">Cargar Pagos</span>
+                  <div className="text-right">
+                    <span className="text-[10px] text-amber-500 uppercase font-bold block">Por Pagar</span>
+                    <span className="text-sm font-extrabold text-amber-500 font-mono">${remaining.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                {/* Payment Methods selector grid */}
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.values(PaymentMethod).map((method) => {
+                    const details = getMethodDetails(method);
+                    const Icon = details.icon;
+                    const isSelected = selectedMethod === method;
+                    return (
+                      <div
+                        key={method}
+                        onClick={() => setSelectedMethod(method)}
+                        className={`p-2.5 border rounded-xl cursor-pointer flex items-center gap-2.5 transition-all ${isSelected
+                            ? 'bg-primary/5 border-primary text-secondary'
+                            : 'bg-bg-dark border-border-card text-neutral hover:text-secondary hover:border-neutral/30'
+                          }`}
+                      >
+                        <div className={`p-1.5 rounded-lg ${isSelected ? details.colorClass : 'bg-bg-card text-neutral'}`}>
+                          <Icon className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <span className="text-[11px] font-bold block leading-none">{details.label}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Payment Input custom amount */}
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleAddPayment();
+                  }}
+                  className="bg-bg-dark/30 border border-border-card/50 rounded-2xl p-3 space-y-3"
+                >
+                  {/* Cash suggestions for quick click */}
+                  {quickAmounts.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {quickAmounts.map((amt) => (
+                        <button
+                          key={amt}
+                          type="button"
+                          onClick={() => handleAddPayment(amt)}
+                          className="px-2 py-1 bg-bg-card border border-border-card hover:border-primary/40 hover:text-primary rounded-lg text-[10px] font-bold font-mono text-secondary transition-all cursor-pointer"
+                        >
+                          ${amt.toFixed(2)}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      placeholder="0.00"
+                      min="0"
+                      value={customAmountText}
+                      onChange={(e) => setCustomAmountText(e.target.value)}
+                      className="flex-1 bg-bg-dark border border-border-card rounded-xl py-1.5 px-3 text-xs text-secondary font-mono focus:outline-none focus:border-primary placeholder-neutral"
+                    />
+                    <button
+                      type="submit"
+                      className="px-4 py-1.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold shadow transition-all cursor-pointer"
+                    >
+                      Agregar
+                    </button>
+                  </div>
+                </form>
+
+                {/* Added Payments List */}
+                {addedPayments.length > 0 && (
+                  <div className="space-y-1.5">
+                    <span className="text-[9px] font-bold text-neutral uppercase tracking-wider block">Pagos Registrados</span>
+                    <div className="h-24 space-y-1.5 overflow-y-auto pr-1">
+                      {addedPayments.map((p, idx) => {
+                        const details = getMethodDetails(p.paymentMethod);
+                        const Icon = details.icon;
+                        return (
+                          <div key={idx} className="flex items-center justify-between p-2 bg-bg-dark/40 border border-border-card/50 rounded-lg text-xs">
+                            <div className="flex items-center gap-2">
+                              <div className={`p-1 rounded ${details.colorClass}`}>
+                                <Icon className="w-3.5 h-3.5" />
+                              </div>
+                              <span className="font-bold text-secondary">{details.label}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-secondary font-mono">${p.amount.toFixed(2)}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemovePayment(idx)}
+                                className="p-0.5 text-neutral hover:text-rose-500 hover:bg-rose-500/10 rounded transition-all cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    placeholder="0.00"
-                    min="0"
-                    value={customAmountText}
-                    onChange={(e) => setCustomAmountText(e.target.value)}
-                    className="flex-1 bg-bg-dark border border-border-card rounded-xl py-1.5 px-3 text-xs text-secondary font-mono focus:outline-none focus:border-primary placeholder-neutral"
-                  />
-                  <button
-                    type="submit"
-                    className="px-4 py-1.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold shadow transition-all cursor-pointer"
-                  >
-                    Agregar
-                  </button>
-                </div>
-              </form>
-
-              {/* Added Payments List */}
-              {addedPayments.length > 0 && (
-                <div className="space-y-1.5">
-                  <span className="text-[9px] font-bold text-neutral uppercase tracking-wider block">Pagos Registrados</span>
-                  <div className="h-24 space-y-1.5 overflow-y-auto pr-1">
-                    {addedPayments.map((p, idx) => {
-                      const details = getMethodDetails(p.paymentMethod);
-                      const Icon = details.icon;
-                      return (
-                        <div key={idx} className="flex items-center justify-between p-2 bg-bg-dark/40 border border-border-card/50 rounded-lg text-xs">
-                          <div className="flex items-center gap-2">
-                            <div className={`p-1 rounded ${details.colorClass}`}>
-                              <Icon className="w-3.5 h-3.5" />
-                            </div>
-                            <span className="font-bold text-secondary">{details.label}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-secondary font-mono">${p.amount.toFixed(2)}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleRemovePayment(idx)}
-                              className="p-0.5 text-neutral hover:text-rose-500 hover:bg-rose-500/10 rounded transition-all cursor-pointer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
+                {/* Cash change helper */}
+                {amountPaid > cartTotal && (
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 rounded-xl flex justify-between items-center animate-fade-in shadow-sm">
+                    <div>
+                      <span className="text-[9px] uppercase font-bold tracking-wider block opacity-90">Vuelto / Cambio a entregar</span>
+                    </div>
+                    <span className="text-xl font-mono font-extrabold">${(amountPaid - cartTotal).toFixed(2)}</span>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Cash change helper */}
-              {amountPaid > cartTotal && (
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 rounded-xl flex justify-between items-center animate-fade-in shadow-sm">
-                  <div>
-                    <span className="text-[9px] uppercase font-bold tracking-wider block opacity-90">Vuelto / Cambio a entregar</span>
-                  </div>
-                  <span className="text-xl font-mono font-extrabold">${(amountPaid - cartTotal).toFixed(2)}</span>
-                </div>
-              )}
-
-            </div>
-          )}
+              </div>
+            )}
 
           </div>
 
           {/* ACTION SUBMIT BUTTON */}
           <div className="shrink-0 border-t border-border-card/50 bg-bg-card pt-3">
-            <button 
+            <button
               onClick={handleCompletePayment}
               disabled={!activeSession || cart.length === 0 || isProcessing || amountPaid < cartTotal}
               className="w-full py-3 bg-primary hover:bg-primary-hover disabled:bg-neutral/20 disabled:text-neutral/60 text-white text-xs font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
@@ -1209,7 +1220,7 @@ export const POSView: React.FC<POSViewProps> = ({
       </div>
 
       {/* Thermal Ticket Printer simulation */}
-      <ThermalTicketModal 
+      <ThermalTicketModal
         isOpen={isTicketModalOpen}
         onClose={() => {
           setIsTicketModalOpen(false);
@@ -1222,7 +1233,7 @@ export const POSView: React.FC<POSViewProps> = ({
       />
 
       {/* Caja Chica Control modals */}
-      <AperturaModal 
+      <AperturaModal
         isOpen={isAperturaModalOpen}
         onClose={() => setIsAperturaModalOpen(false)}
         openingBalance={openingBalance}
@@ -1231,7 +1242,7 @@ export const POSView: React.FC<POSViewProps> = ({
         isOpening={isOpening}
       />
 
-      <EgresoModal 
+      <EgresoModal
         isOpen={isEgresoModalOpen}
         onClose={() => setIsEgresoModalOpen(false)}
         expenseDesc={expenseDesc}
@@ -1242,7 +1253,7 @@ export const POSView: React.FC<POSViewProps> = ({
         isRegistering={isRegistering}
       />
 
-      <CierreModal 
+      <CierreModal
         isOpen={isCierreModalOpen}
         onClose={() => setIsCierreModalOpen(false)}
         closingBalance={closingBalance}
@@ -1255,7 +1266,7 @@ export const POSView: React.FC<POSViewProps> = ({
       />
 
       {isHistorialModalOpen && (
-        <HistorialModal 
+        <HistorialModal
           isOpen={isHistorialModalOpen}
           onClose={() => setIsHistorialModalOpen(false)}
           activeSessionSales={activeSessionSales}
@@ -1267,7 +1278,7 @@ export const POSView: React.FC<POSViewProps> = ({
         />
       )}
 
-      <ThermalTicketModal 
+      <ThermalTicketModal
         isOpen={isReprintModalOpen}
         onClose={() => {
           setIsReprintModalOpen(false);
