@@ -28,7 +28,7 @@ export const ProductPagination: React.FC<ProductPaginationProps> = ({ meta, onPa
   if (meta.total === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4 mt-4 mb-5">
+    <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4 pb-5">
       <Field orientation="horizontal" className="w-fit gap-2">
         <FieldLabel htmlFor="select-rows-per-page" className="text-[11px] text-muted-foreground whitespace-nowrap">
           Filas por página

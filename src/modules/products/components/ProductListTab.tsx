@@ -77,7 +77,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
 
   return (
     <Card className="border border-border/80 shadow-xs">
-      <CardHeader className="pb-4">
+      <CardHeader>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <CardTitle className="text-sm font-bold">Catálogo de Productos ({meta.total})</CardTitle>
@@ -110,7 +110,6 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
           </form>
         </div>
       </CardHeader>
-
       <CardContent>
         <ProductPagination meta={meta} onPageChange={onPageChange} onLimitChange={onLimitChange} />
 
