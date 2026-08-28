@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import type { Product } from '../services/products.service';
 import { useInventoryMovementsByVariant, useProductDetail, useProductPurchases, useProductSales } from '../hooks/useProducts';
 import { ProductPagination } from './ProductPagination';
+import { StockAdjustmentForm } from './StockAdjustmentForm';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Package, ShoppingCart, Truck, ClipboardList } from 'lucide-react';
+import { Loader2, Package, ShoppingCart, Truck, ClipboardList, SlidersHorizontal } from 'lucide-react';
 
-type TabName = 'details' | 'sales' | 'purchases' | 'movements';
+type TabName = 'details' | 'sales' | 'purchases' | 'movements' | 'adjustment';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -25,7 +26,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
   const [tab, setTab] = useState<TabName>('details');
   const [pages, setPages] = useState({ sales: 1, purchases: 1, movements: 1 });
   const [pageSize, setPageSize] = useState(10);
-  const [selectedVariantId, setSelectedVariantId] = useState<string>();
 
   useEffect(() => {
     if (isOpen) {
@@ -42,12 +42,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
   const image = detailProduct?.imageIds?.length ? uploadedImages.find((item) => item.id === detailProduct.imageIds[0]) : undefined;
   const variants = detailProduct?.variants || [];
 
-  useEffect(() => {
-    setSelectedVariantId(detailProduct?.variants?.[0]?.id);
-  }, [detailProduct?.id]);
-
   const { movements, meta: movementsMeta, isLoading: isLoadingMovements } = useInventoryMovementsByVariant(
-    selectedVariantId,
+    variants[0]?.id,
     pages.movements,
     pageSize,
   );
@@ -87,6 +83,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   <TabsTrigger value="sales"><ShoppingCart className="w-3.5 h-3.5 mr-1.5" />Ventas</TabsTrigger>
                   <TabsTrigger value="purchases"><Truck className="w-3.5 h-3.5 mr-1.5" />Compras</TabsTrigger>
                   <TabsTrigger value="movements"><ClipboardList className="w-3.5 h-3.5 mr-1.5" />Movimientos</TabsTrigger>
+                  <TabsTrigger value="adjustment"><SlidersHorizontal className="w-3.5 h-3.5 mr-1.5" />Ajuste</TabsTrigger>
                 </TabsList>
 
                 <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
@@ -117,13 +114,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
                 <TabsContent value="movements" className="mt-0">
                   <ProductPagination meta={movementsMeta} onPageChange={(page) => setPages((value) => ({ ...value, movements: page }))} onLimitChange={(nextLimit) => { setPageSize(nextLimit); setPages((value) => ({ ...value, movements: 1 })); }} />
-                  <div className="mb-4 flex items-center gap-3">
-                    <label htmlFor="movement-variant" className="text-xs font-semibold text-muted-foreground">Variante</label>
-                    <select id="movement-variant" value={selectedVariantId || ''} onChange={(event) => { setSelectedVariantId(event.target.value); setPages((value) => ({ ...value, movements: 1 })); }} className="h-9 min-w-56 rounded-md border border-input bg-background px-3 text-xs">
-                      {variants.map((variant) => <option key={variant.id || variant.sku} value={variant.id}>{variant.sku}</option>)}
-                    </select>
-                  </div>
                   {isLoadingMovements ? <LoadingRows /> : movements.length === 0 ? <p className="py-12 text-center text-sm text-muted-foreground">No hay movimientos para esta variante.</p> : <div className="space-y-2">{movements.map((movement) => <div key={movement.id} className="border border-border rounded-lg p-3 flex justify-between text-xs"><div><strong>{movement.reason}</strong><p className="text-muted-foreground mt-1">{new Date(movement.createdAt).toLocaleString()} · {movement.variant?.sku || 'Sin SKU'}</p></div><strong className={movement.type === 'IN' || movement.type === 'INPUT' ? 'text-emerald-600' : 'text-destructive'}>{movement.type === 'IN' || movement.type === 'INPUT' ? '+' : '-'}{Number(movement.quantity || 0)}</strong></div>)}</div>}
+                </TabsContent>
+
+                <TabsContent value="adjustment" className="mt-0">
+                  <StockAdjustmentForm
+                    product={detailProduct}
+                    selectedBranchId={selectedBranchId}
+                  />
                 </TabsContent>
                 </div>
               </Tabs>

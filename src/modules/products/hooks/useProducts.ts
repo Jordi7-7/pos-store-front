@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsService } from '../services/products.service';
-import type { CreateProductInput, CreateSimpleProductInput, InventoryMovement, PaginatedResult, Product, ProductHistoryPurchase, ProductHistorySale } from '../services/products.service';
+import type { AdjustStockInput, CreateProductInput, CreateSimpleProductInput, InventoryMovement, PaginatedResult, Product, ProductHistoryPurchase, ProductHistorySale } from '../services/products.service';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
 export const useProducts = (params?: { page?: number; limit?: number; search?: string }) => {
@@ -81,6 +81,23 @@ export const useProductPurchases = (productId?: string, page = 1, limit = 10, en
     meta: query.data?.meta || { total: 0, page, limit, totalPages: 1 },
     isLoading: query.isLoading,
     isError: query.isError,
+  };
+};
+
+export const useAdjustStock = () => {
+  const queryClient = useQueryClient();
+  const { tenantId } = useAuthStore();
+  const mutation = useMutation({
+    mutationFn: (input: AdjustStockInput) => productsService.adjustStock(input),
+    onSuccess: (_movement, input) => {
+      queryClient.invalidateQueries({ queryKey: ['products', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['variant-movements', tenantId, input.variantId] });
+    },
+  });
+
+  return {
+    adjustStock: mutation.mutateAsync,
+    isAdjusting: mutation.isPending,
   };
 };
 

@@ -42,6 +42,14 @@ export interface PaginatedResult<T> {
   meta: { total: number; page: number; limit: number; totalPages: number };
 }
 
+export interface AdjustStockInput {
+  branchId: string;
+  variantId: string;
+  quantity: number;
+  type: 'IN' | 'OUT';
+  comment?: string;
+}
+
 export interface ProductHistorySale {
   id: string;
   invoiceNumber?: string | null;
@@ -175,6 +183,10 @@ export const productsService = {
 
   getInventoryMovementsByVariant: async (variantId: string, page = 1, limit = 10): Promise<PaginatedResult<InventoryMovement>> => {
     return apiClient.get(`/products/inventory-movements-by-variant?variantId=${encodeURIComponent(variantId)}&page=${page}&limit=${limit}`);
+  },
+
+  adjustStock: async (input: AdjustStockInput): Promise<InventoryMovement> => {
+    return apiClient.post<InventoryMovement>('/products/stock-adjustments', input);
   },
 };
 
