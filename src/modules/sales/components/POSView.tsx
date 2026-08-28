@@ -930,7 +930,7 @@ export const POSView: React.FC<POSViewProps> = ({
                         {/* Shadcn Input component */}
                         <Input
                           type="number"
-                          placeholder={currentItemDiscountType === 'PERCENTAGE' ? "0" : item.price.toFixed(2)}
+                          placeholder="0"
                           min="0"
                           step={currentItemDiscountType === 'PERCENTAGE' ? "1" : "0.01"}
                           value={currentItemDiscountRate === 0 ? '' : currentItemDiscountRate}
