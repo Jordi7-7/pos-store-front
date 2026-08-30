@@ -16,7 +16,7 @@ import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import {
   Search, Wallet, ArrowRightLeft, ArrowLeftRight, Receipt, X,
   ShoppingCart, Trash2, Minus, Plus, CreditCard, Loader2, Package,
-  Percent, DollarSign, Check, Banknote
+  Percent, DollarSign, Check, Banknote, Maximize2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -39,6 +39,11 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
+
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog';
 
 // Subcomponents import
 import { ThermalTicketModal } from './pos/ThermalTicketModal';
@@ -132,6 +137,7 @@ export const POSView: React.FC<POSViewProps> = ({
   const [currentTenant, setCurrentTenant] = useState<any>(null);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearchModal, setShowSearchModal] = useState<boolean>(false);
+  const [selectedImageForZoom, setSelectedImageForZoom] = useState<string | null>(null);
 
   const currentUser = useAuthStore((state) => state.user);
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
@@ -490,9 +496,7 @@ export const POSView: React.FC<POSViewProps> = ({
         ? variant.attributeValues.map((av: any) => `${av.attribute?.name || 'Attr'}: ${av.value}`).join(' / ')
         : 'Estándar';
 
-      const imageUrl = (variant.images && variant.images.length > 0)
-        ? variant.images[0].url
-        : (product.images && product.images.length > 0) ? product.images[0].url : undefined;
+      const imageUrl = variant.imageUrl
 
       if (1 > maxStock) {
         toast.warning(`Aviso: El stock del producto "${product.name}" quedará en negativo (Stock disponible: ${maxStock} pzs.)`);
@@ -560,6 +564,7 @@ export const POSView: React.FC<POSViewProps> = ({
               sku: singleRes.sku,
               salePrice: Number(singleRes.salePrice || 0),
               attributeValues: singleRes.attributeValues || [],
+              imageUrl: singleRes.imageUrl,
             };
             const stockQty = Number(singleRes.stock || 0);
             if (stockQty <= 0) {
@@ -858,9 +863,23 @@ export const POSView: React.FC<POSViewProps> = ({
 
                     <div className="flex gap-3">
                       {/* Thumbnail */}
-                      <div className="w-12 h-12 bg-bg-card border border-border-card/50 rounded-lg overflow-hidden shrink-0 flex items-center justify-center">
+                      <div
+                        onClick={() => {
+                          if (item.imageUrl) {
+                            setSelectedImageForZoom(item.imageUrl);
+                          }
+                        }}
+                        className={`w-12 h-12 bg-bg-card border border-border-card/50 rounded-lg overflow-hidden shrink-0 flex items-center justify-center relative group/thumb transition-all ${
+                          item.imageUrl ? 'cursor-pointer hover:border-primary/50' : ''
+                        }`}
+                      >
                         {item.imageUrl ? (
-                          <img src={item.imageUrl} className="w-full h-full object-cover" alt="mini" />
+                          <>
+                            <img src={item.imageUrl} className="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-200" alt="mini" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-all duration-200">
+                              <Maximize2 className="w-4 h-4 text-white" />
+                            </div>
+                          </>
                         ) : (
                           <Package className="w-6 h-6 text-neutral opacity-30" />
                         )}
@@ -1318,6 +1337,16 @@ export const POSView: React.FC<POSViewProps> = ({
         />
       )}
 
+      {selectedImageForZoom && (
+        <Dialog open={!!selectedImageForZoom} onOpenChange={() => setSelectedImageForZoom(null)}>
+          <DialogContent className="max-w-5xl w-full bg-bg-card border border-border-card p-6 pt-12 rounded-2xl flex flex-col items-center overflow-hidden shadow-2xl z-[60]">
+            <div className="relative w-full max-h-[75vh] rounded-xl overflow-hidden bg-bg-dark flex items-center justify-center">
+              <img src={selectedImageForZoom} className="max-w-full max-h-[75vh] object-contain" alt="Producto ampliado" />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {showSearchModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <div className="bg-bg-card border border-border-card rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[80vh]">
@@ -1357,6 +1386,7 @@ export const POSView: React.FC<POSViewProps> = ({
                         sku: variant.sku,
                         salePrice: Number(variant.salePrice || 0),
                         attributeValues: variant.attributeValues || [],
+                        imageUrl: variant.imageUrl,
                       };
                       if (stockQty <= 0) {
                         toast.warning(`Aviso: El stock del producto "${variant.productName}" quedará en negativo (Stock disponible: ${stockQty} pzs.)`);
@@ -1369,6 +1399,30 @@ export const POSView: React.FC<POSViewProps> = ({
                     }}
                     className="p-3 bg-bg-dark/50 border border-border-card/60 hover:border-primary/50 hover:bg-bg-dark rounded-xl cursor-pointer transition-all flex items-center justify-between gap-4 group"
                   >
+                    {/* Thumbnail Image */}
+                    <div
+                      onClick={(e) => {
+                        if (variant.imageUrl) {
+                          e.stopPropagation();
+                          setSelectedImageForZoom(variant.imageUrl);
+                        }
+                      }}
+                      className={`w-10 h-10 rounded-lg border border-border-card bg-bg-dark shrink-0 overflow-hidden flex items-center justify-center relative group/thumb transition-all ${
+                        variant.imageUrl ? 'cursor-pointer hover:border-primary/50' : ''
+                      }`}
+                    >
+                      {variant.imageUrl ? (
+                        <>
+                          <img src={variant.imageUrl} className="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-200" alt={variant.productName} />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-all duration-200">
+                            <Maximize2 className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        </>
+                      ) : (
+                        <Package className="w-5 h-5 text-neutral/40" />
+                      )}
+                    </div>
+
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline gap-2">
                         <span className="font-extrabold text-xs text-secondary group-hover:text-primary transition-colors truncate">
