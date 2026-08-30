@@ -93,6 +93,7 @@ export const POSView: React.FC<POSViewProps> = ({
   // Search input selection
   const [searchTerm, setSearchTerm] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const paymentAmountInputRef = useRef<HTMLInputElement>(null);
 
 
   const { openSession, isOpening } = useOpenCashSession();
@@ -228,6 +229,12 @@ export const POSView: React.FC<POSViewProps> = ({
       if (searchInputRef.current) {
         searchInputRef.current.focus();
         searchInputRef.current.select();
+      }
+    },
+    onPaymentFocus: () => {
+      if (paymentAmountInputRef.current) {
+        paymentAmountInputRef.current.focus();
+        paymentAmountInputRef.current.select();
       }
     },
     onCompletePayment: () => {
@@ -1166,6 +1173,7 @@ export const POSView: React.FC<POSViewProps> = ({
                   </div>
 
                   <input
+                    ref={paymentAmountInputRef}
                     type="number"
                     placeholder="0.00"
                     min="0"
