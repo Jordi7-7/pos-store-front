@@ -723,8 +723,8 @@ export const POSView: React.FC<POSViewProps> = ({
           </div>
 
           <div className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl text-xs font-semibold ${activeSession
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-              : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
+            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
+            : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
             }`}>
             <span className={`w-1.5 h-1.5 rounded-full ${activeSession ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
             <span>
@@ -959,10 +959,12 @@ export const POSView: React.FC<POSViewProps> = ({
               Detalles de Pago y Cierre
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(145px,0.42fr)] gap-3 items-end">
+            <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(145px,0.42fr)] gap-3 items-start">
               {/* Customer selector (Shadcn Combobox with integrated search) */}
               <div className="space-y-1.5 min-w-0">
-                <span className="text-[10px] font-bold text-neutral uppercase tracking-wider block">Cliente Facturación</span>
+                <div className="flex items-center h-5">
+                  <span className="text-[10px] font-bold text-neutral uppercase tracking-wider block">Cliente Facturación</span>
+                </div>
                 <Combobox
                   items={customers}
                   value={customers.find(c => c.id === selectedCustomerId) || null}
@@ -1014,34 +1016,34 @@ export const POSView: React.FC<POSViewProps> = ({
               </div>
 
               {/* Global Discount Block */}
-              {cart.length > 0 && (
-                <div className="space-y-1.5 min-w-0">
-                  <div className="flex justify-between items-center gap-2">
-                    <span className="text-[10px] font-bold text-neutral uppercase tracking-wider truncate">Descuento (%)</span>
-                    {globalDiscountAmount > 0 && (
-                      <span className="text-[10px] font-bold text-emerald-500 shrink-0">-${globalDiscountAmount.toFixed(2)}</span>
-                    )}
-                  </div>
-                  <div className="flex h-12 gap-2 items-center">
-                    <div className="h-full aspect-square bg-bg-dark border border-border-card rounded-xl text-blue-400 text-xs font-extrabold flex items-center justify-center gap-1 select-none">
-                      <Percent className="w-3 h-3" />
-                    </div>
-                    <Input
-                      type="number"
-                      placeholder="0"
-                      min="0"
-                      max="100"
-                      step="1"
-                      value={globalDiscountRate === 0 ? '' : globalDiscountRate}
-                      onChange={(e) => {
-                        const val = Math.max(0, parseFloat(e.target.value) || 0);
-                        handleSetGlobalDiscountRate(val);
-                      }}
-                      className="w-full h-full rounded-xl py-1.5 px-3 text-xs text-secondary text-right font-mono bg-bg-dark border-border-card focus-visible:border-primary"
-                    />
-                  </div>
+
+              <div className="space-y-1.5 min-w-0">
+                <div className="flex justify-between items-center gap-2 h-5">
+                  <span className="text-[10px] font-bold text-neutral uppercase tracking-wider truncate">Descuento (%)</span>
+                  {globalDiscountAmount > 0 && (
+                    <span className="text-[10px] font-bold text-emerald-500 shrink-0">-${globalDiscountAmount.toFixed(2)}</span>
+                  )}
                 </div>
-              )}
+                <div className="flex h-12 gap-2 items-center">
+                  {/* <div className="h-full aspect-square bg-bg-dark border border-border-card rounded-xl text-blue-400 text-xs font-extrabold flex items-center justify-center gap-1 select-none">
+                  <Percent className="w-3 h-3" />
+                  </div> */}
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={globalDiscountRate === 0 ? '' : globalDiscountRate}
+                    onChange={(e) => {
+                      const val = Math.max(0, parseFloat(e.target.value) || 0);
+                      handleSetGlobalDiscountRate(val);
+                    }}
+                    className="w-full h-full rounded-xl py-1.5 px-3 text-xs text-secondary text-right font-mono bg-bg-dark border-border-card focus-visible:border-primary"
+                  />
+                </div>
+              </div>
+
             </div>
 
             {/* Calculation Rows */}
@@ -1098,8 +1100,8 @@ export const POSView: React.FC<POSViewProps> = ({
                         key={method}
                         onClick={() => setSelectedMethod(method)}
                         className={`p-2.5 border rounded-xl cursor-pointer flex items-center gap-2.5 transition-all ${isSelected
-                            ? 'bg-primary/5 border-primary text-secondary'
-                            : 'bg-bg-dark border-border-card text-neutral hover:text-secondary hover:border-neutral/30'
+                          ? 'bg-primary/5 border-primary text-secondary'
+                          : 'bg-bg-dark border-border-card text-neutral hover:text-secondary hover:border-neutral/30'
                           }`}
                       >
                         <div className={`p-1.5 rounded-lg ${isSelected ? details.colorClass : 'bg-bg-card text-neutral'}`}>
