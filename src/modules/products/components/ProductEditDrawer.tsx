@@ -100,7 +100,7 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
       initialStock: stockQty,
     });
 
-    setSelectedImages(product.images?.map((img: { id: string }) => img.id) ?? []);
+    setSelectedImages(sv.imageIds ?? []);
     setSelectedTagIds(sv.tags?.map((t: { id: string }) => t.id) ?? []);
   }, [product, selectedBranchId, form]);
 

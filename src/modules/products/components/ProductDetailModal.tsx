@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import type { Product } from '../services/products.service';
 import { useInventoryMovementsByVariant, useProductDetail, useProductPurchases, useProductSales } from '../hooks/useProducts';
 import { ProductPagination } from './ProductPagination';
@@ -39,8 +39,32 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
   const { sales, meta: salesMeta, isLoading: isLoadingSales } = useProductSales(product?.id, pages.sales, pageSize, isOpen && tab === 'sales');
   const { purchases, meta: purchasesMeta, isLoading: isLoadingPurchases } = useProductPurchases(product?.id, pages.purchases, pageSize, isOpen && tab === 'purchases');
   const detailProduct = fetchedProduct || product;
-  const image = detailProduct?.imageIds?.length ? uploadedImages.find((item) => item.id === detailProduct.imageIds[0]) : undefined;
   const variants = detailProduct?.variants || [];
+
+  const allImageIds = useMemo(() => {
+    if (!detailProduct) return [];
+    const idsSet = new Set<string>();
+
+    if (detailProduct.imageIds) {
+      detailProduct.imageIds.forEach((id: string) => idsSet.add(id));
+    }
+
+    if ((detailProduct as any).images) {
+      (detailProduct as any).images.forEach((img: any) => idsSet.add(img.id));
+    }
+
+    variants.forEach((variant: any) => {
+      if (variant.imageIds) {
+        variant.imageIds.forEach((id: string) => idsSet.add(id));
+      }
+      if (variant.images) {
+        variant.images.forEach((img: any) => idsSet.add(img.id));
+      }
+    });
+
+    return Array.from(idsSet);
+  }, [detailProduct, variants]);
+
 
   const { movements, meta: movementsMeta, isLoading: isLoadingMovements } = useInventoryMovementsByVariant(
     variants[0]?.id,
@@ -61,19 +85,19 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                 </div>
               </div>
             </DialogHeader>
-
+ 
             <div className="flex min-h-0 flex-1 flex-col md:flex-row">
               <aside className="shrink-0 border-b border-border bg-muted/10 p-5 md:w-64 md:border-b-0 md:border-r">
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Imágenes</span>
-                  <span className="text-[10px] text-muted-foreground">{detailProduct.imageIds?.length || 0}</span>
+                  <span className="text-[10px] text-muted-foreground">{allImageIds.length}</span>
                 </div>
                 <div className="flex gap-3 overflow-x-auto pb-1 md:grid md:grid-cols-2 md:content-start md:overflow-y-auto md:pb-0">
-                  {(detailProduct.imageIds || []).map((imageId) => {
+                  {allImageIds.map((imageId) => {
                     const productImage = uploadedImages.find((item) => item.id === imageId);
                     return productImage ? <img key={imageId} src={productImage.url} alt={detailProduct.name} className="h-24 w-24 shrink-0 rounded-xl border border-border bg-background object-cover md:h-auto md:w-full md:aspect-square" /> : null;
                   })}
-                  {!image && <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-background md:h-auto md:w-full md:aspect-square"><Package className="w-8 h-8 text-muted-foreground/50" /></div>}
+                  {allImageIds.length === 0 && <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-background md:h-auto md:w-full md:aspect-square"><Package className="w-8 h-8 text-muted-foreground/50" /></div>}
                 </div>
               </aside>
 
