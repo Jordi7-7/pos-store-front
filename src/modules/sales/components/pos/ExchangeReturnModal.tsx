@@ -185,11 +185,12 @@ export function ExchangeReturnModal({
       setScanInput('');
       setIsScanLoading(true);
       try {
-        const variant = await productsService.getPosVariantBySku(code, branchId);
-        if (!variant) {
+        const variants = await productsService.getPosVariantBySku(code, branchId);
+        if (!variants || variants.length === 0) {
           toast.error(`Producto no encontrado: ${code}`);
           return;
         }
+        const variant = variants[0];
         // Build attributes string from attributeValues array
         const attrsString = (variant.attributeValues ?? [])
           .map((av: any) => `${av.attribute?.name ?? ''}: ${av.value}`)

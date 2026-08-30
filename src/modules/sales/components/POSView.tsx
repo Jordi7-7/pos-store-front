@@ -1297,6 +1297,7 @@ export const POSView: React.FC<POSViewProps> = ({
         activeSession={activeSession}
         activeSessionSales={activeSessionSales}
         activeSessionExpenses={activeSessionExpenses}
+        activeSessionRefunds={sessionDetails?.refunds || []}
       />
 
       {isHistorialModalOpen && (

@@ -18,6 +18,7 @@ interface CierreModalProps {
   activeSession: any;
   activeSessionSales: any[];
   activeSessionExpenses: any[];
+  activeSessionRefunds: any[];
 }
 
 export const CierreModal: React.FC<CierreModalProps> = ({
@@ -30,6 +31,7 @@ export const CierreModal: React.FC<CierreModalProps> = ({
   activeSession,
   activeSessionSales,
   activeSessionExpenses,
+  activeSessionRefunds,
 }) => {
   const openingBalance = activeSession?.openingBalance ? Number(activeSession.openingBalance) : 0;
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
@@ -42,7 +44,35 @@ export const CierreModal: React.FC<CierreModalProps> = ({
     return activeSessionExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
   }, [activeSessionExpenses]);
 
-  const expectedBalance = openingBalance + salesTotal - expensesTotal;
+  const refundsTotal = useMemo(() => {
+    return activeSessionRefunds.reduce((sum, r) => sum + Number(r.totalRefunded || 0), 0);
+  }, [activeSessionRefunds]);
+
+  const expectedBalance = openingBalance + salesTotal - expensesTotal - refundsTotal;
+
+  const cashSalesTotal = useMemo(() => {
+    let sum = 0;
+    activeSessionSales.forEach((sale) => {
+      (sale.payments || []).forEach((payment: any) => {
+        if (payment.paymentMethod === 'EFECTIVO') {
+          sum += Number(payment.amount || 0);
+        }
+      });
+    });
+    return sum;
+  }, [activeSessionSales]);
+
+  const cardSalesTotal = useMemo(() => {
+    let sum = 0;
+    activeSessionSales.forEach((sale) => {
+      (sale.payments || []).forEach((payment: any) => {
+        if (payment.paymentMethod === 'TARJETA') {
+          sum += Number(payment.amount || 0);
+        }
+      });
+    });
+    return sum;
+  }, [activeSessionSales]);
 
   // Group products sold for this session
   const productsSummary = useMemo(() => {
@@ -104,11 +134,37 @@ export const CierreModal: React.FC<CierreModalProps> = ({
                 </span>
                 <span className="font-mono font-semibold text-rose-500 font-bold">${expensesTotal.toFixed(2)}</span>
               </div>
+              <div className="flex justify-between items-center text-muted-foreground">
+                <span className="flex items-center gap-1 text-amber-500">
+                  <ArrowDownLeft className="w-3.5 h-3.5" /> (-) Devoluciones:
+                </span>
+                <span className="font-mono font-semibold text-amber-500 font-bold">${refundsTotal.toFixed(2)}</span>
+              </div>
 
               <div className="border-t border-dashed border-border/80 pt-2 flex justify-between items-center font-bold text-sm">
                 <span className="text-secondary">(=) Total Esperado en Caja:</span>
                 <span className="font-mono text-primary font-extrabold text-base">${expectedBalance.toFixed(2)}</span>
               </div>
+            </div>
+          </div>
+
+          {/* Large Metrics Dashboard */}
+          <div className="grid grid-cols-2 gap-3 pt-1">
+            <div className="bg-muted/30 border border-border rounded-xl p-3 flex flex-col justify-between shadow-xs">
+              <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Venta Efectivo</span>
+              <span className="text-base font-extrabold text-emerald-500 font-mono mt-1">${cashSalesTotal.toFixed(2)}</span>
+            </div>
+            <div className="bg-muted/30 border border-border rounded-xl p-3 flex flex-col justify-between shadow-xs">
+              <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Venta TPV</span>
+              <span className="text-base font-extrabold text-blue-500 font-mono mt-1">${cardSalesTotal.toFixed(2)}</span>
+            </div>
+            <div className="bg-muted/30 border border-border rounded-xl p-3 flex flex-col justify-between shadow-xs">
+              <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Devoluciones</span>
+              <span className="text-base font-extrabold text-amber-500 font-mono mt-1">${refundsTotal.toFixed(2)}</span>
+            </div>
+            <div className="bg-muted/30 border border-border rounded-xl p-3 flex flex-col justify-between shadow-xs">
+              <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Gastos</span>
+              <span className="text-base font-extrabold text-rose-500 font-mono mt-1">${expensesTotal.toFixed(2)}</span>
             </div>
           </div>
 
@@ -188,6 +244,31 @@ export const CierreModal: React.FC<CierreModalProps> = ({
                         <div key={exp.id} className="flex justify-between items-center text-[10.5px] border-b border-border/40 pb-1 last:border-b-0 last:pb-0">
                           <span className="text-muted-foreground font-mono">[{timeStr}] {exp.description}</span>
                           <span className="font-mono font-semibold text-rose-500">${Number(exp.amount || 0).toFixed(2)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* List of Returns/Refunds */}
+              <div className="border-t border-border/60 pt-2">
+                <span className="text-[9.5px] font-bold text-secondary uppercase tracking-wider block mb-1">Devoluciones de Caja ({activeSessionRefunds.length})</span>
+                {activeSessionRefunds.length === 0 ? (
+                  <span className="text-[10px] text-muted-foreground italic block">Sin devoluciones en este turno</span>
+                ) : (
+                  <div className="space-y-1.5 max-h-20 overflow-y-auto pr-1">
+                    {activeSessionRefunds.map((refund) => {
+                      const timeStr = new Date(refund.createdAt).toLocaleTimeString(undefined, {
+                        timeZone: timezone,
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                      });
+                      return (
+                        <div key={refund.id} className="flex justify-between items-center text-[10.5px] border-b border-border/40 pb-1 last:border-b-0 last:pb-0">
+                          <span className="text-muted-foreground font-mono">[{timeStr}] {refund.reason || 'Devolución'}</span>
+                          <span className="font-mono font-semibold text-amber-500">${Number(refund.totalRefunded || 0).toFixed(2)}</span>
                         </div>
                       );
                     })}
