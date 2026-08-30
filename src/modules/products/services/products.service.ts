@@ -161,7 +161,7 @@ export const productsService = {
     return apiClient.get(`/products/variant/sku/${sku}`);
   },
 
-  getPosVariantBySku: async (sku: string, branchId: string): Promise<{ id: string; sku: string; purchasePrice: number; salePrice: number; productName: string; stock: number; attributeValues?: any[] }> => {
+  getPosVariantBySku: async (sku: string, branchId: string): Promise<{ id: string; sku: string; purchasePrice: number; salePrice: number; productName: string; stock: number; attributeValues?: any[] }[]> => {
     return apiClient.get(`/products/pos/variant/sku/${sku}?branchId=${branchId}`);
   },
 

@@ -130,6 +130,8 @@ export const POSView: React.FC<POSViewProps> = ({
   const [closingSessionToPrint, setClosingSessionToPrint] = useState<any | null>(null);
   const [isClosingTicketOpen, setIsClosingTicketOpen] = useState(false);
   const [currentTenant, setCurrentTenant] = useState<any>(null);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showSearchModal, setShowSearchModal] = useState<boolean>(false);
 
   const currentUser = useAuthStore((state) => state.user);
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
@@ -546,23 +548,32 @@ export const POSView: React.FC<POSViewProps> = ({
       try {
         const branch = selectedBranchId || (branches[0] && branches[0].id);
         const res = await productsService.getPosVariantBySku(code, branch);
-        if (res) {
-          const fakeProduct = {
-            id: res.id,
-            name: res.productName,
-          };
-          const fakeVariant = {
-            id: res.id,
-            sku: res.sku,
-            salePrice: Number(res.salePrice || 0),
-            attributeValues: res.attributeValues || [],
-          };
-          const stockQty = Number(res.stock || 0);
-          if (stockQty <= 0) {
-            toast.warning(`Aviso: El stock del producto "${res.productName}" quedará en negativo (Stock disponible: ${stockQty} pzs.)`);
+        if (res && res.length > 0) {
+          if (res.length === 1) {
+            const singleRes = res[0];
+            const fakeProduct = {
+              id: singleRes.id,
+              name: singleRes.productName,
+            };
+            const fakeVariant = {
+              id: singleRes.id,
+              sku: singleRes.sku,
+              salePrice: Number(singleRes.salePrice || 0),
+              attributeValues: singleRes.attributeValues || [],
+            };
+            const stockQty = Number(singleRes.stock || 0);
+            if (stockQty <= 0) {
+              toast.warning(`Aviso: El stock del producto "${singleRes.productName}" quedará en negativo (Stock disponible: ${stockQty} pzs.)`);
+            }
+            addVariantToCart(fakeProduct, fakeVariant, stockQty);
+            setSearchTerm('');
+          } else {
+            // Múltiples elementos encontrados
+            setSearchResults(res);
+            setShowSearchModal(true);
           }
-          addVariantToCart(fakeProduct, fakeVariant, stockQty);
-          setSearchTerm('');
+        } else {
+          toast.error(`No se encontró ningún producto con el código: "${code}"`);
         }
       } catch (err) {
         toast.error(`No se encontró ningún producto con el código: "${code}"`);
@@ -1305,6 +1316,99 @@ export const POSView: React.FC<POSViewProps> = ({
           branchId={selectedBranchId}
           cashSessionId={activeSession?.id || ''}
         />
+      )}
+
+      {showSearchModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-bg-card border border-border-card rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[80vh]">
+            {/* Header */}
+            <div className="p-4 border-b border-border-card flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-extrabold text-secondary">Múltiples coincidencias encontradas</h3>
+                <p className="text-[10px] text-neutral mt-0.5">Selecciona el producto que deseas agregar al carrito</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowSearchModal(false);
+                  setSearchResults([]);
+                }}
+                className="p-1.5 hover:bg-bg-dark rounded-xl text-neutral hover:text-secondary transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* List */}
+            <div className="p-3 overflow-y-auto space-y-2 flex-1">
+              {searchResults.map((variant) => {
+                const stockQty = Number(variant.stock || 0);
+                const hasAttributes = variant.attributeValues && variant.attributeValues.length > 0;
+                
+                return (
+                  <div
+                    key={variant.id}
+                    onClick={() => {
+                      const fakeProduct = {
+                        id: variant.id,
+                        name: variant.productName,
+                      };
+                      const fakeVariant = {
+                        id: variant.id,
+                        sku: variant.sku,
+                        salePrice: Number(variant.salePrice || 0),
+                        attributeValues: variant.attributeValues || [],
+                      };
+                      if (stockQty <= 0) {
+                        toast.warning(`Aviso: El stock del producto "${variant.productName}" quedará en negativo (Stock disponible: ${stockQty} pzs.)`);
+                      }
+                      addVariantToCart(fakeProduct, fakeVariant, stockQty);
+                      setShowSearchModal(false);
+                      setSearchResults([]);
+                      setSearchTerm('');
+                      searchInputRef.current?.focus();
+                    }}
+                    className="p-3 bg-bg-dark/50 border border-border-card/60 hover:border-primary/50 hover:bg-bg-dark rounded-xl cursor-pointer transition-all flex items-center justify-between gap-4 group"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-extrabold text-xs text-secondary group-hover:text-primary transition-colors truncate">
+                          {variant.productName}
+                        </span>
+                      </div>
+                      
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-[10px] text-neutral font-mono">
+                        <span>SKU: {variant.sku}</span>
+                        {variant.barcode && (
+                          <>
+                            <span className="text-border-card">•</span>
+                            <span>Código: {variant.barcode}</span>
+                          </>
+                        )}
+                        {hasAttributes && (
+                          <>
+                            <span className="text-border-card">•</span>
+                            <span className="text-neutral font-semibold">
+                              {variant.attributeValues.map((av: any) => `${av.attribute.name}: ${av.value}`).join(', ')}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span className="font-extrabold text-xs text-secondary block font-mono">
+                        ${Number(variant.salePrice || 0).toFixed(2)}
+                      </span>
+                      <span className={`text-[9px] font-bold mt-0.5 block ${stockQty > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                        {stockQty > 0 ? `${stockQty} disponibles` : 'Sin stock'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       )}
 
     </div>
