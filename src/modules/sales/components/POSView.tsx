@@ -598,13 +598,6 @@ export const POSView: React.FC<POSViewProps> = ({
     return Math.max(0, Number((cartTotal - amountPaid).toFixed(2)));
   }, [cartTotal, amountPaid]);
 
-  const quickAmounts = useMemo(() => {
-    if (remaining <= 0) return [];
-    const base = [remaining, 5, 10, 20, 50, 100];
-    const unique = Array.from(new Set(base.map(v => Number(v.toFixed(2)))));
-    return unique.filter(v => v >= remaining).sort((a, b) => a - b).slice(0, 4);
-  }, [remaining]);
-
   const handleAddPayment = (amount?: number) => {
     const targetAmt = amount !== undefined ? amount : parseFloat(customAmountText);
     if (isNaN(targetAmt) || targetAmt <= 0) {
@@ -1025,9 +1018,6 @@ export const POSView: React.FC<POSViewProps> = ({
                   )}
                 </div>
                 <div className="flex h-12 gap-2 items-center">
-                  {/* <div className="h-full aspect-square bg-bg-dark border border-border-card rounded-xl text-blue-400 text-xs font-extrabold flex items-center justify-center gap-1 select-none">
-                  <Percent className="w-3 h-3" />
-                  </div> */}
                   <Input
                     type="number"
                     placeholder="0"
@@ -1123,22 +1113,6 @@ export const POSView: React.FC<POSViewProps> = ({
                   }}
                   className="bg-bg-dark/30 border border-border-card/50 rounded-2xl p-3 space-y-3"
                 >
-                  {/* Cash suggestions for quick click */}
-                  {quickAmounts.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {quickAmounts.map((amt) => (
-                        <button
-                          key={amt}
-                          type="button"
-                          onClick={() => handleAddPayment(amt)}
-                          className="px-2 py-1 bg-bg-card border border-border-card hover:border-primary/40 hover:text-primary rounded-lg text-[10px] font-bold font-mono text-secondary transition-all cursor-pointer"
-                        >
-                          ${amt.toFixed(2)}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
                   <div className="flex gap-2">
                     <input
                       type="number"
