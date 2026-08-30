@@ -62,7 +62,6 @@ export function AppSidebar() {
           </div>
           <div className="grid flex-1 text-left text-xs leading-tight group-data-[collapsible=icon]:hidden">
             <span className="font-bold text-secondary tracking-tight block">POS STORE</span>
-            <span className="text-[9px] text-primary font-mono font-semibold truncate">ID: {tenantId?.substring(0, 8)}...</span>
           </div>
         </div>
       </SidebarHeader>

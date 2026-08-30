@@ -33,6 +33,12 @@ import {
 } from '@/components/ui/combobox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
 
 // Subcomponents import
 import { ThermalTicketModal } from './pos/ThermalTicketModal';
@@ -1079,56 +1085,70 @@ export const POSView: React.FC<POSViewProps> = ({
                   </div>
                 </div>
 
-                {/* Payment Methods selector grid */}
-                <div className="grid grid-cols-2 gap-2">
-                  {Object.values(PaymentMethod).map((method) => {
-                    const details = getMethodDetails(method);
-                    const Icon = details.icon;
-                    const isSelected = selectedMethod === method;
-                    return (
-                      <div
-                        key={method}
-                        onClick={() => setSelectedMethod(method)}
-                        className={`p-2.5 border rounded-xl cursor-pointer flex items-center gap-2.5 transition-all ${isSelected
-                          ? 'bg-primary/5 border-primary text-secondary'
-                          : 'bg-bg-dark border-border-card text-neutral hover:text-secondary hover:border-neutral/30'
-                          }`}
-                      >
-                        <div className={`p-1.5 rounded-lg ${isSelected ? details.colorClass : 'bg-bg-card text-neutral'}`}>
-                          <Icon className="w-3.5 h-3.5" />
-                        </div>
-                        <div>
-                          <span className="text-[11px] font-bold block leading-none">{details.label}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Payment Input custom amount */}
+                {/* Payment Selector and Input in a single row */}
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
                     handleAddPayment();
                   }}
-                  className="bg-bg-dark/30 border border-border-card/50 rounded-2xl p-3 space-y-3"
+                  className="bg-bg-dark/30 border border-border-card/50 rounded-2xl p-2 flex gap-2 items-center"
                 >
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      placeholder="0.00"
-                      min="0"
-                      value={customAmountText}
-                      onChange={(e) => setCustomAmountText(e.target.value)}
-                      className="flex-1 bg-bg-dark border border-border-card rounded-xl py-1.5 px-3 text-xs text-secondary font-mono focus:outline-none focus:border-primary placeholder-neutral"
-                    />
-                    <button
-                      type="submit"
-                      className="px-4 py-1.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold shadow transition-all cursor-pointer"
+                  <div className="w-[145px] shrink-0">
+                    <Select
+                      value={selectedMethod}
+                      onValueChange={(val: any) => setSelectedMethod(val || PaymentMethod.EFECTIVO)}
                     >
-                      Agregar
-                    </button>
+                      <SelectTrigger
+                        className="w-full justify-between font-normal bg-bg-dark border-border-card text-xs text-secondary rounded-xl py-2 px-3 h-10! hover:bg-bg-dark/80 hover:text-secondary flex items-center border"
+                      >
+                        {(() => {
+                          const details = getMethodDetails(selectedMethod);
+                          const Icon = details.icon;
+                          return (
+                            <div className="flex items-center gap-2 truncate">
+                              <div className={`p-1 rounded-md ${details.colorClass} shrink-0`}>
+                                <Icon className="w-3.5 h-3.5" />
+                              </div>
+                              <span className="font-extrabold text-[11px] text-secondary truncate">{details.label}</span>
+                            </div>
+                          );
+                        })()}
+                      </SelectTrigger>
+                      <SelectContent className="bg-bg-card border border-border-card rounded-xl shadow-2xl z-30 w-[145px] max-h-60 overflow-y-auto p-1">
+                        {Object.values(PaymentMethod).map((method) => {
+                          const details = getMethodDetails(method);
+                          const Icon = details.icon;
+                          return (
+                            <SelectItem
+                              key={method}
+                              value={method}
+                              className="px-2.5 py-1.5 hover:bg-bg-dark text-xs text-secondary rounded-lg transition-colors cursor-pointer flex items-center gap-2"
+                            >
+                              <div className={`p-1 rounded-md ${details.colorClass} shrink-0`}>
+                                <Icon className="w-3.5 h-3.5" />
+                              </div>
+                              <span className="font-bold text-[11px] text-secondary">{details.label}</span>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
                   </div>
+
+                  <input
+                    type="number"
+                    placeholder="0.00"
+                    min="0"
+                    value={customAmountText}
+                    onChange={(e) => setCustomAmountText(e.target.value)}
+                    className="flex-1 min-w-0 h-10 bg-bg-dark border border-border-card rounded-xl py-1.5 px-3 text-xs text-secondary font-mono focus:outline-none focus:border-primary placeholder-neutral"
+                  />
+                  <button
+                    type="submit"
+                    className="h-10 px-4 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold shadow transition-all cursor-pointer shrink-0"
+                  >
+                    Agregar
+                  </button>
                 </form>
 
                 {/* Added Payments List */}
