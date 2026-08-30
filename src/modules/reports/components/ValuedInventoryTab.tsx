@@ -10,6 +10,10 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { useValuedInventoryReport } from '../hooks/useReports';
+import { ProductPagination } from '@/modules/products/components/ProductPagination';
+import { 
+  reportsService 
+} from '../services/reports.service';
 import {
   Table,
   TableBody,
@@ -24,34 +28,53 @@ export const ValuedInventoryTab: React.FC = () => {
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
   const [currentTenant, setCurrentTenant] = useState<any>(null);
 
-  const { loading: inventoryLoading, data: inventoryData, fetchValuedInventory } = useValuedInventoryReport();
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
+  const { loading: inventoryLoading, data: inventoryData, meta, fetchValuedInventory } = useValuedInventoryReport();
 
   useEffect(() => {
-    // Fetch initial report
-    fetchValuedInventory();
-    
+    // Fetch paginated report
+    fetchValuedInventory({ page, limit });
+  }, [page, limit]);
+
+  useEffect(() => {
     // Fetch tenant name
     apiClient.request('/tenants/current')
       .then((t) => setCurrentTenant(t))
       .catch((e) => console.error('Error fetching tenant metadata:', e));
   }, []);
 
-  // Aggregate totals
+  // Aggregate totals (uses global totals from meta returned by backend)
   const totals = useMemo(() => {
-    return inventoryData.reduce(
-      (acc, row) => {
-        acc.quantity += Number(row.quantity || 0);
-        acc.totalValue += Number(row.totalValue || 0);
-        return acc;
-      },
-      { quantity: 0, totalValue: 0 }
-    );
-  }, [inventoryData]);
+    return {
+      quantity: meta?.totalQuantity ?? 0,
+      totalValue: meta?.totalValue ?? 0,
+    };
+  }, [meta]);
 
-  const handlePrintReport = () => {
+  const handlePrintReport = async () => {
     if (inventoryData.length === 0) {
       toast.warning('No hay datos para imprimir');
       return;
+    }
+
+    let printData = inventoryData;
+    let printTotals = totals;
+
+    try {
+      const fullRes = await reportsService.getValuedInventory();
+      printData = fullRes.data;
+      printTotals = printData.reduce(
+        (acc, row) => {
+          acc.quantity += Number(row.quantity || 0);
+          acc.totalValue += Number(row.totalValue || 0);
+          return acc;
+        },
+        { quantity: 0, totalValue: 0 }
+      );
+    } catch (e) {
+      console.error('Error fetching full valued inventory data for printing:', e);
     }
 
     const iframe = document.createElement('iframe');
@@ -66,7 +89,7 @@ export const ValuedInventoryTab: React.FC = () => {
 
     const todayStr = new Date().toLocaleDateString(undefined, { timeZone: timezone });
 
-    const rowsHtml = inventoryData.map((row) => `
+    const rowsHtml = printData.map((row) => `
       <tr>
         <td>${row.sku}</td>
         <td style="text-transform: uppercase;">${row.name}</td>
@@ -161,9 +184,9 @@ export const ValuedInventoryTab: React.FC = () => {
               ${rowsHtml}
               <tr class="total-row">
                 <td colspan="2">Gran total...</td>
-                <td style="text-align: right;">${Math.floor(totals.quantity)}</td>
+                <td style="text-align: right;">${Math.floor(printTotals.quantity)}</td>
                 <td style="text-align: right;">-</td>
-                <td style="text-align: right;">$${Number(totals.totalValue).toFixed(2)}</td>
+                <td style="text-align: right;">$${Number(printTotals.totalValue).toFixed(2)}</td>
               </tr>
             </tbody>
           </table>
@@ -181,14 +204,32 @@ export const ValuedInventoryTab: React.FC = () => {
     }, 200);
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (inventoryData.length === 0) {
       toast.warning('No hay datos para exportar');
       return;
     }
 
+    let exportData = inventoryData;
+    let exportTotals = totals;
+
+    try {
+      const fullRes = await reportsService.getValuedInventory();
+      exportData = fullRes.data;
+      exportTotals = exportData.reduce(
+        (acc, row) => {
+          acc.quantity += Number(row.quantity || 0);
+          acc.totalValue += Number(row.totalValue || 0);
+          return acc;
+        },
+        { quantity: 0, totalValue: 0 }
+      );
+    } catch (e) {
+      console.error('Error fetching full valued inventory data for Excel export:', e);
+    }
+
     const headers = ['SKU', 'Nombre', 'Cantidad', 'Precio de compra', 'Total'];
-    const rows = inventoryData.map((row) => [
+    const rows = exportData.map((row) => [
       row.sku,
       row.name,
       Math.floor(row.quantity),
@@ -199,9 +240,9 @@ export const ValuedInventoryTab: React.FC = () => {
     rows.push([
       'Gran total...',
       '',
-      Math.floor(totals.quantity),
+      Math.floor(exportTotals.quantity),
       '',
-      Number(totals.totalValue).toFixed(2)
+      Number(exportTotals.totalValue).toFixed(2)
     ]);
 
     const csvContent = [
@@ -273,38 +314,48 @@ export const ValuedInventoryTab: React.FC = () => {
             No hay productos registrados en inventario.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="uppercase tracking-wider text-[10px] font-bold">
-                  <TableHead className="pr-2">SKU</TableHead>
-                  <TableHead className="px-2">Nombre</TableHead>
-                  <TableHead className="px-2 text-right">Cantidad</TableHead>
-                  <TableHead className="px-2 text-right">Precio de compra</TableHead>
-                  <TableHead className="pl-2 text-right">Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {inventoryData.map((row) => (
-                  <TableRow key={row.sku} className="text-secondary hover:bg-muted/10 transition-colors">
-                    <TableCell className="py-3 pr-2 font-mono font-semibold text-primary">{row.sku}</TableCell>
-                    <TableCell className="py-3 px-2 uppercase font-medium max-w-[300px] truncate">{row.name}</TableCell>
-                    <TableCell className="py-3 px-2 text-right font-mono font-semibold">{Math.floor(row.quantity)}</TableCell>
-                    <TableCell className="py-3 px-2 text-right font-mono font-bold">${Number(row.purchasePrice).toFixed(2)}</TableCell>
-                    <TableCell className="py-3 pl-2 text-right font-mono font-bold text-emerald-600">${Number(row.totalValue).toFixed(2)}</TableCell>
+          <>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="uppercase tracking-wider text-[10px] font-bold">
+                    <TableHead className="pr-2">SKU</TableHead>
+                    <TableHead className="px-2">Nombre</TableHead>
+                    <TableHead className="px-2 text-right">Cantidad</TableHead>
+                    <TableHead className="px-2 text-right">Precio de compra</TableHead>
+                    <TableHead className="pl-2 text-right">Total</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-              <TableFooter className="font-bold text-secondary bg-muted/20">
-                <TableRow>
-                  <TableCell className="py-3 pr-2 font-bold text-secondary" colSpan={2}>Gran total...</TableCell>
-                  <TableCell className="py-3 px-2 text-right font-mono font-bold">{Math.floor(totals.quantity)}</TableCell>
-                  <TableCell className="py-3 px-2 text-right font-mono font-bold text-neutral">-</TableCell>
-                  <TableCell className="py-3 pl-2 text-right font-mono font-extrabold text-emerald-600">${Number(totals.totalValue).toFixed(2)}</TableCell>
-                </TableRow>
-              </TableFooter>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {inventoryData.map((row) => (
+                    <TableRow key={row.sku} className="text-secondary hover:bg-muted/10 transition-colors">
+                      <TableCell className="py-3 pr-2 font-mono font-semibold text-primary">{row.sku}</TableCell>
+                      <TableCell className="py-3 px-2 uppercase font-medium max-w-[300px] truncate">{row.name}</TableCell>
+                      <TableCell className="py-3 px-2 text-right font-mono font-semibold">{Math.floor(row.quantity)}</TableCell>
+                      <TableCell className="py-3 px-2 text-right font-mono font-bold">${Number(row.purchasePrice).toFixed(2)}</TableCell>
+                      <TableCell className="py-3 pl-2 text-right font-mono font-bold text-emerald-600">${Number(row.totalValue).toFixed(2)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                <TableFooter className="font-bold text-secondary bg-muted/20">
+                  <TableRow>
+                    <TableCell className="py-3 pr-2 font-bold text-secondary" colSpan={2}>Gran total...</TableCell>
+                    <TableCell className="py-3 px-2 text-right font-mono font-bold">{Math.floor(totals.quantity)}</TableCell>
+                    <TableCell className="py-3 px-2 text-right font-mono font-bold text-neutral">-</TableCell>
+                    <TableCell className="py-3 pl-2 text-right font-mono font-extrabold text-emerald-600">${Number(totals.totalValue).toFixed(2)}</TableCell>
+                  </TableRow>
+                </TableFooter>
+              </Table>
+            </div>
+            <ProductPagination 
+              meta={meta} 
+              onPageChange={setPage} 
+              onLimitChange={(newLimit) => {
+                setLimit(newLimit);
+                setPage(1);
+              }} 
+            />
+          </>
         )}
       </Card>
     </div>

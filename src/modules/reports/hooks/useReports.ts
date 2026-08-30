@@ -58,12 +58,19 @@ export const useSalesCostReport = () => {
 export const useValuedInventoryReport = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ValuedInventoryRow[]>([]);
+  const [meta, setMeta] = useState<{ total: number; page: number; limit: number; totalPages: number; totalQuantity?: number; totalValue?: number }>({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+  });
 
-  const fetchValuedInventory = async () => {
+  const fetchValuedInventory = async (params?: { page?: number; limit?: number }) => {
     try {
       setLoading(true);
-      const res = await reportsService.getValuedInventory();
-      setData(res);
+      const res = await reportsService.getValuedInventory(params);
+      setData(res.data);
+      setMeta(res.meta);
       return res;
     } catch (error) {
       console.error('Error fetching valued inventory report:', error);
@@ -77,6 +84,7 @@ export const useValuedInventoryReport = () => {
   return {
     loading,
     data,
+    meta,
     fetchValuedInventory
   };
 };
