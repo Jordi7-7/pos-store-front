@@ -669,6 +669,32 @@ export const POSView: React.FC<POSViewProps> = ({
 
     const branchName = branches.find((b: any) => b.id === branch)?.name || 'Sucursal General';
 
+    // Normalize payments for multiple/split payment methods so the exact net total is recorded in DB
+    let remainingBudget = cartTotal;
+    const normalizedPayments: { paymentMethod: PaymentMethod; amount: number; referenceNumber?: string }[] = [];
+
+    // 1. Prioritize non-cash payments (e.g. Tarjeta, Transferencia) which cannot exceed required amount
+    for (const p of addedPayments) {
+      if (p.paymentMethod !== PaymentMethod.EFECTIVO && remainingBudget > 0) {
+        const allowed = Math.min(p.amount, remainingBudget);
+        if (allowed > 0) {
+          normalizedPayments.push({ ...p, amount: Number(allowed.toFixed(2)) });
+          remainingBudget = Number((remainingBudget - allowed).toFixed(2));
+        }
+      }
+    }
+
+    // 2. Allocate cash payments up to the remaining balance (ignoring extra tendered cash returned as change)
+    for (const p of addedPayments) {
+      if (p.paymentMethod === PaymentMethod.EFECTIVO && remainingBudget > 0) {
+        const allowed = Math.min(p.amount, remainingBudget);
+        if (allowed > 0) {
+          normalizedPayments.push({ ...p, amount: Number(allowed.toFixed(2)) });
+          remainingBudget = Number((remainingBudget - allowed).toFixed(2));
+        }
+      }
+    }
+
     try {
       const res = await processSale({
         branchId: branch,
@@ -685,7 +711,7 @@ export const POSView: React.FC<POSViewProps> = ({
           discountRate: i.discountRate,
           discountAmount: i.discountAmount
         })),
-        payments: addedPayments
+        payments: normalizedPayments
       });
 
       const change = amountPaid - cartTotal;

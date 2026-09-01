@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Receipt, Printer, RotateCcw } from 'lucide-react';
 import {
   Dialog,
@@ -63,18 +63,55 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
     return invNo.includes(term) || client.includes(term);
   });
 
-  const totalSalesSum = activeSessionSales.reduce((sum, sale) => sum + Number(sale.total || sale.totalAmount || 0), 0);
-  const totalExpensesSum = activeSessionExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
-  const totalRefundsSum = activeSessionRefunds.reduce((sum, ref) => sum + Number(ref.totalRefunded || ref.total || 0), 0);
+  const openingBalance = Number(activeSession?.openingBalance || 0);
 
-  const cashSalesSum = activeSessionSales.reduce((sum, sale) => {
-    const isCash = (sale.payments || []).some(
-      (p: { paymentMethod: string }) => p.paymentMethod.toUpperCase() === 'EFECTIVO'
-    );
-    return sum + (isCash ? Number(sale.total || sale.totalAmount || 0) : 0);
-  }, 0);
+  const totalSalesSum = useMemo(
+    () => activeSessionSales.reduce((sum, sale) => sum + Number(sale.total || sale.totalAmount || 0), 0),
+    [activeSessionSales]
+  );
+  const totalExpensesSum = useMemo(
+    () => activeSessionExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0),
+    [activeSessionExpenses]
+  );
+  const totalRefundsSum = useMemo(
+    () => activeSessionRefunds.reduce((sum, ref) => sum + Number(ref.totalRefunded || ref.total || 0), 0),
+    [activeSessionRefunds]
+  );
 
-  const currentCashBalance = Number(activeSession?.openingBalance || 0) + cashSalesSum - totalExpensesSum - totalRefundsSum;
+  const { cashSalesSum, cardSalesSum } = useMemo(() => {
+    let cash = 0;
+    let card = 0;
+
+    activeSessionSales.forEach((sale) => {
+      const saleTotal = Number(sale.total || sale.totalAmount || 0);
+      const payments = sale.payments || [];
+
+      if (!payments.length) {
+        const method = (sale.paymentMethod || 'EFECTIVO').toUpperCase();
+        if (method === 'TARJETA') {
+          card += saleTotal;
+        } else {
+          cash += saleTotal;
+        }
+        return;
+      }
+
+      payments.forEach((p: any) => {
+        const method = (p.paymentMethod || '').toUpperCase();
+        const amt = Number(p.amount || 0);
+        // Protection against legacy oversized test entries
+        const cleanAmt = Math.min(amt, saleTotal);
+
+        if (method === 'TARJETA') {
+          card += cleanAmt;
+        } else if (method === 'EFECTIVO') {
+          cash += cleanAmt;
+        }
+      });
+    });
+
+    return { cashSalesSum: cash, cardSalesSum: card };
+  }, [activeSessionSales]);
 
   const handleClose = () => onClose();
 
@@ -94,16 +131,63 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
             <span>Historial de la Sesión Activa</span>
           </DialogTitle>
 
-          {/* Cash Box Status Widget */}
-          <div className="bg-bg-dark/40 border border-border-card p-3.5 rounded-xl mb-4 flex justify-between items-center text-xs">
-            <div>
-              <div className="text-neutral text-[9px] uppercase tracking-wider font-bold">Efectivo en Caja</div>
-              <div className="text-primary font-extrabold text-base mt-0.5">${currentCashBalance.toFixed(2)}</div>
+          {/* Resumen del Turno Activo */}
+          <div className="bg-bg-dark/50 border border-border-card p-3 rounded-2xl mb-3 space-y-2.5">
+            
+            {/* 1. VENTAS DEL TURNO (¿Cuánto se vendió?) */}
+            <div className="bg-bg-card/70 border border-border-card/60 p-2.5 rounded-xl space-y-2">
+              <div className="flex justify-between items-center pb-1.5 border-b border-border-card/50">
+                <span className="text-[10px] text-neutral uppercase font-bold tracking-wider">Ventas del Turno</span>
+                <div className="text-right">
+                  <span className="text-[9px] text-neutral mr-1.5">Venta Neta:</span>
+                  <span className="text-xs font-mono font-extrabold text-primary">${(totalSalesSum - totalRefundsSum).toFixed(2)}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
+                <div className="bg-bg-dark/40 p-1.5 rounded-lg">
+                  <span className="text-[8.5px] text-emerald-500 uppercase font-bold block">Efectivo</span>
+                  <span className="font-mono font-bold text-emerald-500 text-xs">${cashSalesSum.toFixed(2)}</span>
+                </div>
+                <div className="bg-bg-dark/40 p-1.5 rounded-lg">
+                  <span className="text-[8.5px] text-blue-500 uppercase font-bold block">Tarjeta / TPV</span>
+                  <span className="font-mono font-bold text-blue-500 text-xs">${cardSalesSum.toFixed(2)}</span>
+                </div>
+                <div className="bg-bg-dark/40 p-1.5 rounded-lg">
+                  <span className="text-[8.5px] text-neutral uppercase font-bold block">Total Facturado</span>
+                  <span className="font-mono font-bold text-secondary text-xs">${totalSalesSum.toFixed(2)}</span>
+                </div>
+              </div>
             </div>
-            <div className="text-right text-[10px] text-neutral space-y-0.5">
-              <div>Apertura: <strong className="text-secondary">${Number(activeSession?.openingBalance || 0).toFixed(2)}</strong></div>
-              <div>Ventas Totales: <strong className="text-secondary">${totalSalesSum.toFixed(2)}</strong></div>
+
+            {/* 2. ARQUEO DE EFECTIVO EN CAJA (Fórmula paso a paso) */}
+            <div className="bg-bg-card/70 border border-border-card/60 p-2.5 rounded-xl space-y-2">
+              <span className="text-[10px] text-neutral uppercase font-bold tracking-wider block">Fórmula de Efectivo en Gaveta</span>
+              
+              <div className="grid grid-cols-4 gap-1 text-center text-xs">
+                <div className="bg-bg-dark/40 p-1.5 rounded-lg">
+                  <span className="text-[8px] text-neutral uppercase font-bold block">Apertura</span>
+                  <span className="font-mono font-semibold text-secondary text-[10.5px]">${openingBalance.toFixed(2)}</span>
+                </div>
+                <div className="bg-bg-dark/40 p-1.5 rounded-lg">
+                  <span className="text-[8px] text-emerald-500 uppercase font-bold block">(+) Venta Efec</span>
+                  <span className="font-mono font-semibold text-emerald-500 text-[10.5px]">+${cashSalesSum.toFixed(2)}</span>
+                </div>
+                <div className="bg-bg-dark/40 p-1.5 rounded-lg">
+                  <span className="text-[8px] text-amber-500 uppercase font-bold block">(-) Gastos</span>
+                  <span className="font-mono font-semibold text-amber-500 text-[10.5px]">-${totalExpensesSum.toFixed(2)}</span>
+                </div>
+                <div className="bg-bg-dark/40 p-1.5 rounded-lg">
+                  <span className="text-[8px] text-rose-500 uppercase font-bold block">(-) Devol</span>
+                  <span className="font-mono font-semibold text-rose-500 text-[10.5px]">-${totalRefundsSum.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="border-t border-border-card/60 pt-1.5 flex justify-between items-center px-1">
+                <span className="text-[10px] font-bold text-secondary uppercase tracking-wider">(=) Efectivo Físico Esperado</span>
+                <span className="font-mono text-emerald-400 font-extrabold text-sm">${(openingBalance + cashSalesSum - totalExpensesSum - totalRefundsSum).toFixed(2)}</span>
+              </div>
             </div>
+
           </div>
 
           <div className="flex gap-2 pb-2 flex-wrap">

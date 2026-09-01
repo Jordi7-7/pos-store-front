@@ -50,28 +50,38 @@ export const CierreModal: React.FC<CierreModalProps> = ({
 
   const expectedBalance = openingBalance + salesTotal - expensesTotal - refundsTotal;
 
-  const cashSalesTotal = useMemo(() => {
-    let sum = 0;
-    activeSessionSales.forEach((sale) => {
-      (sale.payments || []).forEach((payment: any) => {
-        if (payment.paymentMethod === 'EFECTIVO') {
-          sum += Number(payment.amount || 0);
-        }
-      });
-    });
-    return sum;
-  }, [activeSessionSales]);
+  const { cashSalesTotal, cardSalesTotal } = useMemo(() => {
+    let cash = 0;
+    let card = 0;
 
-  const cardSalesTotal = useMemo(() => {
-    let sum = 0;
     activeSessionSales.forEach((sale) => {
-      (sale.payments || []).forEach((payment: any) => {
-        if (payment.paymentMethod === 'TARJETA') {
-          sum += Number(payment.amount || 0);
+      const saleTotal = Number(sale.total || sale.totalAmount || 0);
+      const payments = sale.payments || [];
+
+      if (!payments.length) {
+        const method = (sale.paymentMethod || 'EFECTIVO').toUpperCase();
+        if (method === 'TARJETA') {
+          card += saleTotal;
+        } else {
+          cash += saleTotal;
+        }
+        return;
+      }
+
+      payments.forEach((p: any) => {
+        const method = (p.paymentMethod || '').toUpperCase();
+        const amt = Number(p.amount || 0);
+        const cleanAmt = Math.min(amt, saleTotal);
+
+        if (method === 'TARJETA') {
+          card += cleanAmt;
+        } else if (method === 'EFECTIVO') {
+          cash += cleanAmt;
         }
       });
     });
-    return sum;
+
+    return { cashSalesTotal: cash, cardSalesTotal: card };
   }, [activeSessionSales]);
 
   // Group products sold for this session
