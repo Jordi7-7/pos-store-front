@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/avatar"
 
 export function AppSidebar() {
-  const { user, role, tenantId, activeTab, setActiveTab, logout, lockScreen } = useAuthStore()
+  const { user, role, activeTab, setActiveTab, logout, lockScreen } = useAuthStore()
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
