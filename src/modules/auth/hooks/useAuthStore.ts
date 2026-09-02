@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { authService, type PublicTenantResponse, type OnboardPayload } from '../services/auth.service';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+export type PublicTenant = PublicTenantResponse;
 
 interface User {
   name: string;
@@ -13,20 +14,21 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   tenantId: string | null;
+  tenantSlug: string | null;
+  publicTenant: PublicTenant | null;
+  isLoadingTenant: boolean;
+  tenantError: string | null;
   role: 'OWNER' | 'ADMIN' | 'CASHIER' | 'MANAGER' | null;
   timezone: string | null;
   user: User | null;
   activeTab: string;
   isAuthenticated: boolean;
-  // PIN handoff — true after admin login, false after cashier PIN entry
-  needsPinSelection: boolean;
-  // Temporarily holds admin JWT during PIN selection phase
-  _adminAccessToken: string | null;
 
   // Actions
-  login: (email: string, password: string, targetWorkflow?: 'admin' | 'store') => Promise<boolean>;
-  pinLogin: (pin: string) => Promise<'SUCCESS' | 'INVALID' | 'EXPIRED'>;
-  skipPinSelection: () => void;
+  fetchPublicTenant: (slug: string) => Promise<boolean>;
+  setTenantSlug: (slug: string | null) => void;
+  login: (identifier: string, password: string, targetWorkflow?: 'admin' | 'store', slugOverride?: string) => Promise<boolean>;
+  pinLogin: (pin: string, slugOverride?: string) => Promise<'SUCCESS' | 'INVALID' | 'EXPIRED' | 'NOT_FOUND'>;
   lockScreen: () => void;
   onboard: (data: any) => Promise<boolean>;
   logout: () => void;
@@ -38,98 +40,95 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       accessToken: null,
       refreshToken: null,
       tenantId: null,
+      tenantSlug: null,
+      publicTenant: null,
+      isLoadingTenant: false,
+      tenantError: null,
       role: null,
       timezone: null,
       user: null,
       activeTab: 'dashboard',
       isAuthenticated: false,
-      needsPinSelection: false,
-      _adminAccessToken: null,
 
       selectedBranchId: null,
 
-      login: async (email, password, targetWorkflow = 'store') => {
-        try {
-          const res = await fetch(`${API_URL}/auth/login`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-          });
+      setTenantSlug: (slug) => set({ tenantSlug: slug }),
 
-          if (!res.ok) return false;
-          const response = await res.json();
+      fetchPublicTenant: async (slug: string) => {
+        if (!slug || !slug.trim()) return false;
+        const cleanSlug = slug.toLowerCase().trim();
+        set({ isLoadingTenant: true, tenantError: null });
+        try {
+          const data = await authService.getPublicTenantBySlug(cleanSlug);
+          set({
+            publicTenant: data,
+            tenantSlug: data.slug,
+            tenantId: data.id,
+            timezone: data.timezone,
+            isLoadingTenant: false,
+            tenantError: null,
+          });
+          return true;
+        } catch (err: any) {
+          console.error('Error fetching public tenant info:', err);
+          set({
+            publicTenant: null,
+            isLoadingTenant: false,
+            tenantError: err.message || 'Error al conectar con la tienda',
+          });
+          return false;
+        }
+      },
+
+      login: async (identifier, password, targetWorkflow = 'store', slugOverride) => {
+        const state = get();
+        const effectiveSlug = slugOverride || state.tenantSlug || state.publicTenant?.slug || undefined;
+
+        try {
+          const response = await authService.login({
+            email: identifier,
+            password,
+            tenantSlug: effectiveSlug,
+          });
 
           const isPosAdmin = response.user.role === 'OWNER' || response.user.role === 'ADMIN';
 
-          if (isPosAdmin && targetWorkflow === 'admin') {
-            // Direct Admin Login Workflow: Bypass PIN completely
-            set({
-              accessToken: response.accessToken,
-              refreshToken: response.refreshToken,
-              tenantId: response.user.tenantId,
-              role: response.user.role,
-              timezone: response.user.timezone || 'America/Guayaquil',
-              user: {
-                name: response.user.name,
-                email: response.user.email,
-                timezone: response.user.timezone,
-              },
-              isAuthenticated: true,
-              needsPinSelection: false,
-              _adminAccessToken: null,
-              activeTab: 'dashboard',
-            });
-          } else {
-            // Store / Cashier Workflow (Even for admin): Hold admin token temporarily, require Cashier PIN
-            set({
-              _adminAccessToken: response.accessToken,
-              refreshToken: response.refreshToken,
-              tenantId: response.user.tenantId,
-              role: response.user.role,
-              timezone: response.user.timezone || 'America/Guayaquil',
-              user: {
-                name: response.user.name,
-                email: response.user.email,
-                timezone: response.user.timezone,
-              },
-              isAuthenticated: false,
-              needsPinSelection: true,
-              activeTab: 'dashboard',
-            });
-          }
+          set({
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken,
+            tenantId: response.user.tenantId,
+            role: response.user.role,
+            timezone: response.user.timezone || 'America/Guayaquil',
+            user: {
+              name: response.user.name,
+              email: response.user.email,
+              timezone: response.user.timezone,
+            },
+            isAuthenticated: true,
+            activeTab: isPosAdmin && targetWorkflow === 'admin' ? 'dashboard' : 'pos',
+          });
           return true;
-          return false;
         } catch (error) {
           console.error('Error de login en backend:', error);
           return false;
         }
       },
 
-      // Cashier PIN handoff
-      pinLogin: async (pin) => {
-        const state = useAuthStore.getState();
-        const adminToken = state._adminAccessToken;
-        if (!adminToken) return 'EXPIRED';
+      // Direct Cashier PIN login (no admin token required when tenantSlug is known)
+      pinLogin: async (pin, slugOverride) => {
+        const state = get();
+        const effectiveSlug = slugOverride || state.tenantSlug || state.publicTenant?.slug || '';
+
         try {
-          const res = await fetch(`${API_URL}/auth/pin-login`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${adminToken}`,
-            },
-            body: JSON.stringify({ pin }),
+          const response = await authService.pinLogin({
+            pin,
+            tenantSlug: effectiveSlug,
           });
-          if (res.status === 401) {
-            return 'EXPIRED';
-          }
-          if (!res.ok) return 'INVALID';
-          const response = await res.json();
+
           if (response && response.accessToken) {
             set({
               accessToken: response.accessToken,
@@ -143,51 +142,38 @@ export const useAuthStore = create<AuthState>()(
                 timezone: response.user.timezone,
               },
               isAuthenticated: true,
-              needsPinSelection: false,
-              _adminAccessToken: adminToken,
-              activeTab: 'dashboard',
+              activeTab: 'pos',
             });
             return 'SUCCESS';
           }
           return 'INVALID';
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error de PIN login:', error);
+          if (error.message?.includes('Tienda no encontrada')) {
+            return 'NOT_FOUND';
+          }
           return 'INVALID';
         }
       },
 
-      // Skip PIN selection (for OWNER/ADMIN who want to go directly)
-      skipPinSelection: () => {
-        const state = useAuthStore.getState();
-        if (!state._adminAccessToken) return;
-        set({
-          accessToken: state._adminAccessToken,
-          needsPinSelection: false,
-          _adminAccessToken: null,
-          isAuthenticated: true,
-        });
-      },
-
-      // Lock current cashier session and return to PIN keyboard
+      // Lock current cashier session and return to fast PIN login
       lockScreen: () => {
         set({
           accessToken: null,
           role: null,
           user: null,
           isAuthenticated: false,
-          needsPinSelection: true,
         });
       },
 
       onboard: async (data) => {
         try {
-          // Mapeamos los datos para que coincidan con la estructura plana esperada por OnboardTenantDto
-          const payload = {
+          const payload: OnboardPayload = {
             tenantName: data.businessName,
             ruc: data.taxId,
             country: data.country,
             currencyCode: data.currency,
-            currencySymbol: '$', // Símbolo por defecto para la moneda elegida
+            currencySymbol: '$',
             adminName: data.adminName,
             email: data.adminEmail,
             password: data.adminPassword,
@@ -195,16 +181,7 @@ export const useAuthStore = create<AuthState>()(
             branchAddress: data.branchAddress,
           };
 
-          const res = await fetch(`${API_URL}/auth/onboard`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-          });
-
-          if (!res.ok) return false;
-          const response = await res.json();
+          const response = await authService.onboard(payload);
 
           if (response && response.accessToken) {
             set({
@@ -232,46 +209,45 @@ export const useAuthStore = create<AuthState>()(
         set({
           accessToken: null,
           refreshToken: null,
-          tenantId: null,
           role: null,
           user: null,
           isAuthenticated: false,
-          needsPinSelection: false,
-          _adminAccessToken: null,
           activeTab: 'dashboard',
           selectedBranchId: null,
         });
       },
 
       fetchProfile: async () => {
-        const state = useAuthStore.getState();
+        const state = get();
         const token = state.accessToken;
         if (!token) return false;
         try {
-          const res = await fetch(`${API_URL}/auth/profile`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-          if (!res.ok) {
-            if (res.status === 401) {
-              set({ isAuthenticated: false, accessToken: null, user: null });
-            }
-            return false;
-          }
-          const profile = await res.json();
+          const profile = await authService.getProfile();
           set({
             timezone: profile.tenant.timezone || 'America/Guayaquil',
+            publicTenant: profile.tenant
+              ? {
+                  id: profile.tenant.id,
+                  name: profile.tenant.name,
+                  slug: profile.tenant.slug,
+                  logoUrl: profile.tenant.logoUrl,
+                  country: profile.tenant.country || 'EC',
+                  currencyCode: profile.tenant.currencyCode || 'USD',
+                  currencySymbol: profile.tenant.currencySymbol || '$',
+                  timezone: profile.tenant.timezone || 'America/Guayaquil',
+                }
+              : state.publicTenant,
+            tenantSlug: profile.tenant?.slug || state.tenantSlug,
             user: {
               name: profile.name,
               email: profile.email,
               timezone: profile.tenant.timezone,
-            }
+            },
           });
           return true;
         } catch (error) {
           console.error('Error fetching user profile:', error);
+          set({ isAuthenticated: false, accessToken: null, user: null });
           return false;
         }
       },
@@ -280,7 +256,20 @@ export const useAuthStore = create<AuthState>()(
       setSelectedBranchId: (branchId) => set({ selectedBranchId: branchId }),
     }),
     {
-      name: 'aura-pos-auth', // Clave en localStorage
+      name: 'aura-pos-auth',
+      partialize: (state) => ({
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
+        tenantId: state.tenantId,
+        tenantSlug: state.tenantSlug,
+        publicTenant: state.publicTenant,
+        role: state.role,
+        user: state.user,
+        timezone: state.timezone,
+        selectedBranchId: state.selectedBranchId,
+        activeTab: state.activeTab,
+      }),
     }
   )
 );
+

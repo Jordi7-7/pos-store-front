@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/apiClient';
-import { Globe, DollarSign, Clock, Building, Save, AlertCircle, Loader2 } from 'lucide-react';
+import { Globe, DollarSign, Clock, Building, Save, AlertCircle, Loader2, Link2, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 
@@ -43,6 +43,8 @@ interface MetadataResponse {
 interface Tenant {
   id: string;
   name: string;
+  slug?: string;
+  logoUrl?: string | null;
   ruc: string;
   country: string;
   currencyCode: string;
@@ -56,6 +58,8 @@ export const TenantSettings: React.FC = () => {
   const [metadata, setMetadata] = useState<MetadataResponse | null>(null);
   
   const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
   const [ruc, setRuc] = useState('');
   const [country, setCountry] = useState('');
   const [currencyCode, setCurrencyCode] = useState('');
@@ -73,6 +77,8 @@ export const TenantSettings: React.FC = () => {
 
         setMetadata(metaRes);
         setName(tenantRes.name);
+        setSlug(tenantRes.slug || '');
+        setLogoUrl(tenantRes.logoUrl || '');
         setRuc(tenantRes.ruc);
         setCountry(tenantRes.country);
         setCurrencyCode(tenantRes.currencyCode);
@@ -97,20 +103,25 @@ export const TenantSettings: React.FC = () => {
     e.preventDefault();
     try {
       setSaving(true);
-      await apiClient.request<Tenant>('/tenants/current', {
+      const updated = await apiClient.request<Tenant>('/tenants/current', {
         method: 'PUT',
         body: JSON.stringify({
           name,
+          slug: slug.trim().toLowerCase(),
+          logoUrl: logoUrl.trim() || undefined,
           country,
           currencyCode,
           timezone,
         }),
       });
       useAuthStore.setState({ timezone });
-      toast.success('Configuración del negocio actualizada con éxito');
-    } catch (error) {
+      if (updated.slug) {
+        useAuthStore.setState({ tenantSlug: updated.slug });
+      }
+      toast.success('Configuración del negocio y logo actualizados con éxito');
+    } catch (error: any) {
       console.error('Error updating tenant:', error);
-      toast.error('Error al guardar la configuración');
+      toast.error(error.message || 'Error al guardar la configuración');
     } finally {
       setSaving(false);
     }
@@ -237,6 +248,56 @@ export const TenantSettings: React.FC = () => {
                   </Combobox>
                 </div>
               </Field>
+
+              {/* Slug (URL Identifier) */}
+              <Field>
+                <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <Link2 className="w-3.5 h-3.5 text-primary" /> Identificador URL (Slug)
+                </FieldLabel>
+                <Input
+                  required
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                  placeholder="ej. zapateria-gomez"
+                  className="text-xs h-9 font-mono"
+                />
+                <p className="text-[10px] text-neutral mt-1">
+                  Enlace de acceso: <span className="font-mono text-primary font-semibold">http://localhost:5173/{slug || 'mi-tienda'}</span>
+                </p>
+              </Field>
+
+              {/* Logo URL */}
+              <Field>
+                <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <ImageIcon className="w-3.5 h-3.5 text-primary" /> URL del Logo de la Empresa
+                </FieldLabel>
+                <Input
+                  value={logoUrl}
+                  onChange={(e) => setLogoUrl(e.target.value)}
+                  placeholder="https://ejemplo.com/logo.png"
+                  className="text-xs h-9 font-mono"
+                />
+              </Field>
+
+              {/* Logo Preview */}
+              {logoUrl && (
+                <div className="md:col-span-2 p-3 bg-bg-dark/60 rounded-xl border border-border-card flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-xl bg-bg-card border border-border-card p-1 flex items-center justify-center overflow-hidden shrink-0">
+                    <img
+                      src={logoUrl}
+                      alt="Vista previa del logo"
+                      className="w-full h-full object-contain rounded-lg"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-secondary block">Vista previa del Logo</span>
+                    <span className="text-[10px] text-neutral">Este logo se mostrará en la pantalla de inicio de sesión y en los tickets.</span>
+                  </div>
+                </div>
+              )}
 
               {/* Timezone Select (Combobox) */}
               <Field className="md:col-span-2">

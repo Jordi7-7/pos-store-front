@@ -22,7 +22,12 @@ export const apiClient = {
     });
 
     if (!response.ok) {
-      if (response.status === 401 && !path.includes('/auth/login')) {
+      if (
+        response.status === 401 &&
+        !path.includes('/auth/login') &&
+        !path.includes('/auth/pin-login') &&
+        !path.includes('/tenants/public')
+      ) {
         // Token expirado o inválido: Cerrar sesión
         useAuthStore.getState().logout();
       }
