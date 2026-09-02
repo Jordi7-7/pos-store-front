@@ -164,7 +164,7 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
 
             {/* 2. ARQUEO DE EFECTIVO EN CAJA (Fórmula paso a paso) */}
             <div className="bg-bg-card/70 border border-border-card/60 p-2.5 rounded-xl space-y-2">
-              <span className="text-[10px] text-neutral uppercase font-bold tracking-wider block">Fórmula de Efectivo en Gaveta</span>
+              <span className="text-[10px] text-neutral uppercase font-bold tracking-wider block">Fórmula de Efectivo en Caja</span>
               
               <div className="grid grid-cols-4 gap-1 text-center text-xs">
                 <div className="bg-bg-dark/40 p-1.5 rounded-lg">
