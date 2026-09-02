@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { X, Loader2, ArrowUpRight, ArrowDownLeft, Wallet, Info, FileText, Package } from 'lucide-react';
+import { X, Loader2, Info, FileText, Package } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -7,6 +7,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAuthStore } from '../../../auth/hooks/useAuthStore';
+import type {
+  CashSessionHeader,
+  SessionSale,
+  SessionExpense,
+  SessionRefund,
+} from '@/modules/cash-sessions/types/cash-sessions.types';
 
 interface CierreModalProps {
   isOpen: boolean;
@@ -15,10 +21,16 @@ interface CierreModalProps {
   setClosingBalance: (val: string) => void;
   onCloseSession: () => void;
   isClosing: boolean;
-  activeSession: any;
-  activeSessionSales: any[];
-  activeSessionExpenses: any[];
-  activeSessionRefunds: any[];
+  activeSession: CashSessionHeader | null;
+  activeSessionSales: SessionSale[];
+  activeSessionExpenses: SessionExpense[];
+  activeSessionRefunds: SessionRefund[];
+}
+
+interface ProductSummaryItem {
+  name: string;
+  quantity: number;
+  total: number;
 }
 
 export const CierreModal: React.FC<CierreModalProps> = ({
@@ -37,30 +49,27 @@ export const CierreModal: React.FC<CierreModalProps> = ({
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
 
   const salesTotal = useMemo(() => {
-    return activeSessionSales.reduce((sum, s) => sum + Number(s.total || 0), 0);
+    return activeSessionSales.reduce((sum, s) => sum + Number(s.total), 0);
   }, [activeSessionSales]);
 
   const expensesTotal = useMemo(() => {
-    return activeSessionExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    return activeSessionExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   }, [activeSessionExpenses]);
 
   const refundsTotal = useMemo(() => {
-    return activeSessionRefunds.reduce((sum, r) => sum + Number(r.totalRefunded || 0), 0);
+    return activeSessionRefunds.reduce((sum, r) => sum + Number(r.totalRefunded), 0);
   }, [activeSessionRefunds]);
-
-  const expectedBalance = openingBalance + salesTotal - expensesTotal - refundsTotal;
 
   const { cashSalesTotal, cardSalesTotal } = useMemo(() => {
     let cash = 0;
     let card = 0;
 
     activeSessionSales.forEach((sale) => {
-      const saleTotal = Number(sale.total || sale.totalAmount || 0);
+      const saleTotal = Number(sale.total);
       const payments = sale.payments || [];
 
       if (!payments.length) {
-        const method = (sale.paymentMethod || 'EFECTIVO').toUpperCase();
-        if (method === 'TARJETA') {
+        if (sale.paymentMethod === 'TARJETA') {
           card += saleTotal;
         } else {
           cash += saleTotal;
@@ -68,14 +77,13 @@ export const CierreModal: React.FC<CierreModalProps> = ({
         return;
       }
 
-      payments.forEach((p: any) => {
-        const method = (p.paymentMethod || '').toUpperCase();
-        const amt = Number(p.amount || 0);
+      payments.forEach((p) => {
+        const amt = Number(p.amount);
         const cleanAmt = Math.min(amt, saleTotal);
 
-        if (method === 'TARJETA') {
+        if (p.paymentMethod === 'TARJETA') {
           card += cleanAmt;
-        } else if (method === 'EFECTIVO') {
+        } else if (p.paymentMethod === 'EFECTIVO') {
           cash += cleanAmt;
         }
       });
@@ -84,24 +92,36 @@ export const CierreModal: React.FC<CierreModalProps> = ({
     return { cashSalesTotal: cash, cardSalesTotal: card };
   }, [activeSessionSales]);
 
-  // Group products sold for this session
+  const expectedCashInDrawer = openingBalance + cashSalesTotal - expensesTotal - refundsTotal;
+  const difference = closingBalance !== '' ? Number(closingBalance) - expectedCashInDrawer : null;
+
+  // Group products sold for this session with strict types
   const productsSummary = useMemo(() => {
-    const summary: { [sku: string]: { name: string; quantity: number; total: number } } = {};
+    const summary: Record<string, ProductSummaryItem> = {};
+
     activeSessionSales.forEach((sale) => {
-      (sale.items || []).forEach((item: any) => {
-        const sku = item.variantSku || 'S/SKU';
+      sale.items.forEach((item) => {
+        const sku = item.variant.sku;
+        const productName = item.variant.product.name;
+        const variantAttrs = (item.variant.attributeValues || [])
+          .map((av) => av.value)
+          .filter(Boolean)
+          .join(' · ');
+        const fullName = variantAttrs ? `${productName} (${variantAttrs})` : productName;
+
         if (!summary[sku]) {
           summary[sku] = {
-            name: item.productName || 'Producto',
+            name: fullName,
             quantity: 0,
             total: 0,
           };
         }
-        summary[sku].quantity += Number(item.quantity || 0);
-        const itemDiscount = item.discountAmount || 0;
-        summary[sku].total += (Number(item.price || 0) - itemDiscount) * Number(item.quantity || 0);
+        summary[sku].quantity += Number(item.quantity);
+        const itemDiscount = Number(item.discountAmount || 0);
+        summary[sku].total += (Number(item.price) - itemDiscount) * Number(item.quantity);
       });
     });
+
     return Object.entries(summary).map(([sku, data]) => ({
       sku,
       ...data,
@@ -121,61 +141,63 @@ export const CierreModal: React.FC<CierreModalProps> = ({
         {/* Scrollable Content Container */}
         <div className="flex-1 overflow-y-auto pr-1 space-y-4 py-3 min-h-0">
           
-          {/* Cash Summary Dashboard */}
-          <div className="bg-muted/30 border border-border rounded-xl p-4.5 space-y-3 shadow-inner">
-            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block border-b border-border/60 pb-1.5 flex items-center gap-1">
-              <Wallet className="w-3.5 h-3.5 text-primary" /> Resumen del Turno
-            </span>
+          {/* Resumen del Turno y Arqueo de Efectivo (Estilo Historial) */}
+          <div className="bg-bg-dark/50 border border-border-card p-3 rounded-2xl space-y-2.5">
             
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between items-center text-muted-foreground">
-                <span>(+) Saldo Inicial (Apertura):</span>
-                <span className="font-mono font-semibold text-foreground">${openingBalance.toFixed(2)}</span>
+            {/* 1. VENTAS DEL TURNO (¿Cuánto se vendió?) */}
+            <div className="bg-bg-card/70 border border-border-card/60 p-2.5 rounded-xl space-y-2">
+              <div className="flex justify-between items-center pb-1.5 border-b border-border-card/50">
+                <span className="text-[10px] text-neutral uppercase font-bold tracking-wider">Ventas del Turno</span>
+                <div className="text-right">
+                  <span className="text-[9px] text-neutral mr-1.5">Venta Neta:</span>
+                  <span className="text-xs font-mono font-extrabold text-primary">${(salesTotal - refundsTotal).toFixed(2)}</span>
+                </div>
               </div>
-              <div className="flex justify-between items-center text-muted-foreground">
-                <span className="flex items-center gap-1 text-emerald-500">
-                  <ArrowUpRight className="w-3.5 h-3.5" /> (+) Ventas Registradas:
-                </span>
-                <span className="font-mono font-semibold text-emerald-500 font-bold">${salesTotal.toFixed(2)}</span>
+              <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
+                <div className="bg-bg-dark/40 p-1.5 rounded-lg">
+                  <span className="text-[8.5px] text-emerald-500 uppercase font-bold block">Efectivo</span>
+                  <span className="font-mono font-bold text-emerald-500 text-xs">${cashSalesTotal.toFixed(2)}</span>
+                </div>
+                <div className="bg-bg-dark/40 p-1.5 rounded-lg">
+                  <span className="text-[8.5px] text-blue-500 uppercase font-bold block">Tarjeta / TPV</span>
+                  <span className="font-mono font-bold text-blue-500 text-xs">${cardSalesTotal.toFixed(2)}</span>
+                </div>
+                <div className="bg-bg-dark/40 p-1.5 rounded-lg">
+                  <span className="text-[8.5px] text-neutral uppercase font-bold block">Total Facturado</span>
+                  <span className="font-mono font-bold text-secondary text-xs">${salesTotal.toFixed(2)}</span>
+                </div>
               </div>
-              <div className="flex justify-between items-center text-muted-foreground">
-                <span className="flex items-center gap-1 text-rose-500">
-                  <ArrowDownLeft className="w-3.5 h-3.5" /> (-) Gastos:
-                </span>
-                <span className="font-mono font-semibold text-rose-500 font-bold">${expensesTotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between items-center text-muted-foreground">
-                <span className="flex items-center gap-1 text-amber-500">
-                  <ArrowDownLeft className="w-3.5 h-3.5" /> (-) Devoluciones:
-                </span>
-                <span className="font-mono font-semibold text-amber-500 font-bold">${refundsTotal.toFixed(2)}</span>
+            </div>
+
+            {/* 2. ARQUEO DE EFECTIVO EN CAJA (Fórmula paso a paso) */}
+            <div className="bg-bg-card/70 border border-border-card/60 p-2.5 rounded-xl space-y-2">
+              <span className="text-[10px] text-neutral uppercase font-bold tracking-wider block">Fórmula de Efectivo en Gaveta</span>
+              
+              <div className="grid grid-cols-4 gap-1 text-center text-xs">
+                <div className="bg-bg-dark/40 p-1.5 rounded-lg">
+                  <span className="text-[8px] text-neutral uppercase font-bold block">Apertura</span>
+                  <span className="font-mono font-semibold text-secondary text-[10.5px]">${openingBalance.toFixed(2)}</span>
+                </div>
+                <div className="bg-bg-dark/40 p-1.5 rounded-lg">
+                  <span className="text-[8px] text-emerald-500 uppercase font-bold block">(+) Venta Efec</span>
+                  <span className="font-mono font-semibold text-emerald-500 text-[10.5px]">+${cashSalesTotal.toFixed(2)}</span>
+                </div>
+                <div className="bg-bg-dark/40 p-1.5 rounded-lg">
+                  <span className="text-[8px] text-amber-500 uppercase font-bold block">(-) Gastos</span>
+                  <span className="font-mono font-semibold text-amber-500 text-[10.5px]">-${expensesTotal.toFixed(2)}</span>
+                </div>
+                <div className="bg-bg-dark/40 p-1.5 rounded-lg">
+                  <span className="text-[8px] text-rose-500 uppercase font-bold block">(-) Devol</span>
+                  <span className="font-mono font-semibold text-rose-500 text-[10.5px]">-${refundsTotal.toFixed(2)}</span>
+                </div>
               </div>
 
-              <div className="border-t border-dashed border-border/80 pt-2 flex justify-between items-center font-bold text-sm">
-                <span className="text-secondary">(=) Total Esperado en Caja:</span>
-                <span className="font-mono text-primary font-extrabold text-base">${expectedBalance.toFixed(2)}</span>
+              <div className="border-t border-border-card/60 pt-1.5 flex justify-between items-center px-1">
+                <span className="text-[10px] font-bold text-secondary uppercase tracking-wider">(=) Efectivo Físico Esperado</span>
+                <span className="font-mono text-emerald-400 font-extrabold text-sm">${expectedCashInDrawer.toFixed(2)}</span>
               </div>
             </div>
-          </div>
 
-          {/* Large Metrics Dashboard */}
-          <div className="grid grid-cols-2 gap-3 pt-1">
-            <div className="bg-muted/30 border border-border rounded-xl p-3 flex flex-col justify-between shadow-xs">
-              <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Venta Efectivo</span>
-              <span className="text-base font-extrabold text-emerald-500 font-mono mt-1">${cashSalesTotal.toFixed(2)}</span>
-            </div>
-            <div className="bg-muted/30 border border-border rounded-xl p-3 flex flex-col justify-between shadow-xs">
-              <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Venta TPV</span>
-              <span className="text-base font-extrabold text-blue-500 font-mono mt-1">${cardSalesTotal.toFixed(2)}</span>
-            </div>
-            <div className="bg-muted/30 border border-border rounded-xl p-3 flex flex-col justify-between shadow-xs">
-              <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Devoluciones</span>
-              <span className="text-base font-extrabold text-amber-500 font-mono mt-1">${refundsTotal.toFixed(2)}</span>
-            </div>
-            <div className="bg-muted/30 border border-border rounded-xl p-3 flex flex-col justify-between shadow-xs">
-              <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Gastos</span>
-              <span className="text-base font-extrabold text-rose-500 font-mono mt-1">${expensesTotal.toFixed(2)}</span>
-            </div>
           </div>
 
           {/* Breakdown Section */}
@@ -187,7 +209,9 @@ export const CierreModal: React.FC<CierreModalProps> = ({
             {/* List of Sales */}
             <div className="border border-border rounded-xl p-3 bg-muted/10 space-y-3">
               <div>
-                <span className="text-[9.5px] font-bold text-secondary uppercase tracking-wider block mb-1">Ventas Realizadas ({activeSessionSales.length})</span>
+                <span className="text-[9.5px] font-bold text-secondary uppercase tracking-wider block mb-1">
+                  Ventas Realizadas ({activeSessionSales.length})
+                </span>
                 {activeSessionSales.length === 0 ? (
                   <span className="text-[10px] text-muted-foreground italic block">Sin ventas en este turno</span>
                 ) : (
@@ -197,13 +221,13 @@ export const CierreModal: React.FC<CierreModalProps> = ({
                         timeZone: timezone,
                         hour: '2-digit',
                         minute: '2-digit',
-                        hour12: false
+                        hour12: false,
                       });
-                      const methods = (sale.payments || []).map((p: any) => p.paymentMethod).join('/') || 'EFE';
+                      const methods = (sale.payments || []).map((p) => p.paymentMethod).join('/') || sale.paymentMethod;
                       return (
                         <div key={sale.id} className="flex justify-between items-center text-[10.5px] border-b border-border/40 pb-1 last:border-b-0 last:pb-0">
                           <span className="text-muted-foreground font-mono">[{timeStr}] {sale.invoiceNumber} ({methods})</span>
-                          <span className="font-mono font-semibold text-foreground">${Number(sale.total || 0).toFixed(2)}</span>
+                          <span className="font-mono font-semibold text-foreground">${Number(sale.total).toFixed(2)}</span>
                         </div>
                       );
                     })}
@@ -238,7 +262,9 @@ export const CierreModal: React.FC<CierreModalProps> = ({
 
               {/* List of Expenses */}
               <div className="border-t border-border/60 pt-2">
-                <span className="text-[9.5px] font-bold text-secondary uppercase tracking-wider block mb-1">Gastos de Caja ({activeSessionExpenses.length})</span>
+                <span className="text-[9.5px] font-bold text-secondary uppercase tracking-wider block mb-1">
+                  Gastos de Caja ({activeSessionExpenses.length})
+                </span>
                 {activeSessionExpenses.length === 0 ? (
                   <span className="text-[10px] text-muted-foreground italic block">Sin gastos en este turno</span>
                 ) : (
@@ -248,12 +274,12 @@ export const CierreModal: React.FC<CierreModalProps> = ({
                         timeZone: timezone,
                         hour: '2-digit',
                         minute: '2-digit',
-                        hour12: false
+                        hour12: false,
                       });
                       return (
                         <div key={exp.id} className="flex justify-between items-center text-[10.5px] border-b border-border/40 pb-1 last:border-b-0 last:pb-0">
                           <span className="text-muted-foreground font-mono">[{timeStr}] {exp.description}</span>
-                          <span className="font-mono font-semibold text-rose-500">${Number(exp.amount || 0).toFixed(2)}</span>
+                          <span className="font-mono font-semibold text-rose-500">${Number(exp.amount).toFixed(2)}</span>
                         </div>
                       );
                     })}
@@ -263,7 +289,9 @@ export const CierreModal: React.FC<CierreModalProps> = ({
 
               {/* List of Returns/Refunds */}
               <div className="border-t border-border/60 pt-2">
-                <span className="text-[9.5px] font-bold text-secondary uppercase tracking-wider block mb-1">Devoluciones de Caja ({activeSessionRefunds.length})</span>
+                <span className="text-[9.5px] font-bold text-secondary uppercase tracking-wider block mb-1">
+                  Devoluciones de Caja ({activeSessionRefunds.length})
+                </span>
                 {activeSessionRefunds.length === 0 ? (
                   <span className="text-[10px] text-muted-foreground italic block">Sin devoluciones en este turno</span>
                 ) : (
@@ -273,12 +301,12 @@ export const CierreModal: React.FC<CierreModalProps> = ({
                         timeZone: timezone,
                         hour: '2-digit',
                         minute: '2-digit',
-                        hour12: false
+                        hour12: false,
                       });
                       return (
                         <div key={refund.id} className="flex justify-between items-center text-[10.5px] border-b border-border/40 pb-1 last:border-b-0 last:pb-0">
-                          <span className="text-muted-foreground font-mono">[{timeStr}] {refund.reason || 'Devolución'}</span>
-                          <span className="font-mono font-semibold text-amber-500">${Number(refund.totalRefunded || 0).toFixed(2)}</span>
+                          <span className="text-muted-foreground font-mono">[{timeStr}] {refund.reason}</span>
+                          <span className="font-mono font-semibold text-amber-500">${Number(refund.totalRefunded).toFixed(2)}</span>
                         </div>
                       );
                     })}
@@ -289,17 +317,43 @@ export const CierreModal: React.FC<CierreModalProps> = ({
           </div>
 
           {/* Form input */}
-          <div className="space-y-1.5">
-            <label className="block text-[10px] text-muted-foreground mb-1 uppercase tracking-wider font-bold">
-              Monto de Cierre Físico ($)
-            </label>
-            <input 
-              type="number" 
-              value={closingBalance}
-              onChange={(e) => setClosingBalance(e.target.value)}
-              placeholder="Ingresa el efectivo contado..."
-              className="w-full bg-muted/40 border border-border rounded-xl py-2.5 px-3.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            />
+          <div className="space-y-2">
+            <div>
+              <label className="block text-[10px] text-muted-foreground mb-1 uppercase tracking-wider font-bold">
+                Monto de Cierre Físico ($)
+              </label>
+              <input 
+                type="number" 
+                value={closingBalance}
+                onChange={(e) => setClosingBalance(e.target.value)}
+                placeholder="Ingresa el efectivo contado..."
+                className="w-full bg-muted/40 border border-border rounded-xl py-2.5 px-3.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+
+            {closingBalance !== '' && difference !== null && (
+              <div
+                className={`p-2.5 rounded-xl border flex justify-between items-center text-xs font-bold transition-all ${
+                  Math.abs(difference) < 0.01
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                    : difference < 0
+                    ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                    : 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                }`}
+              >
+                <span className="text-[10px] uppercase tracking-wider">
+                  {Math.abs(difference) < 0.01
+                    ? '✓ Caja Cuadrada Exacta'
+                    : difference < 0
+                    ? '⚠ Faltante en Caja'
+                    : '▲ Sobrante en Caja'}
+                </span>
+                <span className="font-mono text-xs">
+                  {difference > 0 ? `+$${difference.toFixed(2)}` : `$${difference.toFixed(2)}`}
+                </span>
+              </div>
+            )}
+
             <p className="text-[9px] text-muted-foreground flex items-center gap-1 leading-normal">
               <Info className="w-3.5 h-3.5 text-primary shrink-0" />
               Cuenta el efectivo real de tu caja e ingresa el total. El sistema calculará automáticamente cualquier descuadre.
@@ -322,4 +376,5 @@ export const CierreModal: React.FC<CierreModalProps> = ({
     </Dialog>
   );
 };
+
 export default CierreModal;

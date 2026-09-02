@@ -8,16 +8,22 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/modules/auth';
+import type {
+  CashSessionHeader,
+  SessionSale,
+  SessionExpense,
+  SessionRefund,
+} from '@/modules/cash-sessions/types/cash-sessions.types';
 
 interface HistorialModalProps {
   isOpen: boolean;
   onClose: () => void;
-  activeSessionSales: any[];
-  activeSessionExpenses: any[];
-  activeSessionRefunds: any[];
-  activeSession: any | null;
+  activeSessionSales: SessionSale[];
+  activeSessionExpenses: SessionExpense[];
+  activeSessionRefunds: SessionRefund[];
+  activeSession: CashSessionHeader | null;
   branchId: string;
-  onPrintSale?: (sale: any) => void;
+  onPrintSale?: (sale: SessionSale) => void;
 }
 
 type HistoryTab = 'sales' | 'expenses' | 'refunds';
@@ -53,12 +59,12 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
 }) => {
   const [historyTab, setHistoryTab] = useState<HistoryTab>('sales');
   const [searchTerm, setSearchTerm] = useState('');
-  const timezone = useAuthStore((state: any) => state.timezone) || 'America/Guayaquil';
+  const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
 
   const filteredSales = activeSessionSales.filter((sale) => {
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase();
-    const invNo = (sale.invoiceNumber || '').toLowerCase();
+    const invNo = sale.invoiceNumber.toLowerCase();
     const client = (sale.customer?.name || 'Consumidor Final').toLowerCase();
     return invNo.includes(term) || client.includes(term);
   });
@@ -66,15 +72,15 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
   const openingBalance = Number(activeSession?.openingBalance || 0);
 
   const totalSalesSum = useMemo(
-    () => activeSessionSales.reduce((sum, sale) => sum + Number(sale.total || sale.totalAmount || 0), 0),
+    () => activeSessionSales.reduce((sum, sale) => sum + Number(sale.total), 0),
     [activeSessionSales]
   );
   const totalExpensesSum = useMemo(
-    () => activeSessionExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0),
+    () => activeSessionExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0),
     [activeSessionExpenses]
   );
   const totalRefundsSum = useMemo(
-    () => activeSessionRefunds.reduce((sum, ref) => sum + Number(ref.totalRefunded || ref.total || 0), 0),
+    () => activeSessionRefunds.reduce((sum, ref) => sum + Number(ref.totalRefunded), 0),
     [activeSessionRefunds]
   );
 
@@ -83,12 +89,11 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
     let card = 0;
 
     activeSessionSales.forEach((sale) => {
-      const saleTotal = Number(sale.total || sale.totalAmount || 0);
+      const saleTotal = Number(sale.total);
       const payments = sale.payments || [];
 
       if (!payments.length) {
-        const method = (sale.paymentMethod || 'EFECTIVO').toUpperCase();
-        if (method === 'TARJETA') {
+        if (sale.paymentMethod === 'TARJETA') {
           card += saleTotal;
         } else {
           cash += saleTotal;
@@ -96,15 +101,13 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
         return;
       }
 
-      payments.forEach((p: any) => {
-        const method = (p.paymentMethod || '').toUpperCase();
-        const amt = Number(p.amount || 0);
-        // Protection against legacy oversized test entries
+      payments.forEach((p) => {
+        const amt = Number(p.amount);
         const cleanAmt = Math.min(amt, saleTotal);
 
-        if (method === 'TARJETA') {
+        if (p.paymentMethod === 'TARJETA') {
           card += cleanAmt;
-        } else if (method === 'EFECTIVO') {
+        } else if (p.paymentMethod === 'EFECTIVO') {
           cash += cleanAmt;
         }
       });
@@ -214,18 +217,18 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
 
         {/* Search Invoice Input */}
         {historyTab === 'sales' && (
-          <div className="px-1 mb-1 mt-2 animate-fade-in">
+          <div className="relative mb-2">
             <input
               type="text"
-              placeholder="Buscar factura por folio o cliente..."
+              placeholder="Buscar por cliente o factura (ej. 001-001)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full text-[11px] bg-bg-dark border border-border-card text-secondary placeholder-neutral rounded-xl px-3 py-1.5 outline-none focus:border-primary/50 transition-all font-mono"
+              className="w-full bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-xs text-secondary placeholder-gray-400 focus:outline-none focus:border-primary"
             />
           </div>
         )}
 
-        <div className="space-y-3 max-h-80 overflow-y-auto pr-1 pt-2">
+        <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
           {/* ── SALES TAB ── */}
           {historyTab === 'sales' && (
             filteredSales.length === 0 ? (
@@ -233,22 +236,22 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
                 {activeSessionSales.length === 0 ? 'No has registrado ninguna venta en esta sesión todavía.' : 'No se encontraron facturas con esa búsqueda.'}
               </div>
             ) : (
-              filteredSales.map((sale: any) => (
+              filteredSales.map((sale) => (
                 <div key={sale.id} className="flex justify-between items-center bg-bg-dark/40 border border-border-card p-3 rounded-xl text-secondary animate-fade-in gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                  <div className="overflow-hidden">
+                    <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold font-mono">
                         {sale.invoiceNumber}
                       </span>
                       <SaleStatusBadge status={sale.status} />
                     </div>
                     <div className="text-[9px] text-neutral mt-0.5">{new Date(sale.createdAt).toLocaleTimeString(undefined, { timeZone: timezone })}</div>
-                    <div className="text-[9px] text-neutral">{(sale.items || []).length} artículo(s)</div>
+                    <div className="text-[9px] text-neutral">{sale.items.length} artículo(s)</div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="text-xs font-bold text-primary">${Number(sale.total || sale.totalAmount || 0).toFixed(2)}</div>
+                    <div className="text-xs font-bold text-primary">${Number(sale.total).toFixed(2)}</div>
                     <span className="text-[8.5px] uppercase tracking-wider font-bold text-neutral-400 bg-bg-card px-2 py-0.5 rounded border border-border-card inline-block mt-0.5">
-                      {sale.payments?.[0]?.paymentMethod || 'Efectivo'}
+                      {sale.payments?.[0]?.paymentMethod || sale.paymentMethod}
                     </span>
                   </div>
                   <div className="flex gap-1.5 shrink-0">
@@ -270,14 +273,14 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
             activeSessionExpenses.length === 0 ? (
               <div className="py-12 text-center text-xs text-neutral">No has registrado ningún gasto en esta sesión todavía.</div>
             ) : (
-              activeSessionExpenses.map((exp: any) => (
+              activeSessionExpenses.map((exp) => (
                 <div key={exp.id} className="flex justify-between items-center bg-bg-dark/40 border border-border-card p-3 rounded-xl text-secondary animate-fade-in">
                   <div>
-                    <div className="text-[11px] font-bold text-secondary">{exp.desc}</div>
+                    <div className="text-[11px] font-bold text-secondary">{exp.description}</div>
                     <div className="text-[9px] text-neutral mt-0.5">{exp.createdAt ? new Date(exp.createdAt).toLocaleTimeString(undefined, { timeZone: timezone }) : 'Hace un momento'}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs font-bold text-amber-500">-${Number(exp.amount || 0).toFixed(2)}</div>
+                    <div className="text-xs font-bold text-amber-500">-${Number(exp.amount).toFixed(2)}</div>
                     <span className="text-[8.5px] uppercase tracking-wider font-bold text-amber-400 bg-bg-card px-2 py-0.5 rounded border border-border-card inline-block mt-0.5">
                       {exp.category || 'Servicios'}
                     </span>
@@ -292,7 +295,7 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
             activeSessionRefunds.length === 0 ? (
               <div className="py-12 text-center text-xs text-neutral">No se han procesado devoluciones en esta sesión.</div>
             ) : (
-              activeSessionRefunds.map((refund: any) => (
+              activeSessionRefunds.map((refund) => (
                 <div key={refund.id} className="bg-bg-dark/40 border border-rose-500/20 p-3 rounded-xl animate-fade-in space-y-2">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-1.5">
@@ -302,13 +305,13 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
                       </span>
                     </div>
                     <span className="text-xs font-extrabold text-rose-500 font-mono">
-                      -${Number(refund.totalRefunded || 0).toFixed(2)}
+                      -${Number(refund.totalRefunded).toFixed(2)}
                     </span>
                   </div>
                   <div className="space-y-1">
-                    {(refund.items || []).map((item: any) => (
+                    {refund.items.map((item) => (
                       <div key={item.id} className="flex justify-between text-[9px] text-neutral">
-                        <span className="truncate">{item.variant?.product?.name || item.variantId.slice(0, 8)}</span>
+                        <span className="truncate">{item.variant.product.name} ({item.variant.sku})</span>
                         <span className="font-mono shrink-0 ml-2">
                           x{Number(item.quantity)} × ${Number(item.priceRefunded).toFixed(2)}
                         </span>
@@ -317,35 +320,10 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
                   </div>
                   <div className="flex justify-between items-end">
                     <span className="text-[9px] text-neutral italic truncate max-w-[60%]">"{refund.reason}"</span>
-                    <span className="text-[9px] text-neutral shrink-0">
-                      {new Date(refund.createdAt).toLocaleTimeString(undefined, { timeZone: timezone })}
-                    </span>
                   </div>
                 </div>
               ))
             )
-          )}
-        </div>
-
-        {/* Summary Footer Bar */}
-        <div className="mt-4 pt-3 border-t border-border-card flex justify-between items-center text-xs font-bold bg-bg-dark/20 p-3 rounded-xl">
-          {historyTab === 'sales' && (
-            <>
-              <span className="text-neutral">Total Ventas:</span>
-              <span className="text-primary text-sm">${totalSalesSum.toFixed(2)}</span>
-            </>
-          )}
-          {historyTab === 'expenses' && (
-            <>
-              <span className="text-neutral">Total Gastos:</span>
-              <span className="text-amber-500 text-sm">-${totalExpensesSum.toFixed(2)}</span>
-            </>
-          )}
-          {historyTab === 'refunds' && (
-            <>
-              <span className="text-neutral">Total Devuelto:</span>
-              <span className="text-rose-500 text-sm">-${totalRefundsSum.toFixed(2)}</span>
-            </>
           )}
         </div>
       </DialogContent>

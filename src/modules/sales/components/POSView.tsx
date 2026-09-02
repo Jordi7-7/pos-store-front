@@ -10,7 +10,12 @@ import {
 import { useCustomers } from '../hooks/useCustomers';
 import { useCashSessionDetailsQuery } from '../../cash-sessions/hooks/useCashSessions';
 import { PaymentMethod } from '../services/sales.service';
-import type { Sale, SaleItemResponse } from '../services/sales.service';
+import type { Sale } from '../services/sales.service';
+import type {
+  SessionSale,
+  SessionExpense,
+  SessionRefund,
+} from '../../cash-sessions/types/cash-sessions.types';
 import { apiClient } from '@/lib/apiClient';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import {
@@ -149,11 +154,11 @@ export const POSView: React.FC<POSViewProps> = ({
       .catch((e) => console.error('Error fetching tenant details for ticket:', e));
   }, []);
 
-  const handlePrintSale = (sale: Sale) => {
-    const branchName = sale.branch?.name || 'Sucursal General';
-    const branchAddress = sale.branch?.address || '';
+  const handlePrintSale = (sale: Sale | SessionSale) => {
+    const branchName = ('branch' in sale && sale.branch?.name) ? sale.branch.name : (branches.find((b) => b.id === selectedBranchId)?.name || 'Sucursal General');
+    const branchAddress = ('branch' in sale && sale.branch?.address) ? sale.branch.address : (branches.find((b) => b.id === selectedBranchId)?.address || '');
     const clientName = sale.customer?.name || 'Consumidor Final';
-    const clientIdentity = sale.customer?.identityNumber || '9999999999';
+    const clientIdentity = ('customer' in sale && sale.customer && 'identityNumber' in sale.customer) ? (sale.customer as any).identityNumber : '9999999999';
     const invoiceNumber = sale.invoiceNumber;
 
     setReprintSaleData({
@@ -163,17 +168,17 @@ export const POSView: React.FC<POSViewProps> = ({
       branchAddress,
       clientName,
       clientIdentity,
-      items: (sale.items || []).map((item: SaleItemResponse) => ({
+      items: (sale.items || []).map((item: any) => ({
         variantId: item.variantId,
-        variantSku: item.sku || item.variantSku || item.variant?.sku || '',
-        productName: item.productName || item.variantName || item.variant?.product?.name || 'Producto',
-        combinationText: item.attributes || item.variant?.attributeValues?.map((av) => av.value).join(' / ') || 'Estándar',
+        variantSku: item.variant?.sku || item.sku || item.variantSku || '',
+        productName: item.variant?.product?.name || item.productName || item.variantName || 'Producto',
+        combinationText: item.variant?.attributeValues?.map((av: any) => av.value).join(' / ') || item.attributes || 'Estándar',
         quantity: Number(item.quantity),
         price: Number(item.price),
         discountAmount: Number(item.discountAmount || 0),
       })),
-      paymentMethod: sale.payments?.[0]?.paymentMethod || PaymentMethod.EFECTIVO,
-      discountAmount: Number(sale.discountAmount || 0),
+      paymentMethod: (sale.payments?.[0]?.paymentMethod || ('paymentMethod' in sale ? (sale as any).paymentMethod : undefined) || PaymentMethod.EFECTIVO) as any,
+      discountAmount: Number((sale as any).discountAmount || 0),
       total: Number(sale.total || 0),
       userName: sale.user?.name || 'Vendedor',
     });
@@ -242,21 +247,19 @@ export const POSView: React.FC<POSViewProps> = ({
     },
   });
 
-  const activeSessionSales = useMemo(() => {
+  const activeSessionSales = useMemo<SessionSale[]>(() => {
     if (!activeSession || !sessionDetails) return [];
     return sessionDetails.sales || [];
   }, [sessionDetails, activeSession]);
 
-  const activeSessionExpenses = useMemo(() => {
+  const activeSessionExpenses = useMemo<SessionExpense[]>(() => {
     if (!activeSession || !sessionDetails) return [];
-    return (sessionDetails.expenses || []).map((exp: any) => ({
-      id: exp.id,
-      desc: exp.description,
-      amount: Number(exp.amount),
-      category: exp.category,
-      cashSessionId: exp.cashSessionId,
-      createdAt: exp.createdAt
-    }));
+    return sessionDetails.expenses || [];
+  }, [sessionDetails, activeSession]);
+
+  const activeSessionRefunds = useMemo<SessionRefund[]>(() => {
+    if (!activeSession || !sessionDetails) return [];
+    return sessionDetails.refunds || [];
   }, [sessionDetails, activeSession]);
 
   const handleOpenSession = async () => {
@@ -295,25 +298,33 @@ export const POSView: React.FC<POSViewProps> = ({
     }
     try {
       const openingBalance = Number(activeSession.openingBalance);
-      const salesTotal = activeSessionSales.reduce((sum: number, s: any) => sum + Number(s.total || 0), 0);
-      const expensesTotal = activeSessionExpenses.reduce((sum: number, e: any) => sum + Number(e.amount || 0), 0);
-      const expectedBalance = openingBalance + salesTotal - expensesTotal;
+      const salesTotal = activeSessionSales.reduce((sum, s) => sum + Number(s.total), 0);
+      const expensesTotal = activeSessionExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+      const refundsTotal = activeSessionRefunds.reduce((sum, r) => sum + Number(r.totalRefunded), 0);
+      const expectedBalance = openingBalance + salesTotal - expensesTotal - refundsTotal;
 
       // Group products sold
-      const productsSummary: { [sku: string]: { name: string; quantity: number; total: number } } = {};
-      activeSessionSales.forEach((sale: any) => {
-        (sale.items || []).forEach((item: any) => {
-          const sku = item.variantSku || 'S/SKU';
+      const productsSummary: Record<string, { name: string; quantity: number; total: number }> = {};
+      activeSessionSales.forEach((sale) => {
+        sale.items.forEach((item) => {
+          const sku = item.variant.sku;
+          const prodName = item.variant.product.name;
+          const variantAttrs = (item.variant.attributeValues || [])
+            .map((av) => av.value)
+            .filter(Boolean)
+            .join(' · ');
+          const fullName = variantAttrs ? `${prodName} (${variantAttrs})` : prodName;
+
           if (!productsSummary[sku]) {
             productsSummary[sku] = {
-              name: item.productName || 'Producto',
+              name: fullName,
               quantity: 0,
               total: 0,
             };
           }
-          productsSummary[sku].quantity += Number(item.quantity || 0);
-          const itemDiscount = item.discountAmount || 0;
-          productsSummary[sku].total += (Number(item.price || 0) - itemDiscount) * Number(item.quantity || 0);
+          productsSummary[sku].quantity += Number(item.quantity);
+          const itemDiscount = Number(item.discountAmount || 0);
+          productsSummary[sku].total += (Number(item.price) - itemDiscount) * Number(item.quantity);
         });
       });
 
@@ -323,30 +334,30 @@ export const POSView: React.FC<POSViewProps> = ({
       }));
 
       // Group payments by method
-      const paymentsBreakdown: { [method: string]: number } = {};
-      activeSessionSales.forEach((sale: any) => {
-        (sale.payments || []).forEach((p: any) => {
-          const method = p.paymentMethod || 'EFECTIVO';
-          paymentsBreakdown[method] = (paymentsBreakdown[method] || 0) + Number(p.amount || 0);
+      const paymentsBreakdown: Record<string, number> = {};
+      activeSessionSales.forEach((sale) => {
+        (sale.payments || []).forEach((p) => {
+          const method = p.paymentMethod || sale.paymentMethod;
+          paymentsBreakdown[method] = (paymentsBreakdown[method] || 0) + Number(p.amount);
         });
       });
 
-      // Get refunds from sessionDetails
-      const refundsList = (sessionDetails?.refunds || []).map((ref: any) => ({
+      // Get refunds from activeSessionRefunds
+      const refundsList = activeSessionRefunds.map((ref) => ({
         id: ref.id,
         reason: ref.reason,
-        items: (ref.items || []).map((ri: any) => ({
-          name: ri.variant?.product?.name || 'Producto',
-          sku: ri.variant?.sku || 'SKU',
+        items: ref.items.map((ri) => ({
+          name: ri.variant.product.name,
+          sku: ri.variant.sku,
           quantity: ri.quantity,
         })),
       }));
 
-      const salesList = activeSessionSales.map((s: any) => ({
-        invoiceNumber: s.invoiceNumber || 'S/Ref',
+      const salesList = activeSessionSales.map((s) => ({
+        invoiceNumber: s.invoiceNumber,
         createdAt: s.createdAt,
-        total: Number(s.total || 0),
-        paymentMethods: (s.payments || []).map((p: any) => p.paymentMethod),
+        total: Number(s.total),
+        paymentMethods: (s.payments || []).map((p) => p.paymentMethod),
       }));
 
       const dataToPrint = {
@@ -358,10 +369,10 @@ export const POSView: React.FC<POSViewProps> = ({
         expectedBalance,
         salesTotal,
         expensesTotal,
-        expensesList: activeSessionExpenses.map((e: any) => ({
+        expensesList: activeSessionExpenses.map((e) => ({
           description: e.description,
-          amount: e.amount,
-          createdAt: e.createdAt
+          amount: Number(e.amount),
+          createdAt: e.createdAt,
         })),
         productsList,
         paymentsBreakdown,
