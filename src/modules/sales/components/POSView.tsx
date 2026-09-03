@@ -894,96 +894,93 @@ export const POSView: React.FC<POSViewProps> = ({
                 const lineTotal = (item.price - currentItemDiscountAmount) * item.quantity;
 
                 return (
-                  <div key={item.variantId} className="bg-bg-dark/40 border border-border-card/60 rounded-xl p-3 flex flex-col gap-2 relative hover:border-primary/30 transition-all duration-150 group animate-fade-in">
-
-                    {/* Remove button */}
-                    <button
-                      onClick={() => handleRemoveFromCart(item.variantId)}
-                      className="absolute top-2.5 right-2.5 text-neutral hover:text-rose-500 opacity-60 hover:opacity-100 transition-all cursor-pointer"
-                      title="Eliminar item"
+                  <div 
+                    key={item.variantId} 
+                    className="bg-bg-dark/40 border border-border-card/60 rounded-xl p-2.5 flex items-center gap-3 hover:border-primary/30 transition-all duration-150 group animate-fade-in"
+                  >
+                    {/* Thumbnail matching exact height */}
+                    <div
+                      onClick={() => {
+                        if (item.imageUrl) {
+                          setSelectedImageForZoom(item.imageUrl);
+                        }
+                      }}
+                      className={`w-14 h-14 bg-bg-card border border-border-card/50 rounded-lg overflow-hidden shrink-0 flex items-center justify-center relative group/thumb transition-all ${
+                        item.imageUrl ? 'cursor-pointer hover:border-primary/50' : ''
+                      }`}
                     >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-
-                    <div className="flex gap-3">
-                      {/* Thumbnail */}
-                      <div
-                        onClick={() => {
-                          if (item.imageUrl) {
-                            setSelectedImageForZoom(item.imageUrl);
-                          }
-                        }}
-                        className={`w-12 h-12 bg-bg-card border border-border-card/50 rounded-lg overflow-hidden shrink-0 flex items-center justify-center relative group/thumb transition-all ${
-                          item.imageUrl ? 'cursor-pointer hover:border-primary/50' : ''
-                        }`}
-                      >
-                        {item.imageUrl ? (
-                          <>
-                            <img src={item.imageUrl} className="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-200" alt="mini" />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-all duration-200">
-                              <Maximize2 className="w-4 h-4 text-white" />
-                            </div>
-                          </>
-                        ) : (
-                          <Package className="w-6 h-6 text-neutral opacity-30" />
-                        )}
-                      </div>
-
-                      {/* Info & Quantity controls */}
-                      <div className="flex-1 min-w-0">
-                        <h5 className="text-[11px] font-extrabold text-secondary truncate pr-6 leading-tight">{item.productName}</h5>
-                        <span className="text-[9px] text-neutral font-mono block mt-0.5 truncate">{item.variantSku || 'S/SKU'}</span>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] text-neutral font-bold">${item.price.toFixed(2)}</span>
-                          {item.maxStock <= 0 ? (
-                            <Badge variant="destructive" className="text-[8.5px] h-4 px-1 leading-none font-extrabold">
-                              Stock: {item.maxStock} pzs.
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-[8.5px] h-4 px-1 leading-none font-extrabold text-neutral border-neutral/30 bg-neutral/10">
-                              Stock: {item.maxStock} pzs.
-                            </Badge>
-                          )}
-                          {currentItemDiscountAmount > 0 && (
-                            <Badge variant="secondary" className="text-[8.5px] h-4 px-1 leading-none font-extrabold bg-emerald-500/10 text-emerald-500 border-none">
-                              Desc. -${currentItemDiscountAmount.toFixed(2)}
-                            </Badge>
-                          )}
-                        </div>
-
-                        <div className="flex items-center justify-between mt-3">
-                          {/* Quantity controller */}
-                          <div className="flex items-center gap-2 bg-bg-card border border-border-card/50 rounded-lg p-0.5">
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateCartQty(item.variantId, -1)}
-                              className="p-1 hover:bg-bg-dark text-neutral hover:text-secondary rounded transition-colors cursor-pointer"
-                            >
-                              <Minus className="w-2.5 h-2.5" />
-                            </button>
-                            <span className="text-[10.5px] font-mono font-bold px-1.5 min-w-[14px] text-center text-secondary">{item.quantity}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateCartQty(item.variantId, 1)}
-                              className="p-1 hover:bg-bg-dark text-neutral hover:text-secondary rounded transition-colors cursor-pointer"
-                            >
-                              <Plus className="w-2.5 h-2.5" />
-                            </button>
+                      {item.imageUrl ? (
+                        <>
+                          <img src={item.imageUrl} className="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-200" alt="mini" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 flex items-center justify-center transition-all duration-200">
+                            <Maximize2 className="w-4 h-4 text-white" />
                           </div>
+                        </>
+                      ) : (
+                        <Package className="w-6 h-6 text-neutral opacity-30" />
+                      )}
+                    </div>
 
-                          {/* Calculated Total for item */}
-                          <span className="text-[11px] font-bold text-primary font-mono">${lineTotal.toFixed(2)}</span>
-                        </div>
+                    {/* Product Info (Center-Left) */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <h5 className="text-[11.5px] font-extrabold text-secondary truncate leading-tight">
+                        {item.productName}
+                      </h5>
+                      <div className="flex items-center gap-2 mt-1 text-[9.5px] text-neutral flex-wrap">
+                        <span className="font-mono font-bold text-[10.5px] text-primary/95 bg-primary/10 border border-primary/25 px-1.5 py-0.5 rounded tracking-wide shadow-2xs truncate max-w-[130px]">
+                          {item.variantSku || 'S/SKU'}
+                        </span>
+                        <span className="text-border-card font-bold">·</span>
+                        <span className="font-bold text-foreground font-mono text-[10.5px]">
+                          ${item.price.toFixed(2)}
+                        </span>
+                        {item.maxStock <= 0 ? (
+                          <Badge variant="destructive" className="text-[8px] h-3.5 px-1 leading-none font-extrabold">
+                            Stock: {item.maxStock}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[8px] h-3.5 px-1 leading-none font-extrabold text-neutral border-neutral/30 bg-neutral/10">
+                            Stock: {item.maxStock}
+                          </Badge>
+                        )}
+                        {currentItemDiscountAmount > 0 && (
+                          <Badge variant="secondary" className="text-[8px] h-3.5 px-1 leading-none font-extrabold bg-emerald-500/10 text-emerald-500 border-none">
+                            Desc. -${currentItemDiscountAmount.toFixed(2)}
+                          </Badge>
+                        )}
                       </div>
                     </div>
 
-                    {/* Inline Discount Control */}
-                    <div className="flex items-center justify-between bg-bg-dark/20 border border-border-card/30 rounded-lg p-1.5 mt-1">
-                      <span className="text-[8.5px] font-bold uppercase tracking-wider text-neutral">
-                        {currentItemDiscountType === 'PERCENTAGE' ? 'Descuento (%)' : 'Precio Especial ($)'}:
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        {/* Toggle button */}
+                    {/* Cashier Controls (Right) */}
+                    <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+                      {/* Quantity Selector */}
+                      <div className="flex items-center bg-bg-card border border-border-card/70 rounded-lg h-7 p-0.5 shadow-xs">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateCartQty(item.variantId, -1)}
+                          className="w-5 h-5 flex items-center justify-center hover:bg-bg-dark text-neutral hover:text-secondary rounded transition-colors cursor-pointer"
+                          title="Disminuir cantidad"
+                        >
+                          <Minus className="w-2.5 h-2.5" />
+                        </button>
+                        <span className="text-[10.5px] font-mono font-bold px-1.5 min-w-[20px] text-center text-secondary">
+                          {item.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateCartQty(item.variantId, 1)}
+                          className="w-5 h-5 flex items-center justify-center hover:bg-bg-dark text-neutral hover:text-secondary rounded transition-colors cursor-pointer"
+                          title="Aumentar cantidad"
+                        >
+                          <Plus className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+
+                      {/* Compact Discount Pill */}
+                      <div 
+                        className="flex items-center bg-bg-card border border-border-card/70 rounded-lg h-7 px-1 shadow-xs"
+                        title={currentItemDiscountType === 'PERCENTAGE' ? 'Descuento (%)' : 'Precio Especial ($)'}
+                      >
                         <button
                           type="button"
                           onClick={() => {
@@ -991,17 +988,16 @@ export const POSView: React.FC<POSViewProps> = ({
                             const nextValue = nextType === 'AMOUNT' ? item.price : 0;
                             handleUpdateItemDiscount(item.variantId, nextType, nextValue);
                           }}
-                          className="p-1 rounded bg-bg-card border border-border-card text-[9px] hover:text-secondary transition-all flex items-center justify-center cursor-pointer"
-                          title={currentItemDiscountType === 'PERCENTAGE' ? 'Cambiar a Precio de Venta ($)' : 'Cambiar a Porcentaje (%)'}
+                          className="w-5 h-5 rounded flex items-center justify-center text-neutral hover:text-secondary hover:bg-bg-dark transition-colors cursor-pointer shrink-0"
+                          title={currentItemDiscountType === 'PERCENTAGE' ? 'Cambiar a Precio Fijo ($)' : 'Cambiar a Porcentaje (%)'}
                         >
                           {currentItemDiscountType === 'PERCENTAGE' ? (
-                            <Percent className="w-2.5 h-2.5 text-blue-400" />
+                            <Percent className="w-2.5 h-2.5 text-blue-400 font-bold" />
                           ) : (
-                            <DollarSign className="w-2.5 h-2.5 text-emerald-400" />
+                            <DollarSign className="w-2.5 h-2.5 text-emerald-400 font-bold" />
                           )}
                         </button>
-                        {/* Shadcn Input component */}
-                        <Input
+                        <input
                           type="number"
                           placeholder="0"
                           min="0"
@@ -1011,9 +1007,30 @@ export const POSView: React.FC<POSViewProps> = ({
                             const val = Math.max(0, parseFloat(e.target.value) || 0);
                             handleUpdateItemDiscount(item.variantId, currentItemDiscountType, val);
                           }}
-                          className="w-20 h-6 px-1.5 text-[10px] text-secondary text-right font-mono bg-bg-card border-border-card focus-visible:border-primary/50"
+                          className="w-11 h-6 text-[10.5px] font-mono text-right bg-transparent text-secondary focus:outline-none pr-0.5"
                         />
                       </div>
+
+                      {/* Total Price for line */}
+                      <div className="text-right min-w-[65px]">
+                        <span className="text-xs sm:text-[13px] font-extrabold text-foreground font-mono block leading-tight">
+                          ${lineTotal.toFixed(2)}
+                        </span>
+                        {currentItemDiscountAmount > 0 && (
+                          <span className="text-[8.5px] font-mono text-emerald-400 block leading-tight">
+                            -${(currentItemDiscountAmount * item.quantity).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Remove item button */}
+                      <button
+                        onClick={() => handleRemoveFromCart(item.variantId)}
+                        className="w-6 h-6 flex items-center justify-center text-neutral hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all cursor-pointer shrink-0"
+                        title="Eliminar item"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
 
                   </div>
