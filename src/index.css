@@ -7,50 +7,71 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --primary: oklch(0.205 0 0);
-  --secondary: oklch(0.205 0 0); /* Used as dark text across the app */
-  --secondary-foreground: oklch(0.97 0 0); /* Light background for secondary buttons */
+  /* Brand Personality Palette - Modifica estos 2 colores aquí para cambiar el tema en toda la app */
+  --brand-primary: #121212;            /* Negro elegante */
+  --brand-primary-hover: #1e1e1e;      /* Negro hover */
+  --brand-primary-foreground: #f4ece1; /* Texto/icono sobre negro (crema claro) */
+  --brand-secondary: #f4ece1;          /* Crema suave / beige premium */
+  --brand-secondary-hover: #ebe0d1;    /* Crema hover */
+  --brand-secondary-foreground: #18181b;/* Texto sobre crema */
+  --brand-secondary-border: #e6dac8;   /* Borde crema */
+
+  /* Global App Tokens mapeados a las variables de marca */
+  --primary: var(--brand-primary);
+  --primary-hover: var(--brand-primary-hover);
+  --primary-foreground: var(--brand-primary-foreground);
+
+  --secondary: #18181b;                /* Dark text across the app */
+  --secondary-foreground: var(--brand-secondary); /* Crema background for secondary elements */
   --tertiary: #f8fafc;
   --neutral: #64748b;
 
-  --primary-hover: #1d4ed8;
-  --bg-dark: #f8fafc;        /* Light main background */
-  --bg-card: #ffffff;        /* White card background */
-  --border-card: #e2e8f0;    /* Slate-200 border */
-  --text-main: #0f172a;      /* Dark main text */
-  --text-muted: #64748b;     /* Muted neutral text */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --bg-dark: #fbf9f6;                  /* Main background suave */
+  --bg-card: #ffffff;                  /* White card background */
+  --border-card: #f0ebe4;              /* Subtle border matching warm tone */
+  --text-main: #0f172a;                /* Dark main text */
+  --text-muted: #64748b;               /* Muted neutral text */
+  --background: #ffffff;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --muted: #f4f0eb;
+  --muted-foreground: #71717a;
+  --accent: #f4ece1;
+  --accent-foreground: #18181b;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: #e8e2d9;
+  --input: #e8e2d9;
+  --ring: #18181b;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  /* Sidebar styling - Dark sleek sidebar with cream active states */
+  --sidebar: #121212;
+  --sidebar-foreground: #a1a1aa;
+  --sidebar-primary: var(--brand-secondary);
+  --sidebar-primary-foreground: #18181b;
+  --sidebar-accent: #1e1e1e;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #232326;
+  --sidebar-ring: #ffffff;
 }
 
 @theme {
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-hover: var(--brand-primary-hover);
+  --color-brand-primary-foreground: var(--brand-primary-foreground);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-secondary-hover: var(--brand-secondary-hover);
+  --color-brand-secondary-foreground: var(--brand-secondary-foreground);
+  --color-brand-secondary-border: var(--brand-secondary-border);
+
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--secondary);

@@ -1160,16 +1160,16 @@ export const POSView: React.FC<POSViewProps> = ({
             </div>
 
             {/* HIGHLIGHTED HERO TOTAL TO PAY */}
-            <div className="bg-primary/10 border-2 border-primary/30 rounded-xl p-2.5 flex justify-between items-center shadow-xs">
+            <div className="bg-brand-secondary border border-brand-secondary-border rounded-2xl p-3 flex justify-between items-center shadow-xs">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-primary block leading-tight">
+                <span className="text-[10px] font-black uppercase tracking-wider text-brand-secondary-foreground block leading-tight">
                   Monto Total a Cobrar
                 </span>
-                <span className="text-[9px] text-neutral">
+                <span className="text-[9.5px] text-zinc-600 font-medium">
                   {cart.reduce((sum, item) => sum + item.quantity, 0)} artículo(s)
                 </span>
               </div>
-              <span className="text-2xl sm:text-3xl font-black text-primary font-mono tracking-tight leading-none">
+              <span className="text-2xl sm:text-3xl font-black text-brand-secondary-foreground font-mono tracking-tight leading-none">
                 ${cartTotal.toFixed(2)}
               </span>
             </div>

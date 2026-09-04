@@ -23,7 +23,7 @@ import { ReportsView } from '../modules/reports/components/ReportsView';
 import { CustomersView } from '../modules/customers/components/CustomersView';
 import { CashSessionsHistoryView } from '../modules/cash-sessions/components/CashSessionsHistoryView';
 
-import { Building } from 'lucide-react';
+import { Building, ChevronDown } from 'lucide-react';
 
 export const MainLayout: React.FC = () => {
   const { user, activeTab, selectedBranchId, setSelectedBranchId, fetchProfile, accessToken } = useAuthStore();
@@ -163,6 +163,13 @@ export const MainLayout: React.FC = () => {
                     </select>
                   </div>
                 )}
+
+                {/* User quick pill like in reference photo (Leiza v) */}
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-dark border border-border-card rounded-xl text-xs font-medium text-secondary">
+                  <span className="w-2 h-2 rounded-sm bg-neutral/40" />
+                  <span className="font-semibold">{user?.name?.split(' ')[0] || 'Cajero'}</span>
+                  <ChevronDown className="w-3 h-3 text-neutral" />
+                </div>
 
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-dark border border-border-card rounded-xl text-xs">
                   <div className={`w-2 h-2 rounded-full ${activeSession ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
