@@ -96,13 +96,13 @@ export function AppSidebar() {
                     isActive={isActive}
                     onClick={() => setActiveTab(item.id)}
                     tooltip={item.label}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                       isActive 
-                        ? 'bg-brand-secondary text-brand-secondary-foreground font-bold shadow-md' 
-                        : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60'
+                        ? '!bg-brand-secondary !text-brand-secondary-foreground data-[active=true]:!bg-brand-secondary data-[active=true]:!text-brand-secondary-foreground shadow-sm [&>svg]:!text-brand-secondary-foreground [&>svg]:!opacity-100' 
+                        : 'text-zinc-300 hover:text-white hover:bg-zinc-800/70 [&>svg]:text-zinc-300 hover:[&>svg]:text-white'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-brand-secondary-foreground' : 'text-zinc-400'}`} />
+                    <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? '!text-brand-secondary-foreground !opacity-100 stroke-[2.2]' : 'text-zinc-300'}`} />
                     <span className="group-data-[collapsible=icon]:hidden tracking-tight">{item.label}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

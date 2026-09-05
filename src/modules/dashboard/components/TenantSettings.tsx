@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiClient } from '@/lib/apiClient';
-import { Globe, DollarSign, Clock, Building, Save, AlertCircle, Loader2, Link2, Image as ImageIcon, UploadCloud, Upload, Trash2 } from 'lucide-react';
+import { Globe, DollarSign, Clock, Building, Save, AlertCircle, Loader2, Link2, Image as ImageIcon, UploadCloud, Upload, Trash2, Palette, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { mediaService } from '@/modules/media/services/media.service';
+import { getSavedTheme, saveTheme, DEFAULT_THEME, type TenantThemeColors } from '@/lib/themeManager';
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -68,6 +69,22 @@ export const TenantSettings: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+
+  // Theme Colors state
+  const currentTenantId = useAuthStore((s) => s.tenantId || s.publicTenant?.id);
+  const [theme, setTheme] = useState<TenantThemeColors>(() => getSavedTheme(currentTenantId));
+
+  const handleColorChange = (key: keyof TenantThemeColors, value: string) => {
+    const updated = { ...theme, [key]: value };
+    setTheme(updated);
+    saveTheme(updated, currentTenantId);
+  };
+
+  const handleResetTheme = () => {
+    setTheme(DEFAULT_THEME);
+    saveTheme(DEFAULT_THEME, currentTenantId);
+    toast.success('Colores restaurados por defecto');
+  };
 
   // Fetch initial data
   useEffect(() => {
@@ -432,6 +449,94 @@ export const TenantSettings: React.FC = () => {
                   </p>
                 )}
               </Field>
+
+              {/* Theme Customization Section */}
+              <div className="md:col-span-2 pt-2 border-t border-border-card/40 space-y-3">
+                <div className="flex items-center justify-between">
+                  <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 text-secondary">
+                    <Palette className="w-3.5 h-3.5 text-primary" /> Colores de Marca y Tema
+                  </FieldLabel>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetTheme}
+                    className="h-7 text-[10px] gap-1 text-neutral hover:text-secondary cursor-pointer"
+                  >
+                    <RotateCcw className="w-3 h-3" /> Restaurar colores
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Color Primario */}
+                  <div className="p-3 bg-bg-dark/60 rounded-2xl border border-border-card flex items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-bold text-secondary block">Color Primario</span>
+                      <span className="text-[10px] text-neutral block">Barra lateral y botones principales</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-mono font-medium text-neutral uppercase">
+                        {theme.primary}
+                      </span>
+                      <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-border-card shadow-sm cursor-pointer hover:scale-105 transition-transform">
+                        <input
+                          type="color"
+                          value={theme.primary}
+                          onChange={(e) => handleColorChange('primary', e.target.value)}
+                          className="absolute -top-2 -left-2 w-12 h-12 cursor-pointer border-0 p-0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Color Secundario */}
+                  <div className="p-3 bg-bg-dark/60 rounded-2xl border border-border-card flex items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-bold text-secondary block">Color Secundario</span>
+                      <span className="text-[10px] text-neutral block">Puntos activos y destaques</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-mono font-medium text-neutral uppercase">
+                        {theme.secondary}
+                      </span>
+                      <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-border-card shadow-sm cursor-pointer hover:scale-105 transition-transform">
+                        <input
+                          type="color"
+                          value={theme.secondary}
+                          onChange={(e) => handleColorChange('secondary', e.target.value)}
+                          className="absolute -top-2 -left-2 w-12 h-12 cursor-pointer border-0 p-0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Live Preview Pill */}
+                <div className="flex items-center justify-between p-2.5 rounded-xl border border-border-card bg-bg-card/40 text-xs">
+                  <span className="text-[11px] text-neutral font-medium">Vista previa de botones activos:</span>
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="px-3 py-1.5 rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5"
+                      style={{ 
+                        backgroundColor: theme.secondary, 
+                        color: theme.secondary ? (parseInt(theme.secondary.replace('#',''), 16) > 0x888888 ? '#18181b' : '#ffffff') : '#18181b'
+                      }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
+                      Activo
+                    </div>
+                    <div 
+                      className="px-3 py-1.5 rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5"
+                      style={{ 
+                        backgroundColor: theme.primary, 
+                        color: theme.primary ? (parseInt(theme.primary.replace('#',''), 16) > 0x888888 ? '#18181b' : '#f4ece1') : '#f4ece1'
+                      }}
+                    >
+                      Primario
+                    </div>
+                  </div>
+                </div>
+              </div>
 
             </div>
 
