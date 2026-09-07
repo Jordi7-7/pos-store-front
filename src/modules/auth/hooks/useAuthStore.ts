@@ -101,6 +101,7 @@ export const useAuthStore = create<AuthState>()(
             accessToken: response.accessToken,
             refreshToken: response.refreshToken,
             tenantId: response.user.tenantId,
+            tenantSlug: effectiveSlug || state.tenantSlug,
             role: response.user.role,
             timezone: response.user.timezone || 'America/Guayaquil',
             user: {
@@ -134,6 +135,7 @@ export const useAuthStore = create<AuthState>()(
               accessToken: response.accessToken,
               refreshToken: response.refreshToken,
               tenantId: response.user.tenantId,
+              tenantSlug: effectiveSlug || state.tenantSlug,
               role: response.user.role,
               timezone: response.user.timezone || 'America/Guayaquil',
               user: {
