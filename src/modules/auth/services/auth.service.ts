@@ -3,6 +3,7 @@ import { apiClient } from '@/lib/apiClient';
 export interface PublicTenantResponse {
   id: string;
   name: string;
+  ruc?: string;
   slug: string;
   logoUrl: string | null;
   country: string;
@@ -43,6 +44,7 @@ export interface ProfileResponse {
   tenant: {
     id: string;
     name: string;
+    ruc?: string;
     slug: string;
     logoUrl: string | null;
     country: string;

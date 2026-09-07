@@ -3,13 +3,13 @@ import { purchasesService } from '../services/purchases.service';
 import type { CreateSupplierInput, RegisterPurchaseInput } from '../services/purchases.service';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
-export const useSuppliers = () => {
+export const useSuppliers = (options?: { enabled?: boolean }) => {
   const { tenantId, isAuthenticated } = useAuthStore();
 
   const suppliersQuery = useQuery({
     queryKey: ['suppliers', tenantId],
     queryFn: () => purchasesService.getSuppliers(),
-    enabled: isAuthenticated && !!tenantId,
+    enabled: (options?.enabled ?? true) && isAuthenticated && !!tenantId,
   });
 
   return {

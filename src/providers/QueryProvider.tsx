@@ -5,6 +5,9 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      staleTime: 1000 * 60 * 5, // 5 minutos de frescura para datos antes de pedir de nuevo
+      gcTime: 1000 * 60 * 15,    // 15 minutos en memoria
       retry: 1,
     },
   },

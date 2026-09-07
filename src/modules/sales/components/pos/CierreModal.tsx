@@ -132,10 +132,17 @@ export const CierreModal: React.FC<CierreModalProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-md bg-card border border-border text-card-foreground rounded-2xl shadow-xl p-6 max-h-[90vh] flex flex-col">
         <DialogHeader className="border-b border-border pb-3 shrink-0">
-          <DialogTitle className="text-sm font-bold text-secondary uppercase tracking-wider flex items-center gap-2">
-            <X className="w-4 h-4 text-rose-500" />
-            <span>Cierre de Caja Registradora</span>
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-sm font-bold text-secondary uppercase tracking-wider flex items-center gap-2">
+              <X className="w-4 h-4 text-rose-500" />
+              <span>Cierre de Caja Registradora</span>
+            </DialogTitle>
+            {activeSession?.user?.name && (
+              <span className="text-[10px] text-neutral bg-bg-dark border border-border-card px-2.5 py-0.5 rounded-lg font-medium">
+                Abierta por: <strong className="text-secondary">{activeSession.user.name}</strong>
+              </span>
+            )}
+          </div>
         </DialogHeader>
 
         {/* Scrollable Content Container */}

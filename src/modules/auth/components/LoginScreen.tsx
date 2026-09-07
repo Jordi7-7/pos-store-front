@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { Store, Lock, User, ArrowRight, Loader2, KeyRound, AlertCircle, Building2 } from 'lucide-react';
 import { getTenantSlugFromPath, setTenantUrlPath } from '@/lib/tenantUrl';
@@ -31,6 +31,7 @@ export const LoginScreen: React.FC = () => {
   const [isPinLoading, setIsPinLoading] = useState(false);
   const [pinError, setPinError] = useState(false);
   const [pinShake, setPinShake] = useState(false);
+  const isSubmittingPinRef = useRef(false);
 
   // Tenant search / selector state for root /
   const [searchSlugInput, setSearchSlugInput] = useState('');
@@ -51,28 +52,33 @@ export const LoginScreen: React.FC = () => {
   // Handle PIN Submit
   const handlePinSubmit = useCallback(
     async (submittedPin: string) => {
-      if (submittedPin.length < 4) return;
+      if (submittedPin.length < 4 || isSubmittingPinRef.current) return;
+      isSubmittingPinRef.current = true;
       setIsPinLoading(true);
       setPinError(false);
 
-      const targetSlug = publicTenant?.slug || tenantSlug || undefined;
-      const res = await pinLogin(submittedPin, targetSlug);
-      setIsPinLoading(false);
+      try {
+        const targetSlug = publicTenant?.slug || tenantSlug || undefined;
+        const res = await pinLogin(submittedPin, targetSlug);
 
-      if (res === 'SUCCESS') {
-        toast.success('¡Sesión iniciada con éxito!');
-        return;
-      }
+        if (res === 'SUCCESS') {
+          toast.success('¡Sesión iniciada con éxito!');
+          return;
+        }
 
-      setPinError(true);
-      setPinShake(true);
-      setPin('');
-      if (res === 'NOT_FOUND') {
-        toast.error('Tienda no encontrada. Verifica la URL.');
-      } else {
-        toast.error('PIN incorrecto. Intenta de nuevo.');
+        setPinError(true);
+        setPinShake(true);
+        setPin('');
+        if (res === 'NOT_FOUND') {
+          toast.error('Tienda no encontrada. Verifica la URL.');
+        } else {
+          toast.error('PIN incorrecto. Intenta de nuevo.');
+        }
+        setTimeout(() => setPinShake(false), 500);
+      } finally {
+        setIsPinLoading(false);
+        isSubmittingPinRef.current = false;
       }
-      setTimeout(() => setPinShake(false), 500);
     },
     [pinLogin, publicTenant, tenantSlug]
   );

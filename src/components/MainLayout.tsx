@@ -28,22 +28,27 @@ import { Building, ChevronDown } from 'lucide-react';
 export const MainLayout: React.FC = () => {
   const { user, activeTab, selectedBranchId, setSelectedBranchId, fetchProfile, accessToken } = useAuthStore();
 
-  // Load real-time profile configuration (timezone/tenant info)
+  const hasFetchedProfileRef = React.useRef(false);
+
+  // Load real-time profile configuration (timezone/tenant info) once per session mount
   React.useEffect(() => {
-    if (accessToken) {
+    if (accessToken && !hasFetchedProfileRef.current) {
+      hasFetchedProfileRef.current = true;
       fetchProfile();
     }
-  }, [accessToken]);
+  }, [accessToken, fetchProfile]);
 
 
 
-  // TanStack Query Hooks for layout contexts
+  // TanStack Query Hooks for layout contexts (Lazy loaded based on activeTab)
   const { branches } = useBranches();
-  const { sales } = useSales();
-  const { suppliers } = useSuppliers();
+  const { sales } = useSales({ enabled: activeTab === 'dashboard' });
+  const { suppliers } = useSuppliers({ enabled: activeTab === 'dashboard' || activeTab === 'purchases' });
 
-  // Media upload shared context hook
-  const { uploadImage, uploadImageByUrl, isUploading, deleteImage, isDeleting, isLoading: isLoadingMedia, uploadedImages } = useMediaUpload();
+  // Media upload shared context hook (only fetch images when on media, products or dashboard tabs)
+  const { uploadImage, uploadImageByUrl, isUploading, deleteImage, isDeleting, isLoading: isLoadingMedia, uploadedImages } = useMediaUpload({
+    enabled: activeTab === 'media' || activeTab === 'products',
+  });
 
   // Shared Petty Cash Session State
   const [activeSession, setActiveSession] = useState<any>(null); 
@@ -174,7 +179,12 @@ export const MainLayout: React.FC = () => {
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-dark border border-border-card rounded-xl text-xs">
                   <div className={`w-2 h-2 rounded-full ${activeSession ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
                   <span className="text-neutral font-medium">
-                    Caja Chica: <span className="text-secondary font-bold">{activeSession ? 'ABIERTA' : 'CERRADA'}</span>
+                    Caja: <span className="text-secondary font-bold">{activeSession ? 'ABIERTA' : 'CERRADA'}</span>
+                    {activeSession?.user?.name && (
+                      <span className="text-[11px] text-neutral font-normal ml-1">
+                        ({activeSession.user.name.split(' ')[0]})
+                      </span>
+                    )}
                   </span>
                 </div>
               </div>

@@ -3,13 +3,13 @@ import { salesService } from '../services/sales.service';
 import type { ProcessSaleInput, OpenCashSessionInput, RegisterExpenseInput, ProcessRefundInput, PaginatedSales, SaleDetail } from '../services/sales.service';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
-export const useSales = () => {
+export const useSales = (options?: { enabled?: boolean }) => {
   const { tenantId, isAuthenticated } = useAuthStore();
 
   const salesQuery = useQuery({
     queryKey: ['sales', tenantId],
     queryFn: () => salesService.getSales(),
-    enabled: isAuthenticated && !!tenantId,
+    enabled: (options?.enabled ?? true) && isAuthenticated && !!tenantId,
   });
 
   return {

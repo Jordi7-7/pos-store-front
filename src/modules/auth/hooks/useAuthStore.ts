@@ -229,6 +229,7 @@ export const useAuthStore = create<AuthState>()(
               ? {
                   id: profile.tenant.id,
                   name: profile.tenant.name,
+                  ruc: profile.tenant.ruc,
                   slug: profile.tenant.slug,
                   logoUrl: profile.tenant.logoUrl,
                   country: profile.tenant.country || 'EC',
@@ -268,6 +269,7 @@ export const useAuthStore = create<AuthState>()(
         timezone: state.timezone,
         selectedBranchId: state.selectedBranchId,
         activeTab: state.activeTab,
+        isAuthenticated: state.isAuthenticated,
       }),
     }
   )

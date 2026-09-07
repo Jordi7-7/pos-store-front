@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { productsService } from '../../products/services/products.service';
 import { useBranches } from '../../branches/hooks/useBranches';
 import {
@@ -9,14 +10,13 @@ import {
 } from '../hooks/useSales';
 import { useCustomers } from '../hooks/useCustomers';
 import { useCashSessionDetailsQuery } from '../../cash-sessions/hooks/useCashSessions';
-import { PaymentMethod } from '../services/sales.service';
+import { PaymentMethod, salesService } from '../services/sales.service';
 import type { Sale } from '../services/sales.service';
 import type {
   SessionSale,
   SessionExpense,
   SessionRefund,
 } from '../../cash-sessions/types/cash-sessions.types';
-import { apiClient } from '@/lib/apiClient';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import {
   Search, Wallet, ArrowRightLeft, ArrowLeftRight, Receipt, X,
@@ -91,6 +91,7 @@ export const POSView: React.FC<POSViewProps> = ({
   localExpenses,
   setLocalExpenses
 }) => {
+  const queryClient = useQueryClient();
   const { branches } = useBranches();
   const { customers } = useCustomers();
   const { details: sessionDetails } = useCashSessionDetailsQuery(activeSession?.id || null);
@@ -140,19 +141,13 @@ export const POSView: React.FC<POSViewProps> = ({
   const [isReprintModalOpen, setIsReprintModalOpen] = useState(false);
   const [closingSessionToPrint, setClosingSessionToPrint] = useState<any | null>(null);
   const [isClosingTicketOpen, setIsClosingTicketOpen] = useState(false);
-  const [currentTenant, setCurrentTenant] = useState<any>(null);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearchModal, setShowSearchModal] = useState<boolean>(false);
   const [selectedImageForZoom, setSelectedImageForZoom] = useState<string | null>(null);
 
   const currentUser = useAuthStore((state) => state.user);
+  const publicTenant = useAuthStore((state) => state.publicTenant);
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
-
-  useEffect(() => {
-    apiClient.request('/tenants/current')
-      .then((t) => setCurrentTenant(t))
-      .catch((e) => console.error('Error fetching tenant details for ticket:', e));
-  }, []);
 
   const handlePrintSale = (sale: Sale | SessionSale) => {
     const branchName = ('branch' in sale && sale.branch?.name) ? sale.branch.name : (branches.find((b) => b.id === selectedBranchId)?.name || 'Sucursal General');
@@ -277,6 +272,17 @@ export const POSView: React.FC<POSViewProps> = ({
       setIsAperturaModalOpen(false);
       toast.success('¡Caja registradora abierta con éxito!');
     } catch (err: any) {
+      // Si la sucursal ya tenía una caja abierta, sincronizarla inmediatamente al front
+      if (err.message && err.message.includes('Ya existe una caja abierta')) {
+        const active = await salesService.getActiveCashSession(branch);
+        if (active) {
+          setActiveSession(active);
+          queryClient.setQueryData(['active-cash-session', branch], active);
+          setIsAperturaModalOpen(false);
+          toast.info(`Se sincronizó la caja abierta activa de esta sucursal.`);
+          return;
+        }
+      }
       toast.error(err.message || 'Error al abrir la caja.');
     }
   };
@@ -787,7 +793,9 @@ export const POSView: React.FC<POSViewProps> = ({
             }`}>
             <span className={`w-1.5 h-1.5 rounded-full ${activeSession ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
             <span>
-              {activeSession ? `Caja Abierta: ${shiftDuration}` : 'Caja Cerrada'}
+              {activeSession 
+                ? `Caja Abierta: ${shiftDuration}${activeSession.user?.name ? ` (${activeSession.user.name})` : ''}` 
+                : 'Caja Cerrada'}
             </span>
           </div>
         </div>
@@ -1332,44 +1340,50 @@ export const POSView: React.FC<POSViewProps> = ({
           setLastCompletedSale(null);
         }}
         saleData={lastCompletedSale}
-        tenantRuc={currentTenant?.ruc || ''}
-        tenantName={currentTenant?.name || ''}
-        currencyCode={currentTenant?.currencyCode || ''}
+        tenantRuc={publicTenant?.ruc || ''}
+        tenantName={publicTenant?.name || ''}
+        currencyCode={publicTenant?.currencyCode || ''}
       />
 
       {/* Caja Chica Control modals */}
-      <AperturaModal
-        isOpen={isAperturaModalOpen}
-        onClose={() => setIsAperturaModalOpen(false)}
-        openingBalance={openingBalance}
-        setOpeningBalance={setOpeningBalance}
-        onOpenSession={handleOpenSession}
-        isOpening={isOpening}
-      />
+      {isAperturaModalOpen && (
+        <AperturaModal
+          isOpen={isAperturaModalOpen}
+          onClose={() => setIsAperturaModalOpen(false)}
+          openingBalance={openingBalance}
+          setOpeningBalance={setOpeningBalance}
+          onOpenSession={handleOpenSession}
+          isOpening={isOpening}
+        />
+      )}
 
-      <EgresoModal
-        isOpen={isEgresoModalOpen}
-        onClose={() => setIsEgresoModalOpen(false)}
-        expenseDesc={expenseDesc}
-        setExpenseDesc={setExpenseDesc}
-        expenseAmount={expenseAmount}
-        setExpenseAmount={setExpenseAmount}
-        onAddExpense={handleAddExpense}
-        isRegistering={isRegistering}
-      />
+      {isEgresoModalOpen && (
+        <EgresoModal
+          isOpen={isEgresoModalOpen}
+          onClose={() => setIsEgresoModalOpen(false)}
+          expenseDesc={expenseDesc}
+          setExpenseDesc={setExpenseDesc}
+          expenseAmount={expenseAmount}
+          setExpenseAmount={setExpenseAmount}
+          onAddExpense={handleAddExpense}
+          isRegistering={isRegistering}
+        />
+      )}
 
-      <CierreModal
-        isOpen={isCierreModalOpen}
-        onClose={() => setIsCierreModalOpen(false)}
-        closingBalance={closingBalance}
-        setClosingBalance={setClosingBalance}
-        onCloseSession={handleCloseSession}
-        isClosing={isClosing}
-        activeSession={activeSession}
-        activeSessionSales={activeSessionSales}
-        activeSessionExpenses={activeSessionExpenses}
-        activeSessionRefunds={sessionDetails?.refunds || []}
-      />
+      {isCierreModalOpen && (
+        <CierreModal
+          isOpen={isCierreModalOpen}
+          onClose={() => setIsCierreModalOpen(false)}
+          closingBalance={closingBalance}
+          setClosingBalance={setClosingBalance}
+          onCloseSession={handleCloseSession}
+          isClosing={isClosing}
+          activeSession={activeSession}
+          activeSessionSales={activeSessionSales}
+          activeSessionExpenses={activeSessionExpenses}
+          activeSessionRefunds={sessionDetails?.refunds || []}
+        />
+      )}
 
       {isHistorialModalOpen && (
         <HistorialModal
@@ -1384,28 +1398,32 @@ export const POSView: React.FC<POSViewProps> = ({
         />
       )}
 
-      <ThermalTicketModal
-        isOpen={isReprintModalOpen}
-        onClose={() => {
-          setIsReprintModalOpen(false);
-          setReprintSaleData(null);
-        }}
-        saleData={reprintSaleData}
-        tenantRuc={currentTenant?.ruc || ''}
-        tenantName={currentTenant?.name || ''}
-        currencyCode={currentTenant?.currencyCode || ''}
-      />
+      {isReprintModalOpen && (
+        <ThermalTicketModal
+          isOpen={isReprintModalOpen}
+          onClose={() => {
+            setIsReprintModalOpen(false);
+            setReprintSaleData(null);
+          }}
+          saleData={reprintSaleData}
+          tenantRuc={publicTenant?.ruc || ''}
+          tenantName={publicTenant?.name || ''}
+          currencyCode={publicTenant?.currencyCode || ''}
+        />
+      )}
 
-      <ThermalClosingTicketModal
-        isOpen={isClosingTicketOpen}
-        onClose={() => {
-          setIsClosingTicketOpen(false);
-          setClosingSessionToPrint(null);
-        }}
-        sessionData={closingSessionToPrint}
-        tenantRuc={currentTenant?.ruc || ''}
-        tenantName={currentTenant?.name || ''}
-      />
+      {isClosingTicketOpen && (
+        <ThermalClosingTicketModal
+          isOpen={isClosingTicketOpen}
+          onClose={() => {
+            setIsClosingTicketOpen(false);
+            setClosingSessionToPrint(null);
+          }}
+          sessionData={closingSessionToPrint}
+          tenantRuc={publicTenant?.ruc || ''}
+          tenantName={publicTenant?.name || ''}
+        />
+      )}
 
       {isExchangeReturnModalOpen && (
         <ExchangeReturnModal

@@ -2,13 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { mediaService } from '../services/media.service';
 import type { RegisteredImage } from '../services/media.service';
 
-export const useMediaUpload = () => {
+export const useMediaUpload = (options?: { enabled?: boolean }) => {
   const queryClient = useQueryClient();
 
   // Query to get all images from DB
   const { data: uploadedImages = [], isLoading } = useQuery<RegisteredImage[]>({
     queryKey: ['media-images'],
     queryFn: () => mediaService.getImages(),
+    enabled: options?.enabled ?? true,
   });
 
   // Mutation to upload a new image
