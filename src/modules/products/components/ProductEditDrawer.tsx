@@ -97,6 +97,7 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
       barcode: sv.barcode ?? '',
       purchasePrice: sv.purchasePrice ?? 0,
       salePrice: sv.salePrice ?? 0,
+      wholesalePrice: sv.wholesalePrice !== undefined ? sv.wholesalePrice : null,
       initialStock: stockQty,
     });
 
@@ -150,6 +151,7 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
               barcode: data.barcode?.trim() || undefined,
               purchasePrice: data.purchasePrice,
               salePrice: data.salePrice,
+              wholesalePrice: data.wholesalePrice !== undefined ? data.wholesalePrice : null,
               imageIds: selectedImages,
               stocks: selectedBranchId
                 ? [{ branchId: selectedBranchId, quantity: data.initialStock }]

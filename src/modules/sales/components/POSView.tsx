@@ -21,7 +21,7 @@ import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import {
   Search, Wallet, ArrowRightLeft, ArrowLeftRight, Receipt, X,
   ShoppingCart, Trash2, Minus, Plus, CreditCard, Loader2, Package,
-  Percent, DollarSign, Check, Banknote, Maximize2
+  Percent, DollarSign, Check, Banknote, Maximize2, Tag
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -76,6 +76,9 @@ interface CartItem {
   variantSku: string;
   combinationText: string;
   price: number;
+  unitSalePrice: number;
+  wholesalePrice?: number | null;
+  isWholesale?: boolean;
   quantity: number;
   imageUrl?: string;
   maxStock: number;
@@ -124,6 +127,7 @@ export const POSView: React.FC<POSViewProps> = ({
   // Cart States
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+  const [isGlobalWholesale, setIsGlobalWholesale] = useState<boolean>(false);
 
   // Global Discount States
   const [globalDiscountType] = useState<'PERCENTAGE' | 'AMOUNT'>('PERCENTAGE');
@@ -502,6 +506,68 @@ export const POSView: React.FC<POSViewProps> = ({
     setGlobalDiscountRate(finalRate);
   };
 
+  const toggleGlobalWholesale = () => {
+    const nextMode = !isGlobalWholesale;
+    setIsGlobalWholesale(nextMode);
+
+    setCart(prevCart => prevCart.map(item => {
+      const hasWholesale = item.wholesalePrice !== null && item.wholesalePrice !== undefined && Number(item.wholesalePrice) > 0;
+      const shouldUseWholesale = nextMode && hasWholesale;
+      const newPrice = shouldUseWholesale ? Number(item.wholesalePrice) : item.unitSalePrice;
+
+      // Recalcular descuento si tiene descuento aplicado
+      let newDiscountAmount = 0;
+      if (item.discountType === 'PERCENTAGE') {
+        newDiscountAmount = Number(((newPrice * (item.discountRate || 0)) / 100).toFixed(2));
+      } else if (item.discountType === 'AMOUNT' && (item.discountAmount || 0) > 0) {
+        newDiscountAmount = Math.max(0, Number((newPrice - (item.discountRate || 0)).toFixed(2)));
+      }
+
+      return {
+        ...item,
+        isWholesale: shouldUseWholesale,
+        price: newPrice,
+        discountAmount: newDiscountAmount,
+      };
+    }));
+
+    if (nextMode) {
+      toast.success('Precio mayoreo aplicado al carrito.');
+    } else {
+      toast.info('Precio regular por unidad restaurado en el carrito.');
+    }
+  };
+
+  const toggleItemWholesale = (variantId: string) => {
+    setCart(prevCart => prevCart.map(item => {
+      if (item.variantId !== variantId) return item;
+
+      const hasWholesale = item.wholesalePrice !== null && item.wholesalePrice !== undefined && Number(item.wholesalePrice) > 0;
+      if (!hasWholesale) {
+        toast.warning('Este producto no tiene precio mayoreo configurado.');
+        return item;
+      }
+
+      const nextWholesale = !item.isWholesale;
+      const newPrice = nextWholesale ? Number(item.wholesalePrice) : item.unitSalePrice;
+
+      // Recalcular descuento del item si tenía aplicado
+      let newDiscountAmount = 0;
+      if (item.discountType === 'PERCENTAGE') {
+        newDiscountAmount = Number(((newPrice * (item.discountRate || 0)) / 100).toFixed(2));
+      } else if (item.discountType === 'AMOUNT' && (item.discountAmount || 0) > 0) {
+        newDiscountAmount = Math.max(0, Number((newPrice - (item.discountRate || 0)).toFixed(2)));
+      }
+
+      return {
+        ...item,
+        isWholesale: nextWholesale,
+        price: newPrice,
+        discountAmount: newDiscountAmount,
+      };
+    }));
+  };
+
   const addVariantToCart = (product: any, variant: any, maxStock: number) => {
     const existing = cart.find(item => item.variantId === variant.id);
 
@@ -520,11 +586,17 @@ export const POSView: React.FC<POSViewProps> = ({
         ? variant.attributeValues.map((av: any) => `${av.attribute?.name || 'Attr'}: ${av.value}`).join(' / ')
         : 'Estándar';
 
-      const imageUrl = variant.imageUrl
+      const imageUrl = variant.imageUrl;
 
       if (1 > maxStock) {
         toast.warning(`Aviso: El stock del producto "${product.name}" quedará en negativo (Stock disponible: ${maxStock} pzs.)`);
       }
+
+      const unitSalePrice = Number(variant.salePrice || 0);
+      const rawWholesale = variant.wholesalePrice !== undefined && variant.wholesalePrice !== null ? Number(variant.wholesalePrice) : null;
+      const hasWholesale = rawWholesale !== null && rawWholesale > 0;
+      const shouldUseWholesale = isGlobalWholesale && hasWholesale;
+      const effectivePrice = shouldUseWholesale ? rawWholesale : unitSalePrice;
 
       setCart([...cart, {
         variantId: variant.id,
@@ -532,7 +604,10 @@ export const POSView: React.FC<POSViewProps> = ({
         productName: product.name,
         variantSku: variant.sku,
         combinationText: combText,
-        price: variant.salePrice || 0,
+        price: effectivePrice,
+        unitSalePrice,
+        wholesalePrice: rawWholesale,
+        isWholesale: shouldUseWholesale,
         quantity: 1,
         imageUrl,
         maxStock,
@@ -587,6 +662,7 @@ export const POSView: React.FC<POSViewProps> = ({
               id: singleRes.id,
               sku: singleRes.sku,
               salePrice: Number(singleRes.salePrice || 0),
+              wholesalePrice: singleRes.wholesalePrice !== undefined && singleRes.wholesalePrice !== null ? Number(singleRes.wholesalePrice) : null,
               attributeValues: singleRes.attributeValues || [],
               imageUrl: singleRes.imageUrl,
             };
@@ -871,11 +947,32 @@ export const POSView: React.FC<POSViewProps> = ({
           </div>
 
           {/* Cart Header */}
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-secondary uppercase tracking-wider flex items-center gap-1.5">
-              <ShoppingCart className="w-4 h-4 text-primary" />
-              <span>Lista de Compra</span>
-            </h3>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              <h3 className="text-xs font-bold text-secondary uppercase tracking-wider flex items-center gap-1.5">
+                <ShoppingCart className="w-4 h-4 text-primary" />
+                <span>Lista de Compra</span>
+              </h3>
+
+              {/* Toggle Mayorista Global */}
+              <button
+                type="button"
+                onClick={toggleGlobalWholesale}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer border ${
+                  isGlobalWholesale
+                    ? 'bg-amber-500/15 border-amber-500/40 text-amber-400 shadow-xs shadow-amber-500/10'
+                    : 'bg-bg-dark border-border-card text-neutral hover:text-secondary hover:border-border-card/80'
+                }`}
+                title="Alternar entre venta por unidad y venta mayoreo para todo el carrito"
+              >
+                <Tag className={`w-3.5 h-3.5 ${isGlobalWholesale ? 'text-amber-400' : 'text-neutral'}`} />
+                <span>{isGlobalWholesale ? 'Venta Mayoreo' : 'Venta Unidad'}</span>
+                {isGlobalWholesale && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse ml-0.5" />
+                )}
+              </button>
+            </div>
+
             {cart.length > 0 && (
               <button
                 onClick={() => { setCart([]); setAddedPayments([]); toast.info('Carrito vaciado.'); }}
@@ -942,6 +1039,36 @@ export const POSView: React.FC<POSViewProps> = ({
                         <span className="font-bold text-foreground font-mono text-[10.5px]">
                           ${item.price.toFixed(2)}
                         </span>
+                        {/* Selector Mayoreo / Unidad por producto */}
+                        {(() => {
+                          const hasWholesale = item.wholesalePrice !== null && item.wholesalePrice !== undefined && Number(item.wholesalePrice) > 0;
+                          if (hasWholesale) {
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => toggleItemWholesale(item.variantId)}
+                                className={`text-[8.5px] h-4.5 px-2 rounded-md font-bold flex items-center gap-1 transition-all cursor-pointer border shadow-2xs ${
+                                  item.isWholesale
+                                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/50 hover:bg-amber-500/30'
+                                    : 'bg-bg-card text-neutral hover:text-secondary border-border-card hover:border-amber-500/40'
+                                }`}
+                                title={item.isWholesale ? `Venta mayoreo activa ($${Number(item.wholesalePrice).toFixed(2)}). Clic para volver a precio normal ($${item.unitSalePrice.toFixed(2)})` : `Precio mayoreo: $${Number(item.wholesalePrice).toFixed(2)}. Clic para activar`}
+                              >
+                                <Tag className={`w-2.5 h-2.5 ${item.isWholesale ? 'text-amber-400' : 'text-neutral'}`} />
+                                <span>{item.isWholesale ? 'Mayoreo' : 'Unidad'}</span>
+                              </button>
+                            );
+                          }
+                          return (
+                            <span
+                              className="text-[8px] h-4 px-1.5 rounded bg-neutral/10 border border-neutral/20 text-neutral/60 font-semibold flex items-center gap-1 cursor-not-allowed"
+                              title="Este producto no tiene precio mayoreo registrado en su ficha"
+                            >
+                              <Tag className="w-2.5 h-2.5 opacity-40" />
+                              <span>Sin P. Mayoreo</span>
+                            </span>
+                          );
+                        })()}
                         {item.maxStock <= 0 ? (
                           <Badge variant="destructive" className="text-[8px] h-3.5 px-1 leading-none font-extrabold">
                             Stock: {item.maxStock}
@@ -1483,6 +1610,7 @@ export const POSView: React.FC<POSViewProps> = ({
                         id: variant.id,
                         sku: variant.sku,
                         salePrice: Number(variant.salePrice || 0),
+                        wholesalePrice: variant.wholesalePrice !== undefined && variant.wholesalePrice !== null ? Number(variant.wholesalePrice) : null,
                         attributeValues: variant.attributeValues || [],
                         imageUrl: variant.imageUrl,
                       };

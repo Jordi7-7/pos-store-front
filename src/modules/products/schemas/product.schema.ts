@@ -27,6 +27,11 @@ export const productFormSchema = z.object({
   salePrice: z
     .number({ error: 'Ingresa un precio válido.' })
     .min(0.01, 'El precio de venta debe ser mayor a 0.'),
+  wholesalePrice: z
+    .number({ error: 'Ingresa un precio válido.' })
+    .min(0, 'El precio mayoreo no puede ser negativo.')
+    .optional()
+    .nullable(),
   initialStock: z
     .number({ error: 'Ingresa una cantidad válida.' })
     .int('El stock debe ser un número entero.')
@@ -46,5 +51,6 @@ export const productFormDefaults: ProductFormValues = {
   barcode: '',
   purchasePrice: 10.0,
   salePrice: 19.99,
+  wholesalePrice: null,
   initialStock: 50,
 };

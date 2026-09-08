@@ -103,6 +103,7 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
         barcode: data.barcode?.trim() || undefined,
         purchasePrice: data.purchasePrice,
         salePrice: data.salePrice,
+        wholesalePrice: data.wholesalePrice !== undefined ? data.wholesalePrice : null,
         stocks: selectedBranchId
           ? [{ branchId: selectedBranchId, quantity: data.initialStock }]
           : [],

@@ -294,14 +294,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             )}
           />
 
-          {/* Precios (2 columnas internas) */}
-          <div className="grid grid-cols-2 gap-2.5">
+          {/* Precios (3 columnas: Compra, Venta Unidad, Venta Mayorista) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <Controller
               name="purchasePrice"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={`${formId}-purchase-price`} className="text-[11px] font-bold uppercase tracking-wider">
+                  <FieldLabel htmlFor={`${formId}-purchase-price`} className="text-[11px] font-bold uppercase tracking-wider truncate">
                     Compra ($) <span className="text-destructive">*</span>
                   </FieldLabel>
                   <Input
@@ -324,7 +324,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={`${formId}-sale-price`} className="text-[11px] font-bold uppercase tracking-wider">
+                  <FieldLabel htmlFor={`${formId}-sale-price`} className="text-[11px] font-bold uppercase tracking-wider truncate">
                     Venta ($) <span className="text-destructive">*</span>
                   </FieldLabel>
                   <Input
@@ -335,6 +335,33 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                     className="text-xs h-9"
                     value={field.value}
                     onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                    onBlur={field.onBlur}
+                  />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="wholesalePrice"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={`${formId}-wholesale-price`} className="text-[11px] font-bold uppercase tracking-wider truncate">
+                    Precio Mayoreo ($)
+                  </FieldLabel>
+                  <Input
+                    id={`${formId}-wholesale-price`}
+                    type="number"
+                    step="0.01"
+                    placeholder="Opcional"
+                    aria-invalid={fieldState.invalid}
+                    className="text-xs h-9"
+                    value={field.value ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? null : parseFloat(e.target.value);
+                      field.onChange(val);
+                    }}
                     onBlur={field.onBlur}
                   />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}

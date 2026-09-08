@@ -147,6 +147,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                   <TableHead className="font-semibold text-xs">Cód. Barras</TableHead>
                   <TableHead className="font-semibold text-xs text-right">Compra</TableHead>
                   <TableHead className="font-semibold text-xs text-right">Venta</TableHead>
+                  <TableHead className="font-semibold text-xs text-right">Precio Mayoreo</TableHead>
                   <TableHead className="font-semibold text-xs text-center">Stock Sucursal</TableHead>
                   <TableHead className="w-[60px]"></TableHead>
                 </TableRow>
@@ -156,6 +157,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                   const defaultVariant = product.variants?.[0];
                   const purchasePrice = defaultVariant?.purchasePrice ?? 0;
                   const salePrice = defaultVariant?.salePrice ?? 0;
+                  const wholesalePrice = defaultVariant?.wholesalePrice;
                   const sku = defaultVariant?.sku ?? 'N/A';
                   const barcode = defaultVariant?.barcode ?? 'N/A';
                   const currentStock = defaultVariant?.stocks?.find(s => s.branchId === selectedBranchId)?.quantity ?? 0;
@@ -210,6 +212,15 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                       {/* Sale Price */}
                       <TableCell className="py-2.5 text-right font-mono text-xs font-semibold text-foreground">
                         ${salePrice.toFixed(2)}
+                      </TableCell>
+
+                      {/* Wholesale Price */}
+                      <TableCell className="py-2.5 text-right font-mono text-xs font-semibold text-foreground">
+                        {wholesalePrice !== null && wholesalePrice !== undefined && Number(wholesalePrice) > 0 ? (
+                          `$${Number(wholesalePrice).toFixed(2)}`
+                        ) : (
+                          <span className="text-muted-foreground/50 text-[11px]">—</span>
+                        )}
                       </TableCell>
 
                       {/* Stock */}
