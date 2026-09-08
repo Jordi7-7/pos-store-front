@@ -5,7 +5,10 @@ export interface UserItem {
   name: string;
   username?: string;
   email: string;
-  role: 'OWNER' | 'ADMIN' | 'CASHIER' | 'MANAGER';
+  roleId: string;
+  roleName: string;
+  role?: string;
+  customPermissions?: string[] | null;
   hasPin: boolean;
   isActive: boolean;
   createdAt: string;
@@ -17,7 +20,9 @@ export interface CreateUserInput {
   username?: string;
   email: string;
   password: string;
-  role: 'OWNER' | 'ADMIN' | 'CASHIER' | 'MANAGER';
+  roleId: string;
+  role?: string;
+  customPermissions?: string[];
   pin?: string;
 }
 
@@ -26,7 +31,9 @@ export interface UpdateUserInput {
   username?: string;
   email?: string;
   password?: string;
-  role?: 'OWNER' | 'ADMIN' | 'CASHIER' | 'MANAGER';
+  roleId?: string;
+  role?: string;
+  customPermissions?: string[];
   pin?: string;
   isActive?: boolean;
 }

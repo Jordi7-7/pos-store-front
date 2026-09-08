@@ -1,6 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useUsers, useCreateUser, useUpdateUser, useGeneratePin } from '../hooks/useUsers';
+import { useRoles, useDeleteRole } from '../hooks/useRoles';
 import type { UserItem } from '../services/users.service';
+import type { RoleItem } from '../services/roles.service';
+import { RoleEditorModal } from './RoleEditorModal';
+import { usePermissions } from '@/hooks/usePermissions';
+import { APP_PERMISSIONS } from '@/constants/permissions';
 import {
   Users,
   UserPlus,
@@ -18,6 +23,8 @@ import {
   Shield,
   Power,
   AtSign,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -32,10 +39,16 @@ import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
 
 export const UsersView: React.FC = () => {
+  const { can } = usePermissions();
   const { users, isLoading, refetchUsers } = useUsers();
+  const { roles, isLoading: isLoadingRoles } = useRoles();
+  const { deleteRole, isDeleting: isDeletingRole } = useDeleteRole();
   const { createUser, isCreating } = useCreateUser();
   const { updateUser, isUpdating } = useUpdateUser();
   const { generatePin } = useGeneratePin();
+
+  // Tab: 'users' | 'roles'
+  const [activeMainTab, setActiveMainTab] = useState<'users' | 'roles'>('users');
 
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,16 +58,18 @@ export const UsersView: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
+  const [showRoleModal, setShowRoleModal] = useState(false);
 
   // Selected User for Edit
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
+  const [editingRole, setEditingRole] = useState<RoleItem | null>(null);
 
   // Create Form State
   const [createName, setCreateName] = useState('');
   const [createUsername, setCreateUsername] = useState('');
   const [createEmail, setCreateEmail] = useState('');
   const [createPassword, setCreatePassword] = useState('');
-  const [createRole, setCreateRole] = useState<'CASHIER' | 'MANAGER' | 'ADMIN' | 'OWNER'>('CASHIER');
+  const [createRoleId, setCreateRoleId] = useState<string>('');
   const [createPin, setCreatePin] = useState('');
 
   // Edit Form State
@@ -62,7 +77,7 @@ export const UsersView: React.FC = () => {
   const [editUsername, setEditUsername] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editPassword, setEditPassword] = useState('');
-  const [editRole, setEditRole] = useState<'CASHIER' | 'MANAGER' | 'ADMIN' | 'OWNER'>('CASHIER');
+  const [editRoleId, setEditRoleId] = useState<string>('');
   const [editPin, setEditPin] = useState('');
   const [editIsActive, setEditIsActive] = useState(true);
 
@@ -91,7 +106,9 @@ export const UsersView: React.FC = () => {
     setCreateUsername('');
     setCreateEmail('');
     setCreatePassword('');
-    setCreateRole('CASHIER');
+    // Default to cashier role if available, otherwise first role
+    const defaultRole = roles.find((r) => r.name.toLowerCase().includes('cajero')) || roles[0];
+    setCreateRoleId(defaultRole ? defaultRole.id : '');
     setCreatePin('');
     setShowCreateModal(true);
   };
@@ -104,13 +121,18 @@ export const UsersView: React.FC = () => {
       return;
     }
 
+    if (!createRoleId) {
+      toast.error('Selecciona un rol para el usuario.');
+      return;
+    }
+
     try {
       await createUser({
         name: createName,
         username: createUsername.trim() || undefined,
         email: createEmail,
         password: createPassword,
-        role: createRole,
+        roleId: createRoleId,
         pin: createPin.trim() || undefined,
       });
 
@@ -129,7 +151,7 @@ export const UsersView: React.FC = () => {
     setEditUsername(user.username || '');
     setEditEmail(user.email);
     setEditPassword('');
-    setEditRole(user.role);
+    setEditRoleId(user.roleId || '');
     setEditPin('');
     setEditIsActive(user.isActive ?? true);
     setShowEditModal(true);
@@ -148,7 +170,7 @@ export const UsersView: React.FC = () => {
           username: editUsername.trim() || undefined,
           email: editEmail,
           password: editPassword.trim() ? editPassword : undefined,
-          role: editRole,
+          roleId: editRoleId || undefined,
           pin: editPin.trim() ? editPin.trim() : undefined,
           isActive: editIsActive,
         },
@@ -198,7 +220,13 @@ export const UsersView: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const getRoleBadge = (role: string) => {
+  const getRoleBadge = (role?: string, roleName?: string) => {
+    if (roleName) {
+      return {
+        label: roleName,
+        className: 'bg-primary/10 text-primary border-primary/25',
+      };
+    }
     switch (role) {
       case 'OWNER':
         return {
@@ -224,6 +252,8 @@ export const UsersView: React.FC = () => {
     }
   };
 
+  const canManageRoles = can(APP_PERMISSIONS.ROLES_MANAGE);
+
   return (
     <div className="space-y-6">
       {/* ── HEADER TOOLBAR ── */}
@@ -234,59 +264,199 @@ export const UsersView: React.FC = () => {
               <Users className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-lg font-black text-secondary tracking-tight">Personal & Usuarios</h1>
+              <h1 className="text-lg font-black text-secondary tracking-tight">Personal & Roles</h1>
               <p className="text-xs text-neutral">
-                Gestiona roles, accesos, contraseñas y códigos PIN de los miembros del equipo.
+                Gestiona usuarios, roles personalizados y permisos de acceso para tu equipo.
               </p>
             </div>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Search Box */}
-          <div className="relative min-w-[200px] flex-1 sm:flex-initial">
-            <Search className="w-3.5 h-3.5 text-neutral absolute left-3 top-3" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar por nombre o usuario..."
-              className="w-full bg-bg-dark border border-border-card rounded-xl py-2 pl-9 pr-3 text-xs text-secondary placeholder-neutral focus:outline-none focus:border-primary transition-all font-medium"
-            />
-          </div>
+          {activeMainTab === 'users' ? (
+            <>
+              {/* Search Box */}
+              <div className="relative min-w-[200px] flex-1 sm:flex-initial">
+                <Search className="w-3.5 h-3.5 text-neutral absolute left-3 top-3" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar por nombre o usuario..."
+                  className="w-full bg-bg-dark border border-border-card rounded-xl py-2 pl-9 pr-3 text-xs text-secondary placeholder-neutral focus:outline-none focus:border-primary transition-all font-medium"
+                />
+              </div>
 
-          {/* Role Filter */}
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-xs text-secondary focus:outline-none focus:border-primary cursor-pointer font-medium"
-          >
-            <option value="ALL">Todos los Roles</option>
-            <option value="CASHIER">Cajeros</option>
-            <option value="ADMIN">Administradores</option>
-            <option value="MANAGER">Encargados</option>
-            <option value="OWNER">Propietarios</option>
-          </select>
+              {/* Role Filter */}
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-xs text-secondary focus:outline-none focus:border-primary cursor-pointer font-medium"
+              >
+                <option value="ALL">Todos los Roles</option>
+                {roles.map((r) => (
+                  <option key={r.id} value={r.name}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
 
-          {/* New User Button */}
-          <Button
-            type="button"
-            onClick={handleOpenCreateModal}
-            className="h-9 px-4 text-xs font-bold gap-1.5 shadow-md shadow-primary/20 cursor-pointer"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>Nuevo Usuario</span>
-          </Button>
+              {/* New User Button */}
+              <Button
+                type="button"
+                onClick={handleOpenCreateModal}
+                className="h-9 px-4 text-xs font-bold gap-1.5 shadow-md shadow-primary/20 cursor-pointer"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Nuevo Usuario</span>
+              </Button>
+            </>
+          ) : (
+            canManageRoles && (
+              <Button
+                type="button"
+                onClick={() => {
+                  setEditingRole(null);
+                  setShowRoleModal(true);
+                }}
+                className="h-9 px-4 text-xs font-bold gap-1.5 shadow-md shadow-primary/20 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Nuevo Rol</span>
+              </Button>
+            )
+          )}
         </div>
       </div>
 
-      {/* ── USERS LIST / GRID ── */}
-      {isLoading ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-3">
-          <Loader2 className="w-8 h-8 text-primary animate-spin" />
-          <p className="text-xs text-neutral">Cargando personal...</p>
-        </div>
-      ) : filteredUsers.length === 0 ? (
+      {/* Main Tabs switcher */}
+      <div className="flex items-center gap-2 border-b border-border pb-1">
+        <button
+          type="button"
+          onClick={() => setActiveMainTab('users')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+            activeMainTab === 'users'
+              ? 'bg-primary text-primary-foreground shadow-xs'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span>Usuarios ({users.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveMainTab('roles')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+            activeMainTab === 'roles'
+              ? 'bg-primary text-primary-foreground shadow-xs'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
+          }`}
+        >
+          <Shield className="w-4 h-4" />
+          <span>Roles y Permisos ({roles.length})</span>
+        </button>
+      </div>
+
+      {activeMainTab === 'roles' ? (
+        /* ── ROLES LIST ── */
+        isLoadingRoles ? (
+          <div className="py-20 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <p className="text-xs text-neutral">Cargando roles...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {roles.map((r) => {
+              const permsCount = r.permissions.includes('*') ? 'Todos (*)' : r.permissions.length;
+
+              return (
+                <div
+                  key={r.id}
+                  className="bg-bg-card border border-border-card hover:border-primary/40 transition-all rounded-2xl p-5 flex flex-col justify-between space-y-4 shadow-sm group"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 text-primary">
+                          <Shield className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-secondary flex items-center gap-1.5">
+                            {r.name}
+                            {r.isSystem && (
+                              <span className="text-[9px] font-semibold bg-neutral/10 text-neutral px-1.5 py-0.2 rounded border border-border-card">
+                                Sistema
+                              </span>
+                            )}
+                          </h4>
+                          <span className="text-[10px] text-muted-foreground font-medium">
+                            {r.userCount || 0} usuario(s) asignado(s)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-neutral leading-relaxed min-h-[36px]">
+                      {r.description || 'Sin descripción configurada.'}
+                    </p>
+
+                    <div className="pt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
+                      <span>Permisos activos:</span>
+                      <strong className="text-foreground font-mono bg-muted px-2 py-0.5 rounded-md text-[10px]">
+                        {permsCount}
+                      </strong>
+                    </div>
+                  </div>
+
+                  {canManageRoles && (
+                    <div className="flex items-center gap-2 pt-2 border-t border-border/50">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingRole(r);
+                          setShowRoleModal(true);
+                        }}
+                        className="flex-1 text-xs h-8 gap-1.5 cursor-pointer hover:border-primary"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        <span>Configurar Permisos</span>
+                      </Button>
+
+                      {!r.isSystem && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={isDeletingRole || (r.userCount || 0) > 0}
+                          title={(r.userCount || 0) > 0 ? 'No se puede eliminar: tiene usuarios asignados' : 'Eliminar Rol'}
+                          onClick={async () => {
+                            if (confirm(`¿Estás seguro de eliminar el rol "${r.name}"?`)) {
+                              await deleteRole(r.id);
+                            }
+                          }}
+                          className="h-8 w-8 p-0 text-rose-400 hover:text-rose-500 hover:bg-rose-500/10 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )
+      ) : (
+        /* ── USERS LIST / GRID ── */
+        isLoading ? (
+          <div className="py-20 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <p className="text-xs text-neutral">Cargando personal...</p>
+          </div>
+        ) : filteredUsers.length === 0 ? (
         <div className="bg-bg-card border border-border-card rounded-2xl p-12 text-center space-y-3">
           <div className="w-12 h-12 rounded-2xl bg-bg-dark border border-border-card flex items-center justify-center mx-auto text-neutral">
             <Users className="w-6 h-6" />
@@ -310,7 +480,7 @@ export const UsersView: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredUsers.map((user) => {
-            const roleInfo = getRoleBadge(user.role);
+            const roleInfo = getRoleBadge(user.role, user.roleName);
             const isActive = user.isActive ?? true;
 
             return (
@@ -428,7 +598,7 @@ export const UsersView: React.FC = () => {
             );
           })}
         </div>
-      )}
+      ))}
 
       {/* ── MODAL 1: REGISTRAR NUEVO USUARIO ── */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
@@ -475,13 +645,15 @@ export const UsersView: React.FC = () => {
                   <Shield className="w-3.5 h-3.5 text-primary" /> Rol Operativo
                 </FieldLabel>
                 <select
-                  value={createRole}
-                  onChange={(e) => setCreateRole(e.target.value as any)}
+                  value={createRoleId}
+                  onChange={(e) => setCreateRoleId(e.target.value)}
                   className="w-full bg-bg-dark border border-border-card rounded-xl h-9 px-3 text-xs text-secondary focus:outline-none focus:border-primary cursor-pointer font-medium"
                 >
-                  <option value="CASHIER">Cajero (POS)</option>
-                  <option value="ADMIN">Administrador</option>
-                  <option value="MANAGER">Encargado</option>
+                  {roles.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name} {r.isSystem ? '(Sistema)' : ''}
+                    </option>
+                  ))}
                 </select>
               </Field>
             </div>
@@ -617,14 +789,15 @@ export const UsersView: React.FC = () => {
                   <Shield className="w-3.5 h-3.5 text-primary" /> Rol
                 </FieldLabel>
                 <select
-                  value={editRole}
-                  onChange={(e) => setEditRole(e.target.value as any)}
+                  value={editRoleId}
+                  onChange={(e) => setEditRoleId(e.target.value)}
                   className="w-full bg-bg-dark border border-border-card rounded-xl h-9 px-3 text-xs text-secondary focus:outline-none focus:border-primary cursor-pointer font-medium"
                 >
-                  <option value="CASHIER">Cajero (POS)</option>
-                  <option value="ADMIN">Administrador</option>
-                  <option value="MANAGER">Encargado</option>
-                  <option value="OWNER">Propietario</option>
+                  {roles.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name} {r.isSystem ? '(Sistema)' : ''}
+                    </option>
+                  ))}
                 </select>
               </Field>
             </div>
@@ -782,6 +955,16 @@ export const UsersView: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ── MODAL 4: CREAR O EDITAR ROL ── */}
+      <RoleEditorModal
+        isOpen={showRoleModal}
+        onClose={() => {
+          setShowRoleModal(false);
+          setEditingRole(null);
+        }}
+        roleToEdit={editingRole}
+      />
     </div>
   );
 };

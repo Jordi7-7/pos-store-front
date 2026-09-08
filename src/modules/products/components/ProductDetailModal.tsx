@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Package, ShoppingCart, Truck, ClipboardList, SlidersHorizontal } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { APP_PERMISSIONS } from '@/constants/permissions';
 
 type TabName = 'details' | 'sales' | 'purchases' | 'movements' | 'adjustment';
 
@@ -23,6 +25,9 @@ function LoadingRows() {
 }
 
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, isOpen, onClose, uploadedImages, selectedBranchId }) => {
+  const { can } = usePermissions();
+  const canAdjustStock = can(APP_PERMISSIONS.PRODUCTS_ADJUST_STOCK);
+
   const [tab, setTab] = useState<TabName>('details');
   const [pages, setPages] = useState({ sales: 1, purchases: 1, movements: 1 });
   const [pageSize, setPageSize] = useState(10);
@@ -107,7 +112,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   <TabsTrigger value="sales"><ShoppingCart className="w-3.5 h-3.5 mr-1.5" />Ventas</TabsTrigger>
                   <TabsTrigger value="purchases"><Truck className="w-3.5 h-3.5 mr-1.5" />Compras</TabsTrigger>
                   <TabsTrigger value="movements"><ClipboardList className="w-3.5 h-3.5 mr-1.5" />Movimientos</TabsTrigger>
-                  <TabsTrigger value="adjustment"><SlidersHorizontal className="w-3.5 h-3.5 mr-1.5" />Ajuste</TabsTrigger>
+                  {canAdjustStock && (
+                    <TabsTrigger value="adjustment"><SlidersHorizontal className="w-3.5 h-3.5 mr-1.5" />Ajuste</TabsTrigger>
+                  )}
                 </TabsList>
 
                 <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
@@ -141,12 +148,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   {isLoadingMovements ? <LoadingRows /> : movements.length === 0 ? <p className="py-12 text-center text-sm text-muted-foreground">No hay movimientos para esta variante.</p> : <div className="space-y-2">{movements.map((movement) => <div key={movement.id} className="border border-border rounded-lg p-3 flex justify-between text-xs"><div><strong>{movement.reason}</strong><p className="text-muted-foreground mt-1">{new Date(movement.createdAt).toLocaleString()} · {movement.variant?.sku || 'Sin SKU'}</p></div><strong className={movement.type === 'IN' || movement.type === 'INPUT' ? 'text-emerald-600' : 'text-destructive'}>{movement.type === 'IN' || movement.type === 'INPUT' ? '+' : '-'}{Number(movement.quantity || 0)}</strong></div>)}</div>}
                 </TabsContent>
 
-                <TabsContent value="adjustment" className="mt-0">
-                  <StockAdjustmentForm
-                    product={detailProduct}
-                    selectedBranchId={selectedBranchId}
-                  />
-                </TabsContent>
+                {canAdjustStock && (
+                  <TabsContent value="adjustment" className="mt-0">
+                    <StockAdjustmentForm
+                      product={detailProduct}
+                      selectedBranchId={selectedBranchId}
+                    />
+                  </TabsContent>
+                )}
                 </div>
               </Tabs>
             </div>

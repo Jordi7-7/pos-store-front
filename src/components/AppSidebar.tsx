@@ -34,24 +34,26 @@ import {
   AvatarFallback,
 } from "@/components/ui/avatar"
 
+import { APP_PERMISSIONS } from "@/constants/permissions"
+
 export function AppSidebar() {
-  const { user, role, activeTab, setActiveTab, logout, lockScreen, publicTenant } = useAuthStore()
+  const { user, role, roleName, activeTab, setActiveTab, logout, lockScreen, publicTenant, can } = useAuthStore()
 
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
-    { id: 'pos', label: 'Punto de Venta (POS)', icon: ShoppingBag, roles: ['OWNER', 'ADMIN', 'MANAGER', 'CASHIER'] },
-    { id: 'sales', label: 'Ventas', icon: Receipt, roles: ['OWNER', 'ADMIN', 'MANAGER', 'CASHIER'] },
-    { id: 'products', label: 'Catálogo de Productos', icon: Package, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
-    { id: 'purchases', label: 'Ingresos de Mercancía', icon: Truck, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
-    { id: 'media', label: 'Multimedia / Galería', icon: ImageIcon, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
-    { id: 'users', label: 'Personal / Usuarios', icon: Users, roles: ['OWNER', 'ADMIN'] },
-    { id: 'customers', label: 'Directorio de Clientes', icon: Contact, roles: ['OWNER', 'ADMIN', 'MANAGER', 'CASHIER'] },
-    { id: 'cash-sessions', label: 'Historial de Cajas', icon: History, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
-    { id: 'reports', label: 'Reportes y Utilidades', icon: BarChart3, roles: ['OWNER', 'ADMIN', 'MANAGER'] },
-    { id: 'tenant-settings', label: 'Configuración Negocio', icon: Settings, roles: ['OWNER', 'ADMIN'] },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: APP_PERMISSIONS.VIEW_DASHBOARD },
+    { id: 'pos', label: 'Punto de Venta (POS)', icon: ShoppingBag, permission: APP_PERMISSIONS.VIEW_POS },
+    { id: 'sales', label: 'Ventas', icon: Receipt, permission: APP_PERMISSIONS.VIEW_SALES },
+    { id: 'products', label: 'Catálogo de Productos', icon: Package, permission: APP_PERMISSIONS.VIEW_PRODUCTS },
+    { id: 'purchases', label: 'Ingresos de Mercancía', icon: Truck, permission: APP_PERMISSIONS.VIEW_PURCHASES },
+    { id: 'customers', label: 'Directorio de Clientes', icon: Contact, permission: APP_PERMISSIONS.VIEW_CUSTOMERS },
+    { id: 'cash-sessions', label: 'Historial de Cajas', icon: History, permission: APP_PERMISSIONS.VIEW_CASH_SESSIONS },
+    { id: 'reports', label: 'Reportes y Utilidades', icon: BarChart3, permission: APP_PERMISSIONS.VIEW_REPORTS },
+    { id: 'users', label: 'Personal y Roles', icon: Users, permission: APP_PERMISSIONS.VIEW_USERS },
+    { id: 'media', label: 'Multimedia / Galería', icon: ImageIcon, permission: APP_PERMISSIONS.VIEW_MEDIA },
+    { id: 'tenant-settings', label: 'Configuración Negocio', icon: Settings, permission: APP_PERMISSIONS.VIEW_SETTINGS },
   ]
 
-  const visibleMenuItems = menuItems.filter(item => item.roles.includes(role || ''))
+  const visibleMenuItems = menuItems.filter(item => can(item.permission))
 
   return (
     <Sidebar collapsible="icon" className="bg-brand-primary text-zinc-300 border-r border-[#222225]">
@@ -124,7 +126,7 @@ export function AppSidebar() {
             <span className="text-xs font-semibold text-zinc-100 block truncate">{user?.name || 'Imi y Cristian'}</span>
             <span className="text-[10px] text-zinc-400 font-medium truncate flex items-center gap-1 uppercase tracking-wider">
               <ShieldCheck className="w-3 h-3 text-zinc-400 inline shrink-0" />
-              {role || 'OWNER'}
+              {roleName || role || 'Propietario'}
             </span>
           </div>
         </div>

@@ -7,6 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, Layers, FileSpreadsheet } from 'lucide-react';
 import { BulkImportModal } from './BulkImportModal';
 
+import { usePermissions } from '@/hooks/usePermissions';
+import { APP_PERMISSIONS } from '@/constants/permissions';
+
 interface ProductsViewProps {
   selectedBranchId: string;
   uploadedImages: any[];
@@ -16,11 +19,15 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
   selectedBranchId,
   uploadedImages
 }) => {
+  const { can } = usePermissions();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('list');
   const [isImportOpen, setIsImportOpen] = useState(false);
+
+  const canCreate = can(APP_PERMISSIONS.PRODUCTS_CREATE);
+  const canImport = can(APP_PERMISSIONS.PRODUCTS_IMPORT);
 
   const { products, meta, isLoading: isLoadingProducts } = useProducts({ page, limit, search });
   const { categories } = useCategories();
@@ -37,27 +44,31 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           <h3 className="text-sm font-bold text-secondary">Catálogo General de Productos</h3>
           <p className="text-xs text-neutral mt-0.5">Gestiona tus artículos, precios y stock por sucursales.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsImportOpen(true)}
-          className="flex items-center gap-1.5 text-xs text-primary font-bold border border-primary/20 hover:border-primary/40 bg-primary/5 hover:bg-primary/10 px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-sm self-start sm:self-center"
-        >
-          <FileSpreadsheet className="w-4 h-4" />
-          Importar Excel
-        </button>
+        {canImport && (
+          <button
+            type="button"
+            onClick={() => setIsImportOpen(true)}
+            className="flex items-center gap-1.5 text-xs text-primary font-bold border border-primary/20 hover:border-primary/40 bg-primary/5 hover:bg-primary/10 px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-sm self-start sm:self-center"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Importar Excel
+          </button>
+        )}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="list" className="flex items-center gap-1.5">
-            <Eye className="w-3.5 h-3.5" />
-            Productos
-          </TabsTrigger>
-          <TabsTrigger value="create" className="flex items-center gap-1.5">
-            <Layers className="w-3.5 h-3.5" />
-            Crear Producto
-          </TabsTrigger>
-        </TabsList>
+        {canCreate ? (
+          <TabsList className="mb-4">
+            <TabsTrigger value="list" className="flex items-center gap-1.5">
+              <Eye className="w-3.5 h-3.5" />
+              Productos
+            </TabsTrigger>
+            <TabsTrigger value="create" className="flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5" />
+              Crear Producto
+            </TabsTrigger>
+          </TabsList>
+        ) : null}
 
         <TabsContent value="list">
           <ProductListTab

@@ -18,13 +18,18 @@ interface AuthState {
   publicTenant: PublicTenant | null;
   isLoadingTenant: boolean;
   tenantError: string | null;
-  role: 'OWNER' | 'ADMIN' | 'CASHIER' | 'MANAGER' | null;
+  role: 'OWNER' | 'ADMIN' | 'CASHIER' | 'MANAGER' | string | null;
+  roleId: string | null;
+  roleName: string | null;
+  permissions: string[];
   timezone: string | null;
   user: User | null;
   activeTab: string;
   isAuthenticated: boolean;
 
-  // Actions
+  // Actions & Helpers
+  can: (permission: string) => boolean;
+  canAny: (permissions: string[]) => boolean;
   fetchPublicTenant: (slug: string) => Promise<boolean>;
   setTenantSlug: (slug: string | null) => void;
   login: (identifier: string, password: string, targetWorkflow?: 'admin' | 'store', slugOverride?: string) => Promise<boolean>;
@@ -49,12 +54,29 @@ export const useAuthStore = create<AuthState>()(
       isLoadingTenant: false,
       tenantError: null,
       role: null,
+      roleId: null,
+      roleName: null,
+      permissions: [],
       timezone: null,
       user: null,
       activeTab: 'dashboard',
       isAuthenticated: false,
 
       selectedBranchId: null,
+
+      can: (permission: string) => {
+        const state = get();
+        if (!state.isAuthenticated) return false;
+        if (state.role === 'OWNER' || state.permissions.includes('*')) return true;
+        return state.permissions.includes(permission);
+      },
+
+      canAny: (perms: string[]) => {
+        const state = get();
+        if (!state.isAuthenticated) return false;
+        if (state.role === 'OWNER' || state.permissions.includes('*')) return true;
+        return perms.some((p) => state.permissions.includes(p));
+      },
 
       setTenantSlug: (slug) => set({ tenantSlug: slug }),
 
@@ -103,6 +125,9 @@ export const useAuthStore = create<AuthState>()(
             tenantId: response.user.tenantId,
             tenantSlug: effectiveSlug || state.tenantSlug,
             role: response.user.role,
+            roleId: response.user.roleId || null,
+            roleName: response.user.roleName || response.user.role,
+            permissions: response.user.permissions || [],
             timezone: response.user.timezone || 'America/Guayaquil',
             user: {
               name: response.user.name,
@@ -137,6 +162,9 @@ export const useAuthStore = create<AuthState>()(
               tenantId: response.user.tenantId,
               tenantSlug: effectiveSlug || state.tenantSlug,
               role: response.user.role,
+              roleId: response.user.roleId || null,
+              roleName: response.user.roleName || response.user.role,
+              permissions: response.user.permissions || [],
               timezone: response.user.timezone || 'America/Guayaquil',
               user: {
                 name: response.user.name,
@@ -163,6 +191,9 @@ export const useAuthStore = create<AuthState>()(
         set({
           accessToken: null,
           role: null,
+          roleId: null,
+          roleName: null,
+          permissions: [],
           user: null,
           isAuthenticated: false,
         });
@@ -212,6 +243,9 @@ export const useAuthStore = create<AuthState>()(
           accessToken: null,
           refreshToken: null,
           role: null,
+          roleId: null,
+          roleName: null,
+          permissions: [],
           user: null,
           isAuthenticated: false,
           activeTab: 'dashboard',
@@ -227,6 +261,10 @@ export const useAuthStore = create<AuthState>()(
           const profile = await authService.getProfile();
           set({
             timezone: profile.tenant.timezone || 'America/Guayaquil',
+            role: profile.role,
+            roleId: profile.roleId || null,
+            roleName: profile.roleName || profile.role,
+            permissions: profile.permissions || [],
             publicTenant: profile.tenant
               ? {
                   id: profile.tenant.id,
@@ -267,6 +305,9 @@ export const useAuthStore = create<AuthState>()(
         tenantSlug: state.tenantSlug,
         publicTenant: state.publicTenant,
         role: state.role,
+        roleId: state.roleId,
+        roleName: state.roleName,
+        permissions: state.permissions,
         user: state.user,
         timezone: state.timezone,
         selectedBranchId: state.selectedBranchId,

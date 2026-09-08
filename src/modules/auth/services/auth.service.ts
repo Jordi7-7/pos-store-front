@@ -31,7 +31,10 @@ export interface AuthResponse {
     tenantId: string;
     email: string;
     name: string;
-    role: 'OWNER' | 'ADMIN' | 'CASHIER' | 'MANAGER';
+    role: 'OWNER' | 'ADMIN' | 'CASHIER' | 'MANAGER' | string;
+    roleId?: string | null;
+    roleName?: string;
+    permissions?: string[];
     timezone?: string;
   };
 }
@@ -40,7 +43,10 @@ export interface ProfileResponse {
   id: string;
   email: string;
   name: string;
-  role: 'OWNER' | 'ADMIN' | 'CASHIER' | 'MANAGER';
+  role: 'OWNER' | 'ADMIN' | 'CASHIER' | 'MANAGER' | string;
+  roleId?: string | null;
+  roleName?: string;
+  permissions?: string[];
   tenant: {
     id: string;
     name: string;

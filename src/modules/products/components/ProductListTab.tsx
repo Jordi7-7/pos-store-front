@@ -36,6 +36,9 @@ interface ProductListTabProps {
   onSearchChange: (search: string) => void;
 }
 
+import { usePermissions } from '@/hooks/usePermissions';
+import { APP_PERMISSIONS } from '@/constants/permissions';
+
 export const ProductListTab: React.FC<ProductListTabProps> = ({
   products,
   isLoading,
@@ -48,12 +51,16 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
   search,
   onSearchChange
 }) => {
+  const { can } = usePermissions();
+  const canEdit = can(APP_PERMISSIONS.PRODUCTS_EDIT);
+
   const [selectedProductToEdit, setSelectedProductToEdit] = useState<any | null>(null);
   const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
   const [searchInput, setSearchInput] = useState(search);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const handleOpenEditDrawer = (product: any) => {
+    if (!canEdit) return;
     setSelectedProductToEdit(product);
     setIsEditDrawerOpen(true);
   };
@@ -235,15 +242,19 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
 
                       {/* Actions */}
                       <TableCell className="py-2.5 text-center">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(event) => { event.stopPropagation(); handleOpenEditDrawer(product); }}
-                          title="Editar Ficha de Producto"
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
+                        {canEdit ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(event) => { event.stopPropagation(); handleOpenEditDrawer(product); }}
+                            title="Editar Ficha de Producto"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        ) : (
+                          <span className="text-muted-foreground/30 text-[11px]">—</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
