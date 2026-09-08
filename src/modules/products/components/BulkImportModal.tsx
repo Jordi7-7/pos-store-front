@@ -99,7 +99,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
         const hasAllRequired = required.every(req => fileHeaders.includes(req) || fileHeaders.includes('name'));
 
         if (!hasAllRequired || (fileHeaders.includes('cantidad') && !fileHeaders.includes('nombre') && !fileHeaders.includes('name'))) {
-          toast.error('Plantilla incorrecta. Para la creación masiva de productos usa la plantilla oficial que incluye las columnas: SKU, Nombre, Codigo, Precio Compra, Precio Venta y Existencias.');
+          toast.error('Plantilla incorrecta. Para la creación masiva de productos usa la plantilla oficial que incluye las columnas: SKU, Nombre, Codigo, Precio Compra, Precio Venta, Precio Mayoreo y Existencias.');
           setIsValidating(false);
           setFileName('');
           if (fileInputRef.current) fileInputRef.current.value = '';
@@ -109,14 +109,22 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
         const rawJson: any[] = XLSX.utils.sheet_to_json(ws);
 
         // Normalize columns (handle casing or accent variants if any)
-        const normalized = rawJson.map((row) => ({
-          sku: String(row.SKU || row.sku || '').trim(),
-          name: String(row.Nombre || row.nombre || '').trim(),
-          barcode: String(row.Codigo || row.codigo || row.Barra || row.barra || '').trim(),
-          purchasePrice: Number(row['Precio Compra'] || row.precio_compra || 0),
-          salePrice: Number(row['Precio Venta'] || row.precio_venta || 0),
-          quantity: Number(row.Existencias || row.existencias || row.cantidad || 0),
-        })).filter((item) => item.sku && item.name);
+        const normalized = rawJson.map((row) => {
+          const rawWholesale = row['Precio Mayoreo'] ?? row.precio_mayoreo ?? row['Precio Mayor'] ?? row.precio_mayor ?? row.Mayoreo ?? row.mayoreo;
+          const wholesalePrice = rawWholesale !== undefined && rawWholesale !== null && rawWholesale !== '' && !isNaN(Number(rawWholesale))
+            ? Number(rawWholesale)
+            : undefined;
+
+          return {
+            sku: String(row.SKU || row.sku || '').trim(),
+            name: String(row.Nombre || row.nombre || '').trim(),
+            barcode: String(row.Codigo || row.codigo || row.Barra || row.barra || '').trim(),
+            purchasePrice: Number(row['Precio Compra'] || row.precio_compra || 0),
+            salePrice: Number(row['Precio Venta'] || row.precio_venta || 0),
+            wholesalePrice,
+            quantity: Number(row.Existencias || row.existencias || row.cantidad || 0),
+          };
+        }).filter((item) => item.sku && item.name);
 
         if (normalized.length === 0) {
           toast.error('El archivo Excel no tiene filas válidas o está vacío.');
@@ -176,7 +184,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
                 <span>Descarga la Plantilla Oficial</span>
               </h5>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Utiliza nuestra plantilla de Excel estructurada para asegurar la correcta carga de tus productos. Las columnas necesarias son: <strong className="text-secondary">SKU, Nombre, Codigo, Precio Compra, Precio Venta, Existencias</strong>.
+                Utiliza nuestra plantilla de Excel estructurada para asegurar la correcta carga de tus productos. Las columnas disponibles son: <strong className="text-secondary">SKU, Nombre, Codigo, Precio Compra, Precio Venta, Precio Mayoreo, Existencias</strong>.
               </p>
               <button
                 type="button"

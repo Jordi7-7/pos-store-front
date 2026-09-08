@@ -7,6 +7,7 @@ interface PreviewTableItem {
   barcode?: string;
   purchasePrice?: number;
   salePrice?: number;
+  wholesalePrice?: number;
   quantity?: number;
 }
 
@@ -36,6 +37,7 @@ export const BulkImportPreviewTable: React.FC<BulkImportPreviewTableProps> = ({
                 <th className="px-4 py-2.5 font-mono">Código</th>
                 <th className="px-4 py-2.5 text-right">P. Compra</th>
                 <th className="px-4 py-2.5 text-right">P. Venta</th>
+                <th className="px-4 py-2.5 text-right">P. Mayoreo</th>
                 <th className="px-4 py-2.5 text-right">Cant. Inicial</th>
               </>
             ) : (
@@ -82,6 +84,13 @@ export const BulkImportPreviewTable: React.FC<BulkImportPreviewTableProps> = ({
                     <td className="px-4 py-2.5 font-mono text-[11px] text-muted-foreground">{item.barcode || 'S/Barra'}</td>
                     <td className="px-4 py-2.5 text-right font-mono">${Number(item.purchasePrice || 0).toFixed(2)}</td>
                     <td className="px-4 py-2.5 text-right font-mono">${Number(item.salePrice || 0).toFixed(2)}</td>
+                    <td className="px-4 py-2.5 text-right font-mono">
+                      {item.wholesalePrice !== undefined && item.wholesalePrice !== null && Number(item.wholesalePrice) > 0 ? (
+                        `$${Number(item.wholesalePrice).toFixed(2)}`
+                      ) : (
+                        <span className="text-muted-foreground/50 text-[11px]">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-2.5 text-right font-mono font-bold">{item.quantity || 0}</td>
                   </>
                 ) : (
