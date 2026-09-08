@@ -25,6 +25,7 @@ import {
   AtSign,
   Plus,
   Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -59,6 +60,7 @@ export const UsersView: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState<RoleItem | null>(null);
 
   // Selected User for Edit
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
@@ -425,18 +427,14 @@ export const UsersView: React.FC = () => {
                         <span>Configurar Permisos</span>
                       </Button>
 
-                      {!r.isSystem && (
+                      {r.name !== 'Propietario' && !r.permissions.includes('*') && (
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           disabled={isDeletingRole || (r.userCount || 0) > 0}
-                          title={(r.userCount || 0) > 0 ? 'No se puede eliminar: tiene usuarios asignados' : 'Eliminar Rol'}
-                          onClick={async () => {
-                            if (confirm(`¿Estás seguro de eliminar el rol "${r.name}"?`)) {
-                              await deleteRole(r.id);
-                            }
-                          }}
+                          title={(r.userCount || 0) > 0 ? `No se puede eliminar: tiene ${r.userCount} usuario(s) asignado(s)` : 'Eliminar Rol'}
+                          onClick={() => setRoleToDelete(r)}
                           className="h-8 w-8 p-0 text-rose-400 hover:text-rose-500 hover:bg-rose-500/10 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -965,6 +963,69 @@ export const UsersView: React.FC = () => {
         }}
         roleToEdit={editingRole}
       />
+
+      {/* ── MODAL 5: CONFIRMAR ELIMINACIÓN DE ROL ── */}
+      <Dialog open={!!roleToDelete} onOpenChange={(open) => !open && setRoleToDelete(null)}>
+        <DialogContent className="sm:max-w-md bg-bg-card border border-border-card p-6">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-secondary flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shrink-0">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              <span>¿Eliminar rol?</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-neutral mt-1 leading-relaxed">
+              Estás a punto de eliminar permanentemente el rol{' '}
+              <strong className="text-foreground">"{roleToDelete?.name}"</strong>. Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="p-3 rounded-xl bg-bg-dark border border-border-card text-xs space-y-1.5 mt-2">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Usuarios vinculados:</span>
+              <strong className="text-foreground">{roleToDelete?.userCount || 0}</strong>
+            </div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Permisos asignados:</span>
+              <strong className="text-foreground font-mono">
+                {roleToDelete?.permissions?.includes('*') ? 'Todos (*)' : roleToDelete?.permissions?.length || 0}
+              </strong>
+            </div>
+          </div>
+
+          <div className="pt-3 flex justify-end gap-2 border-t border-border-card/60 mt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setRoleToDelete(null)}
+              disabled={isDeletingRole}
+              className="text-xs"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              disabled={isDeletingRole}
+              onClick={async () => {
+                if (!roleToDelete) return;
+                try {
+                  await deleteRole(roleToDelete.id);
+                  setRoleToDelete(null);
+                } catch {
+                  // Error handled by hook
+                }
+              }}
+              className="text-xs font-bold gap-1.5 bg-rose-600 hover:bg-rose-700 text-white"
+            >
+              {isDeletingRole ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+              <span>Eliminar Rol</span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

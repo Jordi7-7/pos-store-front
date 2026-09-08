@@ -9,9 +9,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
-import { usePermissionsCatalog, useCreateRole, useUpdateRole } from '../hooks/useRoles';
+import { usePermissionsCatalog, useCreateRole, useUpdateRole, useDeleteRole } from '../hooks/useRoles';
 import type { RoleItem } from '../services/roles.service';
-import { Shield, Check, AlertTriangle, Loader2 } from 'lucide-react';
+import { Shield, Check, AlertTriangle, Loader2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface RoleEditorModalProps {
@@ -28,13 +28,17 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
   const { modules, permissions, isLoading: isLoadingCatalog } = usePermissionsCatalog();
   const { createRole, isCreating } = useCreateRole();
   const { updateRole, isUpdating } = useUpdateRole();
+  const { deleteRole, isDeleting } = useDeleteRole();
 
   const isEditing = !!roleToEdit;
+  const isOwner = roleToEdit?.name === 'Propietario' || (roleToEdit?.permissions || []).includes('*');
+  const userCount = roleToEdit?.userCount || 0;
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [activeModuleTab, setActiveModuleTab] = useState<string>('pos');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (roleToEdit) {
@@ -252,22 +256,91 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-border">
-            <span className="text-[11px] text-muted-foreground">
-              Total permisos activos: <strong className="text-foreground">{selectedPermissions.includes('*') ? 'Todos (*)' : selectedPermissions.length}</strong>
-            </span>
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={isSaving}>
-                Cancelar
-              </Button>
-              <Button type="submit" size="sm" disabled={isSaving} className="gap-1.5">
-                {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                {isEditing ? 'Guardar Cambios' : 'Crear Rol'}
-              </Button>
+          <div className="flex items-center justify-between pt-3 border-t border-border">
+            <div>
+              {isEditing && !isOwner && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={isDeleting || isSaving || userCount > 0}
+                  title={userCount > 0 ? `No se puede eliminar: tiene ${userCount} usuario(s) asignado(s)` : 'Eliminar este Rol'}
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="text-xs h-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                  <span>Eliminar Rol</span>
+                </Button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                Permisos activos: <strong className="text-foreground">{selectedPermissions.includes('*') ? 'Todos (*)' : selectedPermissions.length}</strong>
+              </span>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={isSaving || isDeleting}>
+                  Cancelar
+                </Button>
+                <Button type="submit" size="sm" disabled={isSaving || isDeleting} className="gap-1.5">
+                  {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {isEditing ? 'Guardar Cambios' : 'Crear Rol'}
+                </Button>
+              </div>
             </div>
           </div>
         </form>
       </DialogContent>
+
+      {/* Modal de confirmación estilizado dentro de RoleEditorModal */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="sm:max-w-md bg-bg-card border border-border-card p-6">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-secondary flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shrink-0">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              <span>¿Eliminar rol permanentemente?</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-neutral mt-1 leading-relaxed">
+              Estás a punto de eliminar el rol <strong className="text-foreground">"{roleToEdit?.name}"</strong>. Esta operación es irreversible.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="pt-3 flex justify-end gap-2 border-t border-border-card/60 mt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={isDeleting}
+              className="text-xs"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              disabled={isDeleting}
+              onClick={async () => {
+                if (!roleToEdit) return;
+                try {
+                  await deleteRole(roleToEdit.id);
+                  setShowDeleteConfirm(false);
+                  onClose();
+                } catch {
+                  // Handled by hook
+                }
+              }}
+              className="text-xs font-bold gap-1.5 bg-rose-600 hover:bg-rose-700 text-white"
+            >
+              {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+              <span>Eliminar Rol</span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };
