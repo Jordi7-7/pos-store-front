@@ -117,11 +117,11 @@ export const useProcessSale = () => {
   };
 };
 
-export const useActiveCashSession = (branchId?: string) => {
-  const { isAuthenticated } = useAuthStore();
+export const useActiveCashSession = (branchId?: string, cashRegisterId?: string) => {
+  const { isAuthenticated, user } = useAuthStore();
   const activeSessionQuery = useQuery({
-    queryKey: ['active-cash-session', branchId],
-    queryFn: () => salesService.getActiveCashSession(branchId),
+    queryKey: ['active-cash-session', user?.id, branchId, cashRegisterId],
+    queryFn: () => salesService.getActiveCashSession(branchId, cashRegisterId),
     enabled: isAuthenticated && !!branchId,
   });
 

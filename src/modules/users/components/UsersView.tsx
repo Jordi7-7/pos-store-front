@@ -26,7 +26,11 @@ import {
   Plus,
   Trash2,
   AlertTriangle,
+  Building,
+  CreditCard,
 } from 'lucide-react';
+import { useBranches } from '@/modules/branches';
+import { useCashRegisters } from '@/modules/cash-registers/hooks/useCashRegisters';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -62,6 +66,9 @@ export const UsersView: React.FC = () => {
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState<RoleItem | null>(null);
 
+  const { branches } = useBranches();
+  const { cashRegisters } = useCashRegisters();
+
   // Selected User for Edit
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
   const [editingRole, setEditingRole] = useState<RoleItem | null>(null);
@@ -73,6 +80,9 @@ export const UsersView: React.FC = () => {
   const [createPassword, setCreatePassword] = useState('');
   const [createRoleId, setCreateRoleId] = useState<string>('');
   const [createPin, setCreatePin] = useState('');
+  const [createIsGlobalBranch, setCreateIsGlobalBranch] = useState(true);
+  const [createBranchIds, setCreateBranchIds] = useState<string[]>([]);
+  const [createCashRegisterIds, setCreateCashRegisterIds] = useState<string[]>([]);
 
   // Edit Form State
   const [editName, setEditName] = useState('');
@@ -82,6 +92,9 @@ export const UsersView: React.FC = () => {
   const [editRoleId, setEditRoleId] = useState<string>('');
   const [editPin, setEditPin] = useState('');
   const [editIsActive, setEditIsActive] = useState(true);
+  const [editIsGlobalBranch, setEditIsGlobalBranch] = useState(true);
+  const [editBranchIds, setEditBranchIds] = useState<string[]>([]);
+  const [editCashRegisterIds, setEditCashRegisterIds] = useState<string[]>([]);
 
   // Pin Reveal Modal State
   const [revealedPin, setRevealedPin] = useState('');
@@ -112,6 +125,9 @@ export const UsersView: React.FC = () => {
     const defaultRole = roles.find((r) => r.name.toLowerCase().includes('cajero')) || roles[0];
     setCreateRoleId(defaultRole ? defaultRole.id : '');
     setCreatePin('');
+    setCreateIsGlobalBranch(true);
+    setCreateBranchIds([]);
+    setCreateCashRegisterIds([]);
     setShowCreateModal(true);
   };
 
@@ -136,6 +152,8 @@ export const UsersView: React.FC = () => {
         password: createPassword,
         roleId: createRoleId,
         pin: createPin.trim() || undefined,
+        branchIds: createIsGlobalBranch ? branches.map((b) => b.id) : createBranchIds,
+        cashRegisterIds: createCashRegisterIds,
       });
 
       toast.success('Usuario registrado con éxito.');
@@ -156,6 +174,10 @@ export const UsersView: React.FC = () => {
     setEditRoleId(user.roleId || '');
     setEditPin('');
     setEditIsActive(user.isActive ?? true);
+    const userBranchList = user.branchIds || [];
+    setEditIsGlobalBranch(userBranchList.length === 0);
+    setEditBranchIds(userBranchList);
+    setEditCashRegisterIds(user.cashRegisterIds || []);
     setShowEditModal(true);
   };
 
@@ -175,6 +197,8 @@ export const UsersView: React.FC = () => {
           roleId: editRoleId || undefined,
           pin: editPin.trim() ? editPin.trim() : undefined,
           isActive: editIsActive,
+          branchIds: editIsGlobalBranch ? branches.map((b) => b.id) : editBranchIds,
+          cashRegisterIds: editCashRegisterIds,
         },
       });
 
@@ -710,6 +734,121 @@ export const UsersView: React.FC = () => {
               />
             </Field>
 
+            {/* ASIGNACIÓN DE SUCURSALES Y CAJAS */}
+            <div className="p-3.5 bg-bg-dark/70 rounded-2xl border border-border-card space-y-3">
+              <div>
+                <span className="text-xs font-bold text-secondary flex items-center gap-1.5">
+                  <Building className="w-3.5 h-3.5 text-primary" /> Asignación de Sucursales
+                </span>
+                <span className="text-[11px] text-neutral block mt-0.5">
+                  Define si este usuario opera en todas las tiendas o en sucursales puntuales.
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-xs font-medium text-secondary cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={createIsGlobalBranch}
+                    onChange={(e) => {
+                      setCreateIsGlobalBranch(e.target.checked);
+                      if (e.target.checked) {
+                        setCreateBranchIds([]);
+                      }
+                    }}
+                    className="w-4 h-4 accent-primary rounded cursor-pointer"
+                  />
+                  <span>Acceso Global (Todas las sucursales)</span>
+                </label>
+
+                {!createIsGlobalBranch && (
+                  <div className="pl-6 space-y-1.5 pt-1">
+                    <span className="text-[10px] uppercase font-bold text-neutral tracking-wider block">
+                      Selecciona las sucursales permitidas:
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      {branches.map((b) => {
+                        const isChecked = createBranchIds.includes(b.id);
+                        return (
+                          <label
+                            key={b.id}
+                            className={`flex items-center gap-2 p-2 rounded-xl border text-xs cursor-pointer transition-all ${
+                              isChecked
+                                ? 'bg-primary/10 border-primary/40 text-secondary'
+                                : 'bg-bg-dark border-border-card text-neutral hover:border-neutral/40'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setCreateBranchIds([...createBranchIds, b.id]);
+                                } else {
+                                  setCreateBranchIds(createBranchIds.filter((id) => id !== b.id));
+                                }
+                              }}
+                              className="w-3.5 h-3.5 accent-primary rounded cursor-pointer"
+                            />
+                            <span className="truncate">{b.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Cajas Registradoras */}
+              {cashRegisters.length > 0 && (
+                <div className="border-t border-border-card/60 pt-3 space-y-2">
+                  <div>
+                    <span className="text-xs font-bold text-secondary flex items-center gap-1.5">
+                      <CreditCard className="w-3.5 h-3.5 text-primary" /> Cajas Registradoras Autorizadas
+                    </span>
+                    <span className="text-[11px] text-neutral block mt-0.5">
+                      Selecciona qué cajas puede operar este usuario al iniciar turno.
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {cashRegisters
+                      .filter((cr) => createIsGlobalBranch || createBranchIds.includes(cr.branchId))
+                      .map((cr) => {
+                        const isChecked = createCashRegisterIds.includes(cr.id);
+                        return (
+                          <label
+                            key={cr.id}
+                            className={`flex items-center gap-2 p-2 rounded-xl border text-xs cursor-pointer transition-all ${
+                              isChecked
+                                ? 'bg-primary/10 border-primary/40 text-secondary'
+                                : 'bg-bg-dark border-border-card text-neutral hover:border-neutral/40'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setCreateCashRegisterIds([...createCashRegisterIds, cr.id]);
+                                } else {
+                                  setCreateCashRegisterIds(createCashRegisterIds.filter((id) => id !== cr.id));
+                                }
+                              }}
+                              className="w-3.5 h-3.5 accent-primary rounded cursor-pointer"
+                            />
+                            <div className="min-w-0">
+                              <span className="font-semibold block truncate">{cr.name}</span>
+                              <span className="text-[10px] text-neutral block truncate">{cr.branchName}</span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="pt-3 border-t border-border-card flex justify-end gap-2">
               <Button
                 type="button"
@@ -856,6 +995,121 @@ export const UsersView: React.FC = () => {
                 }
                 className="text-xs h-9 font-mono tracking-widest text-center"
               />
+            </div>
+
+            {/* ASIGNACIÓN DE SUCURSALES Y CAJAS */}
+            <div className="p-3.5 bg-bg-dark/70 rounded-2xl border border-border-card space-y-3">
+              <div>
+                <span className="text-xs font-bold text-secondary flex items-center gap-1.5">
+                  <Building className="w-3.5 h-3.5 text-primary" /> Asignación de Sucursales
+                </span>
+                <span className="text-[11px] text-neutral block mt-0.5">
+                  Define si este usuario opera en todas las tiendas o en sucursales puntuales.
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-xs font-medium text-secondary cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editIsGlobalBranch}
+                    onChange={(e) => {
+                      setEditIsGlobalBranch(e.target.checked);
+                      if (e.target.checked) {
+                        setEditBranchIds([]);
+                      }
+                    }}
+                    className="w-4 h-4 accent-primary rounded cursor-pointer"
+                  />
+                  <span>Acceso Global (Todas las sucursales)</span>
+                </label>
+
+                {!editIsGlobalBranch && (
+                  <div className="pl-6 space-y-1.5 pt-1">
+                    <span className="text-[10px] uppercase font-bold text-neutral tracking-wider block">
+                      Selecciona las sucursales permitidas:
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      {branches.map((b) => {
+                        const isChecked = editBranchIds.includes(b.id);
+                        return (
+                          <label
+                            key={b.id}
+                            className={`flex items-center gap-2 p-2 rounded-xl border text-xs cursor-pointer transition-all ${
+                              isChecked
+                                ? 'bg-primary/10 border-primary/40 text-secondary'
+                                : 'bg-bg-dark border-border-card text-neutral hover:border-neutral/40'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setEditBranchIds([...editBranchIds, b.id]);
+                                } else {
+                                  setEditBranchIds(editBranchIds.filter((id) => id !== b.id));
+                                }
+                              }}
+                              className="w-3.5 h-3.5 accent-primary rounded cursor-pointer"
+                            />
+                            <span className="truncate">{b.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Cajas Registradoras */}
+              {cashRegisters.length > 0 && (
+                <div className="border-t border-border-card/60 pt-3 space-y-2">
+                  <div>
+                    <span className="text-xs font-bold text-secondary flex items-center gap-1.5">
+                      <CreditCard className="w-3.5 h-3.5 text-primary" /> Cajas Registradoras Autorizadas
+                    </span>
+                    <span className="text-[11px] text-neutral block mt-0.5">
+                      Selecciona qué cajas puede operar este usuario al iniciar turno.
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {cashRegisters
+                      .filter((cr) => editIsGlobalBranch || editBranchIds.includes(cr.branchId))
+                      .map((cr) => {
+                        const isChecked = editCashRegisterIds.includes(cr.id);
+                        return (
+                          <label
+                            key={cr.id}
+                            className={`flex items-center gap-2 p-2 rounded-xl border text-xs cursor-pointer transition-all ${
+                              isChecked
+                                ? 'bg-primary/10 border-primary/40 text-secondary'
+                                : 'bg-bg-dark border-border-card text-neutral hover:border-neutral/40'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setEditCashRegisterIds([...editCashRegisterIds, cr.id]);
+                                } else {
+                                  setEditCashRegisterIds(editCashRegisterIds.filter((id) => id !== cr.id));
+                                }
+                              }}
+                              className="w-3.5 h-3.5 accent-primary rounded cursor-pointer"
+                            />
+                            <div className="min-w-0">
+                              <span className="font-semibold block truncate">{cr.name}</span>
+                              <span className="text-[10px] text-neutral block truncate">{cr.branchName}</span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Active Status Switch */}

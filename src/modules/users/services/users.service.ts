@@ -11,6 +11,8 @@ export interface UserItem {
   customPermissions?: string[] | null;
   hasPin: boolean;
   isActive: boolean;
+  branchIds?: string[];
+  cashRegisterIds?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -24,6 +26,8 @@ export interface CreateUserInput {
   role?: string;
   customPermissions?: string[];
   pin?: string;
+  branchIds?: string[];
+  cashRegisterIds?: string[];
 }
 
 export interface UpdateUserInput {
@@ -36,6 +40,8 @@ export interface UpdateUserInput {
   customPermissions?: string[];
   pin?: string;
   isActive?: boolean;
+  branchIds?: string[];
+  cashRegisterIds?: string[];
 }
 
 export const usersService = {

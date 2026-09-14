@@ -26,17 +26,6 @@ export interface PinLoginPayload {
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
-  user: {
-    id: string;
-    tenantId: string;
-    email: string;
-    name: string;
-    role: 'OWNER' | 'ADMIN' | 'CASHIER' | 'MANAGER' | string;
-    roleId?: string | null;
-    roleName?: string;
-    permissions?: string[];
-    timezone?: string;
-  };
 }
 
 export interface ProfileResponse {
@@ -47,6 +36,13 @@ export interface ProfileResponse {
   roleId?: string | null;
   roleName?: string;
   permissions?: string[];
+  branchIds?: string[];
+  cashRegisters?: Array<{
+    id: string;
+    name: string;
+    code: number;
+    branchId: string;
+  }>;
   tenant: {
     id: string;
     name: string;
@@ -107,6 +103,13 @@ export const authService = {
    */
   getProfile: async (): Promise<ProfileResponse> => {
     return apiClient.get<ProfileResponse>('/auth/profile');
+  },
+
+  /**
+   * Cierra sesión en el backend revocando la sesión en Redis
+   */
+  logout: async (): Promise<{ message: string }> => {
+    return apiClient.post<{ message: string }>('/auth/logout', {});
   },
 };
 

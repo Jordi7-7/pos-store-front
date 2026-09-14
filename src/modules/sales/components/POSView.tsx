@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { productsService } from '../../products/services/products.service';
 import { useBranches } from '../../branches/hooks/useBranches';
+import { useMyCashRegisters } from '@/modules/cash-registers/hooks/useCashRegisters';
 import {
   useOpenCashSession,
   useCloseCashSession,
@@ -10,7 +10,7 @@ import {
 } from '../hooks/useSales';
 import { useCustomers } from '../hooks/useCustomers';
 import { useCashSessionDetailsQuery } from '../../cash-sessions/hooks/useCashSessions';
-import { PaymentMethod, salesService } from '../services/sales.service';
+import { PaymentMethod } from '../services/sales.service';
 import type { Sale } from '../services/sales.service';
 import type {
   SessionSale,
@@ -94,7 +94,6 @@ export const POSView: React.FC<POSViewProps> = ({
   localExpenses,
   setLocalExpenses
 }) => {
-  const queryClient = useQueryClient();
   const { branches } = useBranches();
   const { customers } = useCustomers();
   const { details: sessionDetails } = useCashSessionDetailsQuery(activeSession?.id || null);
@@ -123,6 +122,31 @@ export const POSView: React.FC<POSViewProps> = ({
   const [isCierreModalOpen, setIsCierreModalOpen] = useState(false);
   const [isHistorialModalOpen, setIsHistorialModalOpen] = useState(false);
   const [isExchangeReturnModalOpen, setIsExchangeReturnModalOpen] = useState(false);
+
+  // Cash Register selection state for aperture
+  const { role, selectedCashRegisterId, setSelectedCashRegisterId } = useAuthStore();
+  const effectiveBranchId = selectedBranchId || (branches[0] && branches[0].id) || '';
+  const { myCashRegisters: availableRegistersForUser } = useMyCashRegisters(effectiveBranchId || undefined);
+
+  const [selectedRegisterId, setSelectedRegisterId] = useState<string>(selectedCashRegisterId || '');
+
+  // Keep local selectedRegisterId in sync with store
+  useEffect(() => {
+    if (selectedCashRegisterId) {
+      setSelectedRegisterId(selectedCashRegisterId);
+    }
+  }, [selectedCashRegisterId]);
+
+  useEffect(() => {
+    if (availableRegistersForUser.length > 0) {
+      // If currently selected register is not in the list, preselect first available or first in list
+      if (!selectedRegisterId || !availableRegistersForUser.some(r => r.id === selectedRegisterId)) {
+        const target = availableRegistersForUser.find(r => !r.isOpen) || availableRegistersForUser[0];
+        setSelectedRegisterId(target.id);
+        setSelectedCashRegisterId(target.id);
+      }
+    }
+  }, [availableRegistersForUser, selectedRegisterId, setSelectedCashRegisterId]);
 
   // Cart States
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -194,13 +218,17 @@ export const POSView: React.FC<POSViewProps> = ({
       const now = DateTime.now().setZone(timezone);
       setCurrentTime(now.toFormat('HH:mm:ss'));
 
-      if (activeSession && activeSession.createdAt) {
-        const openedAt = DateTime.fromISO(activeSession.createdAt).setZone(timezone);
+      const sessionStartTime = activeSession?.openedAt;
+      if (activeSession && sessionStartTime) {
+        const openedAt = typeof sessionStartTime === 'string'
+          ? DateTime.fromISO(sessionStartTime).setZone(timezone)
+          : DateTime.fromJSDate(new Date(sessionStartTime)).setZone(timezone);
+
         if (openedAt.isValid) {
           const diff = now.diff(openedAt, ['hours', 'minutes', 'seconds']);
-          const diffHrs = Math.floor(diff.hours);
-          const diffMins = Math.floor(diff.minutes);
-          const diffSecs = Math.floor(diff.seconds);
+          const diffHrs = Math.max(0, Math.floor(diff.hours)).toString().padStart(2, '0');
+          const diffMins = Math.max(0, Math.floor(diff.minutes)).toString().padStart(2, '0');
+          const diffSecs = Math.max(0, Math.floor(diff.seconds)).toString().padStart(2, '0');
           setShiftDuration(`${diffHrs}h ${diffMins}m ${diffSecs}s`);
         } else {
           setShiftDuration('00h 00m 00s');
@@ -267,26 +295,20 @@ export const POSView: React.FC<POSViewProps> = ({
       toast.warning('Por favor selecciona una sucursal activa.');
       return;
     }
+    if (!selectedRegisterId) {
+      toast.warning('Por favor selecciona una caja registradora.');
+      return;
+    }
     try {
       const res = await openSession({
         branchId: branch,
-        openingBalance: parseFloat(openingBalance),
+        cashRegisterId: selectedRegisterId,
+        openingBalance: parseFloat(openingBalance || '0'),
       });
       setActiveSession(res);
       setIsAperturaModalOpen(false);
       toast.success('¡Caja registradora abierta con éxito!');
     } catch (err: any) {
-      // Si la sucursal ya tenía una caja abierta, sincronizarla inmediatamente al front
-      if (err.message && err.message.includes('Ya existe una caja abierta')) {
-        const active = await salesService.getActiveCashSession(branch);
-        if (active) {
-          setActiveSession(active);
-          queryClient.setQueryData(['active-cash-session', branch], active);
-          setIsAperturaModalOpen(false);
-          toast.info(`Se sincronizó la caja abierta activa de esta sucursal.`);
-          return;
-        }
-      }
       toast.error(err.message || 'Error al abrir la caja.');
     }
   };
@@ -870,7 +892,7 @@ export const POSView: React.FC<POSViewProps> = ({
             <span className={`w-1.5 h-1.5 rounded-full ${activeSession ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
             <span>
               {activeSession 
-                ? `Caja Abierta: ${shiftDuration}${activeSession.user?.name ? ` (${activeSession.user.name})` : ''}` 
+                ? `${activeSession.cashRegisterName || activeSession.cashRegister?.name || 'Caja'} Abierta: ${shiftDuration} (${activeSession.openedByName || currentUser?.name || activeSession.user?.name || 'Vendedor'})` 
                 : 'Caja Cerrada'}
             </span>
           </div>
@@ -914,8 +936,24 @@ export const POSView: React.FC<POSViewProps> = ({
             </>
           ) : (
             <button
-              onClick={() => setIsAperturaModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs font-semibold text-emerald-500 hover:bg-emerald-500/20 transition-all cursor-pointer shadow-sm"
+              onClick={() => {
+                if (role !== 'OWNER' && availableRegistersForUser.length === 0) {
+                  toast.error('No tienes ninguna caja registradora asignada para operar. Contacta a un administrador.');
+                  return;
+                }
+                setIsAperturaModalOpen(true);
+              }}
+              disabled={role !== 'OWNER' && availableRegistersForUser.length === 0}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shadow-sm ${
+                role !== 'OWNER' && availableRegistersForUser.length === 0
+                  ? 'bg-neutral/10 border border-neutral/20 text-neutral cursor-not-allowed opacity-60'
+                  : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/20 cursor-pointer'
+              }`}
+              title={
+                role !== 'OWNER' && availableRegistersForUser.length === 0
+                  ? 'No tienes cajas registradoras asignadas'
+                  : 'Abrir turno en caja'
+              }
             >
               <Wallet className="w-3.5 h-3.5" />
               <span>Apertura de Caja</span>
@@ -1479,6 +1517,10 @@ export const POSView: React.FC<POSViewProps> = ({
           onClose={() => setIsAperturaModalOpen(false)}
           openingBalance={openingBalance}
           setOpeningBalance={setOpeningBalance}
+          availableRegisters={availableRegistersForUser}
+          selectedRegisterId={selectedRegisterId}
+          setSelectedRegisterId={setSelectedRegisterId}
+          isSingleAssigned={availableRegistersForUser.length === 1}
           onOpenSession={handleOpenSession}
           isOpening={isOpening}
         />

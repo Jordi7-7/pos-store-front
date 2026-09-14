@@ -131,6 +131,7 @@ export interface Sale {
 
 export interface OpenCashSessionInput {
   branchId: string;
+  cashRegisterId: string;
   openingBalance: number;
 }
 
@@ -189,8 +190,12 @@ export const salesService = {
     return apiClient.post<any>('/sales/expenses', input);
   },
 
-  getActiveCashSession: async (branchId?: string): Promise<any> => {
-    const url = branchId ? `/sales/cash-sessions/active?branchId=${branchId}` : '/sales/cash-sessions/active';
+  getActiveCashSession: async (branchId?: string, cashRegisterId?: string): Promise<any> => {
+    const params = new URLSearchParams();
+    if (branchId) params.append('branchId', branchId);
+    if (cashRegisterId) params.append('cashRegisterId', cashRegisterId);
+    const queryString = params.toString();
+    const url = queryString ? `/sales/cash-sessions/active?${queryString}` : '/sales/cash-sessions/active';
     return apiClient.get<any>(url);
   },
 

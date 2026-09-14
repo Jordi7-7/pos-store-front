@@ -9,11 +9,11 @@ import {
   Image as ImageIcon,
   LogOut,
   ShieldCheck,
-  Lock,
   Settings,
   BarChart3,
   Contact,
-  History
+  History,
+  CreditCard
 } from "lucide-react"
 
 import {
@@ -37,7 +37,7 @@ import {
 import { APP_PERMISSIONS } from "@/constants/permissions"
 
 export function AppSidebar() {
-  const { user, role, roleName, activeTab, setActiveTab, logout, lockScreen, publicTenant, can } = useAuthStore()
+  const { user, role, roleName, activeTab, setActiveTab, logout, publicTenant, can } = useAuthStore()
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: APP_PERMISSIONS.VIEW_DASHBOARD },
@@ -47,6 +47,7 @@ export function AppSidebar() {
     { id: 'purchases', label: 'Ingresos de Mercancía', icon: Truck, permission: APP_PERMISSIONS.VIEW_PURCHASES },
     { id: 'customers', label: 'Directorio de Clientes', icon: Contact, permission: APP_PERMISSIONS.VIEW_CUSTOMERS },
     { id: 'cash-sessions', label: 'Historial de Cajas', icon: History, permission: APP_PERMISSIONS.VIEW_CASH_SESSIONS },
+    { id: 'cash-registers', label: 'Cajas Registradoras', icon: CreditCard, permission: APP_PERMISSIONS.VIEW_CASH_REGISTERS },
     { id: 'reports', label: 'Reportes y Utilidades', icon: BarChart3, permission: APP_PERMISSIONS.VIEW_REPORTS },
     { id: 'users', label: 'Personal y Roles', icon: Users, permission: APP_PERMISSIONS.VIEW_USERS },
     { id: 'media', label: 'Multimedia / Galería', icon: ImageIcon, permission: APP_PERMISSIONS.VIEW_MEDIA },
@@ -131,25 +132,13 @@ export function AppSidebar() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
-          {role === 'CASHIER' && (
-            <button 
-              onClick={lockScreen}
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-zinc-800/80 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer"
-            >
-              <Lock className="w-3.5 h-3.5 shrink-0" />
-              <span className="group-data-[collapsible=icon]:hidden">Bloquear Caja</span>
-            </button>
-          )}
-
-          <button 
-            onClick={logout}
-            className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer"
-          >
-            <LogOut className="w-3.5 h-3.5 shrink-0" />
-            <span className="group-data-[collapsible=icon]:hidden">Cerrar Sesión de Admin</span>
-          </button>
-        </div>
+        <button 
+          onClick={logout}
+          className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer"
+        >
+          <LogOut className="w-3.5 h-3.5 shrink-0" />
+          <span className="group-data-[collapsible=icon]:hidden">Cerrar Sesión</span>
+        </button>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

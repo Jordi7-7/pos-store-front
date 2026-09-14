@@ -22,28 +22,28 @@ import { TenantSettings } from '../modules/dashboard/components/TenantSettings';
 import { ReportsView } from '../modules/reports/components/ReportsView';
 import { CustomersView } from '../modules/customers/components/CustomersView';
 import { CashSessionsHistoryView } from '../modules/cash-sessions/components/CashSessionsHistoryView';
+import { CashRegistersView } from '../modules/cash-registers/components/CashRegistersView';
+import { useMyCashRegisters } from '../modules/cash-registers/hooks/useCashRegisters';
 
-import { Building, ChevronDown } from 'lucide-react';
+import { Building, ChevronDown, CreditCard } from 'lucide-react';
 
 export const MainLayout: React.FC = () => {
-  const { user, activeTab, selectedBranchId, setSelectedBranchId, fetchProfile, accessToken } = useAuthStore();
-
-  const hasFetchedProfileRef = React.useRef(false);
-
-  // Load real-time profile configuration (timezone/tenant info) once per session mount
-  React.useEffect(() => {
-    if (accessToken && !hasFetchedProfileRef.current) {
-      hasFetchedProfileRef.current = true;
-      fetchProfile();
-    }
-  }, [accessToken, fetchProfile]);
-
-
+  const {
+    user,
+    activeTab,
+    selectedBranchId,
+    setSelectedBranchId,
+    selectedCashRegisterId,
+    setSelectedCashRegisterId,
+  } = useAuthStore();
 
   // TanStack Query Hooks for layout contexts (Lazy loaded based on activeTab)
   const { branches } = useBranches();
   const { sales } = useSales({ enabled: activeTab === 'dashboard' });
   const { suppliers } = useSuppliers({ enabled: activeTab === 'dashboard' || activeTab === 'purchases' });
+
+  // Cash registers authorized for this branch and user
+  const { myCashRegisters: availableRegisters } = useMyCashRegisters(selectedBranchId || undefined);
 
   // Media upload shared context hook (only fetch images when on media, products or dashboard tabs)
   const { uploadImage, uploadImageByUrl, isUploading, deleteImage, isDeleting, isLoading: isLoadingMedia, uploadedImages } = useMediaUpload({
@@ -54,8 +54,24 @@ export const MainLayout: React.FC = () => {
   const [activeSession, setActiveSession] = useState<any>(null); 
   const [localExpenses, setLocalExpenses] = useState<any[]>([]);
 
-  const { activeSession: fetchedSession } = useActiveCashSession(selectedBranchId || undefined);
+  const { activeSession: fetchedSession } = useActiveCashSession(
+    selectedBranchId || undefined,
+    selectedCashRegisterId || undefined
+  );
   const { expenses: fetchedExpenses } = useExpenses({ branchId: selectedBranchId || undefined });
+
+  // Auto-sync selectedCashRegisterId when registers change
+  React.useEffect(() => {
+    if (availableRegisters && availableRegisters.length > 0) {
+      if (!selectedCashRegisterId || !availableRegisters.some((r) => r.id === selectedCashRegisterId)) {
+        setSelectedCashRegisterId(availableRegisters[0].id);
+      }
+    } else if (availableRegisters && availableRegisters.length === 0) {
+      if (selectedCashRegisterId) {
+        setSelectedCashRegisterId(null);
+      }
+    }
+  }, [availableRegisters, selectedCashRegisterId, setSelectedCashRegisterId]);
 
   // Sync activeSession with backend query
   React.useEffect(() => {
@@ -129,6 +145,7 @@ export const MainLayout: React.FC = () => {
     { id: 'reports', label: 'Reportes y Utilidades' },
     { id: 'customers', label: 'Directorio de Clientes' },
     { id: 'cash-sessions', label: 'Historial de Cajas' },
+    { id: 'cash-registers', label: 'Cajas Registradoras' },
     { id: 'tenant-settings', label: 'Configuración' },
   ];
 
@@ -154,16 +171,47 @@ export const MainLayout: React.FC = () => {
 
               <div className="flex items-center gap-3">
                 {/* Branch Selector */}
-                {branches && branches.length > 0 && (
+                {(() => {
+                  const allowedBranches = branches && branches.length > 0
+                    ? (user?.branchIds && user.branchIds.length > 0
+                        ? branches.filter(b => user.branchIds!.includes(b.id))
+                        : branches)
+                    : [];
+
+                  if (allowedBranches.length === 0) return null;
+
+                  return (
+                    <div className="flex items-center gap-2 bg-bg-dark border border-border-card rounded-xl px-3 py-1">
+                      <Building className="w-3.5 h-3.5 text-neutral" />
+                      <select
+                        value={selectedBranchId || ''}
+                        onChange={(e) => setSelectedBranchId(e.target.value)}
+                        disabled={allowedBranches.length === 1}
+                        className="bg-transparent text-xs text-secondary font-semibold focus:outline-none cursor-pointer disabled:cursor-default"
+                      >
+                        {allowedBranches.map(b => (
+                          <option key={b.id} value={b.id} className="bg-bg-card text-secondary">{b.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  );
+                })()}
+
+                {/* Cash Register Selector / Indicator */}
+                {availableRegisters && availableRegisters.length > 0 && (
                   <div className="flex items-center gap-2 bg-bg-dark border border-border-card rounded-xl px-3 py-1">
-                    <Building className="w-3.5 h-3.5 text-neutral" />
+                    <CreditCard className="w-3.5 h-3.5 text-neutral" />
                     <select
-                      value={selectedBranchId || ''}
-                      onChange={(e) => setSelectedBranchId(e.target.value)}
-                      className="bg-transparent text-xs text-secondary font-semibold focus:outline-none cursor-pointer"
+                      value={selectedCashRegisterId || ''}
+                      onChange={(e) => setSelectedCashRegisterId(e.target.value)}
+                      disabled={availableRegisters.length === 1}
+                      className="bg-transparent text-xs text-secondary font-semibold focus:outline-none cursor-pointer disabled:cursor-default"
+                      title={availableRegisters.length === 1 ? 'Caja asignada única' : 'Seleccionar caja registradora'}
                     >
-                      {branches.map(b => (
-                        <option key={b.id} value={b.id} className="bg-bg-card text-secondary">{b.name}</option>
+                      {availableRegisters.map((reg) => (
+                        <option key={reg.id} value={reg.id} className="bg-bg-card text-secondary">
+                          {reg.name} {reg.isOpen ? '🟢' : '⚪'}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -180,9 +228,9 @@ export const MainLayout: React.FC = () => {
                   <div className={`w-2 h-2 rounded-full ${activeSession ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
                   <span className="text-neutral font-medium">
                     Caja: <span className="text-secondary font-bold">{activeSession ? 'ABIERTA' : 'CERRADA'}</span>
-                    {activeSession?.user?.name && (
+                    {(activeSession?.openedByName || activeSession?.user?.name) && (
                       <span className="text-[11px] text-neutral font-normal ml-1">
-                        ({activeSession.user.name.split(' ')[0]})
+                        ({(activeSession.openedByName || activeSession.user.name).split(' ')[0]})
                       </span>
                     )}
                   </span>
@@ -253,6 +301,10 @@ export const MainLayout: React.FC = () => {
 
               {activeTab === 'cash-sessions' && (
                 <CashSessionsHistoryView />
+              )}
+
+              {activeTab === 'cash-registers' && (
+                <CashRegistersView />
               )}
 
               {activeTab === 'tenant-settings' && (

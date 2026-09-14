@@ -4,10 +4,20 @@ import { authService, type PublicTenantResponse, type OnboardPayload } from '../
 
 export type PublicTenant = PublicTenantResponse;
 
+export interface AssignedCashRegister {
+  id: string;
+  name: string;
+  code: number;
+  branchId: string;
+}
+
 interface User {
+  id: string;
   name: string;
   email: string;
   timezone?: string;
+  branchIds?: string[];
+  cashRegisters?: AssignedCashRegister[];
 }
 
 interface AuthState {
@@ -24,8 +34,12 @@ interface AuthState {
   permissions: string[];
   timezone: string | null;
   user: User | null;
+  branchIds: string[];
+  cashRegisters: AssignedCashRegister[];
   activeTab: string;
   isAuthenticated: boolean;
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
 
   // Actions & Helpers
   can: (permission: string) => boolean;
@@ -40,8 +54,12 @@ interface AuthState {
   setActiveTab: (tab: string) => void;
   selectedBranchId: string | null;
   setSelectedBranchId: (branchId: string | null) => void;
+  selectedCashRegisterId: string | null;
+  setSelectedCashRegisterId: (registerId: string | null) => void;
   fetchProfile: () => Promise<boolean>;
 }
+
+let inFlightProfilePromise: Promise<boolean> | null = null;
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -59,21 +77,27 @@ export const useAuthStore = create<AuthState>()(
       permissions: [],
       timezone: null,
       user: null,
+      branchIds: [],
+      cashRegisters: [],
       activeTab: 'dashboard',
       isAuthenticated: false,
+      _hasHydrated: false,
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
 
       selectedBranchId: null,
+      selectedCashRegisterId: null,
+      setSelectedCashRegisterId: (registerId) => set({ selectedCashRegisterId: registerId }),
 
       can: (permission: string) => {
         const state = get();
-        if (!state.isAuthenticated) return false;
+        if (!state.accessToken || !state.user) return false;
         if (state.role === 'OWNER' || state.permissions.includes('*')) return true;
         return state.permissions.includes(permission);
       },
 
       canAny: (perms: string[]) => {
         const state = get();
-        if (!state.isAuthenticated) return false;
+        if (!state.accessToken || !state.user) return false;
         if (state.role === 'OWNER' || state.permissions.includes('*')) return true;
         return perms.some((p) => state.permissions.includes(p));
       },
@@ -117,26 +141,28 @@ export const useAuthStore = create<AuthState>()(
             tenantSlug: effectiveSlug,
           });
 
-          const isPosAdmin = response.user.role === 'OWNER' || response.user.role === 'ADMIN';
+          if (!response || !response.accessToken) {
+            return false;
+          }
 
           set({
             accessToken: response.accessToken,
             refreshToken: response.refreshToken,
-            tenantId: response.user.tenantId,
             tenantSlug: effectiveSlug || state.tenantSlug,
-            role: response.user.role,
-            roleId: response.user.roleId || null,
-            roleName: response.user.roleName || response.user.role,
-            permissions: response.user.permissions || [],
-            timezone: response.user.timezone || 'America/Guayaquil',
-            user: {
-              name: response.user.name,
-              email: response.user.email,
-              timezone: response.user.timezone,
-            },
-            isAuthenticated: true,
+          });
+
+          const profileOk = await get().fetchProfile();
+          if (!profileOk) {
+            get().logout();
+            return false;
+          }
+
+          const currentRole = get().role;
+          const isPosAdmin = currentRole === 'OWNER' || currentRole === 'ADMIN';
+          set({
             activeTab: isPosAdmin && targetWorkflow === 'admin' ? 'dashboard' : 'pos',
           });
+
           return true;
         } catch (error) {
           console.error('Error de login en backend:', error);
@@ -159,21 +185,16 @@ export const useAuthStore = create<AuthState>()(
             set({
               accessToken: response.accessToken,
               refreshToken: response.refreshToken,
-              tenantId: response.user.tenantId,
               tenantSlug: effectiveSlug || state.tenantSlug,
-              role: response.user.role,
-              roleId: response.user.roleId || null,
-              roleName: response.user.roleName || response.user.role,
-              permissions: response.user.permissions || [],
-              timezone: response.user.timezone || 'America/Guayaquil',
-              user: {
-                name: response.user.name,
-                email: response.user.email,
-                timezone: response.user.timezone,
-              },
-              isAuthenticated: true,
-              activeTab: 'pos',
             });
+
+            const profileOk = await get().fetchProfile();
+            if (!profileOk) {
+              get().logout();
+              return 'INVALID';
+            }
+
+            set({ activeTab: 'pos' });
             return 'SUCCESS';
           }
           return 'INVALID';
@@ -195,7 +216,6 @@ export const useAuthStore = create<AuthState>()(
           roleName: null,
           permissions: [],
           user: null,
-          isAuthenticated: false,
         });
       },
 
@@ -220,15 +240,15 @@ export const useAuthStore = create<AuthState>()(
             set({
               accessToken: response.accessToken,
               refreshToken: response.refreshToken,
-              tenantId: response.user.tenantId,
-              role: response.user.role,
-              user: {
-                name: response.user.name,
-                email: response.user.email,
-              },
-              isAuthenticated: true,
-              activeTab: 'dashboard',
             });
+
+            const profileOk = await get().fetchProfile();
+            if (!profileOk) {
+              get().logout();
+              return false;
+            }
+
+            set({ activeTab: 'dashboard' });
             return true;
           }
           return false;
@@ -239,6 +259,9 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        // Notificar al backend de forma asíncrona (fire & forget) para revocar refresh_token en Redis
+        authService.logout().catch(() => {});
+
         set({
           accessToken: null,
           refreshToken: null,
@@ -247,50 +270,69 @@ export const useAuthStore = create<AuthState>()(
           roleName: null,
           permissions: [],
           user: null,
-          isAuthenticated: false,
           activeTab: 'dashboard',
           selectedBranchId: null,
+          selectedCashRegisterId: null,
         });
       },
 
       fetchProfile: async () => {
-        const state = get();
-        const token = state.accessToken;
-        if (!token) return false;
-        try {
-          const profile = await authService.getProfile();
-          set({
-            timezone: profile.tenant.timezone || 'America/Guayaquil',
-            role: profile.role,
-            roleId: profile.roleId || null,
-            roleName: profile.roleName || profile.role,
-            permissions: profile.permissions || [],
-            publicTenant: profile.tenant
-              ? {
-                  id: profile.tenant.id,
-                  name: profile.tenant.name,
-                  ruc: profile.tenant.ruc,
-                  slug: profile.tenant.slug,
-                  logoUrl: profile.tenant.logoUrl,
-                  country: profile.tenant.country || 'EC',
-                  currencyCode: profile.tenant.currencyCode || 'USD',
-                  currencySymbol: profile.tenant.currencySymbol || '$',
-                  timezone: profile.tenant.timezone || 'America/Guayaquil',
-                }
-              : state.publicTenant,
-            tenantSlug: profile.tenant?.slug || state.tenantSlug,
-            user: {
-              name: profile.name,
-              email: profile.email,
-              timezone: profile.tenant.timezone,
-            },
-          });
-          return true;
-        } catch (error) {
-          console.error('Error fetching user profile:', error);
-          set({ isAuthenticated: false, accessToken: null, user: null });
-          return false;
+        if (inFlightProfilePromise) {
+          return inFlightProfilePromise;
         }
+
+        inFlightProfilePromise = (async () => {
+          const state = get();
+          const token = state.accessToken;
+          if (!token) return false;
+          try {
+            const profile = await authService.getProfile();
+            set({
+              tenantId: profile.tenant?.id || state.tenantId,
+              timezone: profile.tenant.timezone || 'America/Guayaquil',
+              role: profile.role,
+              roleId: profile.roleId || null,
+              roleName: profile.roleName || profile.role,
+              permissions: profile.permissions || [],
+              branchIds: profile.branchIds || [],
+              cashRegisters: profile.cashRegisters || [],
+              selectedBranchId: (profile.branchIds && profile.branchIds.length === 1) ? profile.branchIds[0] : (state.selectedBranchId || null),
+              selectedCashRegisterId: (profile.cashRegisters && profile.cashRegisters.length === 1) ? profile.cashRegisters[0].id : (state.selectedCashRegisterId || null),
+              publicTenant: profile.tenant
+                ? {
+                    id: profile.tenant.id,
+                    name: profile.tenant.name,
+                    ruc: profile.tenant.ruc,
+                    slug: profile.tenant.slug,
+                    logoUrl: profile.tenant.logoUrl,
+                    country: profile.tenant.country || 'EC',
+                    currencyCode: profile.tenant.currencyCode || 'USD',
+                    currencySymbol: profile.tenant.currencySymbol || '$',
+                    timezone: profile.tenant.timezone || 'America/Guayaquil',
+                  }
+                : state.publicTenant,
+              tenantSlug: profile.tenant?.slug || state.tenantSlug,
+              user: {
+                id: profile.id,
+                name: profile.name,
+                email: profile.email,
+                timezone: profile.tenant.timezone,
+                branchIds: profile.branchIds || [],
+                cashRegisters: profile.cashRegisters || [],
+              },
+              isAuthenticated: true,
+            });
+            return true;
+          } catch (error) {
+            console.error('Error fetching user profile (token inválido o expirado):', error);
+            get().logout();
+            return false;
+          } finally {
+            inFlightProfilePromise = null;
+          }
+        })();
+
+        return inFlightProfilePromise;
       },
 
       setActiveTab: (tab) => set({ activeTab: tab }),
@@ -298,6 +340,9 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'aura-pos-auth',
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
       partialize: (state) => ({
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
@@ -309,8 +354,11 @@ export const useAuthStore = create<AuthState>()(
         roleName: state.roleName,
         permissions: state.permissions,
         user: state.user,
+        branchIds: state.branchIds,
+        cashRegisters: state.cashRegisters,
         timezone: state.timezone,
         selectedBranchId: state.selectedBranchId,
+        selectedCashRegisterId: state.selectedCashRegisterId,
         activeTab: state.activeTab,
         isAuthenticated: state.isAuthenticated,
       }),
