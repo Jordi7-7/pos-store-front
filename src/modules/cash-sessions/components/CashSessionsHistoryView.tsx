@@ -66,17 +66,49 @@ export const CashSessionsHistoryView: React.FC = () => {
 
   // Calculations for modal summary KPIs
   const financialSummary = useMemo(() => {
-    if (!details) return { totalSales: 0, totalExpenses: 0, totalRefunds: 0, expected: 0 };
-    const salesSum = details.sales.reduce((sum: number, sale: any) => {
-      if (sale.status === 'REFUNDED') return sum;
-      return sum + Number(sale.total || 0);
-    }, 0);
+    if (!details) return { totalSales: 0, cashSales: 0, cardSales: 0, totalExpenses: 0, totalRefunds: 0, expected: 0 };
+    
+    let totalSales = 0;
+    let cashSales = 0;
+    let cardSales = 0;
+
+    details.sales.forEach((sale: any) => {
+      if (sale.status === 'REFUNDED') return;
+      const saleTotal = Number(sale.total || 0);
+      totalSales += saleTotal;
+
+      const payments = sale.payments || [];
+      if (!payments.length) {
+        if (sale.paymentMethod === 'TARJETA') {
+          cardSales += saleTotal;
+        } else {
+          cashSales += saleTotal;
+        }
+      } else {
+        payments.forEach((p: any) => {
+          const amt = Number(p.amount || 0);
+          const cleanAmt = Math.min(amt, saleTotal);
+          if (p.paymentMethod === 'TARJETA') {
+            cardSales += cleanAmt;
+          } else if (p.paymentMethod === 'EFECTIVO') {
+            cashSales += cleanAmt;
+          }
+        });
+      }
+    });
+
     const expensesSum = details.expenses.reduce((sum: number, exp: any) => sum + Number(exp.amount || 0), 0);
     const refundsSum = details.refunds.reduce((sum: number, ref: any) => sum + Number(ref.totalRefunded || 0), 0);
-    const expected = Number(details.session.openingBalance || 0) + salesSum - expensesSum - refundsSum;
+    
+    // Si el backend ya guardó expectedBalance al cerrar, usarlo directamente; si no, calcularlo con ventas en efectivo
+    const expected = details.session.expectedBalance !== null && details.session.expectedBalance !== undefined
+      ? Number(details.session.expectedBalance)
+      : Number(details.session.openingBalance || 0) + cashSales - expensesSum - refundsSum;
 
     return {
-      totalSales: salesSum,
+      totalSales,
+      cashSales,
+      cardSales,
       totalExpenses: expensesSum,
       totalRefunds: refundsSum,
       expected
@@ -212,8 +244,13 @@ export const CashSessionsHistoryView: React.FC = () => {
                   <span className="text-sm font-bold text-secondary font-mono whitespace-nowrap mt-1">${Number(details.session.openingBalance).toFixed(2)}</span>
                 </div>
                 <div className="flex-1 min-w-[140px] p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl flex flex-col justify-between min-h-[64px]">
-                  <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider block">Ventas (+)</span>
-                  <span className="text-sm font-bold text-emerald-600 font-mono whitespace-nowrap mt-1">${financialSummary.totalSales.toFixed(2)}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider block">Ventas Efec (+)</span>
+                    {financialSummary.cardSales > 0 && (
+                      <span className="text-[9px] text-neutral font-mono">Tarj: ${financialSummary.cardSales.toFixed(2)}</span>
+                    )}
+                  </div>
+                  <span className="text-sm font-bold text-emerald-600 font-mono whitespace-nowrap mt-1">${financialSummary.cashSales.toFixed(2)}</span>
                 </div>
                 <div className="flex-1 min-w-[140px] p-3 bg-rose-500/5 border border-rose-500/10 rounded-xl flex flex-col justify-between min-h-[64px]">
                   <span className="text-[10px] text-rose-500 font-bold uppercase tracking-wider block">Gastos (-)</span>
@@ -230,22 +267,34 @@ export const CashSessionsHistoryView: React.FC = () => {
               </div>
 
               {/* Box close balance information if closed */}
-              {details.session.status === 'CLOSED' && (
-                <div className={`mt-3 p-4 rounded-xl border flex items-center justify-between text-xs font-semibold ${
-                  Math.abs(Number(details.session.closingBalance || 0) - financialSummary.expected) < 0.05
-                    ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-600'
-                    : 'bg-rose-500/5 border-rose-500/10 text-rose-500'
-                }`}>
-                  <span>Cierre Registrado: ${Number(details.session.closingBalance).toFixed(2)}</span>
-                  <span>
-                    Diferencia / Arqueo: {
-                      (Number(details.session.closingBalance || 0) - financialSummary.expected) >= 0 
-                        ? `Sobran $${(Number(details.session.closingBalance || 0) - financialSummary.expected).toFixed(2)}`
-                        : `Faltan $${Math.abs(Number(details.session.closingBalance || 0) - financialSummary.expected).toFixed(2)}`
-                    }
-                  </span>
-                </div>
-              )}
+              {details.session.status === 'CLOSED' && (() => {
+                const closingBal = Number(details.session.closingBalance || 0);
+                const diff = details.session.difference !== null && details.session.difference !== undefined
+                  ? Number(details.session.difference)
+                  : Math.round((closingBal - financialSummary.expected) * 100) / 100;
+                const isBalanced = Math.abs(diff) < 0.05;
+
+                return (
+                  <div className={`mt-3 p-4 rounded-xl border flex items-center justify-between text-xs font-semibold ${
+                    isBalanced
+                      ? 'bg-emerald-500/5 border-emerald-500/10 text-emerald-600'
+                      : diff > 0 
+                        ? 'bg-blue-500/5 border-blue-500/10 text-blue-500'
+                        : 'bg-rose-500/5 border-rose-500/10 text-rose-500'
+                  }`}>
+                    <span>Cierre Registrado: ${closingBal.toFixed(2)}</span>
+                    <span>
+                      Diferencia / Arqueo: {
+                        isBalanced 
+                          ? 'Exacto (Sin diferencia)' 
+                          : diff > 0 
+                            ? `Sobran $${diff.toFixed(2)}` 
+                            : `Faltan $${Math.abs(diff).toFixed(2)}`
+                      }
+                    </span>
+                  </div>
+                );
+              })()}
 
               {/* Internal Tab Links */}
               <div className="flex gap-2 border-b border-border mt-6 pb-2">

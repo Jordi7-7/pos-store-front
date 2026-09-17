@@ -259,9 +259,9 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        // Notificar al backend de forma asíncrona (fire & forget) para revocar refresh_token en Redis
-        authService.logout().catch(() => {});
+        const { accessToken } = get();
 
+        // Limpiar estado de autenticación inmediatamente
         set({
           accessToken: null,
           refreshToken: null,
@@ -273,7 +273,13 @@ export const useAuthStore = create<AuthState>()(
           activeTab: 'dashboard',
           selectedBranchId: null,
           selectedCashRegisterId: null,
+          isAuthenticated: false,
         });
+
+        // Solo notificar al backend si efectivamente había un token antes de limpiar
+        if (accessToken) {
+          authService.logout().catch(() => {});
+        }
       },
 
       fetchProfile: async () => {

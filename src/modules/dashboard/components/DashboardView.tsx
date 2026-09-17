@@ -5,7 +5,6 @@ import {
   ShoppingCart, 
   Truck, 
   Vault, 
-  ArrowDownRight, 
   Layers 
 } from 'lucide-react';
 
@@ -13,16 +12,16 @@ interface DashboardViewProps {
   user: any;
   sales: any[];
   suppliers: any[];
-  localExpenses: any[];
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
   user,
   sales,
   suppliers,
-  localExpenses
 }) => {
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
+  const totalRevenue = sales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
+
   return (
     <div className="space-y-6">
       {/* Welcome message */}
@@ -66,16 +65,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         <div className="p-5 bg-bg-card border border-border-card rounded-2xl shadow-sm flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-[10px] text-neutral uppercase tracking-widest font-semibold">Gastos / Caja Chica</span>
+            <span className="text-[10px] text-neutral uppercase tracking-widest font-semibold">Ingresos Totales</span>
             <h3 className="text-2xl font-black text-secondary">
-              ${localExpenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}
+              ${totalRevenue.toFixed(2)}
             </h3>
-            <p className="text-[10px] text-amber-500 flex items-center gap-1 font-semibold">
-              <ArrowDownRight className="w-3.5 h-3.5 text-amber-500" /> Sesión en sucursal
+            <p className="text-[10px] text-emerald-500 flex items-center gap-1 font-semibold">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-500" /> Total facturado
             </p>
           </div>
-          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-            <Vault className="w-6 h-6 text-amber-600" />
+          <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+            <Vault className="w-6 h-6 text-emerald-600" />
           </div>
         </div>
       </div>

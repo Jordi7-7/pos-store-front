@@ -15,14 +15,16 @@ export const useCashSessionsList = (branchId?: string) => {
   };
 };
 
-export const useCashSessionDetailsQuery = (sessionId: string | null) => {
+export const useCashSessionDetailsQuery = (sessionId: string | null, options?: { enabled?: boolean }) => {
+  const isEnabled = options?.enabled !== undefined ? Boolean(options.enabled && sessionId) : !!sessionId;
+
   const { data: details = null, isLoading } = useQuery<CashSessionDetails | null>({
     queryKey: ['cash-session-details', sessionId],
     queryFn: () => {
       if (!sessionId) return Promise.resolve(null);
       return cashSessionsService.getCashSessionDetails(sessionId);
     },
-    enabled: !!sessionId,
+    enabled: isEnabled,
   });
 
   return {

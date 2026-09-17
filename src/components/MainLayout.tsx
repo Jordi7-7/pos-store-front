@@ -7,7 +7,7 @@ import { SidebarProvider, SidebarTrigger } from './ui/sidebar';
 import { TooltipProvider } from './ui/tooltip';
 import { AppSidebar } from './AppSidebar';
 
-import { useSales, useActiveCashSession, useExpenses } from '../modules/sales';
+import { useSales, useActiveCashSession } from '../modules/sales';
 import { useSuppliers } from '../modules/purchases';
 
 // Modular View Components
@@ -52,13 +52,11 @@ export const MainLayout: React.FC = () => {
 
   // Shared Petty Cash Session State
   const [activeSession, setActiveSession] = useState<any>(null); 
-  const [localExpenses, setLocalExpenses] = useState<any[]>([]);
 
   const { activeSession: fetchedSession } = useActiveCashSession(
     selectedBranchId || undefined,
     selectedCashRegisterId || undefined
   );
-  const { expenses: fetchedExpenses } = useExpenses({ branchId: selectedBranchId || undefined });
 
   // Auto-sync selectedCashRegisterId when registers change
   React.useEffect(() => {
@@ -79,21 +77,6 @@ export const MainLayout: React.FC = () => {
       setActiveSession(fetchedSession);
     }
   }, [fetchedSession]);
-
-  // Sync localExpenses with backend query
-  React.useEffect(() => {
-    if (fetchedExpenses) {
-      const mapped = fetchedExpenses.map((exp: any) => ({
-        id: exp.id,
-        desc: exp.description,
-        amount: Number(exp.amount),
-        category: exp.category,
-        cashSessionId: exp.cashSessionId,
-        createdAt: exp.createdAt
-      }));
-      setLocalExpenses(mapped);
-    }
-  }, [fetchedExpenses]);
 
   // Automatic Context Initialization
   React.useEffect(() => {
@@ -246,7 +229,6 @@ export const MainLayout: React.FC = () => {
                   user={user} 
                   sales={sales} 
                   suppliers={suppliers} 
-                  localExpenses={localExpenses} 
                 />
               )}
 
@@ -255,8 +237,6 @@ export const MainLayout: React.FC = () => {
                   selectedBranchId={selectedBranchId || ''} 
                   activeSession={activeSession} 
                   setActiveSession={setActiveSession} 
-                  localExpenses={localExpenses} 
-                  setLocalExpenses={setLocalExpenses} 
                 />
               )}
 

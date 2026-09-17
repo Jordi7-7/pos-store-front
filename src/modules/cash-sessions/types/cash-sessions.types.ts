@@ -116,6 +116,8 @@ export interface CashSessionHeader {
   userId: string;
   openingBalance: number;
   closingBalance: number | null;
+  expectedBalance: number | null;
+  difference: number | null;
   status: 'OPEN' | 'CLOSED';
   openedAt: string;
   closedAt: string | null;

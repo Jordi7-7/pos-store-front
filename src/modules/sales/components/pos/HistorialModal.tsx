@@ -309,9 +309,11 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
                     </span>
                   </div>
                   <div className="space-y-1">
-                    {refund.items.map((item) => (
+                    {(refund.items || []).map((item) => (
                       <div key={item.id} className="flex justify-between text-[9px] text-neutral">
-                        <span className="truncate">{item.variant.product.name} ({item.variant.sku})</span>
+                        <span className="truncate">
+                          {item.variant?.product?.name || 'Producto'} ({item.variant?.sku || 'N/A'})
+                        </span>
                         <span className="font-mono shrink-0 ml-2">
                           x{Number(item.quantity)} × ${Number(item.priceRefunded).toFixed(2)}
                         </span>
@@ -319,7 +321,7 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
                     ))}
                   </div>
                   <div className="flex justify-between items-end">
-                    <span className="text-[9px] text-neutral italic truncate max-w-[60%]">"{refund.reason}"</span>
+                    <span className="text-[9px] text-neutral italic truncate max-w-[60%]">"{refund.reason || 'Sin motivo'}"</span>
                   </div>
                 </div>
               ))

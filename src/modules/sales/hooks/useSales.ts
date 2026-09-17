@@ -120,9 +120,10 @@ export const useProcessSale = () => {
 export const useActiveCashSession = (branchId?: string, cashRegisterId?: string) => {
   const { isAuthenticated, user } = useAuthStore();
   const activeSessionQuery = useQuery({
-    queryKey: ['active-cash-session', user?.id, branchId, cashRegisterId],
+    queryKey: ['active-cash-session', user?.id, branchId, cashRegisterId || 'default'],
     queryFn: () => salesService.getActiveCashSession(branchId, cashRegisterId),
     enabled: isAuthenticated && !!branchId,
+    staleTime: 1000 * 30, // 30s cache to avoid rapid duplicate background re-fetches
   });
 
   return {

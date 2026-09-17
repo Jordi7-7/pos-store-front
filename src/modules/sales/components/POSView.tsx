@@ -65,8 +65,6 @@ interface POSViewProps {
   selectedBranchId: string;
   activeSession: any;
   setActiveSession: (session: any) => void;
-  localExpenses: any[];
-  setLocalExpenses: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
 interface CartItem {
@@ -91,18 +89,27 @@ export const POSView: React.FC<POSViewProps> = ({
   selectedBranchId,
   activeSession,
   setActiveSession,
-  localExpenses,
-  setLocalExpenses
 }) => {
   const { branches } = useBranches();
   const { customers } = useCustomers();
-  const { details: sessionDetails } = useCashSessionDetailsQuery(activeSession?.id || null);
+
+  // Modal Visibility states
+  const [isAperturaModalOpen, setIsAperturaModalOpen] = useState(false);
+  const [isEgresoModalOpen, setIsEgresoModalOpen] = useState(false);
+  const [isCierreModalOpen, setIsCierreModalOpen] = useState(false);
+  const [isHistorialModalOpen, setIsHistorialModalOpen] = useState(false);
+  const [isExchangeReturnModalOpen, setIsExchangeReturnModalOpen] = useState(false);
+
+  // Lazy-fetch session details only when Cierre or Historial modal is open
+  const isSessionDetailsNeeded = isCierreModalOpen || isHistorialModalOpen;
+  const { details: sessionDetails } = useCashSessionDetailsQuery(activeSession?.id || null, {
+    enabled: isSessionDetailsNeeded,
+  });
 
   // Search input selection
   const [searchTerm, setSearchTerm] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const paymentAmountInputRef = useRef<HTMLInputElement>(null);
-
 
   const { openSession, isOpening } = useOpenCashSession();
   const { closeSession, isClosing } = useCloseCashSession();
@@ -115,13 +122,6 @@ export const POSView: React.FC<POSViewProps> = ({
   const [expenseDesc, setExpenseDesc] = useState('');
   const [expenseAmount, setExpenseAmount] = useState('');
   const expenseCategory = 'Servicios';
-
-  // Modal Visibility states
-  const [isAperturaModalOpen, setIsAperturaModalOpen] = useState(false);
-  const [isEgresoModalOpen, setIsEgresoModalOpen] = useState(false);
-  const [isCierreModalOpen, setIsCierreModalOpen] = useState(false);
-  const [isHistorialModalOpen, setIsHistorialModalOpen] = useState(false);
-  const [isExchangeReturnModalOpen, setIsExchangeReturnModalOpen] = useState(false);
 
   // Cash Register selection state for aperture
   const { role, selectedCashRegisterId, setSelectedCashRegisterId } = useAuthStore();
@@ -421,7 +421,6 @@ export const POSView: React.FC<POSViewProps> = ({
       });
 
       setActiveSession(null);
-      setLocalExpenses([]);
       setIsCierreModalOpen(false);
 
       setClosingSessionToPrint(dataToPrint);
@@ -452,12 +451,6 @@ export const POSView: React.FC<POSViewProps> = ({
         amount: parseFloat(expenseAmount),
         category: expenseCategory
       });
-      setLocalExpenses([...localExpenses, {
-        id: Math.random().toString(),
-        desc: expenseDesc.trim(),
-        amount: parseFloat(expenseAmount),
-        category: expenseCategory
-      }]);
       setExpenseDesc('');
       setExpenseAmount('');
       setIsEgresoModalOpen(false);

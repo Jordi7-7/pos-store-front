@@ -47,7 +47,14 @@ interface SaleItemRow {
   price: number;          // unit price
   cost: number;
   discountAmount: number;
+  lineTotal?: number;
 }
+
+const getNetUnitPrice = (item: SaleItemRow): number => {
+  const qty = Number(item.quantity) || 1;
+  const disc = Number(item.discountAmount) || 0;
+  return Math.max(0, Number(item.price) - disc / qty);
+};
 
 interface NewExchangeItem {
   variantId: string;
@@ -170,7 +177,7 @@ export function ExchangeReturnModal({
       foundSale.items.every((item: SaleItemRow) => item.refundableQty === 0));
 
   const totalToReturn = selectedReturnItems.reduce(
-    (acc: number, item: SaleItemRow) => acc + item.price * (returnQtyMap[item.variantId] ?? 0),
+    (acc: number, item: SaleItemRow) => acc + getNetUnitPrice(item) * (returnQtyMap[item.variantId] ?? 0),
     0,
   );
 
@@ -457,12 +464,24 @@ export function ExchangeReturnModal({
                           <p className="text-[10px] text-muted-foreground">{item.attributes}</p>
                         )}
                         <p className="text-[10px] text-muted-foreground font-mono">{item.sku}</p>
-                        <p className="text-xs text-foreground font-semibold mt-0.5">
-                          {formatMoney(item.price)} × {item.quantity}
-                          {item.refundableQty < item.quantity && !isFullyRefunded && (
-                            <span className="text-muted-foreground font-normal"> (disponibles: {item.refundableQty})</span>
+                        <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                          <span className="text-xs text-foreground font-semibold">
+                            {formatMoney(getNetUnitPrice(item))} × {item.quantity}
+                          </span>
+                          {Number(item.discountAmount) > 0 && (
+                            <span className="text-[10px] text-muted-foreground line-through">
+                              {formatMoney(item.price)}
+                            </span>
                           )}
-                        </p>
+                          {Number(item.discountAmount) > 0 && (
+                            <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/15 text-emerald-500 font-medium">
+                              desc. -{formatMoney(Number(item.discountAmount))}
+                            </span>
+                          )}
+                          {item.refundableQty < item.quantity && !isFullyRefunded && (
+                            <span className="text-[11px] text-muted-foreground font-normal"> (disponibles: {item.refundableQty})</span>
+                          )}
+                        </div>
                       </div>
                       {/* Qty stepper — disabled entirely if no qty to refund */}
                       <div className="flex items-center gap-2 shrink-0">
@@ -568,7 +587,7 @@ export function ExchangeReturnModal({
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-xs text-muted-foreground">×{returnQtyMap[item.variantId]}</p>
-                      <p className="text-sm font-semibold text-rose-500">-{formatMoney(item.price * returnQtyMap[item.variantId])}</p>
+                      <p className="text-sm font-semibold text-rose-500">-{formatMoney(getNetUnitPrice(item) * returnQtyMap[item.variantId])}</p>
                     </div>
                   </div>
                 ))}
@@ -619,7 +638,7 @@ export function ExchangeReturnModal({
                       </div>
                       <div className="text-right">
                         <p className="text-[10px] text-muted-foreground">×{returnQtyMap[item.variantId]}</p>
-                        <p className="text-sm font-semibold text-rose-500">-{formatMoney(item.price * returnQtyMap[item.variantId])}</p>
+                        <p className="text-sm font-semibold text-rose-500">-{formatMoney(getNetUnitPrice(item) * returnQtyMap[item.variantId])}</p>
                       </div>
                     </div>
                   ))}

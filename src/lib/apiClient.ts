@@ -26,6 +26,7 @@ export const apiClient = {
         response.status === 401 &&
         !path.includes('/auth/login') &&
         !path.includes('/auth/pin-login') &&
+        !path.includes('/auth/logout') &&
         !path.includes('/tenants/public')
       ) {
         // Token expirado o inválido: Cerrar sesión
