@@ -52,5 +52,5 @@ export const productFormDefaults: ProductFormValues = {
   purchasePrice: 10.0,
   salePrice: 19.99,
   wholesalePrice: null,
-  initialStock: 50,
+  initialStock: 0,
 };

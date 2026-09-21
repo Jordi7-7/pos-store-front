@@ -6,7 +6,8 @@ import { StockAdjustmentForm } from './StockAdjustmentForm';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Package, ShoppingCart, Truck, ClipboardList, SlidersHorizontal } from 'lucide-react';
+import { Loader2, Package, ShoppingCart, Truck, ClipboardList, SlidersHorizontal, Barcode } from 'lucide-react';
+import { BarcodePrintModal, type BarcodeLabelItem } from './barcode-printer/BarcodePrintModal';
 import { usePermissions } from '@/hooks/usePermissions';
 import { APP_PERMISSIONS } from '@/constants/permissions';
 
@@ -27,10 +28,14 @@ function LoadingRows() {
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, isOpen, onClose, uploadedImages, selectedBranchId }) => {
   const { can } = usePermissions();
   const canAdjustStock = can(APP_PERMISSIONS.PRODUCTS_ADJUST_STOCK);
+  const canPrintBarcodes = can(APP_PERMISSIONS.PRODUCTS_PRINT_BARCODES);
 
   const [tab, setTab] = useState<TabName>('details');
   const [pages, setPages] = useState({ sales: 1, purchases: 1, movements: 1 });
   const [pageSize, setPageSize] = useState(10);
+
+  const [barcodeModalOpen, setBarcodeModalOpen] = useState(false);
+  const [barcodeQueue, setBarcodeQueue] = useState<BarcodeLabelItem[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -128,7 +133,32 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   <div className="rounded-lg border border-border overflow-hidden">
                     <div className="px-4 py-3 bg-muted/40 text-xs font-bold uppercase tracking-wide">Variantes y precios</div>
                     <div className="divide-y divide-border">
-                      {variants.map((variant) => <div key={variant.id || variant.sku} className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-3 text-xs"><span className="font-mono font-semibold text-primary">{variant.sku}</span><span className="text-muted-foreground">Compra ${Number(variant.purchasePrice || 0).toFixed(2)}</span><span>Venta ${Number(variant.salePrice || 0).toFixed(2)}</span><Badge variant="secondary">{variant.stocks?.find((stock) => stock.branchId === selectedBranchId)?.quantity || 0}</Badge></div>)}
+                      {variants.map((variant) => (
+                        <div key={variant.id || variant.sku} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-center px-4 py-3 text-xs">
+                          <span className="font-mono font-semibold text-primary">{variant.sku}</span>
+                          <span className="text-muted-foreground">Compra ${Number(variant.purchasePrice || 0).toFixed(2)}</span>
+                          <span className="font-bold">Venta ${Number(variant.salePrice || 0).toFixed(2)}</span>
+                          <Badge variant="secondary">{variant.stocks?.find((stock) => stock.branchId === selectedBranchId)?.quantity || 0} pzs</Badge>
+                          {canPrintBarcodes && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBarcodeQueue([{
+                                  sku: variant.sku || 'SIN-SKU',
+                                  name: detailProduct.name,
+                                  price: Number(variant.salePrice || 0),
+                                  quantity: 1,
+                                }]);
+                                setBarcodeModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg hover:bg-primary/10 text-primary transition-all cursor-pointer"
+                              title="Imprimir Código de Barras Térmico"
+                            >
+                              <Barcode className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </TabsContent>
@@ -162,6 +192,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
           </>
         )}
       </DialogContent>
+
+      <BarcodePrintModal
+        isOpen={barcodeModalOpen}
+        onClose={() => setBarcodeModalOpen(false)}
+        items={barcodeQueue}
+        onUpdateItems={setBarcodeQueue}
+      />
     </Dialog>
   );
 };

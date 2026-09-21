@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Package, Edit, Search } from 'lucide-react';
+import { Package, Edit, Search, Barcode, CheckSquare, Square } from 'lucide-react';
 import type { Product } from '../services/products.service';
 import { ProductEditDrawer } from './ProductEditDrawer';
 import { ProductDetailModal } from './ProductDetailModal';
+import { BarcodePrintModal, type BarcodeLabelItem } from './barcode-printer/BarcodePrintModal';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -53,11 +54,17 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
 }) => {
   const { can } = usePermissions();
   const canEdit = can(APP_PERMISSIONS.PRODUCTS_EDIT);
+  const canPrintBarcodes = can(APP_PERMISSIONS.PRODUCTS_PRINT_BARCODES);
 
   const [selectedProductToEdit, setSelectedProductToEdit] = useState<any | null>(null);
   const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
   const [searchInput, setSearchInput] = useState(search);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  // Estado para selección masiva de etiquetas: Guardar Map<productId, Product> para persistir entre búsquedas y páginas
+  const [selectedProductsMap, setSelectedProductsMap] = useState<Map<string, Product>>(new Map());
+  const [barcodeModalOpen, setBarcodeModalOpen] = useState(false);
+  const [barcodeQueue, setBarcodeQueue] = useState<BarcodeLabelItem[]>([]);
 
   const handleOpenEditDrawer = (product: any) => {
     if (!canEdit) return;
@@ -82,6 +89,94 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
     onPageChange(1);
   };
 
+  // Toggle selección de un producto: Guarda el objeto completo
+  const toggleSelectProduct = (product: Product, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setSelectedProductsMap((prev) => {
+      const next = new Map(prev);
+      if (next.has(product.id)) {
+        next.delete(product.id);
+      } else {
+        next.set(product.id, product);
+      }
+      return next;
+    });
+  };
+
+  // Toggle seleccionar todos los visibles en la página actual
+  const toggleSelectAllPage = () => {
+    const allCurrentPageSelected = products.length > 0 && products.every((p) => selectedProductsMap.has(p.id));
+    setSelectedProductsMap((prev) => {
+      const next = new Map(prev);
+      if (allCurrentPageSelected) {
+        products.forEach((p) => next.delete(p.id));
+      } else {
+        products.forEach((p) => next.set(p.id, p));
+      }
+      return next;
+    });
+  };
+
+  // Abrir modal de impresión con todos los productos seleccionados acumulados
+  const handleOpenMassPrint = () => {
+    const selectedProds = Array.from(selectedProductsMap.values());
+    const itemsToPrint: BarcodeLabelItem[] = [];
+
+    selectedProds.forEach((prod) => {
+      const variants = prod.variants && prod.variants.length > 0 ? prod.variants : [];
+      if (variants.length > 0) {
+        variants.forEach((v: any) => {
+          itemsToPrint.push({
+            sku: v.sku || 'SIN-SKU',
+            name: prod.name,
+            price: Number(v.salePrice || 0),
+            quantity: 1,
+          });
+        });
+      } else {
+        itemsToPrint.push({
+          sku: 'SIN-SKU',
+          name: prod.name,
+          price: 0,
+          quantity: 1,
+        });
+      }
+    });
+
+    setBarcodeQueue(itemsToPrint);
+    setBarcodeModalOpen(true);
+  };
+
+  // Imprimir un solo producto desde el botón de la fila
+  const handlePrintSingleProduct = (product: Product, event: React.MouseEvent) => {
+    event.stopPropagation();
+    const variants = product.variants && product.variants.length > 0 ? product.variants : [];
+    const itemsToPrint: BarcodeLabelItem[] = [];
+
+    if (variants.length > 0) {
+      variants.forEach((v: any) => {
+        itemsToPrint.push({
+          sku: v.sku || 'SIN-SKU',
+          name: product.name,
+          price: Number(v.salePrice || 0),
+          quantity: 1,
+        });
+      });
+    } else {
+      itemsToPrint.push({
+        sku: 'SIN-SKU',
+        name: product.name,
+        price: 0,
+        quantity: 1,
+      });
+    }
+
+    setBarcodeQueue(itemsToPrint);
+    setBarcodeModalOpen(true);
+  };
+
+  const isAllSelected = products.length > 0 && products.every((p) => selectedProductsMap.has(p.id));
+
   return (
     <Card className="border border-border/80 shadow-xs">
       <CardHeader>
@@ -91,30 +186,45 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
             <CardDescription className="text-xs">Visualiza y edita los productos de tu inventario.</CardDescription>
           </div>
 
-          <form onSubmit={handleSearchSubmit} className="flex gap-2 w-full md:max-w-md">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
-              <Input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Buscar por nombre, SKU o código de barras..."
-                className="pl-9 pr-8 text-xs h-9"
-              />
-              {searchInput && (
-                <button
-                  type="button"
-                  onClick={handleClearSearch}
-                  className="absolute right-3 top-2 text-xs text-muted-foreground hover:text-foreground font-bold"
-                >
-                  ×
-                </button>
-              )}
-            </div>
-            <Button type="submit" size="sm" className="text-xs h-9">
-              Buscar
-            </Button>
-          </form>
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            {/* Botón de impresión masiva cuando hay seleccionados */}
+            {canPrintBarcodes && selectedProductsMap.size > 0 && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleOpenMassPrint}
+                className="text-xs h-9 gap-1.5 font-bold bg-primary text-white shadow-sm cursor-pointer animate-fade-in"
+              >
+                <Barcode className="w-4 h-4" />
+                Imprimir Etiquetas ({selectedProductsMap.size})
+              </Button>
+            )}
+
+            <form onSubmit={handleSearchSubmit} className="flex gap-2 flex-1 md:w-80">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Buscar por nombre, SKU o código de barras..."
+                  className="pl-9 pr-8 text-xs h-9"
+                />
+                {searchInput && (
+                  <button
+                    type="button"
+                    onClick={handleClearSearch}
+                    className="absolute right-3 top-2 text-xs text-muted-foreground hover:text-foreground font-bold"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+              <Button type="submit" size="sm" className="text-xs h-9">
+                Buscar
+              </Button>
+            </form>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -148,7 +258,22 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead className="w-[80px]"></TableHead>
+                  {/* Checkbox para seleccionar todos */}
+                  <TableHead className="w-[40px] px-3">
+                    <button
+                      type="button"
+                      onClick={toggleSelectAllPage}
+                      className="text-muted-foreground hover:text-foreground cursor-pointer flex items-center justify-center"
+                      title={isAllSelected ? 'Deseleccionar todos en esta página' : 'Seleccionar todos en esta página'}
+                    >
+                      {isAllSelected ? (
+                        <CheckSquare className="w-4 h-4 text-primary" />
+                      ) : (
+                        <Square className="w-4 h-4" />
+                      )}
+                    </button>
+                  </TableHead>
+                  <TableHead className="w-[60px]"></TableHead>
                   <TableHead className="font-semibold text-xs">SKU</TableHead>
                   <TableHead className="font-semibold text-xs">Producto</TableHead>
                   <TableHead className="font-semibold text-xs">Cód. Barras</TableHead>
@@ -156,7 +281,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                   <TableHead className="font-semibold text-xs text-right">Venta</TableHead>
                   <TableHead className="font-semibold text-xs text-right">Precio Mayoreo</TableHead>
                   <TableHead className="font-semibold text-xs text-center">Stock Sucursal</TableHead>
-                  <TableHead className="w-[60px]"></TableHead>
+                  <TableHead className="w-[80px] text-center">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -168,9 +293,30 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                   const sku = defaultVariant?.sku ?? 'N/A';
                   const barcode = defaultVariant?.barcode ?? 'N/A';
                   const currentStock = defaultVariant?.stocks?.find(s => s.branchId === selectedBranchId)?.quantity ?? 0;
+                  const isSelected = selectedProductsMap.has(product.id);
 
                   return (
-                    <TableRow key={product.id} onClick={() => setSelectedProduct(product)} className="hover:bg-muted/30 cursor-pointer">
+                    <TableRow 
+                      key={product.id} 
+                      onClick={() => setSelectedProduct(product)} 
+                      className={`hover:bg-muted/30 cursor-pointer transition-colors ${
+                        isSelected ? 'bg-primary/5' : ''
+                      }`}
+                    >
+                      {/* Checkbox individual */}
+                      <TableCell className="py-2.5 px-3" onClick={(e) => toggleSelectProduct(product, e)}>
+                        <button
+                          type="button"
+                          className="text-muted-foreground hover:text-foreground cursor-pointer flex items-center justify-center"
+                        >
+                          {isSelected ? (
+                            <CheckSquare className="w-4 h-4 text-primary" />
+                          ) : (
+                            <Square className="w-4 h-4" />
+                          )}
+                        </button>
+                      </TableCell>
+
                       {/* Image Thumbnail */}
                       <TableCell className="py-2.5">
                         <div className="w-9 h-9 rounded-lg bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0">
@@ -192,8 +338,8 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                       {/* SKU */}
                       <TableCell className="py-2.5 font-mono text-[11px] text-primary font-bold">
                         {sku}
-
                       </TableCell>
+
                       {/* Product details */}
                       <TableCell className="py-2.5">
                         <div className="font-semibold text-xs text-foreground leading-tight truncate max-w-[200px]" title={product.name}>
@@ -242,19 +388,32 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
 
                       {/* Actions */}
                       <TableCell className="py-2.5 text-center">
-                        {canEdit ? (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(event) => { event.stopPropagation(); handleOpenEditDrawer(product); }}
-                            title="Editar Ficha de Producto"
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        ) : (
-                          <span className="text-muted-foreground/30 text-[11px]">—</span>
-                        )}
+                        <div className="flex items-center justify-center gap-1">
+                          {/* Botón imprimir etiqueta individual */}
+                          {canPrintBarcodes && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(event) => handlePrintSingleProduct(product, event)}
+                              title="Imprimir Código de Barras"
+                              className="h-8 w-8 text-primary hover:bg-primary/10 cursor-pointer"
+                            >
+                              <Barcode className="w-4 h-4" />
+                            </Button>
+                          )}
+
+                          {canEdit && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(event) => { event.stopPropagation(); handleOpenEditDrawer(product); }}
+                              title="Editar Ficha de Producto"
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -280,6 +439,14 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
         onClose={() => setSelectedProduct(null)}
         uploadedImages={uploadedImages}
         selectedBranchId={selectedBranchId}
+      />
+
+      {/* Modal de Impresión Térmica de Códigos de Barras */}
+      <BarcodePrintModal
+        isOpen={barcodeModalOpen}
+        onClose={() => setBarcodeModalOpen(false)}
+        items={barcodeQueue}
+        onUpdateItems={setBarcodeQueue}
       />
     </Card>
   );

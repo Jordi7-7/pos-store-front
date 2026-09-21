@@ -21,7 +21,7 @@ import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import {
   Search, Wallet, ArrowRightLeft, ArrowLeftRight, Receipt, X,
   ShoppingCart, Trash2, Minus, Plus, CreditCard, Loader2, Package,
-  Percent, DollarSign, Check, Banknote, Maximize2, Tag
+  Percent, DollarSign, Check, Banknote, Maximize2, Tag, CornerDownLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -657,47 +657,51 @@ export const POSView: React.FC<POSViewProps> = ({
     toast.info('Item removido del carrito.');
   };
 
+  const executeSearch = async () => {
+    const code = searchTerm.trim();
+    if (!code) return;
+
+    try {
+      const branch = selectedBranchId || (branches[0] && branches[0].id);
+      const res = await productsService.getPosVariantBySku(code, branch);
+      if (res && res.length > 0) {
+        if (res.length === 1) {
+          const singleRes = res[0];
+          const fakeProduct = {
+            id: singleRes.id,
+            name: singleRes.productName,
+          };
+          const fakeVariant = {
+            id: singleRes.id,
+            sku: singleRes.sku,
+            salePrice: Number(singleRes.salePrice || 0),
+            wholesalePrice: singleRes.wholesalePrice !== undefined && singleRes.wholesalePrice !== null ? Number(singleRes.wholesalePrice) : null,
+            attributeValues: singleRes.attributeValues || [],
+            imageUrl: singleRes.imageUrl,
+          };
+          const stockQty = Number(singleRes.stock || 0);
+          if (stockQty <= 0) {
+            toast.warning(`Aviso: El stock del producto "${singleRes.productName}" quedará en negativo (Stock disponible: ${stockQty} pzs.)`);
+          }
+          addVariantToCart(fakeProduct, fakeVariant, stockQty);
+          setSearchTerm('');
+        } else {
+          // Múltiples elementos encontrados
+          setSearchResults(res);
+          setShowSearchModal(true);
+        }
+      } else {
+        toast.error(`No se encontró ningún producto con el código: "${code}"`);
+      }
+    } catch (err) {
+      toast.error(`No se encontró ningún producto con el código: "${code}"`);
+    }
+  };
+
   const handleSearchKeyPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      const code = searchTerm.trim();
-      if (!code) return;
-
-      try {
-        const branch = selectedBranchId || (branches[0] && branches[0].id);
-        const res = await productsService.getPosVariantBySku(code, branch);
-        if (res && res.length > 0) {
-          if (res.length === 1) {
-            const singleRes = res[0];
-            const fakeProduct = {
-              id: singleRes.id,
-              name: singleRes.productName,
-            };
-            const fakeVariant = {
-              id: singleRes.id,
-              sku: singleRes.sku,
-              salePrice: Number(singleRes.salePrice || 0),
-              wholesalePrice: singleRes.wholesalePrice !== undefined && singleRes.wholesalePrice !== null ? Number(singleRes.wholesalePrice) : null,
-              attributeValues: singleRes.attributeValues || [],
-              imageUrl: singleRes.imageUrl,
-            };
-            const stockQty = Number(singleRes.stock || 0);
-            if (stockQty <= 0) {
-              toast.warning(`Aviso: El stock del producto "${singleRes.productName}" quedará en negativo (Stock disponible: ${stockQty} pzs.)`);
-            }
-            addVariantToCart(fakeProduct, fakeVariant, stockQty);
-            setSearchTerm('');
-          } else {
-            // Múltiples elementos encontrados
-            setSearchResults(res);
-            setShowSearchModal(true);
-          }
-        } else {
-          toast.error(`No se encontró ningún producto con el código: "${code}"`);
-        }
-      } catch (err) {
-        toast.error(`No se encontró ningún producto con el código: "${code}"`);
-      }
+      await executeSearch();
     }
   };
 
@@ -961,7 +965,7 @@ export const POSView: React.FC<POSViewProps> = ({
         <div className="lg:col-span-3 min-h-0 space-y-4 bg-bg-card border border-border-card rounded-2xl p-5 shadow-sm flex flex-col">
 
           {/* Barcode Search Header with Shift menu */}
-          <div className="flex gap-3 items-center justify-between border-b border-border-card pb-4">
+          <div className="flex gap-2 items-center justify-between border-b border-border-card pb-4">
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-3 w-4 h-4 text-neutral" />
               <input
@@ -975,6 +979,17 @@ export const POSView: React.FC<POSViewProps> = ({
                 autoFocus
               />
             </div>
+            
+            {/* Botón táctil para confirmar / simular Enter (ideal para celulares y tablets) */}
+            <button
+              type="button"
+              onClick={executeSearch}
+              disabled={!searchTerm.trim()}
+              title="Buscar código / Confirmar (Enter)"
+              className="flex items-center gap-1 px-3 py-2 bg-primary hover:bg-primary/90 active:scale-95 text-white font-bold text-xs rounded-xl shadow-sm transition-all disabled:opacity-40 disabled:pointer-events-none cursor-pointer shrink-0"
+            >
+              <CornerDownLeft className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Cart Header */}
