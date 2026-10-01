@@ -4,7 +4,10 @@ import {
   FileSpreadsheet,
   FileText,
   Loader2,
-  CalendarIcon
+  CalendarIcon,
+  ChevronDown,
+  ChevronRight,
+  Package
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
@@ -36,6 +39,21 @@ export const CostSalesTab: React.FC = () => {
 
   // Use modular hook
   const { loading: costLoading, data: salesCostData, fetchSalesCost } = useSalesCostReport();
+
+  // State to track expanded sales for product-level details
+  const [expandedSaleIds, setExpandedSaleIds] = useState<Set<string>>(new Set());
+
+  const toggleSaleExpand = (saleId: string) => {
+    setExpandedSaleIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(saleId)) {
+        next.delete(saleId);
+      } else {
+        next.add(saleId);
+      }
+      return next;
+    });
+  };
 
   // Date Picker Range state (Defaults: start of month to today)
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -116,17 +134,42 @@ export const CostSalesTab: React.FC = () => {
     const periodStr = `${startStr} al ${endStr}`;
     const todayStr = new Date().toLocaleDateString(undefined, { timeZone: timezone });
 
-    const rowsHtml = salesCostData.map((row) => `
-      <tr>
-        <td>${row.invoiceNumber}</td>
-        <td>${formatReportDate(row.createdAt)}</td>
-        <td style="text-transform: uppercase;">${row.clientName}</td>
-        <td style="text-align: right;">${Math.floor(row.pieces)}</td>
-        <td style="text-align: right;">$${Number(row.salePrice).toFixed(2)}</td>
-        <td style="text-align: right;">$${Number(row.costPrice).toFixed(2)}</td>
-        <td style="text-align: right;">$${Number(row.difference).toFixed(2)}</td>
-      </tr>
-    `).join('');
+    const rowsHtml = salesCostData.map((row) => {
+      let itemsHtml = '';
+      if (row.items && row.items.length > 0) {
+        const itemRows = row.items.map((item) => `
+          <tr style="background-color: #fafafa; font-size: 8.5px; color: #555;">
+            <td style="padding-left: 14px;">↳ ${item.sku ? `[${item.sku}] ` : ''}${item.productName}</td>
+            <td></td>
+            <td style="text-align: right;">Costo U: $${item.unitCost.toFixed(2)} | Venta U: $${item.unitPrice.toFixed(2)}</td>
+            <td style="text-align: right;">${item.quantity}</td>
+            <td style="text-align: right;">$${item.totalPrice.toFixed(2)}</td>
+            <td style="text-align: right;">$${item.totalCost.toFixed(2)}</td>
+            <td style="text-align: right;">$${item.profit.toFixed(2)}</td>
+          </tr>
+        `).join('');
+
+        itemsHtml = `
+          <tr style="background-color: #f0f0f0; font-size: 8px; font-weight: bold; color: #666;">
+            <td colspan="7" style="padding-left: 14px; text-transform: uppercase;">Detalle de productos:</td>
+          </tr>
+          ${itemRows}
+        `;
+      }
+
+      return `
+        <tr style="border-top: 1px solid #ccc; font-weight: 500;">
+          <td><strong>${row.invoiceNumber}</strong></td>
+          <td>${formatReportDate(row.createdAt)}</td>
+          <td style="text-transform: uppercase;">${row.clientName}</td>
+          <td style="text-align: right;">${Math.floor(row.pieces)}</td>
+          <td style="text-align: right;">$${Number(row.salePrice).toFixed(2)}</td>
+          <td style="text-align: right;">$${Number(row.costPrice).toFixed(2)}</td>
+          <td style="text-align: right;">$${Number(row.difference).toFixed(2)}</td>
+        </tr>
+        ${itemsHtml}
+      `;
+    }).join('');
 
     doc.open();
     doc.write(`
@@ -165,7 +208,7 @@ export const CostSalesTab: React.FC = () => {
             table {
               width: 100%;
               border-collapse: collapse;
-              margin-top: 10px;
+              margin-top: 5px;
             }
             th {
               border-top: 1px solid #000;
@@ -196,19 +239,19 @@ export const CostSalesTab: React.FC = () => {
           <div class="header">
             <div class="header-title" style="text-transform: uppercase;">${currentTenant?.name || 'NEGOCIO'}</div>
             <div class="header-info" style="font-weight: bold;">Resumen de costo de ventas por documentos</div>
-            <div class="header-info">Documentos: Factura</div>
+            <div class="header-info">Documentos: Factura (Solo completadas)</div>
             <div class="header-info" style="font-weight: bold;">Período: ${periodStr}</div>
           </div>
 
           <table>
             <thead>
               <tr>
-                <th style="width: 14%;">Factura</th>
+                <th style="width: 15%;">Factura</th>
                 <th style="width: 10%;">Fecha</th>
-                <th style="width: 32%;">Cliente</th>
-                <th style="width: 10%; text-align: right;">Pzas</th>
-                <th style="width: 11%; text-align: right;">Precio de venta</th>
-                <th style="width: 11%; text-align: right;">Precio de costo</th>
+                <th style="width: 30%;">Cliente</th>
+                <th style="width: 9%; text-align: right;">Pzas</th>
+                <th style="width: 12%; text-align: right;">Precio de venta</th>
+                <th style="width: 12%; text-align: right;">Precio de costo</th>
                 <th style="width: 12%; text-align: right;">Diferencia</th>
               </tr>
             </thead>
@@ -243,22 +286,54 @@ export const CostSalesTab: React.FC = () => {
       return;
     }
 
-    const headers = ['Factura', 'Fecha', 'Cliente', 'Pzas', 'Precio de venta', 'Precio de costo', 'Diferencia'];
-    const rows = salesCostData.map((row) => [
-      row.invoiceNumber,
-      formatReportDate(row.createdAt),
-      row.clientName,
-      Math.floor(row.pieces),
-      Number(row.salePrice).toFixed(2),
-      Number(row.costPrice).toFixed(2),
-      Number(row.difference).toFixed(2)
-    ]);
+    const headers = ['Tipo', 'Factura', 'Fecha', 'Cliente / Producto', 'SKU', 'Pzas', 'Costo Unit.', 'Precio Unit.', 'Total Venta', 'Total Costo', 'Diferencia / Margen'];
+    const rows: (string | number)[][] = [];
+
+    salesCostData.forEach((row) => {
+      // Venta principal
+      rows.push([
+        'VENTA',
+        row.invoiceNumber,
+        formatReportDate(row.createdAt),
+        row.clientName,
+        '',
+        Math.floor(row.pieces),
+        '',
+        '',
+        Number(row.salePrice).toFixed(2),
+        Number(row.costPrice).toFixed(2),
+        Number(row.difference).toFixed(2)
+      ]);
+
+      // Desglose de productos
+      if (row.items && row.items.length > 0) {
+        row.items.forEach((item) => {
+          rows.push([
+            'PRODUCTO',
+            row.invoiceNumber,
+            '',
+            item.productName,
+            item.sku,
+            item.quantity,
+            item.unitCost.toFixed(2),
+            item.unitPrice.toFixed(2),
+            item.totalPrice.toFixed(2),
+            item.totalCost.toFixed(2),
+            item.profit.toFixed(2)
+          ]);
+        });
+      }
+    });
 
     rows.push([
+      'TOTAL',
       'Gran total...',
       '',
       '',
+      '',
       Math.floor(totals.pieces),
+      '',
+      '',
       Number(totals.sales).toFixed(2),
       Number(totals.cost).toFixed(2),
       Number(totals.difference).toFixed(2)
@@ -375,6 +450,7 @@ export const CostSalesTab: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow className="uppercase tracking-wider text-[10px] font-bold">
+                  <TableHead className="w-8 px-1"></TableHead>
                   <TableHead className="pr-2">Factura</TableHead>
                   <TableHead className="px-2">Fecha</TableHead>
                   <TableHead className="px-2">Cliente</TableHead>
@@ -385,22 +461,116 @@ export const CostSalesTab: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {salesCostData.map((row) => (
-                  <TableRow key={row.id} className="text-secondary hover:bg-muted/10 transition-colors">
-                    <TableCell className="py-3 pr-2 font-mono font-semibold text-primary">{row.invoiceNumber}</TableCell>
-                    <TableCell className="py-3 px-2 text-neutral">{formatReportDate(row.createdAt)}</TableCell>
-                    <TableCell className="py-3 px-2 uppercase font-medium max-w-[200px] truncate">{row.clientName}</TableCell>
-                    <TableCell className="py-3 px-2 text-right font-mono font-semibold">{Math.floor(row.pieces)}</TableCell>
-                    <TableCell className="py-3 px-2 text-right font-mono font-bold">${Number(row.salePrice).toFixed(2)}</TableCell>
-                    <TableCell className="py-3 px-2 text-right font-mono font-bold text-rose-500/80">${Number(row.costPrice).toFixed(2)}</TableCell>
-                    <TableCell className={`py-3 pl-2 text-right font-mono font-bold ${row.difference >= 0 ? 'text-emerald-500' : 'text-rose-600'}`}>
-                      ${Number(row.difference).toFixed(2)}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {salesCostData.map((row) => {
+                  const isExpanded = expandedSaleIds.has(row.id);
+                  const hasItems = row.items && row.items.length > 0;
+
+                  return (
+                    <React.Fragment key={row.id}>
+                      <TableRow 
+                        onClick={() => hasItems && toggleSaleExpand(row.id)}
+                        className={`text-secondary hover:bg-muted/10 transition-colors cursor-pointer ${isExpanded ? 'bg-muted/5' : ''}`}
+                      >
+                        <TableCell className="w-8 px-1 py-3 text-center">
+                          {hasItems ? (
+                            <button
+                              type="button"
+                              className="p-1 rounded hover:bg-muted text-neutral hover:text-secondary transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSaleExpand(row.id);
+                              }}
+                            >
+                              {isExpanded ? <ChevronDown className="w-4 h-4 text-primary" /> : <ChevronRight className="w-4 h-4" />}
+                            </button>
+                          ) : null}
+                        </TableCell>
+                        <TableCell className="py-3 pr-2 font-mono font-semibold text-primary">
+                          <div className="flex items-center gap-1.5">
+                            {row.invoiceNumber}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-3 px-2 text-neutral">{formatReportDate(row.createdAt)}</TableCell>
+                        <TableCell className="py-3 px-2 uppercase font-medium max-w-[200px] truncate">{row.clientName}</TableCell>
+                        <TableCell className="py-3 px-2 text-right font-mono font-semibold">{Math.floor(row.pieces)}</TableCell>
+                        <TableCell className="py-3 px-2 text-right font-mono font-bold">${Number(row.salePrice).toFixed(2)}</TableCell>
+                        <TableCell className="py-3 px-2 text-right font-mono font-bold text-rose-500/80">${Number(row.costPrice).toFixed(2)}</TableCell>
+                        <TableCell className={`py-3 pl-2 text-right font-mono font-bold ${row.difference >= 0 ? 'text-emerald-500' : 'text-rose-600'}`}>
+                          ${Number(row.difference).toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+
+                      {/* Expanded Product Details */}
+                      {isExpanded && row.items && (
+                        <TableRow className="bg-muted/15 border-b border-border/80 hover:bg-muted/15">
+                          <TableCell colSpan={8} className="p-3 pl-6 sm:pl-10 whitespace-normal">
+                            <div className="rounded-xl border border-border/60 bg-bg-dark/50 overflow-hidden shadow-inner">
+                              <div className="px-3 py-2 bg-muted/40 border-b border-border/60 flex items-center justify-between text-[11px] font-semibold text-secondary">
+                                <span className="flex items-center gap-1.5">
+                                  <Package className="w-3.5 h-3.5 text-primary" />
+                                  Productos vendidos ({row.items.length})
+                                </span>
+                                <span className="text-[10px] text-neutral">
+                                  Costos y márgenes individuales de la factura
+                                </span>
+                              </div>
+                              <table className="w-full text-xs">
+                                <thead>
+                                  <tr className="border-b border-border/40 text-[10px] uppercase font-medium text-neutral bg-muted/20">
+                                    <th className="py-1.5 px-3 text-left">SKU</th>
+                                    <th className="py-1.5 px-3 text-left">Producto</th>
+                                    <th className="py-1.5 px-3 text-right">Cant.</th>
+                                    <th className="py-1.5 px-3 text-right">Costo Unit.</th>
+                                    <th className="py-1.5 px-3 text-right">Costo Total</th>
+                                    <th className="py-1.5 px-3 text-right">Precio Venta</th>
+                                    <th className="py-1.5 px-3 text-right">Venta Total</th>
+                                    <th className="py-1.5 px-3 text-right">Ganancia</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {row.items.map((item) => (
+                                    <tr key={item.id} className="border-b border-border/20 last:border-0 hover:bg-muted/10">
+                                      <td className="py-2 px-3 font-mono text-[11px] text-primary">{item.sku || '-'}</td>
+                                      <td className="py-2 px-3">
+                                        <div className="font-medium text-secondary">{item.productName}</div>
+                                      </td>
+                                      <td className="py-2 px-3 text-right font-mono font-semibold">
+                                        {item.quantity}
+                                        {item.refundedQuantity > 0 && (
+                                          <span className="block text-[9px] text-rose-500 font-normal">
+                                            ({item.refundedQuantity} dev.)
+                                          </span>
+                                        )}
+                                      </td>
+                                      <td className="py-2 px-3 text-right font-mono text-neutral">${item.unitCost.toFixed(2)}</td>
+                                      <td className="py-2 px-3 text-right font-mono font-medium text-rose-500/90">${item.totalCost.toFixed(2)}</td>
+                                      <td className="py-2 px-3 text-right font-mono text-neutral">${item.unitPrice.toFixed(2)}</td>
+                                      <td className="py-2 px-3 text-right font-mono font-semibold text-secondary">
+                                        ${item.totalPrice.toFixed(2)}
+                                        {item.discountAmount > 0 && (
+                                          <span className="block text-[9px] text-amber-500 font-normal">
+                                            (-${item.discountAmount.toFixed(2)})
+                                          </span>
+                                        )}
+                                      </td>
+                                      <td className={`py-2 px-3 text-right font-mono font-bold ${item.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                        ${item.profit.toFixed(2)}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </TableBody>
               <TableFooter className="font-bold text-secondary bg-muted/20">
                 <TableRow>
+                  <TableCell className="w-8 px-1"></TableCell>
                   <TableCell className="py-3 pr-2 font-bold text-secondary" colSpan={3}>Gran total...</TableCell>
                   <TableCell className="py-3 px-2 text-right font-mono font-bold">{Math.floor(totals.pieces)}</TableCell>
                   <TableCell className="py-3 px-2 text-right font-mono font-bold text-primary">${Number(totals.sales).toFixed(2)}</TableCell>

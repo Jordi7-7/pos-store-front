@@ -20,6 +20,22 @@ export interface ReportsResponse {
   breakdown: BreakdownDay[];
 }
 
+export interface SalesCostItemDetail {
+  id: string;
+  variantId: string;
+  productName: string;
+  sku: string;
+  quantity: number;
+  refundedQuantity: number;
+  netQuantity: number;
+  unitCost: number;
+  totalCost: number;
+  unitPrice: number;
+  discountAmount: number;
+  totalPrice: number;
+  profit: number;
+}
+
 export interface SalesCostReportRow {
   id: string;
   invoiceNumber: string;
@@ -30,6 +46,7 @@ export interface SalesCostReportRow {
   costPrice: number;
   difference: number;
   status: string;
+  items?: SalesCostItemDetail[];
 }
 
 export interface ValuedInventoryRow {
