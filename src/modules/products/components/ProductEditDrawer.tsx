@@ -153,9 +153,6 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
               salePrice: data.salePrice,
               wholesalePrice: data.wholesalePrice !== undefined ? data.wholesalePrice : null,
               imageIds: selectedImages,
-              stocks: selectedBranchId
-                ? [{ branchId: selectedBranchId, quantity: data.initialStock }]
-                : [],
             },
           ],
         },
