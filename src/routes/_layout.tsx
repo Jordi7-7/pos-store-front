@@ -50,7 +50,7 @@ function DashboardShell() {
     if (currentPath.startsWith('/dashboard')) return 'Dashboard';
     if (currentPath.startsWith('/pos')) return 'Punto de Venta (POS)';
     if (currentPath.startsWith('/ventas')) return 'Ventas e Historial';
-    if (currentPath.startsWith('/compras')) return 'Ingresos de Mercancía';
+    if (currentPath.startsWith('/compras')) return 'Compras';
     if (currentPath.startsWith('/clientes')) return 'Directorio de Clientes';
     if (currentPath.startsWith('/cajas/historial')) return 'Historial de Cajas';
     if (currentPath.startsWith('/cajas/registradoras')) return 'Cajas Registradoras';

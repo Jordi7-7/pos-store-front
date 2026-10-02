@@ -88,7 +88,7 @@ export const navigationConfig: NavItem[] = [
   },
   {
     id: 'purchases',
-    label: 'Ingresos de Mercancía',
+    label: 'Compras',
     path: '/compras',
     icon: Truck,
     permission: APP_PERMISSIONS.VIEW_PURCHASES,

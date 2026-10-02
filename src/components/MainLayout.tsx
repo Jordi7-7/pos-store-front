@@ -176,7 +176,7 @@ export const MainLayout: React.FC = () => {
     { id: 'products:list', label: 'Inventario - Catálogo de Productos' },
     { id: 'products:batches', label: 'Inventario - Lotes de Inventario' },
     { id: 'products:create', label: 'Inventario - Registrar Producto' },
-    { id: 'purchases', label: 'Compras y Proveedores' },
+    { id: 'purchases', label: 'Compras' },
     { id: 'media', label: 'Multimedia / Galería' },
     { id: 'users', label: 'Personal / Usuarios' },
     { id: 'reports', label: 'Reportes y Utilidades' },

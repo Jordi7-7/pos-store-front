@@ -24,7 +24,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ selectedBranchId }
           }`}
         >
           <ClipboardList className="w-3.5 h-3.5" />
-          <span>Registrar Ingreso</span>
+          <span>Registrar Compra</span>
         </button>
 
         <button
@@ -36,7 +36,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ selectedBranchId }
           }`}
         >
           <History className="w-3.5 h-3.5" />
-          <span>Historial de Ingresos</span>
+          <span>Historial de Compras</span>
         </button>
       </div>
 
