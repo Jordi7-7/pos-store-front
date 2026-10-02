@@ -1,21 +1,5 @@
 import { useAuthStore } from "@/modules/auth/hooks/useAuthStore"
-import { 
-  LayoutDashboard, 
-  ShoppingBag, 
-  Receipt, 
-  Package, 
-  Truck, 
-  Users, 
-  Image as ImageIcon,
-  LogOut,
-  ShieldCheck,
-  Settings,
-  BarChart3,
-  Contact,
-  History,
-  CreditCard
-} from "lucide-react"
-
+import { LogOut, ShieldCheck, ChevronDown } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -26,42 +10,39 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar"
-
-import {
-  Avatar,
-  AvatarFallback,
-} from "@/components/ui/avatar"
-
-import { APP_PERMISSIONS } from "@/constants/permissions"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { navigationConfig } from "@/config/navigation.config"
+import { Link, useRouterState } from "@tanstack/react-router"
+import { useState } from "react"
 
 export function AppSidebar() {
-  const { user, role, roleName, activeTab, setActiveTab, logout, publicTenant, can } = useAuthStore()
+  const { user, role, roleName, logout, publicTenant, can } = useAuthStore()
+  const { state: sidebarState } = useSidebar()
+  const isIconCollapsed = sidebarState === 'collapsed'
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: APP_PERMISSIONS.VIEW_DASHBOARD },
-    { id: 'pos', label: 'Punto de Venta (POS)', icon: ShoppingBag, permission: APP_PERMISSIONS.VIEW_POS },
-    { id: 'sales', label: 'Ventas', icon: Receipt, permission: APP_PERMISSIONS.VIEW_SALES },
-    { id: 'products', label: 'Catálogo de Productos', icon: Package, permission: APP_PERMISSIONS.VIEW_PRODUCTS },
-    { id: 'purchases', label: 'Ingresos de Mercancía', icon: Truck, permission: APP_PERMISSIONS.VIEW_PURCHASES },
-    { id: 'customers', label: 'Directorio de Clientes', icon: Contact, permission: APP_PERMISSIONS.VIEW_CUSTOMERS },
-    { id: 'cash-sessions', label: 'Historial de Cajas', icon: History, permission: APP_PERMISSIONS.VIEW_CASH_SESSIONS },
-    { id: 'cash-registers', label: 'Cajas Registradoras', icon: CreditCard, permission: APP_PERMISSIONS.VIEW_CASH_REGISTERS },
-    { id: 'reports', label: 'Reportes y Utilidades', icon: BarChart3, permission: APP_PERMISSIONS.VIEW_REPORTS },
-    { id: 'users', label: 'Personal y Roles', icon: Users, permission: APP_PERMISSIONS.VIEW_USERS },
-    { id: 'media', label: 'Multimedia / Galería', icon: ImageIcon, permission: APP_PERMISSIONS.VIEW_MEDIA },
-    { id: 'tenant-settings', label: 'Configuración Negocio', icon: Settings, permission: APP_PERMISSIONS.VIEW_SETTINGS },
-  ]
+  const routerState = useRouterState()
+  const currentPath = routerState.location.pathname
 
-  const visibleMenuItems = menuItems.filter(item => can(item.permission))
+  // Check if inventory section is active
+  const isInventoryActive = currentPath.startsWith('/inventario')
+  const [isInventoryOpen, setIsInventoryOpen] = useState(true)
+
+  // Filter items based on permissions
+  const visibleMenuItems = navigationConfig.filter((item) => {
+    if (item.permission && !can(item.permission)) return false
+    return true
+  })
 
   return (
     <Sidebar collapsible="icon" className="bg-brand-primary text-zinc-300 border-r border-[#222225]">
       {/* Header with Oval Logo & Brand Title */}
       <SidebarHeader className="p-4 pb-3 border-b border-[#222225]/80">
         <div className="flex flex-col items-center justify-center text-center gap-2 group-data-[collapsible=icon]:p-0">
-          {/* Circular/Oval Brand Logo */}
           <div className="w-16 h-10 rounded-full border border-zinc-600/80 bg-[#161618] flex items-center justify-center px-2 py-1 shadow-inner shrink-0 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8">
             {publicTenant?.logoUrl ? (
               <img 
@@ -92,22 +73,77 @@ export function AppSidebar() {
           <SidebarMenu className="space-y-1.5">
             {visibleMenuItems.map((item) => {
               const Icon = item.icon
-              const isActive = activeTab === item.id
+
+              // Collapsible Group (e.g. Inventario)
+              if (item.children && item.children.length > 0) {
+                const visibleChildren = item.children.filter((child) => !child.permission || can(child.permission))
+                if (visibleChildren.length === 0) return null
+
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      isActive={isInventoryActive}
+                      onClick={() => setIsInventoryOpen((prev) => !prev)}
+                      tooltip={item.label}
+                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        isInventoryActive 
+                          ? '!bg-zinc-800/80 !text-white shadow-sm [&>div>svg]:!text-brand-secondary-foreground [&>div>svg]:!opacity-100' 
+                          : 'text-zinc-300 hover:text-white hover:bg-zinc-800/70 [&>div>svg]:text-zinc-300 hover:[&>div>svg]:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className={`w-4 h-4 shrink-0 transition-colors ${isInventoryActive ? '!text-brand-secondary-foreground !opacity-100 stroke-[2.2]' : 'text-zinc-300'}`} />
+                        <span className="group-data-[collapsible=icon]:hidden tracking-tight">{item.label}</span>
+                      </div>
+                      <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 group-data-[collapsible=icon]:hidden ${isInventoryOpen ? 'rotate-180 text-white' : ''}`} />
+                    </SidebarMenuButton>
+
+                    {/* Submenu Items */}
+                    {isInventoryOpen && !isIconCollapsed && (
+                      <SidebarMenuSub className="mt-1 space-y-1 pl-4 border-l border-zinc-800/80">
+                        {visibleChildren.map((subItem) => {
+                          const SubIcon = subItem.icon
+                          const isSubActive = currentPath === subItem.path
+
+                          return (
+                            <SidebarMenuSubItem key={subItem.id}>
+                              <Link
+                                to={subItem.path}
+                                className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                                  isSubActive
+                                    ? '!bg-brand-secondary !text-brand-secondary-foreground font-semibold shadow-xs [&>svg]:!text-brand-secondary-foreground'
+                                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 [&>svg]:text-zinc-400 hover:[&>svg]:text-zinc-200'
+                                }`}
+                              >
+                                <SubIcon className="w-3.5 h-3.5 shrink-0" />
+                                <span className="truncate">{subItem.label}</span>
+                              </Link>
+                            </SidebarMenuSubItem>
+                          )
+                        })}
+                      </SidebarMenuSub>
+                    )}
+                  </SidebarMenuItem>
+                )
+              }
+
+              // Standard Link Item
+              const targetUrl = item.path || '/'
+              const isActive = currentPath === targetUrl
+
               return (
                 <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    isActive={isActive}
-                    onClick={() => setActiveTab(item.id)}
-                    tooltip={item.label}
+                  <Link
+                    to={targetUrl}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                       isActive 
-                        ? '!bg-brand-secondary !text-brand-secondary-foreground data-[active=true]:!bg-brand-secondary data-[active=true]:!text-brand-secondary-foreground shadow-sm [&>svg]:!text-brand-secondary-foreground [&>svg]:!opacity-100' 
+                        ? '!bg-brand-secondary !text-brand-secondary-foreground shadow-sm [&>svg]:!text-brand-secondary-foreground [&>svg]:!opacity-100' 
                         : 'text-zinc-300 hover:text-white hover:bg-zinc-800/70 [&>svg]:text-zinc-300 hover:[&>svg]:text-white'
                     }`}
                   >
                     <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? '!text-brand-secondary-foreground !opacity-100 stroke-[2.2]' : 'text-zinc-300'}`} />
                     <span className="group-data-[collapsible=icon]:hidden tracking-tight">{item.label}</span>
-                  </SidebarMenuButton>
+                  </Link>
                 </SidebarMenuItem>
               )
             })}

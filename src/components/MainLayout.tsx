@@ -26,18 +26,69 @@ import { CashRegistersView } from '../modules/cash-registers/components/CashRegi
 import { useMyCashRegisters } from '../modules/cash-registers/hooks/useCashRegisters';
 
 import { Building, ChevronDown, CreditCard } from 'lucide-react';
+import { parseTenantUrl, setTenantUrlPath } from '../lib/tenantUrl';
+import { APP_PERMISSIONS } from '../constants/permissions';
 
 export const MainLayout: React.FC = () => {
   const {
     user,
     activeTab,
+    setActiveTab,
+    tenantSlug,
+    publicTenant,
+    can,
     selectedBranchId,
     setSelectedBranchId,
     selectedCashRegisterId,
     setSelectedCashRegisterId,
   } = useAuthStore();
 
+  const effectiveSlug = tenantSlug || publicTenant?.slug;
+
+  // Synchronize initial URL subpath on load
+  React.useEffect(() => {
+    const { subpath } = parseTenantUrl();
+    if (!subpath) return;
+
+    const clean = subpath.toLowerCase().trim();
+    if (clean === 'inventario' || clean === 'inventario/productos') {
+      setActiveTab('products:list');
+    } else if (clean === 'inventario/lotes') {
+      setActiveTab('products:batches');
+    } else if (clean === 'inventario/crear') {
+      if (can(APP_PERMISSIONS.PRODUCTS_CREATE)) {
+        setActiveTab('products:create');
+      } else {
+        toast.error('No tienes permisos para registrar nuevos productos.');
+        setActiveTab('products:list');
+      }
+    }
+  }, []);
+
+  // Synchronize browser URL when activeTab changes
+  React.useEffect(() => {
+    if (!effectiveSlug) return;
+    if (activeTab === 'products:list' || activeTab === 'products') {
+      setTenantUrlPath(effectiveSlug, 'inventario/productos');
+    } else if (activeTab === 'products:batches') {
+      setTenantUrlPath(effectiveSlug, 'inventario/lotes');
+    } else if (activeTab === 'products:create') {
+      setTenantUrlPath(effectiveSlug, 'inventario/crear');
+    } else {
+      setTenantUrlPath(effectiveSlug, '');
+    }
+  }, [activeTab, effectiveSlug]);
+
+  // Guard against direct unauthorized access to products:create
+  React.useEffect(() => {
+    if (activeTab === 'products:create' && !can(APP_PERMISSIONS.PRODUCTS_CREATE)) {
+      toast.error('Acceso denegado: No tienes permiso para crear productos');
+      setActiveTab('products:list');
+    }
+  }, [activeTab, can, setActiveTab]);
+
   // TanStack Query Hooks for layout contexts (Lazy loaded based on activeTab)
+  const isProductsActive = activeTab === 'products' || activeTab.startsWith('products:');
   const { branches } = useBranches();
   const { sales } = useSales({ enabled: activeTab === 'dashboard' });
   const { suppliers } = useSuppliers({ enabled: activeTab === 'dashboard' || activeTab === 'purchases' });
@@ -47,7 +98,7 @@ export const MainLayout: React.FC = () => {
 
   // Media upload shared context hook (only fetch images when on media, products or dashboard tabs)
   const { uploadImage, uploadImageByUrl, isUploading, deleteImage, isDeleting, isLoading: isLoadingMedia, uploadedImages } = useMediaUpload({
-    enabled: activeTab === 'media' || activeTab === 'products',
+    enabled: activeTab === 'media' || isProductsActive,
   });
 
   // Shared Petty Cash Session State
@@ -121,7 +172,10 @@ export const MainLayout: React.FC = () => {
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'pos', label: 'Punto de Venta (POS)' },
     { id: 'sales', label: 'Ventas' },
-    { id: 'products', label: 'Catálogo de Productos' },
+    { id: 'products', label: 'Inventario - Catálogo de Productos' },
+    { id: 'products:list', label: 'Inventario - Catálogo de Productos' },
+    { id: 'products:batches', label: 'Inventario - Lotes de Inventario' },
+    { id: 'products:create', label: 'Inventario - Registrar Producto' },
     { id: 'purchases', label: 'Compras y Proveedores' },
     { id: 'media', label: 'Multimedia / Galería' },
     { id: 'users', label: 'Personal / Usuarios' },
@@ -148,7 +202,7 @@ export const MainLayout: React.FC = () => {
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="text-neutral hover:text-secondary cursor-pointer" />
                 <h1 className="text-xs font-bold text-secondary uppercase tracking-wider">
-                  {menuItems.find(i => i.id === activeTab)?.label}
+                  {menuItems.find(i => i.id === activeTab)?.label || 'Inventario'}
                 </h1>
               </div>
 
@@ -244,10 +298,16 @@ export const MainLayout: React.FC = () => {
                 <SalesView />
               )}
 
-              {activeTab === 'products' && (
+              {isProductsActive && (
                 <ProductsView 
                   selectedBranchId={selectedBranchId || ''} 
                   uploadedImages={uploadedImages} 
+                  activeSubTab={
+                    activeTab === 'products:batches' 
+                      ? 'batches' 
+                      : (activeTab === 'products:create' ? 'create' : 'list')
+                  }
+                  onSubTabChange={(sub) => setActiveTab(`products:${sub}`)}
                 />
               )}
 

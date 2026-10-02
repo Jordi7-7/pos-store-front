@@ -51,6 +51,27 @@ export interface AdjustStockInput {
   comment?: string;
 }
 
+export interface ProductBatch {
+  id: string;
+  createdAt: string;
+  branchId: string;
+  branchName: string;
+  variantId: string;
+  productName: string;
+  sku: string;
+  barcode: string;
+  initialQuantity: number;
+  remainingQuantity: number;
+  consumedQuantity: number;
+  unitCost: number;
+  totalCostValue: number;
+  originType: 'PURCHASE' | 'INITIAL_STOCK' | 'REFUND' | 'ADJUSTMENT';
+  originLabel: string;
+  originReference: string;
+  purchaseOrderId: string | null;
+  status: 'ACTIVE' | 'EXHAUSTED';
+}
+
 export interface ProductHistorySale {
   id: string;
   invoiceNumber?: string | null;
@@ -189,6 +210,23 @@ export const productsService = {
 
   adjustStock: async (input: AdjustStockInput): Promise<InventoryMovement> => {
     return apiClient.post<InventoryMovement>('/products/stock-adjustments', input);
+  },
+
+  getBatches: async (params?: {
+    branchId?: string;
+    search?: string;
+    status?: 'all' | 'active' | 'exhausted';
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedResult<ProductBatch>> => {
+    const query = new URLSearchParams();
+    if (params?.branchId) query.append('branchId', params.branchId);
+    if (params?.search) query.append('search', params.search);
+    if (params?.status && params.status !== 'all') query.append('status', params.status);
+    if (params?.page) query.append('page', String(params.page));
+    if (params?.limit) query.append('limit', String(params.limit));
+    const qs = query.toString();
+    return apiClient.get<PaginatedResult<ProductBatch>>(`/products/batches${qs ? `?${qs}` : ''}`);
   },
 };
 

@@ -15,10 +15,28 @@ export function getTenantSlugFromPath(): string | null {
   return firstSegment;
 }
 
+export function parseTenantUrl(): { slug: string | null; subpath: string } {
+  if (typeof window === 'undefined') return { slug: null, subpath: '' };
+  const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
+  if (!path) return { slug: null, subpath: '' };
+
+  const parts = path.split('/');
+  const firstSegment = parts[0]?.toLowerCase().trim();
+
+  if (!firstSegment || RESERVED_PATHS.has(firstSegment)) {
+    return { slug: null, subpath: '' };
+  }
+
+  const subpath = parts.slice(1).join('/');
+  return { slug: firstSegment, subpath };
+}
+
 export function setTenantUrlPath(slug: string, subpath = '') {
   if (typeof window === 'undefined') return;
-  const target = `/${slug}${subpath ? (subpath.startsWith('/') ? subpath : `/${subpath}`) : ''}`;
+  const cleanSubpath = subpath.replace(/^\/+/, '');
+  const target = cleanSubpath ? `/${slug}/${cleanSubpath}` : `/${slug}`;
   if (window.location.pathname !== target) {
     window.history.pushState(null, '', target);
   }
 }
+

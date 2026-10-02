@@ -15,6 +15,7 @@
     "@hookform/resolvers": "^5.7.1",
     "@radix-ui/react-select": "^2.3.7",
     "@tanstack/react-query": "^5.101.2",
+    "@tanstack/react-router": "^1.170.41",
     "@types/jsbarcode": "^3.11.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -37,6 +38,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.2",
+    "@tanstack/router-plugin": "^1.168.42",
     "@types/luxon": "^3.7.5",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.17",
