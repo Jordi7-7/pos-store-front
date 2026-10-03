@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { productsService } from '../../products/services/products.service';
 import { useBranches } from '../../branches/hooks/useBranches';
+import type { Branch } from '../../branches/services/branches.service';
 import { useMyCashRegisters } from '@/modules/cash-registers/hooks/useCashRegisters';
+import type { MyCashRegisterItem } from '@/modules/cash-registers/services/cash-registers.service';
 import {
   useOpenCashSession,
   useCloseCashSession,
@@ -9,6 +11,7 @@ import {
   useProcessSale
 } from '../hooks/useSales';
 import { useCustomers } from '../hooks/useCustomers';
+import type { Customer } from '../hooks/useCustomers';
 import { useCashSessionDetailsQuery } from '../../cash-sessions/hooks/useCashSessions';
 import { PaymentMethod } from '../services/sales.service';
 import type { Sale } from '../services/sales.service';
@@ -68,6 +71,7 @@ interface POSViewProps {
 }
 
 interface CartItem {
+  cartItemId: string;
   variantId: string;
   productId: string;
   productName: string;
@@ -140,8 +144,8 @@ export const POSView: React.FC<POSViewProps> = ({
   useEffect(() => {
     if (availableRegistersForUser.length > 0) {
       // If currently selected register is not in the list, preselect first available or first in list
-      if (!selectedRegisterId || !availableRegistersForUser.some(r => r.id === selectedRegisterId)) {
-        const target = availableRegistersForUser.find(r => !r.isOpen) || availableRegistersForUser[0];
+      if (!selectedRegisterId || !availableRegistersForUser.some((r: MyCashRegisterItem) => r.id === selectedRegisterId)) {
+        const target = availableRegistersForUser.find((r: MyCashRegisterItem) => !r.isOpen) || availableRegistersForUser[0];
         setSelectedRegisterId(target.id);
         setSelectedCashRegisterId(target.id);
       }
@@ -178,8 +182,8 @@ export const POSView: React.FC<POSViewProps> = ({
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
 
   const handlePrintSale = (sale: Sale | SessionSale) => {
-    const branchName = ('branch' in sale && sale.branch?.name) ? sale.branch.name : (branches.find((b) => b.id === selectedBranchId)?.name || 'Sucursal General');
-    const branchAddress = ('branch' in sale && sale.branch?.address) ? sale.branch.address : (branches.find((b) => b.id === selectedBranchId)?.address || '');
+    const branchName = ('branch' in sale && sale.branch?.name) ? sale.branch.name : (branches.find((b: Branch) => b.id === selectedBranchId)?.name || 'Sucursal General');
+    const branchAddress = ('branch' in sale && sale.branch?.address) ? sale.branch.address : (branches.find((b: Branch) => b.id === selectedBranchId)?.address || '');
     const clientName = sale.customer?.name || 'Consumidor Final';
     const clientIdentity = ('customer' in sale && sale.customer && 'identityNumber' in sale.customer) ? (sale.customer as any).identityNumber : '9999999999';
     const invoiceNumber = sale.invoiceNumber;
@@ -460,9 +464,9 @@ export const POSView: React.FC<POSViewProps> = ({
     }
   };
 
-  const handleUpdateItemDiscount = (variantId: string, type: 'PERCENTAGE' | 'AMOUNT', inputVal: number) => {
+  const handleUpdateItemDiscount = (cartItemId: string, type: 'PERCENTAGE' | 'AMOUNT', inputVal: number) => {
     setCart(prevCart => prevCart.map(item => {
-      if (item.variantId !== variantId) return item;
+      if (item.cartItemId !== cartItemId) return item;
 
       let val = Number(inputVal.toFixed(2));
       if (isNaN(val) || val < 0) {
@@ -553,9 +557,9 @@ export const POSView: React.FC<POSViewProps> = ({
     }
   };
 
-  const toggleItemWholesale = (variantId: string) => {
+  const toggleItemWholesale = (cartItemId: string) => {
     setCart(prevCart => prevCart.map(item => {
-      if (item.variantId !== variantId) return item;
+      if (item.cartItemId !== cartItemId) return item;
 
       const hasWholesale = item.wholesalePrice !== null && item.wholesalePrice !== undefined && Number(item.wholesalePrice) > 0;
       if (!hasWholesale) {
@@ -584,36 +588,31 @@ export const POSView: React.FC<POSViewProps> = ({
   };
 
   const addVariantToCart = (product: any, variant: any, maxStock: number) => {
-    const existing = cart.find(item => item.variantId === variant.id);
+    const totalQtyInCart = cart
+      .filter(item => item.variantId === variant.id)
+      .reduce((sum, item) => sum + item.quantity, 0);
 
-    if (existing) {
-      const newQty = existing.quantity + 1;
-      if (newQty > maxStock) {
-        toast.warning(`Aviso: El stock del producto "${product.name}" quedará en negativo (Stock disponible: ${maxStock} pzs.)`);
-      }
-      setCart(cart.map(item =>
-        item.variantId === variant.id
-          ? { ...item, quantity: newQty }
-          : item
-      ));
-    } else {
-      const combText = variant.attributeValues && variant.attributeValues.length > 0
-        ? variant.attributeValues.map((av: any) => `${av.attribute?.name || 'Attr'}: ${av.value}`).join(' / ')
-        : 'Estándar';
+    if (totalQtyInCart + 1 > maxStock) {
+      toast.warning(`Aviso: El stock del producto "${product.name}" quedará en negativo (Stock disponible: ${maxStock} pzs.)`);
+    }
 
-      const imageUrl = variant.imageUrl;
+    const combText = variant.attributeValues && variant.attributeValues.length > 0
+      ? variant.attributeValues.map((av: any) => `${av.attribute?.name || 'Attr'}: ${av.value}`).join(' / ')
+      : 'Estándar';
 
-      if (1 > maxStock) {
-        toast.warning(`Aviso: El stock del producto "${product.name}" quedará en negativo (Stock disponible: ${maxStock} pzs.)`);
-      }
+    const imageUrl = variant.imageUrl;
+    const unitSalePrice = Number(variant.salePrice || 0);
+    const rawWholesale = variant.wholesalePrice !== undefined && variant.wholesalePrice !== null ? Number(variant.wholesalePrice) : null;
+    const hasWholesale = rawWholesale !== null && rawWholesale > 0;
+    const shouldUseWholesale = isGlobalWholesale && hasWholesale;
+    const effectivePrice = shouldUseWholesale ? rawWholesale : unitSalePrice;
 
-      const unitSalePrice = Number(variant.salePrice || 0);
-      const rawWholesale = variant.wholesalePrice !== undefined && variant.wholesalePrice !== null ? Number(variant.wholesalePrice) : null;
-      const hasWholesale = rawWholesale !== null && rawWholesale > 0;
-      const shouldUseWholesale = isGlobalWholesale && hasWholesale;
-      const effectivePrice = shouldUseWholesale ? rawWholesale : unitSalePrice;
+    const uniqueCartItemId = `${variant.id}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
 
-      setCart([...cart, {
+    setCart(prevCart => [
+      ...prevCart,
+      {
+        cartItemId: uniqueCartItemId,
         variantId: variant.id,
         productId: product.id,
         productName: product.name,
@@ -628,32 +627,37 @@ export const POSView: React.FC<POSViewProps> = ({
         maxStock,
         discountType: 'PERCENTAGE',
         discountRate: 0,
-        discountAmount: 0
-      }]);
-    }
+        discountAmount: 0,
+      },
+    ]);
+
     toast.success(`Se agregó al carrito: ${product.name} ${variant.sku}`);
   };
 
-  const handleUpdateCartQty = (variantId: string, delta: number) => {
-    const item = cart.find(i => i.variantId === variantId);
+  const handleUpdateCartQty = (cartItemId: string, delta: number) => {
+    const item = cart.find(i => i.cartItemId === cartItemId);
     if (!item) return;
 
     const newQty = item.quantity + delta;
     if (newQty <= 0) {
-      setCart(cart.filter(i => i.variantId !== variantId));
+      setCart(cart.filter(i => i.cartItemId !== cartItemId));
       toast.info('Item removido del carrito.');
       return;
     }
 
-    if (newQty > item.maxStock && delta > 0) {
+    const totalQtyInCart = cart
+      .filter(i => i.variantId === item.variantId && i.cartItemId !== cartItemId)
+      .reduce((sum, i) => sum + i.quantity, 0) + newQty;
+
+    if (totalQtyInCart > item.maxStock && delta > 0) {
       toast.warning(`Aviso: El stock del producto "${item.productName}" quedará en negativo (Stock disponible: ${item.maxStock} pzs.)`);
     }
 
-    setCart(cart.map(i => i.variantId === variantId ? { ...i, quantity: newQty } : i));
+    setCart(cart.map(i => i.cartItemId === cartItemId ? { ...i, quantity: newQty } : i));
   };
 
-  const handleRemoveFromCart = (variantId: string) => {
-    setCart(cart.filter(i => i.variantId !== variantId));
+  const handleRemoveFromCart = (cartItemId: string) => {
+    setCart(cart.filter(i => i.cartItemId !== cartItemId));
     toast.info('Item removido del carrito.');
   };
 
@@ -808,21 +812,27 @@ export const POSView: React.FC<POSViewProps> = ({
     }
 
     try {
+      const hasGlobalDiscount = (globalDiscountAmount || 0) > 0;
+
       const res = await processSale({
         branchId: branch,
         cashSessionId: activeSession.id,
         customerId: selectedCustomerId || undefined,
-        discountType: globalDiscountType,
-        discountRate: globalDiscountRate,
-        discountAmount: globalDiscountAmount,
-        items: cart.map(i => ({
-          variantId: i.variantId,
-          quantity: i.quantity,
-          price: i.price,
-          discountType: i.discountType,
-          discountRate: i.discountRate,
-          discountAmount: i.discountAmount
-        })),
+        discountType: hasGlobalDiscount ? globalDiscountType : undefined,
+        discountRate: hasGlobalDiscount ? globalDiscountRate : undefined,
+        discountAmount: globalDiscountAmount || 0,
+        items: cart.map(i => {
+          const hasItemDisc = (i.discountAmount || 0) > 0;
+          const totalLineDiscount = Number(((i.discountAmount || 0) * i.quantity).toFixed(2));
+          return {
+            variantId: i.variantId,
+            quantity: i.quantity,
+            price: i.price,
+            discountType: hasItemDisc ? i.discountType : undefined,
+            discountRate: hasItemDisc ? i.discountRate : undefined,
+            discountAmount: totalLineDiscount
+          };
+        }),
         payments: normalizedPayments
       });
 
@@ -1046,7 +1056,7 @@ export const POSView: React.FC<POSViewProps> = ({
 
                 return (
                   <div 
-                    key={item.variantId} 
+                    key={item.cartItemId} 
                     className="bg-bg-dark/40 border border-border-card/60 rounded-xl p-2.5 flex items-center gap-3 hover:border-primary/30 transition-all duration-150 group animate-fade-in"
                   >
                     {/* Thumbnail matching exact height */}
@@ -1092,7 +1102,7 @@ export const POSView: React.FC<POSViewProps> = ({
                             return (
                               <button
                                 type="button"
-                                onClick={() => toggleItemWholesale(item.variantId)}
+                                onClick={() => toggleItemWholesale(item.cartItemId)}
                                 className={`text-[8.5px] h-4.5 px-2 rounded-md font-bold flex items-center gap-1 transition-all cursor-pointer border shadow-2xs ${
                                   item.isWholesale
                                     ? 'bg-amber-500/20 text-amber-400 border-amber-500/50 hover:bg-amber-500/30'
@@ -1138,7 +1148,7 @@ export const POSView: React.FC<POSViewProps> = ({
                       <div className="flex items-center bg-bg-card border border-border-card/70 rounded-lg h-7 p-0.5 shadow-xs">
                         <button
                           type="button"
-                          onClick={() => handleUpdateCartQty(item.variantId, -1)}
+                          onClick={() => handleUpdateCartQty(item.cartItemId, -1)}
                           className="w-5 h-5 flex items-center justify-center hover:bg-bg-dark text-neutral hover:text-secondary rounded transition-colors cursor-pointer"
                           title="Disminuir cantidad"
                         >
@@ -1149,7 +1159,7 @@ export const POSView: React.FC<POSViewProps> = ({
                         </span>
                         <button
                           type="button"
-                          onClick={() => handleUpdateCartQty(item.variantId, 1)}
+                          onClick={() => handleUpdateCartQty(item.cartItemId, 1)}
                           className="w-5 h-5 flex items-center justify-center hover:bg-bg-dark text-neutral hover:text-secondary rounded transition-colors cursor-pointer"
                           title="Aumentar cantidad"
                         >
@@ -1167,7 +1177,7 @@ export const POSView: React.FC<POSViewProps> = ({
                           onClick={() => {
                             const nextType = currentItemDiscountType === 'PERCENTAGE' ? 'AMOUNT' : 'PERCENTAGE';
                             const nextValue = nextType === 'AMOUNT' ? item.price : 0;
-                            handleUpdateItemDiscount(item.variantId, nextType, nextValue);
+                            handleUpdateItemDiscount(item.cartItemId, nextType, nextValue);
                           }}
                           className="w-5 h-5 rounded flex items-center justify-center text-neutral hover:text-secondary hover:bg-bg-dark transition-colors cursor-pointer shrink-0"
                           title={currentItemDiscountType === 'PERCENTAGE' ? 'Cambiar a Precio Fijo ($)' : 'Cambiar a Porcentaje (%)'}
@@ -1186,7 +1196,7 @@ export const POSView: React.FC<POSViewProps> = ({
                           value={currentItemDiscountRate === 0 ? '' : currentItemDiscountRate}
                           onChange={(e) => {
                             const val = Math.max(0, parseFloat(e.target.value) || 0);
-                            handleUpdateItemDiscount(item.variantId, currentItemDiscountType, val);
+                            handleUpdateItemDiscount(item.cartItemId, currentItemDiscountType, val);
                           }}
                           className="w-11 h-6 text-[10.5px] font-mono text-right bg-transparent text-secondary focus:outline-none pr-0.5"
                         />
@@ -1206,7 +1216,7 @@ export const POSView: React.FC<POSViewProps> = ({
 
                       {/* Remove item button */}
                       <button
-                        onClick={() => handleRemoveFromCart(item.variantId)}
+                        onClick={() => handleRemoveFromCart(item.cartItemId)}
                         className="w-6 h-6 flex items-center justify-center text-neutral hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all cursor-pointer shrink-0"
                         title="Eliminar item"
                       >
@@ -1239,7 +1249,7 @@ export const POSView: React.FC<POSViewProps> = ({
                 </span>
                 <Combobox
                   items={customers}
-                  value={customers.find(c => c.id === selectedCustomerId) || null}
+                  value={customers.find((c: Customer) => c.id === selectedCustomerId) || null}
                   onValueChange={(val: any) => setSelectedCustomerId(val?.id || '')}
                 >
                   <ComboboxTrigger
@@ -1249,7 +1259,7 @@ export const POSView: React.FC<POSViewProps> = ({
                         className="w-full justify-between font-normal bg-bg-dark border-border-card text-xs text-secondary rounded-lg py-1 px-2.5 h-8 hover:bg-bg-dark/80 hover:text-secondary flex items-center"
                       >
                         {(() => {
-                          const activeCust = customers.find(c => c.id === selectedCustomerId);
+                          const activeCust = customers.find((c: Customer) => c.id === selectedCustomerId);
                           return activeCust ? (
                             <div className="flex items-center gap-1.5 truncate">
                               <span className="font-bold text-[11px] text-secondary truncate">{activeCust.name}</span>

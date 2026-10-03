@@ -11,6 +11,8 @@ import {
   AlertCircle,
   Barcode,
   Trash2,
+  Percent,
+  DollarSign,
 } from 'lucide-react';
 import {
   Dialog,
@@ -64,6 +66,9 @@ interface NewExchangeItem {
   quantity: number;
   price: number;  // salePrice from POS endpoint
   cost: number;
+  discountType?: 'PERCENTAGE' | 'AMOUNT';
+  discountRate?: number;
+  discountAmount?: number; // unit discount amount
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -243,8 +248,55 @@ export function ExchangeReturnModal({
     );
   };
 
-  const totalNewItems = newItems.reduce((acc, x) => acc + x.price * x.quantity, 0);
-  const exchangeDiff = totalNewItems - totalToReturn; // positive = customer pays, negative = refund extra
+  const handleUpdateNewItemDiscount = (
+    variantId: string,
+    type: 'PERCENTAGE' | 'AMOUNT',
+    inputVal: number,
+  ) => {
+    setNewItems((prev) =>
+      prev.map((item) => {
+        if (item.variantId !== variantId) return item;
+
+        let val = Number(inputVal.toFixed(2));
+        if (isNaN(val) || val < 0) val = 0;
+
+        let calculatedAmount = 0;
+        let displayRate = val;
+
+        if (type === 'PERCENTAGE') {
+          if (val > 100) {
+            val = 100;
+            displayRate = 100;
+            toast.warning('El descuento por producto no puede superar el 100%');
+          }
+          calculatedAmount = Number(((item.price * val) / 100).toFixed(2));
+        } else {
+          // En modo AMOUNT (Moneda), el inputVal representa el PRECIO FINAL unitario deseado
+          if (val > item.price) {
+            val = item.price;
+            displayRate = item.price;
+            toast.warning(`El precio de venta no puede superar el precio original ($${item.price.toFixed(2)})`);
+          }
+          calculatedAmount = Number((item.price - val).toFixed(2));
+        }
+        calculatedAmount = Math.max(0, Math.min(item.price, calculatedAmount));
+
+        return {
+          ...item,
+          discountType: type,
+          discountRate: displayRate,
+          discountAmount: calculatedAmount,
+        };
+      }),
+    );
+  };
+
+  const totalNewItems = newItems.reduce((acc, x) => {
+    const unitDiscount = Number(x.discountAmount || 0);
+    const lineTotal = Math.max(0, (x.price - unitDiscount) * x.quantity);
+    return acc + lineTotal;
+  }, 0);
+  const exchangeDiff = Number((totalNewItems - totalToReturn).toFixed(2)); // positive = customer pays, negative = refund extra
 
   // ── Confirm Refund (pure devolution) ──
   const handleConfirmRefund = async () => {
@@ -286,18 +338,29 @@ export function ExchangeReturnModal({
       // 2. Process new sale for the new items
       // The payment amount must always equal the total of the new items.
       // When diff <= 0, the refund credit covers the new sale and the rest is returned to the customer.
+      const exchangeCustomerId = foundSale.customer?.id || undefined;
+
       await processSale({
         branchId,
         cashSessionId,
-        items: newItems.map((x) => ({
-          variantId: x.variantId,
-          quantity: x.quantity,
-          price: x.price,
-        })),
+        customerId: exchangeCustomerId,
+        items: newItems.map((x) => {
+          const unitDiscount = Number(x.discountAmount || 0);
+          const hasDiscount = unitDiscount > 0;
+          const totalLineDiscount = Number((unitDiscount * x.quantity).toFixed(2));
+          return {
+            variantId: x.variantId,
+            quantity: x.quantity,
+            price: x.price,
+            discountType: hasDiscount ? x.discountType : undefined,
+            discountRate: hasDiscount ? x.discountRate : undefined,
+            discountAmount: totalLineDiscount,
+          };
+        }),
         payments: [
           {
             paymentMethod: 'EFECTIVO',
-            amount: totalNewItems,  // always cover full amount of new sale
+            amount: totalNewItems,  // always cover full net amount of new sale
           },
         ],
         discountAmount: 0,
@@ -664,27 +727,78 @@ export function ExchangeReturnModal({
 
                 {newItems.length > 0 && (
                   <div className="flex flex-col gap-1.5">
-                    {newItems.map((item) => (
-                      <div key={item.variantId} className="flex items-center gap-2 rounded-lg bg-indigo-500/8 border border-indigo-500/20 px-3 py-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{item.productName}</p>
-                          {item.attributes && <p className="text-[10px] text-muted-foreground">{item.attributes}</p>}
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button onClick={() => adjustNewItemQty(item.variantId, -1)} className="w-6 h-6 rounded bg-background border border-border flex items-center justify-center hover:bg-muted">
-                            <Minus className="w-2.5 h-2.5" />
+                    {newItems.map((item) => {
+                      const discountType = item.discountType || 'PERCENTAGE';
+                      const discountRate = item.discountRate || 0;
+                      const unitDiscount = item.discountAmount || 0;
+                      const lineTotal = Math.max(0, (item.price - unitDiscount) * item.quantity);
+
+                      return (
+                        <div key={item.variantId} className="flex items-center gap-2 rounded-lg bg-indigo-500/8 border border-indigo-500/20 px-3 py-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{item.productName}</p>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {item.attributes && <span className="text-[10px] text-muted-foreground">{item.attributes}</span>}
+                              <span className="text-[10px] font-mono text-muted-foreground">· ${item.price.toFixed(2)} c/u</span>
+                              {unitDiscount > 0 && (
+                                <span className="text-[9px] font-mono text-emerald-400 font-medium">
+                                  (-${(unitDiscount * item.quantity).toFixed(2)})
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Discount pill */}
+                          <div
+                            className="flex items-center bg-background/80 border border-border rounded-lg h-7 px-1 shadow-xs shrink-0"
+                            title={discountType === 'PERCENTAGE' ? 'Descuento (%)' : 'Precio Especial ($)'}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const nextType = discountType === 'PERCENTAGE' ? 'AMOUNT' : 'PERCENTAGE';
+                                const nextVal = nextType === 'AMOUNT' ? item.price : 0;
+                                handleUpdateNewItemDiscount(item.variantId, nextType, nextVal);
+                              }}
+                              className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
+                              title={discountType === 'PERCENTAGE' ? 'Cambiar a Precio Fijo ($)' : 'Cambiar a Porcentaje (%)'}
+                            >
+                              {discountType === 'PERCENTAGE' ? (
+                                <Percent className="w-2.5 h-2.5 text-blue-400 font-bold" />
+                              ) : (
+                                <DollarSign className="w-2.5 h-2.5 text-emerald-400 font-bold" />
+                              )}
+                            </button>
+                            <input
+                              type="number"
+                              placeholder="0"
+                              min="0"
+                              step={discountType === 'PERCENTAGE' ? '1' : '0.01'}
+                              value={discountRate === 0 ? '' : discountRate}
+                              onChange={(e) => {
+                                const val = Math.max(0, parseFloat(e.target.value) || 0);
+                                handleUpdateNewItemDiscount(item.variantId, discountType, val);
+                              }}
+                              className="w-10 h-6 text-[10.5px] font-mono text-right bg-transparent text-foreground focus:outline-none pr-0.5"
+                            />
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button onClick={() => adjustNewItemQty(item.variantId, -1)} className="w-6 h-6 rounded bg-background border border-border flex items-center justify-center hover:bg-muted">
+                              <Minus className="w-2.5 h-2.5" />
+                            </button>
+                            <span className="w-5 text-center text-sm font-bold tabular-nums text-indigo-400">{item.quantity}</span>
+                            <button onClick={() => adjustNewItemQty(item.variantId, +1)} className="w-6 h-6 rounded bg-background border border-border flex items-center justify-center hover:bg-muted">
+                              <Plus className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                          <p className="text-sm font-semibold text-indigo-400 shrink-0 w-16 text-right">+{formatMoney(lineTotal)}</p>
+                          <button onClick={() => setNewItems((prev) => prev.filter((x) => x.variantId !== item.variantId))} className="text-muted-foreground hover:text-rose-500 transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                          <span className="w-5 text-center text-sm font-bold tabular-nums text-indigo-400">{item.quantity}</span>
-                          <button onClick={() => adjustNewItemQty(item.variantId, +1)} className="w-6 h-6 rounded bg-background border border-border flex items-center justify-center hover:bg-muted">
-                            <Plus className="w-2.5 h-2.5" />
-                          </button>
                         </div>
-                        <p className="text-sm font-semibold text-indigo-400 shrink-0 w-16 text-right">+{formatMoney(item.price * item.quantity)}</p>
-                        <button onClick={() => setNewItems((prev) => prev.filter((x) => x.variantId !== item.variantId))} className="text-muted-foreground hover:text-rose-500 transition-colors">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 
