@@ -80,14 +80,14 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
       const lineTotal = (item.price - itemDiscount) * item.quantity;
       return `
         <div style="margin-bottom: 5px;">
-          <div style="display: flex; justify-content: space-between; font-weight: bold;">
-            <span>${item.variantSku || 'SKU'}</span>
-            <span style="text-align: right; text-transform: uppercase;">${item.productName}</span>
+          <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 10.5px;">
+            <span style="max-width: 35%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.variantSku || 'SKU'}</span>
+            <span style="max-width: 63%; text-align: right; text-transform: uppercase;">${item.productName}</span>
           </div>
-          <div style="display: flex; justify-content: space-between; color: #222;">
-            <span style="padding-left: 20px;">${item.quantity}</span>
-            <span>${Number(item.price).toFixed(2)}</span>
-            <span>${lineTotal.toFixed(2)}</span>
+          <div style="display: flex; justify-content: space-between; color: #000; font-weight: 600; font-size: 10px; margin-top: 1px;">
+            <span style="padding-left: 10px;">x${item.quantity}</span>
+            <span>$${Number(item.price).toFixed(2)}</span>
+            <span style="font-weight: 700;">$${lineTotal.toFixed(2)}</span>
           </div>
         </div>
       `;
@@ -103,38 +103,47 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
               margin: 0;
               size: 80mm auto;
             }
+            * {
+              box-sizing: border-box;
+            }
             body {
-              margin: 0;
-              padding: 4mm;
-              width: 72mm;
-              font-family: 'Courier New', Courier, monospace;
+              margin: 0 auto;
+              padding: 2mm 3mm;
+              width: 70mm;
+              max-width: 70mm;
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
               font-size: 11px;
-              line-height: 1.4;
+              font-weight: 600;
+              line-height: 1.35;
               color: #000;
               background-color: #fff;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+              word-break: break-word;
+              overflow: hidden;
             }
             .text-center { text-align: center; }
-            .font-bold { font-weight: bold; }
+            .font-bold { font-weight: 800; }
             .uppercase { text-transform: uppercase; }
             .flex { display: flex; }
             .justify-between { justify-content: space-between; }
             .border-dashed {
-              border-bottom: 1px dashed #000;
-              margin: 5px 0;
+              border-bottom: 1.5px dashed #000;
+              margin: 4px 0;
             }
           </style>
         </head>
         <body>
-          <div class="text-center" style="margin-bottom: 8px;">
-            <div class="font-bold" style="font-size: 11px; text-transform: uppercase;">${tenantName || 'leAO'}</div>
-            ${tenantRuc ? `<div>RFC: ${tenantRuc}</div>` : ''}
-            ${saleData.branchAddress ? `<div style="text-transform: uppercase; font-size: 8.5px; margin-top: 2px;">${saleData.branchAddress}</div>` : '<div>AV. 20 DE NOVIEMBRE</div>'}
-            <div>TLF: 967 6316359</div>
+          <div class="text-center" style="margin-bottom: 6px;">
+            <div class="font-bold" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">${tenantName || 'leAO'}</div>
+            ${tenantRuc ? `<div style="font-weight: 700; font-size: 10px;">RFC: ${tenantRuc}</div>` : ''}
+            ${saleData.branchAddress ? `<div style="text-transform: uppercase; font-size: 9.5px; font-weight: 600; margin-top: 1px;">${saleData.branchAddress}</div>` : '<div style="font-size: 9.5px;">AV. 20 DE NOVIEMBRE</div>'}
+            <div style="font-size: 9.5px; font-weight: 600;">TLF: 967 6316359</div>
           </div>
 
           <div class="border-dashed"></div>
 
-          <div style="font-size: 9px; line-height: 1.25;">
+          <div style="font-size: 10px; line-height: 1.3; font-weight: 600;">
             <div class="flex justify-between">
               <span>FOLIO:</span>
               <span class="font-bold">${saleData.invoiceNumber}</span>
@@ -149,7 +158,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
             </div>
             <div class="flex justify-between">
               <span>CLIENTE:</span>
-              <span class="uppercase">${saleData.clientName}</span>
+              <span class="uppercase font-bold">${saleData.clientName}</span>
             </div>
           </div>
 
@@ -161,33 +170,33 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
 
           <div class="border-dashed"></div>
 
-          <div style="font-size: 9px; line-height: 1.25;">
+          <div style="font-size: 10px; line-height: 1.3; font-weight: 600;">
             <div class="flex justify-between">
-              <span>Piezas</span>
-              <span>${totalPieces}</span>
+              <span>Piezas:</span>
+              <span class="font-bold">${totalPieces}</span>
             </div>
             ${saleData.discountAmount && saleData.discountAmount > 0 ? `
               <div class="flex justify-between">
                 <span>DESC. GLOBAL:</span>
-                <span>-${Number(saleData.discountAmount).toFixed(2)}</span>
+                <span class="font-bold">-${Number(saleData.discountAmount).toFixed(2)}</span>
               </div>
             ` : ''}
-            <div class="flex justify-between font-bold" style="border-top: 1px dashed #000; padding-top: 3px; font-size: 10px; margin-top: 2px;">
-              <span>Total</span>
-              <span>$${Number(saleData.total || 0).toFixed(2)}</span>
+            <div class="flex justify-between font-bold" style="border-top: 1.5px dashed #000; padding-top: 4px; font-size: 12px; margin-top: 3px;">
+              <span>TOTAL:</span>
+              <span style="font-size: 13px;">$${Number(saleData.total || 0).toFixed(2)}</span>
             </div>
-            <div style="font-size: 8px; text-align: center; margin-top: 6px; font-style: italic;">
+            <div style="font-size: 9px; font-weight: 700; text-align: center; margin-top: 5px;">
               ${lettersText}
             </div>
           </div>
 
           <div class="border-dashed"></div>
 
-          <div class="text-center font-bold" style="font-size: 9px; line-height: 1.35; margin-top: 4px;">
+          <div class="text-center font-bold" style="font-size: 9.5px; line-height: 1.35; margin-top: 4px;">
             <div>SALIDA LA MERCANCIA</div>
             <div>NO HAY CAMBIOS</div>
             <div>NI DEVOLUCIONES</div>
-            <div style="margin-top: 4px;">^ GRACIAS POR SU COMPRA ^</div>
+            <div style="margin-top: 4px; font-size: 10px;">¡GRACIAS POR SU COMPRA!</div>
           </div>
         </body>
       </html>

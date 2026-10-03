@@ -143,38 +143,49 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
               margin: 0;
               size: 80mm auto;
             }
+            * {
+              box-sizing: border-box;
+            }
             body {
-              margin: 0;
-              padding: 4mm;
-              width: 72mm;
-              font-family: 'Courier New', Courier, monospace;
+              margin: 0 auto;
+              padding: 2mm 3mm;
+              width: 70mm;
+              max-width: 70mm;
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
               font-size: 10.5px;
-              line-height: 1.4;
+              font-weight: 600;
+              line-height: 1.35;
               color: #000;
               background-color: #fff;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+              word-break: break-word;
+              overflow: hidden;
             }
             .text-center { text-align: center; }
-            .font-bold { font-weight: bold; }
+            .font-bold { font-weight: 800; }
             .uppercase { text-transform: uppercase; }
             .flex { display: flex; }
             .justify-between { justify-content: space-between; }
             .border-dashed {
-              border-bottom: 1px dashed #000;
-              margin: 6px 0;
+              border-bottom: 1.5px dashed #000;
+              margin: 5px 0;
             }
             .title {
-              font-size: 11px;
-              font-weight: bold;
+              font-size: 13px;
+              font-weight: 800;
               text-transform: uppercase;
               text-align: center;
               margin-bottom: 2px;
+              letter-spacing: 0.5px;
             }
             .section-title {
-              font-weight: bold;
+              font-weight: 800;
               text-transform: uppercase;
               margin: 8px 0 4px 0;
-              font-size: 9.5px;
-              text-decoration: underline;
+              font-size: 10px;
+              border-bottom: 1px solid #000;
+              padding-bottom: 1px;
             }
           </style>
         </head>
