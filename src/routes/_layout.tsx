@@ -1,12 +1,11 @@
-import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { useEffect } from 'react';
+import { createFileRoute, Outlet, redirect, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
-import { LayoutContextProvider } from '@/providers/LayoutContext';
+import { LayoutContextProvider, useLayoutContext } from '@/providers/LayoutContext';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AppSidebar } from '@/components/AppSidebar';
 import { Building, ChevronDown, CreditCard } from 'lucide-react';
-import { useLayoutContext } from '@/providers/LayoutContext';
-import { useRouterState } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_layout')({
   beforeLoad: () => {
@@ -21,6 +20,19 @@ export const Route = createFileRoute('/_layout')({
 });
 
 function AppLayout() {
+  const { isAuthenticated, accessToken } = useAuthStore();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) {
+      navigate({ to: '/login', replace: true });
+    }
+  }, [isAuthenticated, accessToken, navigate]);
+
+  if (!isAuthenticated || !accessToken) {
+    return null;
+  }
+
   return (
     <LayoutContextProvider>
       <DashboardShell />

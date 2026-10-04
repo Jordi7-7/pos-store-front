@@ -17,13 +17,19 @@ import {
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { navigationConfig } from "@/config/navigation.config"
-import { Link, useRouterState } from "@tanstack/react-router"
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
 
 export function AppSidebar() {
   const { user, role, roleName, logout, publicTenant, can } = useAuthStore()
+  const navigate = useNavigate()
   const { state: sidebarState } = useSidebar()
   const isIconCollapsed = sidebarState === 'collapsed'
+
+  const handleLogout = () => {
+    logout()
+    navigate({ to: '/login', replace: true })
+  }
 
   const routerState = useRouterState()
   const currentPath = routerState.location.pathname
@@ -169,7 +175,7 @@ export function AppSidebar() {
         </div>
 
         <button 
-          onClick={logout}
+          onClick={handleLogout}
           className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-semibold rounded-xl transition-all duration-150 cursor-pointer"
         >
           <LogOut className="w-3.5 h-3.5 shrink-0" />
