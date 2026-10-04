@@ -16,7 +16,7 @@ import { AlertTriangle, Loader2, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useCategories } from '../hooks/useCategories';
-import { useUpdateProduct, useDeleteProduct } from '../hooks/useProducts';
+import { useUpdateSimpleProduct, useDeleteProduct } from '../hooks/useProducts';
 import { useTags } from '../hooks/useTags';
 import { productFormSchema, type ProductFormValues } from '../schemas/product.schema';
 import { ProductForm } from './forms/ProductForm';
@@ -54,7 +54,7 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
   selectedBranchId,
 }) => {
   const { createCategory, isCreating: isCreatingCategory } = useCategories();
-  const { updateProduct, isUpdating } = useUpdateProduct();
+  const { updateSimpleProduct, isUpdating } = useUpdateSimpleProduct();
   const { deleteProduct, isDeleting } = useDeleteProduct();
   const { tags: allTags, createTag, isCreating: isCreatingTag, updateVariantTags } = useTags();
 
@@ -137,24 +137,18 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
   const onSubmit = async (data: ProductFormValues) => {
     const sv = product?.variants?.[0] ?? {};
     try {
-      await updateProduct({
+      await updateSimpleProduct({
         id: product.id,
         input: {
           name: data.name.trim(),
           description: data.description?.trim() ?? '',
-          categoryId: data.categoryId || undefined,
+          categoryId: data.categoryId || null,
           imageIds: selectedImages,
-          variants: [
-            {
-              id: sv.id,
-              sku: data.sku.trim(),
-              barcode: data.barcode?.trim() || undefined,
-              purchasePrice: data.purchasePrice,
-              salePrice: data.salePrice,
-              wholesalePrice: data.wholesalePrice !== undefined ? data.wholesalePrice : null,
-              imageIds: selectedImages,
-            },
-          ],
+          sku: data.sku.trim(),
+          barcode: data.barcode?.trim() || undefined,
+          purchasePrice: data.purchasePrice,
+          salePrice: data.salePrice,
+          wholesalePrice: data.wholesalePrice !== undefined ? data.wholesalePrice : null,
         },
       });
       // Sync tags on variant
@@ -163,9 +157,13 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
       }
       toast.success('¡Producto actualizado con éxito!');
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error('Error al guardar los cambios en el servidor.');
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Error al guardar los cambios en el servidor.';
+      toast.error(message);
     }
   };
 
@@ -179,9 +177,13 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
       toast.success('¡Producto eliminado con éxito!');
       setShowDeleteConfirm(false);
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error('Error al intentar eliminar el producto.');
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Error al intentar eliminar el producto.';
+      toast.error(message);
     }
   };
 

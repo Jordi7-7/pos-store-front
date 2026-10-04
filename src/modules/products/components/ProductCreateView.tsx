@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCategories } from '../hooks/useCategories';
-import { useCreateProduct } from '../hooks/useProducts';
+import { useCreateSimpleProduct } from '../hooks/useProducts';
 import { ProductCreateTab } from './ProductCreateTab';
 import { usePermissions } from '@/hooks/usePermissions';
 import { APP_PERMISSIONS } from '@/constants/permissions';
@@ -20,7 +20,7 @@ export const ProductCreateView: React.FC<ProductCreateViewProps> = ({
   const canCreate = can(APP_PERMISSIONS.PRODUCTS_CREATE);
 
   const { categories } = useCategories();
-  const { createSimpleProduct } = useCreateProduct();
+  const { createSimpleProduct } = useCreateSimpleProduct();
 
   if (!canCreate) {
     return (

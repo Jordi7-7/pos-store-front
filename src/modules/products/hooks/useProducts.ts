@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsService } from '../services/products.service';
-import type { AdjustStockInput, CreateProductInput, CreateSimpleProductInput, InventoryMovement, PaginatedResult, Product, ProductHistoryPurchase, ProductHistorySale } from '../services/products.service';
+import type { AdjustStockInput, CreateVariableProductInput, CreateSimpleProductInput, UpdateProductInput, UpdateSimpleProductInput, UpdateVariantInput, InventoryMovement, PaginatedResult, Product, ProductHistoryPurchase, ProductHistorySale } from '../services/products.service';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
 export const useProducts = (params?: { page?: number; limit?: number; search?: string }) => {
@@ -101,49 +101,66 @@ export const useAdjustStock = () => {
   };
 };
 
-export const useCreateProduct = () => {
+export const useCreateSimpleProduct = () => {
   const queryClient = useQueryClient();
   const { tenantId } = useAuthStore();
 
-  const createProductMutation = useMutation({
-    mutationFn: (input: CreateProductInput) => productsService.createProduct(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products', tenantId] });
-    },
-  });
-
-  const createSimpleProductMutation = useMutation({
+  const mutation = useMutation({
     mutationFn: (input: CreateSimpleProductInput) => productsService.createSimpleProduct(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products', tenantId] });
     },
   });
 
-  const createVariableProductMutation = useMutation({
-    mutationFn: (input: CreateProductInput) => productsService.createVariableProduct(input),
+  return {
+    createSimpleProduct: mutation.mutateAsync,
+    isCreating: mutation.isPending,
+  };
+};
+
+export const useCreateVariableProduct = () => {
+  const queryClient = useQueryClient();
+  const { tenantId } = useAuthStore();
+
+  const mutation = useMutation({
+    mutationFn: (input: CreateVariableProductInput) => productsService.createVariableProduct(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products', tenantId] });
     },
   });
 
   return {
-    createProduct: createProductMutation.mutateAsync,
-    isCreating: createProductMutation.isPending,
-    createSimpleProduct: createSimpleProductMutation.mutateAsync,
-    isCreatingSimple: createSimpleProductMutation.isPending,
-    createVariableProduct: createVariableProductMutation.mutateAsync,
-    isCreatingVariable: createVariableProductMutation.isPending,
-    isError: createProductMutation.isError,
+    createVariableProduct: mutation.mutateAsync,
+    isCreating: mutation.isPending,
   };
 };
 
+
+export const useUpdateSimpleProduct = () => {
+  const queryClient = useQueryClient();
+  const { tenantId } = useAuthStore();
+
+  const mutation = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateSimpleProductInput }) => 
+      productsService.updateSimpleProduct(id, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products', tenantId] });
+    },
+  });
+
+  return {
+    updateSimpleProduct: mutation.mutateAsync,
+    isUpdating: mutation.isPending,
+    isError: mutation.isError,
+  };
+};
 
 export const useUpdateProduct = () => {
   const queryClient = useQueryClient();
   const { tenantId } = useAuthStore();
 
   const updateProductMutation = useMutation({
-    mutationFn: ({ id, input }: { id: string; input: any }) => 
+    mutationFn: ({ id, input }: { id: string; input: UpdateProductInput }) => 
       productsService.updateProduct(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products', tenantId] });
@@ -154,6 +171,25 @@ export const useUpdateProduct = () => {
     updateProduct: updateProductMutation.mutateAsync,
     isUpdating: updateProductMutation.isPending,
     isError: updateProductMutation.isError,
+  };
+};
+
+export const useUpdateVariant = () => {
+  const queryClient = useQueryClient();
+  const { tenantId } = useAuthStore();
+
+  const updateVariantMutation = useMutation({
+    mutationFn: ({ variantId, input }: { variantId: string; input: UpdateVariantInput }) => 
+      productsService.updateVariant(variantId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products', tenantId] });
+    },
+  });
+
+  return {
+    updateVariant: updateVariantMutation.mutateAsync,
+    isUpdating: updateVariantMutation.isPending,
+    isError: updateVariantMutation.isError,
   };
 };
 

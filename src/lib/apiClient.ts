@@ -36,7 +36,12 @@ export const apiClient = {
       throw new Error(errorData.message || `Request failed with status ${response.status}`);
     }
 
-    return response.json();
+    if (response.status === 204) {
+      return {} as T;
+    }
+
+    const text = await response.text();
+    return text ? JSON.parse(text) : ({} as T);
   },
 
   get: <T>(path: string, options?: RequestInit) => 

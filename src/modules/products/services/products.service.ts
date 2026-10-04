@@ -118,12 +118,51 @@ export interface ProductHistoryPurchase {
   supplier?: { name?: string } | null;
 }
 
-export interface CreateProductInput {
+export interface CreateVariableProductVariantInput {
+  sku: string;
+  barcode?: string;
+  purchasePrice: number;
+  salePrice: number;
+  wholesalePrice?: number | null;
+  imageIds?: string[];
+  attributeValues: { attributeValueId: string }[];
+  stocks?: { branchId: string; quantity: number }[];
+}
+
+export interface CreateVariableProductInput {
   name: string;
   description: string;
   categoryId?: string;
   imageIds?: string[];
-  variants: ProductVariant[];
+  variants: CreateVariableProductVariantInput[];
+}
+
+export interface UpdateProductInput {
+  name?: string;
+  description?: string;
+  categoryId?: string | null;
+  imageIds?: string[];
+}
+
+export interface UpdateVariantInput {
+  sku?: string;
+  barcode?: string;
+  purchasePrice?: number;
+  salePrice?: number;
+  wholesalePrice?: number | null;
+  imageIds?: string[];
+}
+
+export interface UpdateSimpleProductInput {
+  name?: string;
+  description?: string;
+  categoryId?: string | null;
+  imageIds?: string[];
+  sku?: string;
+  barcode?: string;
+  purchasePrice?: number;
+  salePrice?: number;
+  wholesalePrice?: number | null;
 }
 
 export interface CreateSimpleProductInput {
@@ -166,15 +205,11 @@ export const productsService = {
     return apiClient.delete(`/products/${id}`);
   },
 
-  createProduct: async (input: CreateProductInput): Promise<Product> => {
-    return apiClient.post<Product>('/products', input);
-  },
-
   createSimpleProduct: async (input: CreateSimpleProductInput): Promise<Product> => {
     return apiClient.post<Product>('/products/simple', input);
   },
 
-  createVariableProduct: async (input: CreateProductInput): Promise<Product> => {
+  createVariableProduct: async (input: CreateVariableProductInput): Promise<Product> => {
     return apiClient.post<Product>('/products/variable', input);
   },
 
@@ -190,8 +225,16 @@ export const productsService = {
     return apiClient.post<AttributeValue>('/products/attributes/values', { attributeId, value });
   },
 
-  updateProduct: async (id: string, input: Partial<CreateProductInput>): Promise<Product> => {
+  updateProduct: async (id: string, input: UpdateProductInput): Promise<Product> => {
     return apiClient.put<Product>(`/products/${id}`, input);
+  },
+
+  updateSimpleProduct: async (id: string, input: UpdateSimpleProductInput): Promise<Product> => {
+    return apiClient.put<Product>(`/products/${id}/simple`, input);
+  },
+
+  updateVariant: async (variantId: string, input: UpdateVariantInput): Promise<ProductVariant> => {
+    return apiClient.put<ProductVariant>(`/products/variants/${variantId}`, input);
   },
 
   createVariant: async (productId: string, input: ProductVariant): Promise<ProductVariant> => {
