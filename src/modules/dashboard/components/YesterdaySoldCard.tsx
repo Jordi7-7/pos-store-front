@@ -14,22 +14,29 @@ interface YesterdaySoldCardProps {
 
 export const YesterdaySoldCard: React.FC<YesterdaySoldCardProps> = ({ products }) => {
   return (
-    <div className="bg-bg-card border border-border-card rounded-2xl p-4 shadow-sm flex flex-col justify-between h-full space-y-2">
-      <div className="flex items-center gap-2 mb-1">
-        <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
-          <History className="w-3.5 h-3.5" />
+    <div className="bg-bg-card border border-border-card rounded-2xl p-4 shadow-sm flex flex-col h-full space-y-2">
+      <div className="flex items-center justify-between mb-1 shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
+            <History className="w-3.5 h-3.5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-secondary">Vendidos el día anterior</h3>
+            <p className="text-[10px] text-neutral">Productos con salida registrada ayer</p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-sm font-bold text-secondary">Vendidos el día anterior</h3>
-          <p className="text-[10px] text-neutral">Productos con salida registrada ayer</p>
-        </div>
+        {products && products.length > 0 && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">
+            {products.length} {products.length === 1 ? 'prod' : 'prods'}
+          </span>
+        )}
       </div>
 
-      {/* Table */}
-      <div className="flex-1 overflow-hidden">
+      {/* Table with custom scrollbar */}
+      <div className="flex-1 overflow-y-auto pr-1 min-h-0">
         {products && products.length > 0 ? (
           <table className="w-full text-left border-collapse">
-            <thead>
+            <thead className="sticky top-0 bg-bg-card z-10">
               <tr className="border-b border-border-card/60 text-[9px] uppercase font-bold text-neutral">
                 <th className="py-1 px-1.5">SKU</th>
                 <th className="py-1 px-1.5">Producto</th>
@@ -37,7 +44,7 @@ export const YesterdaySoldCard: React.FC<YesterdaySoldCardProps> = ({ products }
               </tr>
             </thead>
             <tbody className="divide-y divide-border-card/30 text-xs">
-              {products.slice(0, 5).map((item, index) => (
+              {products.map((item, index) => (
                 <tr key={item.variantId || index} className="hover:bg-bg-dark/30 transition-colors">
                   <td className="py-1.5 px-1.5 font-mono text-[10px] text-neutral truncate max-w-[70px]">
                     {item.sku || 'N/A'}

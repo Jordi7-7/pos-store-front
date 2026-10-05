@@ -14,8 +14,8 @@ interface LowStockCardProps {
 
 export const LowStockCard: React.FC<LowStockCardProps> = ({ products }) => {
   return (
-    <div className="bg-bg-card border border-border-card rounded-2xl p-4 shadow-sm flex flex-col justify-between h-full">
-      <div className="flex items-center justify-between mb-2">
+    <div className="bg-bg-card border border-border-card rounded-2xl p-4 shadow-sm flex flex-col h-full">
+      <div className="flex items-center justify-between mb-3 shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
             <AlertTriangle className="w-3.5 h-3.5" />
@@ -25,12 +25,17 @@ export const LowStockCard: React.FC<LowStockCardProps> = ({ products }) => {
             <p className="text-[10px] text-neutral">Stock menor o igual a 5</p>
           </div>
         </div>
+        {products && products.length > 0 && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
+            {products.length} {products.length === 1 ? 'prod' : 'prods'}
+          </span>
+        )}
       </div>
 
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-y-auto pr-1 min-h-0">
         {products && products.length > 0 ? (
           <table className="w-full text-left border-collapse">
-            <thead>
+            <thead className="sticky top-0 bg-bg-card z-10">
               <tr className="border-b border-border-card/60 text-[9px] uppercase font-bold text-neutral">
                 <th className="py-1 px-1.5">SKU</th>
                 <th className="py-1 px-1.5">Producto</th>
@@ -38,7 +43,7 @@ export const LowStockCard: React.FC<LowStockCardProps> = ({ products }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border-card/30 text-xs">
-              {products.slice(0, 5).map((item, index) => {
+              {products.map((item, index) => {
                 const isCritical = item.stock <= 2;
                 return (
                   <tr key={item.variantId || index} className="hover:bg-bg-dark/30 transition-colors">

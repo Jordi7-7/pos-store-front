@@ -91,9 +91,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ branchId }) => {
 
       {/* Row 2: Top Productos (4 cols) + Poco Inventario (4 cols) + Vendidos Ayer (4 cols) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
-        <TopProductsCard products={metrics.topProducts} />
-        <LowStockCard products={metrics.lowStockProducts} />
-        <YesterdaySoldCard products={metrics.yesterdaySoldProducts} />
+        <div className="h-[270px] xl:h-[300px]">
+          <TopProductsCard products={metrics.topProducts} />
+        </div>
+        <div className="h-[270px] xl:h-[300px]">
+          <LowStockCard products={metrics.lowStockProducts} />
+        </div>
+        <div className="h-[270px] xl:h-[300px]">
+          <YesterdaySoldCard products={metrics.yesterdaySoldProducts} />
+        </div>
       </div>
     </div>
   );

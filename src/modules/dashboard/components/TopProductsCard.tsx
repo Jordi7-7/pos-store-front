@@ -17,8 +17,8 @@ const MEDAL_EMOJIS = ['🥇', '🥈', '🥉'];
 
 export const TopProductsCard: React.FC<TopProductsCardProps> = ({ products }) => {
   return (
-    <div className="bg-bg-card border border-border-card rounded-2xl p-4 shadow-sm flex flex-col justify-between h-full">
-      <div className="flex items-center justify-between mb-2">
+    <div className="bg-bg-card border border-border-card rounded-2xl p-4 shadow-sm flex flex-col h-full">
+      <div className="flex items-center justify-between mb-2 shrink-0">
         <h3 className="text-sm font-bold text-secondary">Productos más vendidos</h3>
         <span className="text-[10px] font-semibold text-neutral uppercase tracking-wider">Top 5</span>
       </div>
