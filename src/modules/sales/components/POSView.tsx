@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { productsService } from '../../products/services/products.service';
 import { useBranches } from '../../branches/hooks/useBranches';
-import type { Branch } from '../../branches/services/branches.service';
 import { useMyCashRegisters } from '@/modules/cash-registers/hooks/useCashRegisters';
 import {
   useOpenCashSession,
@@ -14,7 +13,6 @@ import { useCustomers } from '../hooks/useCustomers';
 import type { Customer } from '../hooks/useCustomers';
 import { useCashSessionDetailsQuery } from '../../cash-sessions/hooks/useCashSessions';
 import { PaymentMethod } from '../services/sales.service';
-import type { Sale } from '../services/sales.service';
 import type {
   SessionSale,
   SessionExpense,
@@ -59,7 +57,7 @@ import { ThermalClosingTicketModal } from './pos/ThermalClosingTicketModal';
 import { AperturaModal } from './pos/AperturaModal';
 import { EgresoModal } from './pos/EgresoModal';
 import { CierreModal } from './pos/CierreModal';
-import { HistorialModal } from './pos/HistorialModal';
+import { CashSessionAuditModal } from '../../cash-sessions/components/CashSessionAuditModal';
 import { ExchangeReturnModal } from './pos/ExchangeReturnModal';
 import { usePOSHotkeys } from '../hooks/usePOSHotkeys';
 
@@ -182,8 +180,6 @@ export const POSView: React.FC<POSViewProps> = ({
   // Ticket Printing State
   const [lastCompletedSale, setLastCompletedSale] = useState<any | null>(null);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
-  const [reprintSaleData, setReprintSaleData] = useState<any | null>(null);
-  const [isReprintModalOpen, setIsReprintModalOpen] = useState(false);
   const [closingSessionToPrint, setClosingSessionToPrint] = useState<any | null>(null);
   const [isClosingTicketOpen, setIsClosingTicketOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -193,38 +189,6 @@ export const POSView: React.FC<POSViewProps> = ({
   const currentUser = useAuthStore((state) => state.user);
   const publicTenant = useAuthStore((state) => state.publicTenant);
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
-
-  const handlePrintSale = (sale: Sale | SessionSale) => {
-    const branchName = ('branch' in sale && sale.branch?.name) ? sale.branch.name : (branches.find((b: Branch) => b.id === selectedBranchId)?.name || 'Sucursal General');
-    const branchAddress = ('branch' in sale && sale.branch?.address) ? sale.branch.address : (branches.find((b: Branch) => b.id === selectedBranchId)?.address || '');
-    const clientName = sale.customer?.name || 'Consumidor Final';
-    const clientIdentity = ('customer' in sale && sale.customer && 'identityNumber' in sale.customer) ? (sale.customer as any).identityNumber : '9999999999';
-    const invoiceNumber = sale.invoiceNumber;
-
-    setReprintSaleData({
-      invoiceNumber,
-      createdAt: sale.createdAt,
-      branchName,
-      branchAddress,
-      clientName,
-      clientIdentity,
-      items: (sale.items || []).map((item: any) => ({
-        variantId: item.variantId,
-        variantSku: item.variant?.sku || item.sku || item.variantSku || '',
-        productName: item.variant?.product?.name || item.productName || item.variantName || 'Producto',
-        combinationText: item.variant?.attributeValues?.map((av: any) => av.value).join(' / ') || item.attributes || 'Estándar',
-        quantity: Number(item.quantity),
-        price: Number(item.price),
-        discountAmount: Number(item.discountAmount || 0),
-      })),
-      paymentMethod: (sale.payments?.[0]?.paymentMethod || ('paymentMethod' in sale ? (sale as any).paymentMethod : undefined) || PaymentMethod.EFECTIVO) as any,
-      discountAmount: Number((sale as any).discountAmount || 0),
-      total: Number(sale.total || 0),
-      userName: sale.user?.name || 'Vendedor',
-    });
-    setIsReprintModalOpen(true);
-  };
-
 
   // Clock & shift timer
   const [currentTime, setCurrentTime] = useState(() => DateTime.now().setZone(timezone).toFormat('HH:mm:ss'));
@@ -399,8 +363,8 @@ export const POSView: React.FC<POSViewProps> = ({
         id: ref.id,
         reason: ref.reason,
         items: (ref.items || []).map((ri) => ({
-          name: ri.variant.product.name,
-          sku: ri.variant.sku,
+          name: ri.variant?.product?.name || 'Producto',
+          sku: ri.variant?.sku || 'N/A',
           quantity: ri.quantity,
         })),
       }));
@@ -1601,29 +1565,10 @@ export const POSView: React.FC<POSViewProps> = ({
       )}
 
       {isHistorialModalOpen && (
-        <HistorialModal
+        <CashSessionAuditModal
+          sessionId={activeSession?.id || null}
           isOpen={isHistorialModalOpen}
           onClose={() => setIsHistorialModalOpen(false)}
-          activeSessionSales={activeSessionSales}
-          activeSessionExpenses={activeSessionExpenses}
-          activeSessionRefunds={sessionDetails?.refunds || []}
-          activeSession={activeSession}
-          branchId={selectedBranchId}
-          onPrintSale={handlePrintSale}
-        />
-      )}
-
-      {isReprintModalOpen && (
-        <ThermalTicketModal
-          isOpen={isReprintModalOpen}
-          onClose={() => {
-            setIsReprintModalOpen(false);
-            setReprintSaleData(null);
-          }}
-          saleData={reprintSaleData}
-          tenantRuc={publicTenant?.ruc || ''}
-          tenantName={publicTenant?.name || ''}
-          currencyCode={publicTenant?.currencyCode || ''}
         />
       )}
 

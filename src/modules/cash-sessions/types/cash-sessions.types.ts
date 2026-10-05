@@ -52,37 +52,40 @@ export interface SessionSale {
   customer?: {
     id: string;
     name: string;
+    identityNumber?: string;
   } | null;
   user?: {
     id: string;
     name: string;
   };
+  userName?: string;
   items: SessionSaleItem[];
   payments: SessionSalePayment[];
 }
 
 export interface SessionExpense {
   id: string;
-  tenantId: string;
-  branchId: string;
-  cashSessionId: string;
+  tenantId?: string;
+  branchId?: string;
+  cashSessionId?: string;
   description: string;
   amount: number;
   category: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
+  userName?: string;
 }
 
 export interface SessionRefundItem {
   id: string;
-  refundId: string;
-  variantId: string;
+  refundId?: string;
+  variantId?: string;
   quantity: number;
   priceRefunded: number;
-  variant: {
+  variant?: {
     id: string;
     sku: string;
-    product: {
+    product?: {
       id: string;
       name: string;
     };
@@ -91,14 +94,15 @@ export interface SessionRefundItem {
 
 export interface SessionRefund {
   id: string;
-  tenantId: string;
-  branchId: string;
-  saleId: string;
-  cashSessionId: string;
+  tenantId?: string;
+  branchId?: string;
+  saleId?: string;
+  cashSessionId?: string;
   totalRefunded: number;
   reason: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
+  userName?: string;
   user?: {
     id: string;
     name: string;
