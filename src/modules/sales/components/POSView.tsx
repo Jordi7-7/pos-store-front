@@ -850,10 +850,13 @@ export const POSView: React.FC<POSViewProps> = ({
           combinationText: i.combinationText,
           quantity: i.quantity,
           price: i.price,
-          discountAmount: i.discountAmount || 0
+          discountAmount: i.discountAmount || 0,
         })),
         paymentMethod: addedPayments[0]?.paymentMethod || PaymentMethod.EFECTIVO,
-        discountAmount: globalDiscountAmount,
+        subtotal: grossSubtotal,
+        itemsDiscountAmount: totalItemDiscounts,
+        globalDiscountAmount: globalDiscountAmount,
+        discountAmount: Number((totalItemDiscounts + globalDiscountAmount).toFixed(2)),
         total: cartTotal,
         userName: currentUser?.name || 'Vendedor'
       };

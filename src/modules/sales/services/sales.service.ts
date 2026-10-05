@@ -85,6 +85,8 @@ export interface SaleDetail {
   total: number;
   subtotal: number;
   discountAmount: number;
+  itemsDiscountAmount?: number;
+  globalDiscountAmount?: number;
   status: string;
   branch?: { id: string; name: string; address?: string } | null;
   customer?: { id: string; name: string } | null;

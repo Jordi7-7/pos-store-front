@@ -94,7 +94,10 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
         (sale.payments?.[0]?.paymentMethod ||
           sale.paymentMethod ||
           PaymentMethod.EFECTIVO) as any,
-      discountAmount: Number((sale as any).discountAmount || 0),
+      subtotal: Number(sale.subtotal || 0),
+      itemsDiscountAmount: Number(sale.itemsDiscountAmount || 0),
+      globalDiscountAmount: Number(sale.globalDiscountAmount || 0),
+      discountAmount: Number(sale.discountAmount || 0),
       total: Number(sale.total || 0),
       userName: sale.userName || sale.user?.name || 'Vendedor',
     });

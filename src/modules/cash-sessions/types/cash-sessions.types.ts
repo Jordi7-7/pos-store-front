@@ -21,34 +21,43 @@ export interface SessionProductVariant {
 
 export interface SessionSaleItem {
   id: string;
-  saleId: string;
+  saleId?: string;
   variantId: string;
   quantity: number;
   price: number;
-  cost: number;
-  discountType: string | null;
-  discountRate: number | null;
-  discountAmount: number;
+  cost?: number;
+  subtotal?: number;
+  total?: number;
+  discountType?: string | null;
+  discountRate?: number | null;
+  discountAmount?: number;
+  globalDiscountAmount?: number;
   variant: SessionProductVariant;
 }
 
 export interface SessionSalePayment {
   id: string;
-  saleId: string;
+  saleId?: string;
   paymentMethod: 'EFECTIVO' | 'TARJETA';
   amount: number;
-  referenceNumber: string | null;
+  referenceNumber?: string | null;
 }
 
 export interface SessionSale {
   id: string;
   invoiceNumber: string;
   cashSessionId: string;
+  subtotal?: number;
   total: number;
+  discountAmount?: number;
+  itemsDiscountAmount?: number;
+  globalDiscountAmount?: number;
+  discountType?: string | null;
+  discountRate?: number | null;
   paymentMethod: 'EFECTIVO' | 'TARJETA';
   status: 'COMPLETED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
   customer?: {
     id: string;
     name: string;

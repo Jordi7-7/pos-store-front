@@ -20,16 +20,17 @@ interface ThermalTicketModalProps {
     clientIdentity: string;
     items: any[];
     paymentMethod: PaymentMethod;
-    total: number;
+    subtotal?: number;
+    itemsDiscountAmount?: number;
+    globalDiscountAmount?: number;
     discountAmount?: number;
+    total: number;
     userName?: string;
   } | null;
   tenantRuc?: string;
   tenantName?: string;
   currencyCode?: string;
 }
-
-
 
 export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
   isOpen,
@@ -57,6 +58,29 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
   }
 
   const totalPieces = saleData.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+
+  // Compute subtotal (gross total before discounts)
+  const computedGrossSubtotal = saleData.items.reduce((sum, item) => {
+    return sum + (Number(item.price || 0) * Number(item.quantity || 0));
+  }, 0);
+  const rawSubtotal = saleData.subtotal !== undefined && saleData.subtotal > 0
+    ? Number(saleData.subtotal)
+    : computedGrossSubtotal;
+
+  // Compute item discounts
+  const computedItemDiscounts = saleData.items.reduce((sum, item) => {
+    const disc = Number(item.discountAmount || 0);
+    return sum + disc;
+  }, 0);
+  const itemsDiscount = saleData.itemsDiscountAmount !== undefined
+    ? Number(saleData.itemsDiscountAmount)
+    : computedItemDiscounts;
+
+  // Global discount
+  const globalDiscount = saleData.globalDiscountAmount !== undefined
+    ? Number(saleData.globalDiscountAmount)
+    : Math.max(0, Number(saleData.discountAmount || 0) - itemsDiscount);
+
   const lettersText = `Son: ${numeroALetras(saleData.total, {
     moneda,
     sufijo,
@@ -76,18 +100,24 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
     if (!doc) return;
 
     const itemsHtml = saleData.items.map((item: any) => {
-      const itemDiscount = item.discountAmount || 0;
-      const lineTotal = (item.price - itemDiscount) * item.quantity;
+      const itemDisc = Number(item.discountAmount || 0);
+      const qty = Number(item.quantity || 1);
+      const unitPrice = Number(item.price || 0);
+      const lineSubtotal = unitPrice * qty;
+      const lineTotal = Math.max(0, lineSubtotal - itemDisc);
+      const hasDiscount = itemDisc > 0;
+
       return `
-        <div style="margin-bottom: 5px;">
+        <div style="margin-bottom: 6px;">
           <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 10.5px;">
-            <span style="max-width: 35%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.variantSku || 'SKU'}</span>
-            <span style="max-width: 63%; text-align: right; text-transform: uppercase;">${item.productName}</span>
+            <span style="max-width: 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.variantSku || 'SKU'}</span>
+            <span style="max-width: 60%; text-align: right; text-transform: uppercase;">${item.productName}</span>
           </div>
-          <div style="display: flex; justify-content: space-between; color: #000; font-weight: 600; font-size: 10px; margin-top: 1px;">
-            <span style="padding-left: 10px;">x${item.quantity}</span>
-            <span>$${Number(item.price).toFixed(2)}</span>
-            <span style="font-weight: 700;">$${lineTotal.toFixed(2)}</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; color: #000; font-weight: 600; font-size: 10px; margin-top: 1.5px;">
+            <span style="padding-left: 8px;">x${qty}</span>
+            <span>$${unitPrice.toFixed(2)}</span>
+            ${hasDiscount ? `<span style="font-size: 9px; font-weight: 700; color: #b91c1c;">(Desc -$${itemDisc.toFixed(2)})</span>` : ''}
+            <span style="font-weight: 800; font-size: 10.5px;">$${lineTotal.toFixed(2)}</span>
           </div>
         </div>
       `;
@@ -170,20 +200,30 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
 
           <div class="border-dashed"></div>
 
-          <div style="font-size: 10px; line-height: 1.3; font-weight: 600;">
+          <div style="font-size: 10px; line-height: 1.35; font-weight: 600;">
             <div class="flex justify-between">
               <span>Piezas:</span>
               <span class="font-bold">${totalPieces}</span>
             </div>
-            ${saleData.discountAmount && saleData.discountAmount > 0 ? `
-              <div class="flex justify-between">
+            <div class="flex justify-between" style="margin-top: 2px;">
+              <span>SUBTOTAL:</span>
+              <span class="font-bold">$${rawSubtotal.toFixed(2)}</span>
+            </div>
+            ${itemsDiscount > 0 ? `
+              <div class="flex justify-between" style="color: #b91c1c;">
+                <span>DESC. ÍTEMS:</span>
+                <span class="font-bold">-$${itemsDiscount.toFixed(2)}</span>
+              </div>
+            ` : ''}
+            ${globalDiscount > 0 ? `
+              <div class="flex justify-between" style="color: #b91c1c;">
                 <span>DESC. GLOBAL:</span>
-                <span class="font-bold">-${Number(saleData.discountAmount).toFixed(2)}</span>
+                <span class="font-bold">-$${globalDiscount.toFixed(2)}</span>
               </div>
             ` : ''}
             <div class="flex justify-between font-bold" style="border-top: 1.5px dashed #000; padding-top: 4px; font-size: 12px; margin-top: 3px;">
               <span>TOTAL:</span>
-              <span style="font-size: 13px;">$${Number(saleData.total || 0).toFixed(2)}</span>
+              <span style="font-size: 13.5px;">$${Number(saleData.total || 0).toFixed(2)}</span>
             </div>
             <div style="font-size: 9px; font-weight: 700; text-align: center; margin-top: 5px;">
               ${lettersText}
@@ -248,18 +288,28 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
 
           <div className="border-t border-dashed border-gray-200 pt-3 space-y-2">
             {saleData.items.map((item: any, idx: number) => {
-              const itemDiscount = item.discountAmount || 0;
-              const lineTotal = (item.price - itemDiscount) * item.quantity;
+              const itemDisc = Number(item.discountAmount || 0);
+              const qty = Number(item.quantity || 1);
+              const unitPrice = Number(item.price || 0);
+              const lineSubtotal = unitPrice * qty;
+              const lineTotal = Math.max(0, lineSubtotal - itemDisc);
+              const hasDiscount = itemDisc > 0;
+
               return (
                 <div key={item.variantId || idx} className="space-y-0.5 text-[11px]">
                   <div className="flex justify-between font-semibold text-black">
                     <span>{item.variantSku || 'SKU'}</span>
                     <span className="uppercase truncate max-w-[140px]">{item.productName}</span>
                   </div>
-                  <div className="flex justify-between text-gray-500">
-                    <span className="pl-4">{item.quantity}</span>
-                    <span>${Number(item.price).toFixed(2)}</span>
-                    <span className="text-black">${lineTotal.toFixed(2)}</span>
+                  <div className="flex justify-between items-center text-gray-500">
+                    <span className="pl-4">x{qty}</span>
+                    <span>${unitPrice.toFixed(2)}</span>
+                    {hasDiscount && (
+                      <span className="text-[10px] text-rose-600 font-bold">
+                        (-${itemDisc.toFixed(2)})
+                      </span>
+                    )}
+                    <span className="text-black font-bold">${lineTotal.toFixed(2)}</span>
                   </div>
                 </div>
               );
@@ -271,14 +321,24 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
               <span>Piezas</span>
               <span className="text-black">{totalPieces}</span>
             </div>
-            {saleData.discountAmount !== undefined && saleData.discountAmount > 0 && (
+            <div className="flex justify-between">
+              <span>SUBTOTAL</span>
+              <span className="text-black font-bold">${rawSubtotal.toFixed(2)}</span>
+            </div>
+            {itemsDiscount > 0 && (
+              <div className="flex justify-between text-rose-600">
+                <span>DESC. ÍTEMS:</span>
+                <span className="font-bold">-${itemsDiscount.toFixed(2)}</span>
+              </div>
+            )}
+            {globalDiscount > 0 && (
               <div className="flex justify-between text-rose-600">
                 <span>DESC. GLOBAL:</span>
-                <span>-${Number(saleData.discountAmount).toFixed(2)}</span>
+                <span className="font-bold">-${globalDiscount.toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between font-bold text-black text-xs pt-1.5 border-t border-dashed border-gray-200">
-              <span>Total</span>
+              <span>TOTAL</span>
               <span className="text-black font-extrabold text-sm">${Number(saleData.total || 0).toFixed(2)}</span>
             </div>
             <p className="text-[9px] text-gray-500 italic text-center mt-2 leading-relaxed">
