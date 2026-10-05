@@ -1,25 +1,3 @@
-export interface SummaryData {
-  totalSales: number;
-  totalCOGS: number;
-  grossProfit: number;
-  totalPurchases: number;
-  totalExpenses: number;
-  netProfit: number;
-}
-
-export interface BreakdownDay {
-  date: string;
-  sales: number;
-  purchases: number;
-  expenses: number;
-  profit: number;
-}
-
-export interface ReportsResponse {
-  summary: SummaryData;
-  breakdown: BreakdownDay[];
-}
-
 export interface SalesCostItemDetail {
   id: string;
   variantId: string;
@@ -56,3 +34,14 @@ export interface ValuedInventoryRow {
   purchasePrice: number;
   totalValue: number;
 }
+
+export interface ProductSaleRow {
+  variantId: string;
+  sku: string;
+  name: string;
+  soldQuantity: number;
+  currentStock: number;
+  salePrice: number;
+  totalRevenue: number;
+}
+

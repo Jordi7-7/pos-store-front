@@ -62,6 +62,9 @@ function DashboardShell() {
     if (currentPath.startsWith('/clientes')) return 'Directorio de Clientes';
     if (currentPath.startsWith('/cajas/historial')) return 'Historial de Cajas';
     if (currentPath.startsWith('/cajas/registradoras')) return 'Cajas Registradoras';
+    if (currentPath.startsWith('/reportes/costo-ventas')) return 'Reportes - Costo de Ventas';
+    if (currentPath.startsWith('/reportes/ventas-productos')) return 'Reportes - Ventas por Producto';
+    if (currentPath.startsWith('/reportes/existencias-valuadas')) return 'Reportes - Existencias Valuadas';
     if (currentPath.startsWith('/reportes')) return 'Reportes y Utilidades';
     if (currentPath.startsWith('/usuarios')) return 'Personal y Roles';
     if (currentPath.startsWith('/multimedia')) return 'Multimedia / Galería';

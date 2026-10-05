@@ -15,6 +15,7 @@ import {
   Boxes,
   PlusCircle,
   List,
+  FileText,
 } from 'lucide-react';
 import { APP_PERMISSIONS } from '@/constants/permissions';
 
@@ -122,11 +123,33 @@ export const navigationConfig: NavItem[] = [
     ],
   },
   {
-    id: 'reports',
+    id: 'reports-group',
     label: 'Reportes y Utilidades',
-    path: '/reportes',
     icon: BarChart3,
     permission: APP_PERMISSIONS.VIEW_REPORTS,
+    children: [
+      {
+        id: 'reports-cost-sales',
+        label: 'Costo de Ventas',
+        path: '/reportes/costo-ventas',
+        icon: FileText,
+        permission: APP_PERMISSIONS.VIEW_REPORTS,
+      },
+      {
+        id: 'reports-product-sales',
+        label: 'Ventas por Producto',
+        path: '/reportes/ventas-productos',
+        icon: ShoppingBag,
+        permission: APP_PERMISSIONS.VIEW_REPORTS,
+      },
+      {
+        id: 'reports-valued-inventory',
+        label: 'Existencias Valuadas',
+        path: '/reportes/existencias-valuadas',
+        icon: Boxes,
+        permission: APP_PERMISSIONS.VIEW_REPORTS,
+      },
+    ],
   },
   {
     id: 'users',

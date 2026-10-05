@@ -18,7 +18,6 @@ import { Route as LayoutConfiguracionRouteImport } from './routes/_layout/config
 import { Route as LayoutDashboardRouteImport } from './routes/_layout/dashboard'
 import { Route as LayoutMultimediaRouteImport } from './routes/_layout/multimedia'
 import { Route as LayoutPosRouteImport } from './routes/_layout/pos'
-import { Route as LayoutReportesRouteImport } from './routes/_layout/reportes'
 import { Route as LayoutUsuariosRouteImport } from './routes/_layout/usuarios'
 import { Route as LayoutVentasRouteImport } from './routes/_layout/ventas'
 import { Route as LoginTenantSlugRouteImport } from './routes/login.$tenantSlug'
@@ -27,6 +26,10 @@ import { Route as LayoutCajasRegistradorasRouteImport } from './routes/_layout/c
 import { Route as LayoutInventarioCrearRouteImport } from './routes/_layout/inventario/crear'
 import { Route as LayoutInventarioLotesRouteImport } from './routes/_layout/inventario/lotes'
 import { Route as LayoutInventarioProductosRouteImport } from './routes/_layout/inventario/productos'
+import { Route as LayoutReportesIndexRouteImport } from './routes/_layout/reportes/index'
+import { Route as LayoutReportesCostoVentasRouteImport } from './routes/_layout/reportes/costo-ventas'
+import { Route as LayoutReportesExistenciasValuadasRouteImport } from './routes/_layout/reportes/existencias-valuadas'
+import { Route as LayoutReportesVentasProductosRouteImport } from './routes/_layout/reportes/ventas-productos'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -72,11 +75,6 @@ const LayoutPosRoute = LayoutPosRouteImport.update({
   path: '/pos',
   getParentRoute: () => LayoutRoute,
 } as any)
-const LayoutReportesRoute = LayoutReportesRouteImport.update({
-  id: '/reportes',
-  path: '/reportes',
-  getParentRoute: () => LayoutRoute,
-} as any)
 const LayoutUsuariosRoute = LayoutUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
@@ -119,6 +117,29 @@ const LayoutInventarioProductosRoute =
     path: '/inventario/productos',
     getParentRoute: () => LayoutRoute,
   } as any)
+const LayoutReportesIndexRoute = LayoutReportesIndexRouteImport.update({
+  id: '/reportes/',
+  path: '/reportes/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutReportesCostoVentasRoute =
+  LayoutReportesCostoVentasRouteImport.update({
+    id: '/reportes/costo-ventas',
+    path: '/reportes/costo-ventas',
+    getParentRoute: () => LayoutRoute,
+  } as any)
+const LayoutReportesExistenciasValuadasRoute =
+  LayoutReportesExistenciasValuadasRouteImport.update({
+    id: '/reportes/existencias-valuadas',
+    path: '/reportes/existencias-valuadas',
+    getParentRoute: () => LayoutRoute,
+  } as any)
+const LayoutReportesVentasProductosRoute =
+  LayoutReportesVentasProductosRouteImport.update({
+    id: '/reportes/ventas-productos',
+    path: '/reportes/ventas-productos',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -129,7 +150,6 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof LayoutDashboardRoute
   '/multimedia': typeof LayoutMultimediaRoute
   '/pos': typeof LayoutPosRoute
-  '/reportes': typeof LayoutReportesRoute
   '/usuarios': typeof LayoutUsuariosRoute
   '/ventas': typeof LayoutVentasRoute
   '/login/$tenantSlug': typeof LoginTenantSlugRoute
@@ -138,6 +158,10 @@ export interface FileRoutesByFullPath {
   '/inventario/crear': typeof LayoutInventarioCrearRoute
   '/inventario/lotes': typeof LayoutInventarioLotesRoute
   '/inventario/productos': typeof LayoutInventarioProductosRoute
+  '/reportes/costo-ventas': typeof LayoutReportesCostoVentasRoute
+  '/reportes/existencias-valuadas': typeof LayoutReportesExistenciasValuadasRoute
+  '/reportes/ventas-productos': typeof LayoutReportesVentasProductosRoute
+  '/reportes/': typeof LayoutReportesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -148,7 +172,6 @@ export interface FileRoutesByTo {
   '/dashboard': typeof LayoutDashboardRoute
   '/multimedia': typeof LayoutMultimediaRoute
   '/pos': typeof LayoutPosRoute
-  '/reportes': typeof LayoutReportesRoute
   '/usuarios': typeof LayoutUsuariosRoute
   '/ventas': typeof LayoutVentasRoute
   '/login/$tenantSlug': typeof LoginTenantSlugRoute
@@ -157,6 +180,10 @@ export interface FileRoutesByTo {
   '/inventario/crear': typeof LayoutInventarioCrearRoute
   '/inventario/lotes': typeof LayoutInventarioLotesRoute
   '/inventario/productos': typeof LayoutInventarioProductosRoute
+  '/reportes/costo-ventas': typeof LayoutReportesCostoVentasRoute
+  '/reportes/existencias-valuadas': typeof LayoutReportesExistenciasValuadasRoute
+  '/reportes/ventas-productos': typeof LayoutReportesVentasProductosRoute
+  '/reportes': typeof LayoutReportesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -169,7 +196,6 @@ export interface FileRoutesById {
   '/_layout/dashboard': typeof LayoutDashboardRoute
   '/_layout/multimedia': typeof LayoutMultimediaRoute
   '/_layout/pos': typeof LayoutPosRoute
-  '/_layout/reportes': typeof LayoutReportesRoute
   '/_layout/usuarios': typeof LayoutUsuariosRoute
   '/_layout/ventas': typeof LayoutVentasRoute
   '/login/$tenantSlug': typeof LoginTenantSlugRoute
@@ -178,6 +204,10 @@ export interface FileRoutesById {
   '/_layout/inventario/crear': typeof LayoutInventarioCrearRoute
   '/_layout/inventario/lotes': typeof LayoutInventarioLotesRoute
   '/_layout/inventario/productos': typeof LayoutInventarioProductosRoute
+  '/_layout/reportes/costo-ventas': typeof LayoutReportesCostoVentasRoute
+  '/_layout/reportes/existencias-valuadas': typeof LayoutReportesExistenciasValuadasRoute
+  '/_layout/reportes/ventas-productos': typeof LayoutReportesVentasProductosRoute
+  '/_layout/reportes/': typeof LayoutReportesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -190,7 +220,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/multimedia'
     | '/pos'
-    | '/reportes'
     | '/usuarios'
     | '/ventas'
     | '/login/$tenantSlug'
@@ -199,6 +228,10 @@ export interface FileRouteTypes {
     | '/inventario/crear'
     | '/inventario/lotes'
     | '/inventario/productos'
+    | '/reportes/costo-ventas'
+    | '/reportes/existencias-valuadas'
+    | '/reportes/ventas-productos'
+    | '/reportes/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -209,7 +242,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/multimedia'
     | '/pos'
-    | '/reportes'
     | '/usuarios'
     | '/ventas'
     | '/login/$tenantSlug'
@@ -218,6 +250,10 @@ export interface FileRouteTypes {
     | '/inventario/crear'
     | '/inventario/lotes'
     | '/inventario/productos'
+    | '/reportes/costo-ventas'
+    | '/reportes/existencias-valuadas'
+    | '/reportes/ventas-productos'
+    | '/reportes'
   id:
     | '__root__'
     | '/'
@@ -229,7 +265,6 @@ export interface FileRouteTypes {
     | '/_layout/dashboard'
     | '/_layout/multimedia'
     | '/_layout/pos'
-    | '/_layout/reportes'
     | '/_layout/usuarios'
     | '/_layout/ventas'
     | '/login/$tenantSlug'
@@ -238,6 +273,10 @@ export interface FileRouteTypes {
     | '/_layout/inventario/crear'
     | '/_layout/inventario/lotes'
     | '/_layout/inventario/productos'
+    | '/_layout/reportes/costo-ventas'
+    | '/_layout/reportes/existencias-valuadas'
+    | '/_layout/reportes/ventas-productos'
+    | '/_layout/reportes/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -311,13 +350,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutPosRouteImport
       parentRoute: typeof LayoutRoute
     }
-    '/_layout/reportes': {
-      id: '/_layout/reportes'
-      path: '/reportes'
-      fullPath: '/reportes'
-      preLoaderRoute: typeof LayoutReportesRouteImport
-      parentRoute: typeof LayoutRoute
-    }
     '/_layout/usuarios': {
       id: '/_layout/usuarios'
       path: '/usuarios'
@@ -374,6 +406,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutInventarioProductosRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/reportes/': {
+      id: '/_layout/reportes/'
+      path: '/reportes'
+      fullPath: '/reportes/'
+      preLoaderRoute: typeof LayoutReportesIndexRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/reportes/costo-ventas': {
+      id: '/_layout/reportes/costo-ventas'
+      path: '/reportes/costo-ventas'
+      fullPath: '/reportes/costo-ventas'
+      preLoaderRoute: typeof LayoutReportesCostoVentasRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/reportes/existencias-valuadas': {
+      id: '/_layout/reportes/existencias-valuadas'
+      path: '/reportes/existencias-valuadas'
+      fullPath: '/reportes/existencias-valuadas'
+      preLoaderRoute: typeof LayoutReportesExistenciasValuadasRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/reportes/ventas-productos': {
+      id: '/_layout/reportes/ventas-productos'
+      path: '/reportes/ventas-productos'
+      fullPath: '/reportes/ventas-productos'
+      preLoaderRoute: typeof LayoutReportesVentasProductosRouteImport
+      parentRoute: typeof LayoutRoute
+    }
   }
 }
 
@@ -384,7 +444,6 @@ interface LayoutRouteChildren {
   LayoutDashboardRoute: typeof LayoutDashboardRoute
   LayoutMultimediaRoute: typeof LayoutMultimediaRoute
   LayoutPosRoute: typeof LayoutPosRoute
-  LayoutReportesRoute: typeof LayoutReportesRoute
   LayoutUsuariosRoute: typeof LayoutUsuariosRoute
   LayoutVentasRoute: typeof LayoutVentasRoute
   LayoutCajasHistorialRoute: typeof LayoutCajasHistorialRoute
@@ -392,6 +451,10 @@ interface LayoutRouteChildren {
   LayoutInventarioCrearRoute: typeof LayoutInventarioCrearRoute
   LayoutInventarioLotesRoute: typeof LayoutInventarioLotesRoute
   LayoutInventarioProductosRoute: typeof LayoutInventarioProductosRoute
+  LayoutReportesCostoVentasRoute: typeof LayoutReportesCostoVentasRoute
+  LayoutReportesExistenciasValuadasRoute: typeof LayoutReportesExistenciasValuadasRoute
+  LayoutReportesVentasProductosRoute: typeof LayoutReportesVentasProductosRoute
+  LayoutReportesIndexRoute: typeof LayoutReportesIndexRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
@@ -401,7 +464,6 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutDashboardRoute: LayoutDashboardRoute,
   LayoutMultimediaRoute: LayoutMultimediaRoute,
   LayoutPosRoute: LayoutPosRoute,
-  LayoutReportesRoute: LayoutReportesRoute,
   LayoutUsuariosRoute: LayoutUsuariosRoute,
   LayoutVentasRoute: LayoutVentasRoute,
   LayoutCajasHistorialRoute: LayoutCajasHistorialRoute,
@@ -409,6 +471,11 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutInventarioCrearRoute: LayoutInventarioCrearRoute,
   LayoutInventarioLotesRoute: LayoutInventarioLotesRoute,
   LayoutInventarioProductosRoute: LayoutInventarioProductosRoute,
+  LayoutReportesCostoVentasRoute: LayoutReportesCostoVentasRoute,
+  LayoutReportesExistenciasValuadasRoute:
+    LayoutReportesExistenciasValuadasRoute,
+  LayoutReportesVentasProductosRoute: LayoutReportesVentasProductosRoute,
+  LayoutReportesIndexRoute: LayoutReportesIndexRoute,
 }
 
 const LayoutRouteWithChildren =

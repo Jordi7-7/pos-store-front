@@ -1,12 +1,12 @@
 import { apiClient } from '@/lib/apiClient';
-import type { ReportsResponse, SalesCostReportRow, ValuedInventoryRow } from '../types/reports.types';
+import type { SalesCostReportRow, ValuedInventoryRow, ProductSaleRow } from '../types/reports.types';
 
 export const reportsService = {
-  getSummary: async (startDate: string, endDate: string): Promise<ReportsResponse> => {
-    return apiClient.get<ReportsResponse>(`/reports/summary?startDate=${startDate}&endDate=${endDate}`);
-  },
   getSalesCost: async (startDate: string, endDate: string): Promise<SalesCostReportRow[]> => {
     return apiClient.get<SalesCostReportRow[]>(`/reports/sales-cost?startDate=${startDate}&endDate=${endDate}`);
+  },
+  getProductSales: async (startDate: string, endDate: string): Promise<ProductSaleRow[]> => {
+    return apiClient.get<ProductSaleRow[]>(`/reports/product-sales?startDate=${startDate}&endDate=${endDate}`);
   },
   getValuedInventory: async (params?: { page?: number; limit?: number }): Promise<{ data: ValuedInventoryRow[]; meta: { total: number; page: number; limit: number; totalPages: number } }> => {
     const query = new URLSearchParams();
