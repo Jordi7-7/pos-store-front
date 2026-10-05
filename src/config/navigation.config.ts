@@ -101,18 +101,25 @@ export const navigationConfig: NavItem[] = [
     permission: APP_PERMISSIONS.VIEW_CUSTOMERS,
   },
   {
-    id: 'cash-sessions',
-    label: 'Historial de Cajas',
-    path: '/cajas/historial',
-    icon: History,
-    permission: APP_PERMISSIONS.VIEW_CASH_SESSIONS,
-  },
-  {
-    id: 'cash-registers',
+    id: 'cash-registers-group',
     label: 'Cajas Registradoras',
-    path: '/cajas/registradoras',
     icon: CreditCard,
-    permission: APP_PERMISSIONS.VIEW_CASH_REGISTERS,
+    children: [
+      {
+        id: 'cash-registers',
+        label: 'Cajas',
+        path: '/cajas/registradoras',
+        icon: CreditCard,
+        permission: APP_PERMISSIONS.VIEW_CASH_REGISTERS,
+      },
+      {
+        id: 'cash-sessions',
+        label: 'Historial de Cajas',
+        path: '/cajas/historial',
+        icon: History,
+        permission: APP_PERMISSIONS.VIEW_CASH_SESSIONS,
+      },
+    ],
   },
   {
     id: 'reports',

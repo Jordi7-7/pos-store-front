@@ -112,8 +112,8 @@ export interface SessionRefund {
 
 export interface CashSessionHeader {
   id: string;
-  branchId: string;
-  userId: string;
+  branchId?: string;
+  userId?: string;
   openingBalance: number;
   closingBalance: number | null;
   expectedBalance: number | null;
@@ -121,13 +121,43 @@ export interface CashSessionHeader {
   status: 'OPEN' | 'CLOSED';
   openedAt: string;
   closedAt: string | null;
-  branch: { name: string };
-  user: { name: string };
+  cashRegister?: {
+    id: string;
+    name: string;
+    code: number;
+  } | null;
+  totalSales?: number;
+  branch?: { name: string };
+  user?: { name: string };
+}
+
+export interface SessionKPIs {
+  grossSales: number;
+  netSales: number;
+  cashSales: number;
+  cardSales: number;
+  totalExpenses: number;
+  totalRefunds: number;
+  salesCount: number;
+  expensesCount: number;
+  refundsCount: number;
+}
+
+export interface DetailedSessionHeader extends CashSessionHeader {
+  durationFormatted?: string;
+  openedBy?: string;
+  branchName?: string;
+}
+
+export interface DetailedSessionSale extends SessionSale {
+  customerName?: string;
+  totalItems?: number;
 }
 
 export interface CashSessionDetails {
-  session: CashSessionHeader;
-  sales: SessionSale[];
+  session: DetailedSessionHeader;
+  kpis: SessionKPIs;
+  sales: DetailedSessionSale[];
   expenses: SessionExpense[];
   refunds: SessionRefund[];
 }

@@ -127,11 +127,11 @@ export const HistorialModal: React.FC<HistorialModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl p-6 sm:p-8">
         <DialogHeader>
-          <DialogTitle className="text-xs font-bold text-secondary uppercase tracking-wider flex items-center gap-2 mb-2">
+          <DialogTitle className="text-sm font-bold text-secondary uppercase tracking-wider flex items-center gap-2 mb-2">
             <Receipt className="w-4 h-4 text-primary" />
-            <span>Historial de la Sesión Activa</span>
+            <span>Historial y Arqueo de la Sesión Activa</span>
           </DialogTitle>
 
           {/* Resumen del Turno Activo */}

@@ -34,9 +34,18 @@ export function AppSidebar() {
   const routerState = useRouterState()
   const currentPath = routerState.location.pathname
 
-  // Check if inventory section is active
-  const isInventoryActive = currentPath.startsWith('/inventario')
-  const [isInventoryOpen, setIsInventoryOpen] = useState(true)
+  // State to track open collapsible menus by item id
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    inventory: currentPath.startsWith('/inventario'),
+    'cash-registers-group': currentPath.startsWith('/cajas'),
+  })
+
+  const toggleGroup = (id: string) => {
+    setOpenGroups((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }))
+  }
 
   // Filter items based on permissions
   const visibleMenuItems = navigationConfig.filter((item) => {
@@ -80,32 +89,35 @@ export function AppSidebar() {
             {visibleMenuItems.map((item) => {
               const Icon = item.icon
 
-              // Collapsible Group (e.g. Inventario)
+              // Collapsible Group (e.g. Inventario, Cajas Registradoras)
               if (item.children && item.children.length > 0) {
                 const visibleChildren = item.children.filter((child) => !child.permission || can(child.permission))
                 if (visibleChildren.length === 0) return null
 
+                const isGroupActive = visibleChildren.some((child) => currentPath === child.path || currentPath.startsWith(child.path))
+                const isOpen = openGroups[item.id] ?? isGroupActive
+
                 return (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
-                      isActive={isInventoryActive}
-                      onClick={() => setIsInventoryOpen((prev) => !prev)}
+                      isActive={isGroupActive}
+                      onClick={() => toggleGroup(item.id)}
                       tooltip={item.label}
                       className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                        isInventoryActive 
+                        isGroupActive 
                           ? '!bg-zinc-800/80 !text-white shadow-sm [&>div>svg]:!text-brand-secondary-foreground [&>div>svg]:!opacity-100' 
                           : 'text-zinc-300 hover:text-white hover:bg-zinc-800/70 [&>div>svg]:text-zinc-300 hover:[&>div>svg]:text-white'
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <Icon className={`w-4 h-4 shrink-0 transition-colors ${isInventoryActive ? '!text-brand-secondary-foreground !opacity-100 stroke-[2.2]' : 'text-zinc-300'}`} />
+                        <Icon className={`w-4 h-4 shrink-0 transition-colors ${isGroupActive ? '!text-brand-secondary-foreground !opacity-100 stroke-[2.2]' : 'text-zinc-300'}`} />
                         <span className="group-data-[collapsible=icon]:hidden tracking-tight">{item.label}</span>
                       </div>
-                      <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 group-data-[collapsible=icon]:hidden ${isInventoryOpen ? 'rotate-180 text-white' : ''}`} />
+                      <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 group-data-[collapsible=icon]:hidden ${isOpen ? 'rotate-180 text-white' : ''}`} />
                     </SidebarMenuButton>
 
                     {/* Submenu Items */}
-                    {isInventoryOpen && !isIconCollapsed && (
+                    {isOpen && !isIconCollapsed && (
                       <SidebarMenuSub className="mt-1 space-y-1 pl-4 border-l border-zinc-800/80">
                         {visibleChildren.map((subItem) => {
                           const SubIcon = subItem.icon
