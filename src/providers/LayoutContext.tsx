@@ -1,11 +1,8 @@
 import React, { createContext, useContext, useState } from 'react';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 import { useBranches } from '@/modules/branches';
-import { useSales, useActiveCashSession } from '@/modules/sales';
-import { useSuppliers } from '@/modules/purchases';
+import { useActiveCashSession } from '@/modules/sales';
 import { useMyCashRegisters } from '@/modules/cash-registers/hooks/useCashRegisters';
-import { useMediaUpload } from '@/modules/media';
-import { toast } from 'sonner';
 
 interface LayoutContextType {
   selectedBranchId: string | null;
@@ -16,15 +13,6 @@ interface LayoutContextType {
   availableRegisters: any[];
   activeSession: any;
   setActiveSession: (session: any) => void;
-  sales: any[];
-  suppliers: any[];
-  uploadedImages: any[];
-  uploadImage: (params: { file: File; description: string }) => Promise<any>;
-  uploadImageByUrl: (params: { url: string; description: string }) => Promise<any>;
-  deleteImage: (id: string) => Promise<any>;
-  isUploading: boolean;
-  isDeleting: boolean;
-  isLoadingMedia: boolean;
 }
 
 const LayoutContext = createContext<LayoutContextType | null>(null);
@@ -38,19 +26,7 @@ export const LayoutContextProvider: React.FC<{ children: React.ReactNode }> = ({
   } = useAuthStore();
 
   const { branches } = useBranches();
-  const { sales } = useSales();
-  const { suppliers } = useSuppliers();
   const { myCashRegisters: availableRegisters } = useMyCashRegisters(selectedBranchId || undefined);
-
-  const {
-    uploadImage,
-    uploadImageByUrl,
-    isUploading,
-    deleteImage,
-    isDeleting,
-    isLoading: isLoadingMedia,
-    uploadedImages,
-  } = useMediaUpload();
 
   const [activeSession, setActiveSession] = useState<any>(null);
 
@@ -83,42 +59,6 @@ export const LayoutContextProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [branches, selectedBranchId, setSelectedBranchId]);
 
-  const handleUpload = async (params: { file: File; description: string }) => {
-    try {
-      const res = await uploadImage(params);
-      toast.success('¡Imagen subida con éxito!');
-      return res;
-    } catch (err: any) {
-      console.error(err);
-      toast.error('Error en la subida multimedia.');
-      throw err;
-    }
-  };
-
-  const handleUploadByUrl = async (params: { url: string; description: string }) => {
-    try {
-      const res = await uploadImageByUrl(params);
-      toast.success('¡Imagen de internet descargada y registrada con éxito!');
-      return res;
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || 'Error al procesar la imagen externa.');
-      throw err;
-    }
-  };
-
-  const handleDeleteImage = async (id: string) => {
-    try {
-      const res = await deleteImage(id);
-      toast.success('Imagen eliminada de la galería.');
-      return res;
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || 'Error al eliminar la imagen.');
-      throw err;
-    }
-  };
-
   return (
     <LayoutContext.Provider
       value={{
@@ -130,15 +70,6 @@ export const LayoutContextProvider: React.FC<{ children: React.ReactNode }> = ({
         availableRegisters: availableRegisters || [],
         activeSession,
         setActiveSession,
-        sales: sales || [],
-        suppliers: suppliers || [],
-        uploadedImages: uploadedImages || [],
-        uploadImage: handleUpload,
-        uploadImageByUrl: handleUploadByUrl,
-        deleteImage: handleDeleteImage,
-        isUploading,
-        isDeleting,
-        isLoadingMedia,
       }}
     >
       {children}

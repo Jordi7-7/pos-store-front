@@ -36,7 +36,6 @@ interface AuthState {
   user: User | null;
   branchIds: string[];
   cashRegisters: AssignedCashRegister[];
-  activeTab: string;
   isAuthenticated: boolean;
   _hasHydrated: boolean;
   setHasHydrated: (state: boolean) => void;
@@ -47,12 +46,11 @@ interface AuthState {
   fetchPublicTenant: (slug: string) => Promise<boolean>;
   setTenantSlug: (slug: string | null) => void;
   clearTenant: () => void;
-  login: (identifier: string, password: string, targetWorkflow?: 'admin' | 'store', slugOverride?: string) => Promise<boolean>;
+  login: (identifier: string, password: string, _targetWorkflow?: 'admin' | 'store', slugOverride?: string) => Promise<boolean>;
   pinLogin: (pin: string, slugOverride?: string) => Promise<'SUCCESS' | 'INVALID' | 'EXPIRED' | 'NOT_FOUND'>;
   lockScreen: () => void;
   onboard: (data: any) => Promise<boolean>;
   logout: () => void;
-  setActiveTab: (tab: string) => void;
   selectedBranchId: string | null;
   setSelectedBranchId: (branchId: string | null) => void;
   selectedCashRegisterId: string | null;
@@ -80,7 +78,6 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       branchIds: [],
       cashRegisters: [],
-      activeTab: 'dashboard',
       isAuthenticated: false,
       _hasHydrated: false,
       setHasHydrated: (state) => set({ _hasHydrated: state }),
@@ -149,7 +146,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      login: async (identifier, password, targetWorkflow = 'store', slugOverride) => {
+      login: async (identifier, password, _targetWorkflow = 'store', slugOverride) => {
         const state = get();
         const effectiveSlug = slugOverride || state.tenantSlug || state.publicTenant?.slug || undefined;
 
@@ -175,12 +172,6 @@ export const useAuthStore = create<AuthState>()(
             get().logout();
             return false;
           }
-
-          const currentRole = get().role;
-          const isPosAdmin = currentRole === 'OWNER' || currentRole === 'ADMIN';
-          set({
-            activeTab: isPosAdmin && targetWorkflow === 'admin' ? 'dashboard' : 'pos',
-          });
 
           return true;
         } catch (error) {
@@ -213,7 +204,6 @@ export const useAuthStore = create<AuthState>()(
               return 'INVALID';
             }
 
-            set({ activeTab: 'pos' });
             return 'SUCCESS';
           }
           return 'INVALID';
@@ -267,7 +257,6 @@ export const useAuthStore = create<AuthState>()(
               return false;
             }
 
-            set({ activeTab: 'dashboard' });
             return true;
           }
           return false;
@@ -289,7 +278,6 @@ export const useAuthStore = create<AuthState>()(
           roleName: null,
           permissions: [],
           user: null,
-          activeTab: 'dashboard',
           selectedBranchId: null,
           selectedCashRegisterId: null,
           isAuthenticated: false,
@@ -360,7 +348,6 @@ export const useAuthStore = create<AuthState>()(
         return inFlightProfilePromise;
       },
 
-      setActiveTab: (tab) => set({ activeTab: tab }),
       setSelectedBranchId: (branchId) => set({ selectedBranchId: branchId }),
     }),
     {
@@ -384,7 +371,6 @@ export const useAuthStore = create<AuthState>()(
         timezone: state.timezone,
         selectedBranchId: state.selectedBranchId,
         selectedCashRegisterId: state.selectedCashRegisterId,
-        activeTab: state.activeTab,
         isAuthenticated: state.isAuthenticated,
       }),
     }

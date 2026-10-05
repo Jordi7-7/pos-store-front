@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { DashboardView } from '@/modules/dashboard/components/DashboardView';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 import { useLayoutContext } from '@/providers/LayoutContext';
 
 export const Route = createFileRoute('/_layout/dashboard')({
@@ -8,14 +7,7 @@ export const Route = createFileRoute('/_layout/dashboard')({
 });
 
 function DashboardRoute() {
-  const { user } = useAuthStore();
-  const { sales, suppliers } = useLayoutContext();
+  const { selectedBranchId } = useLayoutContext();
 
-  return (
-    <DashboardView
-      user={user}
-      sales={sales}
-      suppliers={suppliers}
-    />
-  );
+  return <DashboardView branchId={selectedBranchId} />;
 }
