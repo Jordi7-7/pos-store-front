@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/dialog';
 import { useBranches } from '../../branches/hooks/useBranches';
 import { ThermalTicketModal } from '../../sales/components/pos/ThermalTicketModal';
+import { ThermalClosingTicketModal } from '../../sales/components/pos/ThermalClosingTicketModal';
 import { PaymentMethod } from '../../sales/services/sales.service';
 
 interface CashSessionAuditModalProps {
@@ -58,6 +59,124 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
   // Ticket reprint state
   const [reprintSaleData, setReprintSaleData] = useState<any | null>(null);
   const [isReprintModalOpen, setIsReprintModalOpen] = useState(false);
+
+  // Session Closing Ticket print state
+  const [sessionClosingDataToPrint, setSessionClosingDataToPrint] = useState<any | null>(null);
+  const [isClosingTicketModalOpen, setIsClosingTicketModalOpen] = useState(false);
+
+  const handlePrintSessionTicket = () => {
+    if (!details) return;
+
+    // Aggregate products sold
+    const productMap = new Map<string, { sku: string; name: string; quantity: number; subtotal: number; discount: number; total: number }>();
+    (details.sales || []).forEach((sale: any) => {
+      (sale.items || []).forEach((item: any) => {
+        const sku = item.variant?.sku || item.sku || 'N/A';
+        const name = item.variant?.product?.name || item.productName || 'Producto';
+        const qty = Number(item.quantity || 0);
+        const lineGross = item.subtotal !== undefined && Number(item.subtotal) > 0
+          ? Number(item.subtotal)
+          : Number(item.price || 0) * qty;
+
+        const totalLineDiscount = (item.discountAmount !== undefined && Number(item.discountAmount) > 0
+          ? Number(item.discountAmount)
+          : 0) + (item.globalDiscountAmount !== undefined && Number(item.globalDiscountAmount) > 0
+          ? Number(item.globalDiscountAmount)
+          : 0);
+
+        const lineNet = item.total !== undefined && Number(item.total) > 0
+          ? Number(item.total)
+          : Math.max(0, lineGross - totalLineDiscount);
+
+        const existing = productMap.get(sku);
+        if (existing) {
+          existing.quantity += qty;
+          existing.subtotal += lineGross;
+          existing.discount += totalLineDiscount;
+          existing.total += lineNet;
+        } else {
+          productMap.set(sku, {
+            sku,
+            name,
+            quantity: qty,
+            subtotal: lineGross,
+            discount: totalLineDiscount,
+            total: lineNet,
+          });
+        }
+      });
+    });
+    const productsList = Array.from(productMap.values());
+
+    // Aggregate payments breakdown
+    const paymentsBreakdown: { [method: string]: number } = {
+      EFECTIVO: Number(details.kpis?.cashSales || 0),
+      TARJETA: Number(details.kpis?.cardSales || 0),
+    };
+
+    // Calculate subtotal and discounts
+    const salesSubtotal = (details.sales || []).reduce((sum: number, s: any) => {
+      const itemGross = (s.items || []).reduce((isum: number, it: any) => isum + Number(it.price || 0) * Number(it.quantity || 0), 0);
+      return sum + (s.subtotal !== undefined && s.subtotal > 0 ? Number(s.subtotal) : itemGross);
+    }, 0);
+
+    const discountsTotal = (details.sales || []).reduce((sum: number, s: any) => {
+      return sum + Number(s.discountAmount || 0);
+    }, 0);
+
+    const refundsTotal = Number(details.kpis?.totalRefunds || 0);
+
+    const branchName =
+      details.session?.branchName ||
+      branches.find((b: any) => b.id === details.session?.branchId)?.name ||
+      'Sucursal General';
+
+    const branchAddress =
+      branches.find((b: any) => b.id === details.session?.branchId)?.address || '';
+
+    const sessionTicketData = {
+      id: details.session.id,
+      openedAt: details.session.openedAt,
+      closedAt: details.session.closedAt || undefined,
+      openingBalance: Number(details.session.openingBalance || 0),
+      closingBalance: Number(details.session.closingBalance ?? details.session.expectedBalance ?? 0),
+      expectedBalance: Number(details.session.expectedBalance || 0),
+      salesTotal: Number(details.kpis?.netSales ?? details.session.totalSales ?? 0),
+      salesSubtotal: salesSubtotal > 0 ? salesSubtotal : undefined,
+      discountsTotal: discountsTotal > 0 ? discountsTotal : undefined,
+      expensesTotal: Number(details.kpis?.totalExpenses || 0),
+      refundsTotal: refundsTotal > 0 ? refundsTotal : undefined,
+      expensesList: (details.expenses || []).map((e: any) => ({
+        description: e.description,
+        amount: Number(e.amount),
+        createdAt: e.createdAt,
+      })),
+      productsList,
+      paymentsBreakdown,
+      refundsList: (details.refunds || []).map((r: any) => ({
+        id: r.id,
+        reason: r.reason,
+        items: (r.items || []).map((it: any) => ({
+          name: it.variant?.product?.name || 'Producto',
+          sku: it.variant?.sku || 'N/A',
+          quantity: Number(it.quantity || 0),
+        })),
+      })),
+      salesList: (details.sales || []).map((s: any) => ({
+        invoiceNumber: s.invoiceNumber,
+        createdAt: s.createdAt,
+        total: Number(s.total),
+        paymentMethods: (s.payments || []).map((p: any) => p.paymentMethod || 'EFECTIVO'),
+      })),
+      userName: details.session.openedBy || 'Usuario',
+      branchName,
+      branchAddress,
+      status: details.session.status as 'OPEN' | 'CLOSED',
+    };
+
+    setSessionClosingDataToPrint(sessionTicketData);
+    setIsClosingTicketModalOpen(true);
+  };
 
   const handlePrintSale = (sale: SessionSale) => {
     const branchName =
@@ -155,8 +274,19 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Badges de Caja y Sucursal */}
+                  {/* Badges de Caja y Sucursal + Botón Imprimir Ticket de Sesión */}
                   <div className="flex items-center gap-2 flex-wrap">
+                    <Button
+                      type="button"
+                      onClick={handlePrintSessionTicket}
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-3 rounded-xl border-primary/20 bg-primary/10 hover:bg-primary/20 text-xs font-bold text-primary shadow-xs cursor-pointer flex items-center gap-1.5 transition-all"
+                      title="Imprimir ticket de arqueo y cierre de sesión"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>Imprimir Ticket de Sesión</span>
+                    </Button>
                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-xl bg-bg-dark border border-border-card text-secondary">
                       <span className="w-2 h-2 rounded-full bg-primary" />
                       {details.session.cashRegister?.name || 'Caja Registradora'} (#
@@ -639,6 +769,20 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
           tenantRuc={publicTenant?.ruc || ''}
           tenantName={publicTenant?.name || ''}
           currencyCode={publicTenant?.currencyCode || 'USD'}
+        />
+      )}
+
+      {/* Modal de Impresión de Ticket de Arqueo y Cierre de Sesión */}
+      {isClosingTicketModalOpen && (
+        <ThermalClosingTicketModal
+          isOpen={isClosingTicketModalOpen}
+          onClose={() => {
+            setIsClosingTicketModalOpen(false);
+            setSessionClosingDataToPrint(null);
+          }}
+          sessionData={sessionClosingDataToPrint}
+          tenantRuc={publicTenant?.ruc || ''}
+          tenantName={publicTenant?.name || ''}
         />
       )}
     </>

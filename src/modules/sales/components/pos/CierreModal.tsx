@@ -52,6 +52,20 @@ export const CierreModal: React.FC<CierreModalProps> = ({
     return activeSessionSales.reduce((sum, s) => sum + Number(s.total), 0);
   }, [activeSessionSales]);
 
+  const salesSubtotal = useMemo(() => {
+    return activeSessionSales.reduce((sum, s) => {
+      const itemGross = (s.items || []).reduce((isum, it) => isum + Number(it.price || 0) * Number(it.quantity || 0), 0);
+      return sum + (s.subtotal !== undefined && s.subtotal > 0 ? Number(s.subtotal) : itemGross);
+    }, 0);
+  }, [activeSessionSales]);
+
+  const totalDiscounts = useMemo(() => {
+    return activeSessionSales.reduce((sum, s) => {
+      const disc = Number(s.discountAmount || 0);
+      return sum + disc;
+    }, 0);
+  }, [activeSessionSales]);
+
   const expensesTotal = useMemo(() => {
     return activeSessionExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
   }, [activeSessionExpenses]);
@@ -160,7 +174,15 @@ export const CierreModal: React.FC<CierreModalProps> = ({
                   <span className="text-xs font-mono font-extrabold text-primary">${(salesTotal - refundsTotal).toFixed(2)}</span>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
+              <div className="grid grid-cols-4 gap-1.5 text-center text-xs">
+                <div className="bg-bg-dark/40 p-1.5 rounded-lg">
+                  <span className="text-[8.5px] text-neutral uppercase font-bold block">Subtotal</span>
+                  <span className="font-mono font-bold text-secondary text-xs">${salesSubtotal.toFixed(2)}</span>
+                </div>
+                <div className="bg-bg-dark/40 p-1.5 rounded-lg">
+                  <span className="text-[8.5px] text-rose-500 uppercase font-bold block">Descuentos</span>
+                  <span className="font-mono font-bold text-rose-500 text-xs">-${totalDiscounts.toFixed(2)}</span>
+                </div>
                 <div className="bg-bg-dark/40 p-1.5 rounded-lg">
                   <span className="text-[8.5px] text-emerald-500 uppercase font-bold block">Efectivo</span>
                   <span className="font-mono font-bold text-emerald-500 text-xs">${cashSalesTotal.toFixed(2)}</span>
@@ -169,10 +191,10 @@ export const CierreModal: React.FC<CierreModalProps> = ({
                   <span className="text-[8.5px] text-blue-500 uppercase font-bold block">Tarjeta / TPV</span>
                   <span className="font-mono font-bold text-blue-500 text-xs">${cardSalesTotal.toFixed(2)}</span>
                 </div>
-                <div className="bg-bg-dark/40 p-1.5 rounded-lg">
-                  <span className="text-[8.5px] text-neutral uppercase font-bold block">Total Facturado</span>
-                  <span className="font-mono font-bold text-secondary text-xs">${salesTotal.toFixed(2)}</span>
-                </div>
+              </div>
+              <div className="border-t border-border-card/50 pt-1.5 flex justify-between items-center px-1">
+                <span className="text-[9px] text-neutral uppercase font-bold">Total Facturado:</span>
+                <span className="text-xs font-mono font-extrabold text-secondary">${salesTotal.toFixed(2)}</span>
               </div>
             </div>
 

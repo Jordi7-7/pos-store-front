@@ -317,10 +317,27 @@ export const POSView: React.FC<POSViewProps> = ({
       const salesTotal = activeSessionSales.reduce((sum, s) => sum + Number(s.total), 0);
       const expensesTotal = activeSessionExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
       const refundsTotal = activeSessionRefunds.reduce((sum, r) => sum + Number(r.totalRefunded), 0);
-      const expectedBalance = openingBalance + salesTotal - expensesTotal - refundsTotal;
+
+      // Compute cash sales specifically for drawer balance
+      let cashSalesTotal = 0;
+      activeSessionSales.forEach((sale) => {
+        const saleTotal = Number(sale.total);
+        const payments = sale.payments || [];
+        if (!payments.length) {
+          if (sale.paymentMethod !== 'TARJETA') cashSalesTotal += saleTotal;
+          return;
+        }
+        payments.forEach((p) => {
+          if (p.paymentMethod === 'EFECTIVO') {
+            cashSalesTotal += Math.min(Number(p.amount), saleTotal);
+          }
+        });
+      });
+
+      const expectedBalance = Math.round((openingBalance + cashSalesTotal - expensesTotal - refundsTotal) * 100) / 100;
 
       // Group products sold
-      const productsSummary: Record<string, { name: string; quantity: number; total: number }> = {};
+      const productsSummary: Record<string, { name: string; quantity: number; subtotal: number; discount: number; total: number }> = {};
       activeSessionSales.forEach((sale) => {
         (sale.items || []).forEach((item) => {
           const sku = item.variant.sku;
@@ -335,12 +352,30 @@ export const POSView: React.FC<POSViewProps> = ({
             productsSummary[sku] = {
               name: fullName,
               quantity: 0,
+              subtotal: 0,
+              discount: 0,
               total: 0,
             };
           }
-          productsSummary[sku].quantity += Number(item.quantity);
-          const itemDiscount = Number(item.discountAmount || 0);
-          productsSummary[sku].total += (Number(item.price) - itemDiscount) * Number(item.quantity);
+          const qty = Number(item.quantity || 0);
+          const lineGross = item.subtotal !== undefined && item.subtotal > 0
+            ? Number(item.subtotal)
+            : Number(item.price || 0) * qty;
+
+          const totalLineDiscount = (item.discountAmount !== undefined && Number(item.discountAmount) > 0
+            ? Number(item.discountAmount)
+            : 0) + (item.globalDiscountAmount !== undefined && Number(item.globalDiscountAmount) > 0
+            ? Number(item.globalDiscountAmount)
+            : 0);
+
+          const lineNet = item.total !== undefined && item.total > 0
+            ? Number(item.total)
+            : Math.max(0, lineGross - totalLineDiscount);
+
+          productsSummary[sku].quantity += qty;
+          productsSummary[sku].subtotal += lineGross;
+          productsSummary[sku].discount += totalLineDiscount;
+          productsSummary[sku].total += lineNet;
         });
       });
 
@@ -376,6 +411,15 @@ export const POSView: React.FC<POSViewProps> = ({
         paymentMethods: (s.payments || []).map((p) => p.paymentMethod),
       }));
 
+      const salesSubtotal = activeSessionSales.reduce((sum, s) => {
+        const itemGross = (s.items || []).reduce((isum, it) => isum + Number(it.price || 0) * Number(it.quantity || 0), 0);
+        return sum + (s.subtotal !== undefined && s.subtotal > 0 ? Number(s.subtotal) : itemGross);
+      }, 0);
+
+      const discountsTotal = activeSessionSales.reduce((sum, s) => {
+        return sum + Number(s.discountAmount || 0);
+      }, 0);
+
       const dataToPrint = {
         id: activeSession.id,
         openedAt: activeSession.openedAt,
@@ -384,7 +428,10 @@ export const POSView: React.FC<POSViewProps> = ({
         closingBalance: parseFloat(closingBalance) || 0,
         expectedBalance,
         salesTotal,
+        salesSubtotal,
+        discountsTotal,
         expensesTotal,
+        refundsTotal,
         expensesList: activeSessionExpenses.map((e) => ({
           description: e.description,
           amount: Number(e.amount),
@@ -397,6 +444,7 @@ export const POSView: React.FC<POSViewProps> = ({
         userName: currentUser?.name || 'Vendedor',
         branchName: branches.find((b: any) => b.id === selectedBranchId)?.name || 'Principal',
         branchAddress: branches.find((b: any) => b.id === selectedBranchId)?.address || '',
+        status: 'CLOSED' as const,
       };
 
       await closeSession({

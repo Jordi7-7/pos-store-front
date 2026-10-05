@@ -17,15 +17,27 @@ interface ThermalClosingTicketModalProps {
     closingBalance: number;
     expectedBalance: number;
     salesTotal: number;
+    salesSubtotal?: number;
+    discountsTotal?: number;
     expensesTotal: number;
+    refundsTotal?: number;
     expensesList: { description: string; amount: number; createdAt: string }[];
-    productsList: { sku: string; name: string; quantity: number; total: number }[];
+    productsList: {
+      sku: string;
+      name: string;
+      quantity: number;
+      price?: number;
+      subtotal?: number;
+      discount?: number;
+      total: number;
+    }[];
     paymentsBreakdown: { [method: string]: number };
     refundsList: { id: string; reason: string; items: { name: string; sku: string; quantity: number }[] }[];
     salesList: { invoiceNumber: string; createdAt: string; total: number; paymentMethods: string[] }[];
     userName?: string;
     branchName?: string;
     branchAddress?: string;
+    status?: 'OPEN' | 'CLOSED';
   } | null;
   tenantRuc?: string;
   tenantName?: string;
@@ -41,6 +53,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
   if (!sessionData) return null;
 
+  const isSessionClosed = sessionData.status ? sessionData.status === 'CLOSED' : !!sessionData.closedAt;
   const difference = sessionData.closingBalance - sessionData.expectedBalance;
 
   const handlePrint = () => {
@@ -56,18 +69,22 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
 
     // Build Products Sold HTML
     const productsHtml = sessionData.productsList.length > 0
-      ? sessionData.productsList.map((prod) => `
+      ? sessionData.productsList.map((prod) => {
+        const hasDisc = (prod.discount || 0) > 0;
+        return `
         <div style="margin-bottom: 4px;">
           <div style="display: flex; justify-content: space-between; font-weight: bold;">
             <span>${prod.sku}</span>
             <span style="max-width: 65%; text-align: right; text-transform: uppercase;">${prod.name}</span>
           </div>
-          <div style="display: flex; justify-content: space-between; color: #222;">
+          <div style="display: flex; justify-content: space-between; color: #222; align-items: center;">
             <span style="padding-left: 10px;">Cant: x${prod.quantity}</span>
-            <span>$${prod.total.toFixed(2)}</span>
+            ${hasDisc ? `<span style="font-size: 8.5px; font-weight: bold; color: #b91c1c;">(Desc -$${Number(prod.discount).toFixed(2)})</span>` : ''}
+            <span style="font-weight: bold;">$${prod.total.toFixed(2)}</span>
           </div>
         </div>
-      `).join('')
+      `;
+      }).join('')
       : '<div style="font-style: italic;">Sin ventas registradas</div>';
 
     // Build Detailed Sales Chronology HTML
@@ -194,7 +211,16 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
             <div class="title">${tenantName || 'NEGOCIO'}</div>
             ${tenantRuc ? `<div>RFC: ${tenantRuc}</div>` : ''}
             ${sessionData.branchAddress ? `<div style="text-transform: uppercase; font-size: 8px; margin-top: 2px;">${sessionData.branchAddress}</div>` : ''}
-            <div class="font-bold" style="font-size: 10px; margin-top: 5px;">ARQUEO / RESUMEN DE CAJA</div>
+            <div class="font-bold" style="font-size: 11px; margin-top: 5px;">
+              ${isSessionClosed ? 'TICKET DE CIERRE DE CAJA' : 'CORTE PARCIAL / ARQUEO PREVIO'}
+            </div>
+            ${!isSessionClosed ? `
+              <div style="border: 1.5px dashed #000; padding: 4px; margin-top: 5px; font-size: 8.5px; font-weight: bold; text-transform: uppercase; background-color: #f0f0f0;">
+                *** AVISO: SESIÓN EN CURSO ***<br/>
+                LA CAJA AÚN NO HA SIDO CERRADA.<br/>
+                ESTE TICKET ES UN ARQUEO PARCIAL/PROVISIONAL.
+              </div>
+            ` : ''}
           </div>
 
           <div class="border-dashed"></div>
@@ -203,6 +229,10 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
             <div class="flex justify-between">
               <span>SESIÓN ID:</span>
               <span class="font-bold">${sessionData.id}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>ESTADO DE CAJA:</span>
+              <span class="font-bold uppercase">${isSessionClosed ? 'CERRADA' : 'ABIERTA / EN CURSO'}</span>
             </div>
             <div class="flex justify-between">
               <span>CAJERO:</span>
@@ -217,7 +247,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
               <span>${new Date(sessionData.openedAt).toLocaleString(undefined, { timeZone: timezone })}</span>
             </div>
             <div class="flex justify-between">
-              <span>CIERRE:</span>
+              <span>${isSessionClosed ? 'CIERRE:' : 'HORA CORTE:'}</span>
               <span>${sessionData.closedAt ? new Date(sessionData.closedAt).toLocaleString(undefined, { timeZone: timezone }) : new Date().toLocaleString(undefined, { timeZone: timezone })}</span>
             </div>
           </div>
@@ -230,7 +260,19 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
               <span>(+) SALDO INICIAL:</span>
               <span>$${Number(sessionData.openingBalance).toFixed(2)}</span>
             </div>
-            <div class="flex justify-between">
+            ${sessionData.salesSubtotal !== undefined && sessionData.salesSubtotal > 0 ? `
+              <div class="flex justify-between">
+                <span>VENTAS SUBTOTAL:</span>
+                <span>$${Number(sessionData.salesSubtotal).toFixed(2)}</span>
+              </div>
+            ` : ''}
+            ${sessionData.discountsTotal !== undefined && sessionData.discountsTotal > 0 ? `
+              <div class="flex justify-between" style="color: #b91c1c;">
+                <span>(-) DESCUENTOS:</span>
+                <span>-$${Number(sessionData.discountsTotal).toFixed(2)}</span>
+              </div>
+            ` : ''}
+            <div class="flex justify-between font-bold">
               <span>(+) VENTAS TOTALES:</span>
               <span>$${Number(sessionData.salesTotal).toFixed(2)}</span>
             </div>
@@ -238,29 +280,41 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
               <span>(-) GASTOS:</span>
               <span>$${Number(sessionData.expensesTotal).toFixed(2)}</span>
             </div>
+            ${sessionData.refundsTotal !== undefined && sessionData.refundsTotal > 0 ? `
+              <div class="flex justify-between">
+                <span>(-) DEVOLUCIONES:</span>
+                <span>-$${Number(sessionData.refundsTotal).toFixed(2)}</span>
+              </div>
+            ` : ''}
             
             <div class="border-dashed"></div>
             
             <div class="flex justify-between font-bold">
-              <span>(=) SALDO ESPERADO:</span>
+              <span>(=) SALDO TEÓRICO EN CAJA:</span>
               <span>$${Number(sessionData.expectedBalance).toFixed(2)}</span>
             </div>
-            <div class="flex justify-between font-bold">
-              <span>(=) SALDO DECLARADO:</span>
-              <span>$${Number(sessionData.closingBalance).toFixed(2)}</span>
-            </div>
+            ${isSessionClosed ? `
+              <div class="flex justify-between font-bold">
+                <span>(=) SALDO DECLARADO:</span>
+                <span>$${Number(sessionData.closingBalance).toFixed(2)}</span>
+              </div>
 
-            <div class="border-dashed"></div>
+              <div class="border-dashed"></div>
 
-            <div class="flex justify-between font-bold" style="font-size: 10px;">
-              <span>DIFERENCIA:</span>
-              <span style="color: ${difference === 0 ? '#000' : difference < 0 ? '#b91c1c' : '#047857'}">
-                ${difference === 0 ? '' : difference > 0 ? '+' : ''}$${difference.toFixed(2)}
-              </span>
-            </div>
-            <div class="text-center font-bold" style="font-size: 8px; margin-top: 2px;">
-              ${difference === 0 ? 'CAJA CUADRADA' : difference < 0 ? 'FALTANTE EN CAJA' : 'SOBRANTE EN CAJA'}
-            </div>
+              <div class="flex justify-between font-bold" style="font-size: 10px;">
+                <span>DIFERENCIA:</span>
+                <span style="color: ${difference === 0 ? '#000' : difference < 0 ? '#b91c1c' : '#047857'}">
+                  ${difference === 0 ? '' : difference > 0 ? '+' : ''}$${difference.toFixed(2)}
+                </span>
+              </div>
+              <div class="text-center font-bold" style="font-size: 8px; margin-top: 2px;">
+                ${difference === 0 ? 'CAJA CUADRADA' : difference < 0 ? 'FALTANTE EN CAJA' : 'SOBRANTE EN CAJA'}
+              </div>
+            ` : `
+              <div class="text-center font-bold" style="font-size: 8px; margin-top: 4px; color: #555;">
+                [ARQUEO PARCIAL - PENDIENTE DE CONTEO FÍSICO AL CIERRE]
+              </div>
+            `}
           </div>
 
           <div class="border-dashed"></div>
@@ -330,13 +384,29 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
           <div className="text-center space-y-1 pb-2 border-b border-gray-200">
             <h4 className="text-sm font-bold uppercase text-black">{tenantName || 'NEGOCIO'}</h4>
             {tenantRuc && <p className="text-[10px] text-gray-500">RFC: {tenantRuc}</p>}
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-1">Ticket de Cierre de Caja</p>
+            <p className="text-[11px] font-bold uppercase tracking-wider mt-1 text-black">
+              {isSessionClosed ? 'Ticket de Cierre de Caja' : 'Corte Parcial / Arqueo Previo'}
+            </p>
+            {!isSessionClosed && (
+              <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-700 text-[10px] font-semibold text-center uppercase">
+                ⚠️ Aviso: Sesión en Curso (Caja Abierta)
+                <span className="block text-[9px] font-normal text-amber-600 normal-case mt-0.5">
+                  Este ticket es un corte informativo parcial. La caja continúa activa y no se ha cerrado.
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="space-y-1 text-gray-700">
             <div className="flex justify-between">
               <span>SESIÓN:</span>
               <span className="text-black font-bold truncate max-w-[160px]">{sessionData.id}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>ESTADO DE CAJA:</span>
+              <span className={`font-bold uppercase ${isSessionClosed ? 'text-gray-700' : 'text-emerald-600'}`}>
+                {isSessionClosed ? 'Cerrada' : 'Abierta / En Curso'}
+              </span>
             </div>
             <div className="flex justify-between">
               <span>CAJERO:</span>
@@ -347,7 +417,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
               <span className="text-black">{new Date(sessionData.openedAt).toLocaleString(undefined, { timeZone: timezone })}</span>
             </div>
             <div className="flex justify-between">
-              <span>CIERRE:</span>
+              <span>{isSessionClosed ? 'CIERRE:' : 'HORA CORTE:'}</span>
               <span className="text-black">{sessionData.closedAt ? new Date(sessionData.closedAt).toLocaleString(undefined, { timeZone: timezone }) : new Date().toLocaleString(undefined, { timeZone: timezone })}</span>
             </div>
           </div>
@@ -358,32 +428,72 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
               <span>(+) Saldo Inicial:</span>
               <span className="text-black font-semibold">${Number(sessionData.openingBalance).toFixed(2)}</span>
             </div>
-            <div className="flex justify-between">
-              <span>(+) Ventas:</span>
-              <span className="text-black font-semibold">${Number(sessionData.salesTotal).toFixed(2)}</span>
+            {sessionData.salesSubtotal !== undefined && sessionData.salesSubtotal > 0 && (
+              <div className="flex justify-between">
+                <span>Ventas Subtotal:</span>
+                <span className="text-black font-semibold">${Number(sessionData.salesSubtotal).toFixed(2)}</span>
+              </div>
+            )}
+            {sessionData.discountsTotal !== undefined && sessionData.discountsTotal > 0 && (
+              <div className="flex justify-between text-rose-600 font-semibold">
+                <span>(-) Descuentos:</span>
+                <span>-${Number(sessionData.discountsTotal).toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between font-bold text-black">
+              <span>(+) Ventas Totales:</span>
+              <span>${Number(sessionData.salesTotal).toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span>(-) Gastos:</span>
               <span className="text-black font-semibold">${Number(sessionData.expensesTotal).toFixed(2)}</span>
             </div>
+            {sessionData.refundsTotal !== undefined && sessionData.refundsTotal > 0 && (
+              <div className="flex justify-between text-amber-600 font-semibold">
+                <span>(-) Devoluciones:</span>
+                <span>-${Number(sessionData.refundsTotal).toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-black font-bold border-t border-dashed border-gray-200 pt-1.5 mt-1.5">
-              <span>(=) Total Esperado:</span>
+              <span>(=) Saldo Teórico en Caja:</span>
               <span>${Number(sessionData.expectedBalance).toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-black font-bold">
-              <span>(=) Caja Declarado:</span>
-              <span>${Number(sessionData.closingBalance).toFixed(2)}</span>
-            </div>
 
-            <div className="flex justify-between font-bold text-xs pt-1.5 border-t border-dashed border-gray-200">
-              <span>Diferencia:</span>
-              <span className={difference === 0 ? 'text-black' : difference < 0 ? 'text-rose-600' : 'text-emerald-600'}>
-                {difference === 0 ? '' : difference > 0 ? '+' : ''}${difference.toFixed(2)}
-              </span>
+            {isSessionClosed ? (
+              <>
+                <div className="flex justify-between text-black font-bold">
+                  <span>(=) Caja Declarado:</span>
+                  <span>${Number(sessionData.closingBalance).toFixed(2)}</span>
+                </div>
+
+                <div className="flex justify-between font-bold text-xs pt-1.5 border-t border-dashed border-gray-200">
+                  <span>Diferencia:</span>
+                  <span className={difference === 0 ? 'text-black' : difference < 0 ? 'text-rose-600' : 'text-emerald-600'}>
+                    {difference === 0 ? '' : difference > 0 ? '+' : ''}${difference.toFixed(2)}
+                  </span>
+                </div>
+                <p className="text-[9px] text-gray-500 font-bold text-center mt-1 uppercase">
+                  {difference === 0 ? 'Caja Cuadrada' : difference < 0 ? 'Faltante en Caja' : 'Sobrante en Caja'}
+                </p>
+              </>
+            ) : (
+              <p className="text-[9.5px] text-neutral font-semibold text-center mt-2 italic">
+                * Conteo físico y diferencia pendientes hasta el cierre definitivo.
+              </p>
+            )}
+          </div>
+
+          {/* Desglose Métodos de Pago */}
+          <div className="border-t border-dashed border-gray-200 pt-3">
+            <span className="text-[10px] text-gray-500 font-bold block mb-1.5 uppercase">Ingresos por Método:</span>
+            <div className="space-y-1 text-[10.5px]">
+              {Object.entries(sessionData.paymentsBreakdown || {}).map(([method, amount], i) => (
+                <div key={i} className="flex justify-between">
+                  <span className="uppercase text-gray-700">{method}:</span>
+                  <span className="text-black font-semibold">${Number(amount).toFixed(2)}</span>
+                </div>
+              ))}
             </div>
-            <p className="text-[9px] text-gray-500 font-bold text-center mt-1 uppercase">
-              {difference === 0 ? 'Caja Cuadrada' : difference < 0 ? 'Faltante en Caja' : 'Sobrante en Caja'}
-            </p>
           </div>
 
           {/* Cronología de Ventas */}
@@ -417,8 +527,13 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
                     <span>{prod.sku}</span>
                     <span className="truncate max-w-[170px] uppercase">{prod.name}</span>
                   </div>
-                  <div className="flex justify-between text-gray-500 pl-3">
+                  <div className="flex justify-between text-gray-500 pl-3 items-center">
                     <span>Cant: x{prod.quantity}</span>
+                    {prod.discount && prod.discount > 0 ? (
+                      <span className="text-[9.5px] font-bold text-red-600">
+                        (Desc -${Number(prod.discount).toFixed(2)})
+                      </span>
+                    ) : null}
                     <span className="text-black font-semibold">${prod.total.toFixed(2)}</span>
                   </div>
                 </div>
