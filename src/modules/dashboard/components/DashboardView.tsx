@@ -55,17 +55,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ branchId }) => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Top Header / Actions */}
+    <div className="space-y-3">
+      {/* Top Header / Actions - Compact bar */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-secondary tracking-tight">Dashboard General</h2>
-          <p className="text-xs text-neutral">Resumen en tiempo real del rendimiento de tu negocio</p>
+          <h2 className="text-lg font-bold text-secondary tracking-tight">Dashboard General</h2>
+          <p className="text-[11px] text-neutral">Resumen en tiempo real del rendimiento de tu negocio</p>
         </div>
         <button
           onClick={() => refetch()}
           disabled={isFetching}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border-card bg-bg-card hover:bg-bg-dark text-xs font-medium text-secondary transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-border-card bg-bg-card hover:bg-bg-dark text-xs font-medium text-secondary transition-colors disabled:opacity-50"
           title="Actualizar datos"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin text-primary' : 'text-neutral'}`} />
@@ -73,25 +73,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ branchId }) => {
         </button>
       </div>
 
-      {/* Row 1: Ventas Hoy + Métodos de Pago + Top Productos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
-        <TodaySalesCard
-          totalSales={metrics.today?.totalSales || 0}
-          itemsCount={metrics.today?.itemsCount || 0}
-        />
-        <PaymentMethodsCard data={metrics.paymentMethods} />
-        <TopProductsCard products={metrics.topProducts} />
+      {/* Row 1: Ventas Hoy (3 cols) + Métodos de Pago (4 cols) + Resumen de la Semana (5 cols) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-3 items-stretch">
+        <div className="lg:col-span-3">
+          <TodaySalesCard
+            totalSales={metrics.today?.totalSales || 0}
+            itemsCount={metrics.today?.itemsCount || 0}
+          />
+        </div>
+        <div className="lg:col-span-4">
+          <PaymentMethodsCard data={metrics.paymentMethods} />
+        </div>
+        <div className="lg:col-span-5 md:col-span-2">
+          <WeeklySummaryCard data={metrics.weekSummary} />
+        </div>
       </div>
 
-      {/* Row 2: Poco Inventario + Vendidos Día Anterior */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+      {/* Row 2: Top Productos (4 cols) + Poco Inventario (4 cols) + Vendidos Ayer (4 cols) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
+        <TopProductsCard products={metrics.topProducts} />
         <LowStockCard products={metrics.lowStockProducts} />
         <YesterdaySoldCard products={metrics.yesterdaySoldProducts} />
-      </div>
-
-      {/* Row 3: Resumen de la Semana */}
-      <div>
-        <WeeklySummaryCard data={metrics.weekSummary} />
       </div>
     </div>
   );

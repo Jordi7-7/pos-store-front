@@ -41,18 +41,18 @@ export const PaymentMethodsCard: React.FC<PaymentMethodsCardProps> = ({ data }) 
   }).format(data?.card?.amount || 0);
 
   return (
-    <div className="bg-bg-card border border-border-card rounded-2xl p-6 shadow-sm flex flex-col justify-between h-full">
-      <h3 className="text-base font-semibold text-secondary mb-3">Métodos de pago</h3>
+    <div className="bg-bg-card border border-border-card rounded-2xl p-4 shadow-sm flex flex-col justify-between h-full">
+      <h3 className="text-sm font-bold text-secondary mb-2">Métodos de pago</h3>
 
-      <div className="flex flex-col sm:flex-row items-center gap-6 my-auto">
+      <div className="flex flex-col sm:flex-row items-center gap-4 my-auto">
         {/* Donut Chart with Center Text */}
-        <div className="relative w-40 h-40 flex items-center justify-center flex-shrink-0">
+        <div className="relative w-32 h-32 flex items-center justify-center flex-shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={displayChartData}
-                innerRadius={50}
-                outerRadius={70}
+                innerRadius={38}
+                outerRadius={54}
                 paddingAngle={hasData ? 3 : 0}
                 dataKey="value"
                 stroke="none"
@@ -64,19 +64,19 @@ export const PaymentMethodsCard: React.FC<PaymentMethodsCardProps> = ({ data }) 
             </PieChart>
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-1">
-            <span className="text-[10px] uppercase font-bold text-neutral">Total</span>
-            <span className="text-xs font-black text-secondary tracking-tight truncate max-w-[85px]">
+            <span className="text-[9px] uppercase font-bold text-neutral">Total</span>
+            <span className="text-[11px] font-black text-secondary tracking-tight truncate max-w-[70px]">
               {formattedTotal}
             </span>
           </div>
         </div>
 
         {/* Legend / Breakdown */}
-        <div className="flex-1 w-full space-y-3">
+        <div className="flex-1 w-full space-y-2">
           {/* Efectivo */}
-          <div className="flex items-center justify-between p-2.5 rounded-xl bg-bg-dark/40 border border-border-card/40">
-            <div className="flex items-center gap-2.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+          <div className="flex items-center justify-between p-2 rounded-xl bg-bg-dark/40 border border-border-card/40">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
               <div className="flex items-center gap-1.5 text-xs font-medium text-secondary">
                 <Banknote className="w-3.5 h-3.5 text-emerald-500" />
                 <span>Efectivo</span>
@@ -89,9 +89,9 @@ export const PaymentMethodsCard: React.FC<PaymentMethodsCardProps> = ({ data }) 
           </div>
 
           {/* Tarjeta */}
-          <div className="flex items-center justify-between p-2.5 rounded-xl bg-bg-dark/40 border border-border-card/40">
-            <div className="flex items-center gap-2.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+          <div className="flex items-center justify-between p-2 rounded-xl bg-bg-dark/40 border border-border-card/40">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-500" />
               <div className="flex items-center gap-1.5 text-xs font-medium text-secondary">
                 <CreditCard className="w-3.5 h-3.5 text-blue-500" />
                 <span>Tarjeta</span>
