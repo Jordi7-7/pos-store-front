@@ -21,6 +21,7 @@ import { Route as LayoutPosRouteImport } from './routes/_layout/pos'
 import { Route as LayoutReportesRouteImport } from './routes/_layout/reportes'
 import { Route as LayoutUsuariosRouteImport } from './routes/_layout/usuarios'
 import { Route as LayoutVentasRouteImport } from './routes/_layout/ventas'
+import { Route as LoginTenantSlugRouteImport } from './routes/login.$tenantSlug'
 import { Route as LayoutCajasHistorialRouteImport } from './routes/_layout/cajas/historial'
 import { Route as LayoutCajasRegistradorasRouteImport } from './routes/_layout/cajas/registradoras'
 import { Route as LayoutInventarioCrearRouteImport } from './routes/_layout/inventario/crear'
@@ -86,6 +87,11 @@ const LayoutVentasRoute = LayoutVentasRouteImport.update({
   path: '/ventas',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LoginTenantSlugRoute = LoginTenantSlugRouteImport.update({
+  id: '/$tenantSlug',
+  path: '/$tenantSlug',
+  getParentRoute: () => LoginRoute,
+} as any)
 const LayoutCajasHistorialRoute = LayoutCajasHistorialRouteImport.update({
   id: '/cajas/historial',
   path: '/cajas/historial',
@@ -116,7 +122,7 @@ const LayoutInventarioProductosRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
+  '/login': typeof LoginRouteWithChildren
   '/clientes': typeof LayoutClientesRoute
   '/compras': typeof LayoutComprasRoute
   '/configuracion': typeof LayoutConfiguracionRoute
@@ -126,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/reportes': typeof LayoutReportesRoute
   '/usuarios': typeof LayoutUsuariosRoute
   '/ventas': typeof LayoutVentasRoute
+  '/login/$tenantSlug': typeof LoginTenantSlugRoute
   '/cajas/historial': typeof LayoutCajasHistorialRoute
   '/cajas/registradoras': typeof LayoutCajasRegistradorasRoute
   '/inventario/crear': typeof LayoutInventarioCrearRoute
@@ -134,7 +141,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
+  '/login': typeof LoginRouteWithChildren
   '/clientes': typeof LayoutClientesRoute
   '/compras': typeof LayoutComprasRoute
   '/configuracion': typeof LayoutConfiguracionRoute
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/reportes': typeof LayoutReportesRoute
   '/usuarios': typeof LayoutUsuariosRoute
   '/ventas': typeof LayoutVentasRoute
+  '/login/$tenantSlug': typeof LoginTenantSlugRoute
   '/cajas/historial': typeof LayoutCajasHistorialRoute
   '/cajas/registradoras': typeof LayoutCajasRegistradorasRoute
   '/inventario/crear': typeof LayoutInventarioCrearRoute
@@ -154,7 +162,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_layout': typeof LayoutRouteWithChildren
-  '/login': typeof LoginRoute
+  '/login': typeof LoginRouteWithChildren
   '/_layout/clientes': typeof LayoutClientesRoute
   '/_layout/compras': typeof LayoutComprasRoute
   '/_layout/configuracion': typeof LayoutConfiguracionRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/_layout/reportes': typeof LayoutReportesRoute
   '/_layout/usuarios': typeof LayoutUsuariosRoute
   '/_layout/ventas': typeof LayoutVentasRoute
+  '/login/$tenantSlug': typeof LoginTenantSlugRoute
   '/_layout/cajas/historial': typeof LayoutCajasHistorialRoute
   '/_layout/cajas/registradoras': typeof LayoutCajasRegistradorasRoute
   '/_layout/inventario/crear': typeof LayoutInventarioCrearRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
     | '/reportes'
     | '/usuarios'
     | '/ventas'
+    | '/login/$tenantSlug'
     | '/cajas/historial'
     | '/cajas/registradoras'
     | '/inventario/crear'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/reportes'
     | '/usuarios'
     | '/ventas'
+    | '/login/$tenantSlug'
     | '/cajas/historial'
     | '/cajas/registradoras'
     | '/inventario/crear'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/_layout/reportes'
     | '/_layout/usuarios'
     | '/_layout/ventas'
+    | '/login/$tenantSlug'
     | '/_layout/cajas/historial'
     | '/_layout/cajas/registradoras'
     | '/_layout/inventario/crear'
@@ -231,7 +243,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LayoutRoute: typeof LayoutRouteWithChildren
-  LoginRoute: typeof LoginRoute
+  LoginRoute: typeof LoginRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -320,6 +332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutVentasRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/login/$tenantSlug': {
+      id: '/login/$tenantSlug'
+      path: '/$tenantSlug'
+      fullPath: '/login/$tenantSlug'
+      preLoaderRoute: typeof LoginTenantSlugRouteImport
+      parentRoute: typeof LoginRoute
+    }
     '/_layout/cajas/historial': {
       id: '/_layout/cajas/historial'
       path: '/cajas/historial'
@@ -395,10 +414,20 @@ const LayoutRouteChildren: LayoutRouteChildren = {
 const LayoutRouteWithChildren =
   LayoutRoute._addFileChildren(LayoutRouteChildren)
 
+interface LoginRouteChildren {
+  LoginTenantSlugRoute: typeof LoginTenantSlugRoute
+}
+
+const LoginRouteChildren: LoginRouteChildren = {
+  LoginTenantSlugRoute: LoginTenantSlugRoute,
+}
+
+const LoginRouteWithChildren = LoginRoute._addFileChildren(LoginRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LayoutRoute: LayoutRouteWithChildren,
-  LoginRoute: LoginRoute,
+  LoginRoute: LoginRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

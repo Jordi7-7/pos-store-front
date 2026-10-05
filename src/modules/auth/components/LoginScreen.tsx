@@ -13,7 +13,7 @@ export const LoginScreen: React.FC = () => {
     isLoadingTenant,
     tenantError,
     fetchPublicTenant,
-    setTenantSlug,
+    clearTenant,
     login,
     pinLogin,
   } = useAuthStore();
@@ -165,9 +165,10 @@ export const LoginScreen: React.FC = () => {
   };
 
   const handleClearTenant = () => {
-    setTenantSlug(null);
+    clearTenant();
+    setSearchSlugInput('');
     if (typeof window !== 'undefined') {
-      window.history.pushState(null, '', '/');
+      window.history.pushState(null, '', '/login');
     }
   };
 

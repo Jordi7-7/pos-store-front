@@ -46,6 +46,7 @@ interface AuthState {
   canAny: (permissions: string[]) => boolean;
   fetchPublicTenant: (slug: string) => Promise<boolean>;
   setTenantSlug: (slug: string | null) => void;
+  clearTenant: () => void;
   login: (identifier: string, password: string, targetWorkflow?: 'admin' | 'store', slugOverride?: string) => Promise<boolean>;
   pinLogin: (pin: string, slugOverride?: string) => Promise<'SUCCESS' | 'INVALID' | 'EXPIRED' | 'NOT_FOUND'>;
   lockScreen: () => void;
@@ -102,7 +103,25 @@ export const useAuthStore = create<AuthState>()(
         return perms.some((p) => state.permissions.includes(p));
       },
 
-      setTenantSlug: (slug) => set({ tenantSlug: slug }),
+      clearTenant: () => set({
+        publicTenant: null,
+        tenantSlug: null,
+        tenantId: null,
+        tenantError: null,
+      }),
+
+      setTenantSlug: (slug) => {
+        if (!slug) {
+          set({
+            publicTenant: null,
+            tenantSlug: null,
+            tenantId: null,
+            tenantError: null,
+          });
+        } else {
+          set({ tenantSlug: slug });
+        }
+      },
 
       fetchPublicTenant: async (slug: string) => {
         if (!slug || !slug.trim()) return false;
