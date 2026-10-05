@@ -7,13 +7,7 @@ export const Route = createFileRoute('/_layout/pos')({
 });
 
 function POSRoute() {
-  const { selectedBranchId, activeSession, setActiveSession } = useLayoutContext();
+  const { selectedBranchId } = useLayoutContext();
 
-  return (
-    <POSView
-      selectedBranchId={selectedBranchId || ''}
-      activeSession={activeSession}
-      setActiveSession={setActiveSession}
-    />
-  );
+  return <POSView selectedBranchId={selectedBranchId || ''} />;
 }

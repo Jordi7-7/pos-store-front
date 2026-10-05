@@ -8,7 +8,8 @@ import {
   useOpenCashSession,
   useCloseCashSession,
   useRegisterExpense,
-  useProcessSale
+  useProcessSale,
+  useActiveCashSession,
 } from '../hooks/useSales';
 import { useCustomers } from '../hooks/useCustomers';
 import type { Customer } from '../hooks/useCustomers';
@@ -66,8 +67,8 @@ import { usePOSHotkeys } from '../hooks/usePOSHotkeys';
 
 interface POSViewProps {
   selectedBranchId: string;
-  activeSession: any;
-  setActiveSession: (session: any) => void;
+  activeSession?: any;
+  setActiveSession?: (session: any) => void;
 }
 
 interface CartItem {
@@ -91,11 +92,38 @@ interface CartItem {
 
 export const POSView: React.FC<POSViewProps> = ({
   selectedBranchId,
-  activeSession,
-  setActiveSession,
+  activeSession: externalActiveSession,
+  setActiveSession: externalSetActiveSession,
 }) => {
   const { branches } = useBranches();
   const { customers } = useCustomers();
+  const { role, selectedCashRegisterId, setSelectedCashRegisterId } = useAuthStore();
+  const effectiveBranchId = selectedBranchId || (branches[0] && branches[0].id) || '';
+  const { myCashRegisters: availableRegistersForUser } = useMyCashRegisters(effectiveBranchId || undefined);
+
+  const [selectedRegisterId, setSelectedRegisterId] = useState<string>(selectedCashRegisterId || '');
+
+  // Query active cash session directly in POS
+  const { activeSession: queryActiveSession } = useActiveCashSession(
+    effectiveBranchId || undefined,
+    selectedRegisterId || undefined
+  );
+
+  const [internalSession, setInternalSession] = useState<any>(null);
+
+  useEffect(() => {
+    if (queryActiveSession !== undefined) {
+      setInternalSession(queryActiveSession);
+    }
+  }, [queryActiveSession]);
+
+  const activeSession = externalActiveSession !== undefined ? externalActiveSession : internalSession;
+  const setActiveSession = (session: any) => {
+    setInternalSession(session);
+    if (externalSetActiveSession) {
+      externalSetActiveSession(session);
+    }
+  };
 
   // Modal Visibility states
   const [isAperturaModalOpen, setIsAperturaModalOpen] = useState(false);
@@ -126,13 +154,6 @@ export const POSView: React.FC<POSViewProps> = ({
   const [expenseDesc, setExpenseDesc] = useState('');
   const [expenseAmount, setExpenseAmount] = useState('');
   const expenseCategory = 'Servicios';
-
-  // Cash Register selection state for aperture
-  const { role, selectedCashRegisterId, setSelectedCashRegisterId } = useAuthStore();
-  const effectiveBranchId = selectedBranchId || (branches[0] && branches[0].id) || '';
-  const { myCashRegisters: availableRegistersForUser } = useMyCashRegisters(effectiveBranchId || undefined);
-
-  const [selectedRegisterId, setSelectedRegisterId] = useState<string>(selectedCashRegisterId || '');
 
   // Keep local selectedRegisterId in sync with store
   useEffect(() => {

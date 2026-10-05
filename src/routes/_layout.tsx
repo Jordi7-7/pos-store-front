@@ -5,7 +5,7 @@ import { LayoutContextProvider, useLayoutContext } from '@/providers/LayoutConte
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { AppSidebar } from '@/components/AppSidebar';
-import { Building, ChevronDown, CreditCard } from 'lucide-react';
+import { Building, ChevronDown } from 'lucide-react';
 
 export const Route = createFileRoute('/_layout')({
   beforeLoad: () => {
@@ -49,10 +49,6 @@ function DashboardShell() {
     branches,
     selectedBranchId,
     setSelectedBranchId,
-    availableRegisters,
-    selectedCashRegisterId,
-    setSelectedCashRegisterId,
-    activeSession,
   } = useLayoutContext();
 
   const getPageTitle = () => {
@@ -120,46 +116,11 @@ function DashboardShell() {
                   );
                 })()}
 
-                {/* Cash Register Selector */}
-                {availableRegisters && availableRegisters.length > 0 && (
-                  <div className="flex items-center gap-2 bg-bg-dark border border-border-card rounded-xl px-3 py-1">
-                    <CreditCard className="w-3.5 h-3.5 text-neutral" />
-                    <select
-                      value={selectedCashRegisterId || ''}
-                      onChange={(e) => setSelectedCashRegisterId(e.target.value)}
-                      disabled={availableRegisters.length === 1}
-                      className="bg-transparent text-xs text-secondary font-semibold focus:outline-none cursor-pointer disabled:cursor-default"
-                      title={availableRegisters.length === 1 ? 'Caja asignada única' : 'Seleccionar caja registradora'}
-                    >
-                      {availableRegisters.map((reg: any) => (
-                        <option key={reg.id} value={reg.id} className="bg-bg-card text-secondary">
-                          {reg.name} {reg.isOpen ? '🟢' : '⚪'}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
                 {/* User quick pill */}
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-dark border border-border-card rounded-xl text-xs font-medium text-secondary">
                   <span className="w-2 h-2 rounded-sm bg-neutral/40" />
                   <span className="font-semibold">{user?.name?.split(' ')[0] || 'Cajero'}</span>
                   <ChevronDown className="w-3 h-3 text-neutral" />
-                </div>
-
-                {/* Cash Session Status */}
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-dark border border-border-card rounded-xl text-xs">
-                  <div
-                    className={`w-2 h-2 rounded-full ${activeSession ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}
-                  />
-                  <span className="text-neutral font-medium">
-                    Caja: <span className="text-secondary font-bold">{activeSession ? 'ABIERTA' : 'CERRADA'}</span>
-                    {(activeSession?.openedByName || activeSession?.user?.name) && (
-                      <span className="text-[11px] text-neutral font-normal ml-1">
-                        ({(activeSession.openedByName || activeSession.user.name).split(' ')[0]})
-                      </span>
-                    )}
-                  </span>
                 </div>
               </div>
             </header>
