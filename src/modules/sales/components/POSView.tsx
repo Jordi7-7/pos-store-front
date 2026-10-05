@@ -3,7 +3,6 @@ import { productsService } from '../../products/services/products.service';
 import { useBranches } from '../../branches/hooks/useBranches';
 import type { Branch } from '../../branches/services/branches.service';
 import { useMyCashRegisters } from '@/modules/cash-registers/hooks/useCashRegisters';
-import type { MyCashRegisterItem } from '@/modules/cash-registers/services/cash-registers.service';
 import {
   useOpenCashSession,
   useCloseCashSession,
@@ -103,25 +102,26 @@ export const POSView: React.FC<POSViewProps> = ({
 
   const [selectedRegisterId, setSelectedRegisterId] = useState<string>(selectedCashRegisterId || '');
 
-  // Query active cash session directly in POS
+  // Query active cash session for the branch directly in POS
   const { activeSession: queryActiveSession } = useActiveCashSession(
-    effectiveBranchId || undefined,
-    selectedRegisterId || undefined
+    effectiveBranchId || undefined
   );
 
   const [internalSession, setInternalSession] = useState<any>(null);
 
   useEffect(() => {
     if (queryActiveSession !== undefined) {
-      setInternalSession(queryActiveSession);
+      setInternalSession(queryActiveSession && queryActiveSession.id ? queryActiveSession : null);
     }
   }, [queryActiveSession]);
 
-  const activeSession = externalActiveSession !== undefined ? externalActiveSession : internalSession;
+  const rawSession = externalActiveSession !== undefined ? externalActiveSession : internalSession;
+  const activeSession = rawSession && rawSession.id ? rawSession : null;
   const setActiveSession = (session: any) => {
-    setInternalSession(session);
+    const validSession = session && session.id ? session : null;
+    setInternalSession(validSession);
     if (externalSetActiveSession) {
-      externalSetActiveSession(session);
+      externalSetActiveSession(validSession);
     }
   };
 
@@ -155,23 +155,15 @@ export const POSView: React.FC<POSViewProps> = ({
   const [expenseAmount, setExpenseAmount] = useState('');
   const expenseCategory = 'Servicios';
 
-  // Keep local selectedRegisterId in sync with store
+  // Keep local selectedRegisterId in sync with active session or store
   useEffect(() => {
-    if (selectedCashRegisterId) {
+    if (activeSession?.cashRegisterId) {
+      setSelectedRegisterId(activeSession.cashRegisterId);
+      setSelectedCashRegisterId(activeSession.cashRegisterId);
+    } else if (selectedCashRegisterId) {
       setSelectedRegisterId(selectedCashRegisterId);
     }
-  }, [selectedCashRegisterId]);
-
-  useEffect(() => {
-    if (availableRegistersForUser.length > 0) {
-      // If currently selected register is not in the list, preselect first available or first in list
-      if (!selectedRegisterId || !availableRegistersForUser.some((r: MyCashRegisterItem) => r.id === selectedRegisterId)) {
-        const target = availableRegistersForUser.find((r: MyCashRegisterItem) => !r.isOpen) || availableRegistersForUser[0];
-        setSelectedRegisterId(target.id);
-        setSelectedCashRegisterId(target.id);
-      }
-    }
-  }, [availableRegistersForUser, selectedRegisterId, setSelectedCashRegisterId]);
+  }, [activeSession?.cashRegisterId, selectedCashRegisterId, setSelectedCashRegisterId]);
 
   // Cart States
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -235,11 +227,11 @@ export const POSView: React.FC<POSViewProps> = ({
 
 
   // Clock & shift timer
-  const [currentTime, setCurrentTime] = useState('');
+  const [currentTime, setCurrentTime] = useState(() => DateTime.now().setZone(timezone).toFormat('HH:mm:ss'));
   const [shiftDuration, setShiftDuration] = useState('00h 00m 00s');
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    const updateTimer = () => {
       const now = DateTime.now().setZone(timezone);
       setCurrentTime(now.toFormat('HH:mm:ss'));
 
@@ -261,7 +253,10 @@ export const POSView: React.FC<POSViewProps> = ({
       } else {
         setShiftDuration('00h 00m 00s');
       }
-    }, 1000);
+    };
+
+    updateTimer();
+    const timer = setInterval(updateTimer, 1000);
     return () => clearInterval(timer);
   }, [activeSession, timezone]);
 
@@ -363,7 +358,7 @@ export const POSView: React.FC<POSViewProps> = ({
       // Group products sold
       const productsSummary: Record<string, { name: string; quantity: number; total: number }> = {};
       activeSessionSales.forEach((sale) => {
-        sale.items.forEach((item) => {
+        (sale.items || []).forEach((item) => {
           const sku = item.variant.sku;
           const prodName = item.variant.product.name;
           const variantAttrs = (item.variant.attributeValues || [])
@@ -403,7 +398,7 @@ export const POSView: React.FC<POSViewProps> = ({
       const refundsList = activeSessionRefunds.map((ref) => ({
         id: ref.id,
         reason: ref.reason,
-        items: ref.items.map((ri) => ({
+        items: (ref.items || []).map((ri) => ({
           name: ri.variant.product.name,
           sku: ri.variant.sku,
           quantity: ri.quantity,
@@ -797,7 +792,19 @@ export const POSView: React.FC<POSViewProps> = ({
 
   const handleCompletePayment = async () => {
     const branch = selectedBranchId || (branches[0] && branches[0].id);
-    if (!branch || !activeSession || cart.length === 0) return;
+    if (!branch) {
+      toast.warning('Por favor selecciona una sucursal.');
+      return;
+    }
+    if (!activeSession || !activeSession.id) {
+      toast.error('No hay una sesión de caja abierta. Abre tu caja antes de registrar ventas.');
+      setIsAperturaModalOpen(true);
+      return;
+    }
+    if (cart.length === 0) {
+      toast.warning('El carrito de compras está vacío.');
+      return;
+    }
 
     if (amountPaid < cartTotal) {
       toast.warning(`Falta cubrir $${remaining.toFixed(2)} del total para poder procesar la venta.`);
