@@ -285,9 +285,14 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
               const isExpanded = !!expandedGroups[lot.id];
               const totalItems = lot.items?.length || 0;
               const hasStock = lot.totalRemainingQuantity > 0;
-              const percentLeft = lot.totalInitialQuantity > 0
-                ? Math.round((lot.totalRemainingQuantity / lot.totalInitialQuantity) * 100)
+              const percentLeftRaw = lot.totalInitialQuantity > 0
+                ? (lot.totalRemainingQuantity / lot.totalInitialQuantity) * 100
                 : 0;
+              // Si queda algo pero se consumió una parte, nunca redondear hacia arriba al 100%
+              const percentDisplay = (lot.totalRemainingQuantity < lot.totalInitialQuantity && percentLeftRaw > 99)
+                ? percentLeftRaw.toFixed(1)
+                : Math.round(percentLeftRaw);
+              const initialCost = lot.totalInitialCostValue ?? (lot.items || []).reduce((acc, it) => acc + (it.initialQuantity * it.unitCost), 0);
 
               return (
                 <div 
@@ -356,20 +361,24 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
                           <div className="w-20 md:ml-auto mt-1 h-1.5 rounded-full bg-muted/60 overflow-hidden">
                             <div 
                               className={`h-full rounded-full ${
-                                percentLeft > 50 ? 'bg-emerald-500' : percentLeft > 20 ? 'bg-amber-500' : 'bg-rose-500'
+                                percentLeftRaw > 50 ? 'bg-emerald-500' : percentLeftRaw > 20 ? 'bg-amber-500' : 'bg-rose-500'
                               }`}
-                              style={{ width: `${Math.min(100, Math.max(0, percentLeft))}%` }}
+                              style={{ width: `${Math.min(100, Math.max(0, percentLeftRaw))}%` }}
                             />
                           </div>
                         )}
                       </div>
 
+                      {/* Financial Value: Initial vs Remaining */}
                       <div className="text-right">
                         <span className="text-[10px] uppercase font-bold text-neutral block">
-                          Valor Restante
+                          Valor Lote
                         </span>
                         <div className="font-mono font-bold text-xs text-primary">
                           ${lot.totalCostValue.toFixed(2)}
+                          <span className="text-[10.5px] font-normal text-neutral/80 block">
+                            Inicial: ${initialCost.toFixed(2)}
+                          </span>
                         </div>
                         <span className={`text-[10px] font-semibold ${
                           lot.status === 'CANCELLED' 
@@ -378,7 +387,7 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
                               ? 'text-emerald-500' 
                               : 'text-neutral/60'
                         }`}>
-                          {lot.status === 'CANCELLED' ? 'Anulado' : hasStock ? `${percentLeft}% disponible` : 'Agotado'}
+                          {lot.status === 'CANCELLED' ? 'Anulado' : hasStock ? `${percentDisplay}% disponible` : 'Agotado'}
                         </span>
                       </div>
                     </div>
@@ -459,6 +468,9 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
                                   {/* Total Value */}
                                   <TableCell className="py-2.5 pl-2 text-right font-mono font-bold text-xs text-primary">
                                     ${item.totalCostValue.toFixed(2)}
+                                    <span className="text-[10px] font-normal text-neutral/80 block">
+                                      Ini: ${(item.initialCostValue ?? (item.initialQuantity * item.unitCost)).toFixed(2)}
+                                    </span>
                                   </TableCell>
                                 </TableRow>
                               );

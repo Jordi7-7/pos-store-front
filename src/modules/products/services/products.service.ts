@@ -63,6 +63,7 @@ export interface LotItem {
   consumedQuantity: number;
   unitCost: number;
   totalCostValue: number;
+  initialCostValue?: number;
 }
 
 export interface InventoryLot {
@@ -77,6 +78,7 @@ export interface InventoryLot {
   totalInitialQuantity: number;
   totalRemainingQuantity: number;
   totalCostValue: number;
+  totalInitialCostValue?: number;
   status: 'ACTIVE' | 'DEPLETED' | 'EXHAUSTED' | 'CANCELLED';
   items: LotItem[];
 }
