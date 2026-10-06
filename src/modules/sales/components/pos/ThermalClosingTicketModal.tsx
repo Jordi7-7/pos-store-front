@@ -272,13 +272,23 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
                 <span>-$${Number(sessionData.discountsTotal).toFixed(2)}</span>
               </div>
             ` : ''}
-            <div class="flex justify-between font-bold">
-              <span>(+) VENTAS TOTALES:</span>
+            <div class="flex justify-between">
+              <span>VENTAS TOTALES (FACTURADO):</span>
               <span>$${Number(sessionData.salesTotal).toFixed(2)}</span>
             </div>
+            <div class="flex justify-between font-bold" style="color: #047857;">
+              <span>(+) ENTRADA EFECTIVO VENTAS:</span>
+              <span>+$${Number(sessionData.paymentsBreakdown?.['EFECTIVO'] ?? sessionData.paymentsBreakdown?.['efectivo'] ?? 0).toFixed(2)}</span>
+            </div>
+            ${(sessionData.paymentsBreakdown?.['TARJETA'] ?? sessionData.paymentsBreakdown?.['tarjeta'] ?? 0) > 0 ? `
+              <div class="flex justify-between" style="color: #555; font-size: 8px;">
+                <span>(i) Venta Tarjeta/Digital (No en caja):</span>
+                <span>$${Number(sessionData.paymentsBreakdown?.['TARJETA'] ?? sessionData.paymentsBreakdown?.['tarjeta'] ?? 0).toFixed(2)}</span>
+              </div>
+            ` : ''}
             <div class="flex justify-between">
               <span>(-) GASTOS:</span>
-              <span>$${Number(sessionData.expensesTotal).toFixed(2)}</span>
+              <span>-$${Number(sessionData.expensesTotal).toFixed(2)}</span>
             </div>
             ${sessionData.refundsTotal !== undefined && sessionData.refundsTotal > 0 ? `
               <div class="flex justify-between">
@@ -440,13 +450,23 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
                 <span>-${Number(sessionData.discountsTotal).toFixed(2)}</span>
               </div>
             )}
-            <div className="flex justify-between font-bold text-black">
-              <span>(+) Ventas Totales:</span>
-              <span>${Number(sessionData.salesTotal).toFixed(2)}</span>
+            <div className="flex justify-between">
+              <span>Ventas Totales (Facturado):</span>
+              <span className="font-semibold text-black">${Number(sessionData.salesTotal).toFixed(2)}</span>
             </div>
+            <div className="flex justify-between font-bold text-emerald-600">
+              <span>(+) Entrada Efectivo Ventas:</span>
+              <span>+${Number(sessionData.paymentsBreakdown?.['EFECTIVO'] ?? sessionData.paymentsBreakdown?.['efectivo'] ?? 0).toFixed(2)}</span>
+            </div>
+            {(sessionData.paymentsBreakdown?.['TARJETA'] ?? sessionData.paymentsBreakdown?.['tarjeta'] ?? 0) > 0 && (
+              <div className="flex justify-between text-[10px] text-gray-500 italic">
+                <span>(i) Venta Tarjeta/Digital (No en caja):</span>
+                <span>${Number(sessionData.paymentsBreakdown?.['TARJETA'] ?? sessionData.paymentsBreakdown?.['tarjeta'] ?? 0).toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span>(-) Gastos:</span>
-              <span className="text-black font-semibold">${Number(sessionData.expensesTotal).toFixed(2)}</span>
+              <span className="text-black font-semibold">-${Number(sessionData.expensesTotal).toFixed(2)}</span>
             </div>
             {sessionData.refundsTotal !== undefined && sessionData.refundsTotal > 0 && (
               <div className="flex justify-between text-amber-600 font-semibold">

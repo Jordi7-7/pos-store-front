@@ -15,6 +15,7 @@ import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { useBranches } from '../../branches/hooks/useBranches';
 import { cashSessionsService } from '../services/cash-sessions.service';
 import { ThermalClosingTicketModal } from '../../sales/components/pos/ThermalClosingTicketModal';
+import { buildClosingTicketData } from '../utils/buildClosingTicketData';
 import { toast } from 'sonner';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,110 +50,11 @@ export const CashSessionsHistoryView: React.FC = () => {
       setPrintingSessionId(sessionId);
       const details = await cashSessionsService.getCashSessionDetails(sessionId);
 
-      // Aggregate products sold
-      const productMap = new Map<string, { sku: string; name: string; quantity: number; subtotal: number; discount: number; total: number }>();
-      (details.sales || []).forEach((sale: any) => {
-        (sale.items || []).forEach((item: any) => {
-          const sku = item.variant?.sku || item.sku || 'N/A';
-          const name = item.variant?.product?.name || item.productName || 'Producto';
-          const qty = Number(item.quantity || 0);
-          const lineGross = item.subtotal !== undefined && Number(item.subtotal) > 0
-            ? Number(item.subtotal)
-            : Number(item.price || 0) * qty;
-
-          const totalLineDiscount = (item.discountAmount !== undefined && Number(item.discountAmount) > 0
-            ? Number(item.discountAmount)
-            : 0) + (item.globalDiscountAmount !== undefined && Number(item.globalDiscountAmount) > 0
-            ? Number(item.globalDiscountAmount)
-            : 0);
-
-          const lineNet = item.total !== undefined && Number(item.total) > 0
-            ? Number(item.total)
-            : Math.max(0, lineGross - totalLineDiscount);
-
-          const existing = productMap.get(sku);
-          if (existing) {
-            existing.quantity += qty;
-            existing.subtotal += lineGross;
-            existing.discount += totalLineDiscount;
-            existing.total += lineNet;
-          } else {
-            productMap.set(sku, {
-              sku,
-              name,
-              quantity: qty,
-              subtotal: lineGross,
-              discount: totalLineDiscount,
-              total: lineNet,
-            });
-          }
-        });
+      const branch = branches.find((b: any) => b.id === details.session?.branchId);
+      const sessionTicketData = buildClosingTicketData(details, {
+        name: branch?.name,
+        address: branch?.address,
       });
-      const productsList = Array.from(productMap.values());
-
-      const paymentsBreakdown: { [method: string]: number } = {
-        EFECTIVO: Number(details.kpis?.cashSales || 0),
-        TARJETA: Number(details.kpis?.cardSales || 0),
-      };
-
-      const salesSubtotal = (details.sales || []).reduce((sum: number, s: any) => {
-        const itemGross = (s.items || []).reduce((isum: number, it: any) => isum + Number(it.price || 0) * Number(it.quantity || 0), 0);
-        return sum + (s.subtotal !== undefined && s.subtotal > 0 ? Number(s.subtotal) : itemGross);
-      }, 0);
-
-      const discountsTotal = (details.sales || []).reduce((sum: number, s: any) => {
-        return sum + Number(s.discountAmount || 0);
-      }, 0);
-
-      const refundsTotal = Number(details.kpis?.totalRefunds || 0);
-
-      const branchName =
-        details.session?.branchName ||
-        branches.find((b: any) => b.id === details.session?.branchId)?.name ||
-        'Sucursal General';
-
-      const branchAddress =
-        branches.find((b: any) => b.id === details.session?.branchId)?.address || '';
-
-      const sessionTicketData = {
-        id: details.session.id,
-        openedAt: details.session.openedAt,
-        closedAt: details.session.closedAt || undefined,
-        openingBalance: Number(details.session.openingBalance || 0),
-        closingBalance: Number(details.session.closingBalance ?? details.session.expectedBalance ?? 0),
-        expectedBalance: Number(details.session.expectedBalance || 0),
-        salesTotal: Number(details.kpis?.netSales ?? details.session.totalSales ?? 0),
-        salesSubtotal: salesSubtotal > 0 ? salesSubtotal : undefined,
-        discountsTotal: discountsTotal > 0 ? discountsTotal : undefined,
-        expensesTotal: Number(details.kpis?.totalExpenses || 0),
-        refundsTotal: refundsTotal > 0 ? refundsTotal : undefined,
-        expensesList: (details.expenses || []).map((e: any) => ({
-          description: e.description,
-          amount: Number(e.amount),
-          createdAt: e.createdAt,
-        })),
-        productsList,
-        paymentsBreakdown,
-        refundsList: (details.refunds || []).map((r: any) => ({
-          id: r.id,
-          reason: r.reason,
-          items: (r.items || []).map((it: any) => ({
-            name: it.variant?.product?.name || 'Producto',
-            sku: it.variant?.sku || 'N/A',
-            quantity: Number(it.quantity || 0),
-          })),
-        })),
-        salesList: (details.sales || []).map((s: any) => ({
-          invoiceNumber: s.invoiceNumber,
-          createdAt: s.createdAt,
-          total: Number(s.total),
-          paymentMethods: (s.payments || []).map((p: any) => p.paymentMethod || 'EFECTIVO'),
-        })),
-        userName: details.session.openedBy || 'Usuario',
-        branchName,
-        branchAddress,
-        status: details.session.status as 'OPEN' | 'CLOSED',
-      };
 
       setSessionClosingDataToPrint(sessionTicketData);
       setIsClosingTicketModalOpen(true);

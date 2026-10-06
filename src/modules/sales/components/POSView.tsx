@@ -58,6 +58,8 @@ import { AperturaModal } from './pos/AperturaModal';
 import { EgresoModal } from './pos/EgresoModal';
 import { CierreModal } from './pos/CierreModal';
 import { CashSessionAuditModal } from '../../cash-sessions/components/CashSessionAuditModal';
+import { cashSessionsService } from '../../cash-sessions/services/cash-sessions.service';
+import { buildClosingTicketData } from '../../cash-sessions/utils/buildClosingTicketData';
 import { ExchangeReturnModal } from './pos/ExchangeReturnModal';
 import { usePOSHotkeys } from '../hooks/usePOSHotkeys';
 
@@ -313,149 +315,48 @@ export const POSView: React.FC<POSViewProps> = ({
       return;
     }
     try {
-      const openingBalance = Number(activeSession.openingBalance);
-      const salesTotal = activeSessionSales.reduce((sum, s) => sum + Number(s.total), 0);
-      const expensesTotal = activeSessionExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
-      const refundsTotal = activeSessionRefunds.reduce((sum, r) => sum + Number(r.totalRefunded), 0);
-
-      // Compute cash sales specifically for drawer balance
-      let cashSalesTotal = 0;
-      activeSessionSales.forEach((sale) => {
-        const saleTotal = Number(sale.total);
-        const payments = sale.payments || [];
-        if (!payments.length) {
-          if (sale.paymentMethod !== 'TARJETA') cashSalesTotal += saleTotal;
-          return;
-        }
-        payments.forEach((p) => {
-          if (p.paymentMethod === 'EFECTIVO') {
-            cashSalesTotal += Math.min(Number(p.amount), saleTotal);
-          }
-        });
-      });
-
-      const expectedBalance = Math.round((openingBalance + cashSalesTotal - expensesTotal - refundsTotal) * 100) / 100;
-
-      // Group products sold
-      const productsSummary: Record<string, { name: string; quantity: number; subtotal: number; discount: number; total: number }> = {};
-      activeSessionSales.forEach((sale) => {
-        (sale.items || []).forEach((item) => {
-          const sku = item.variant.sku;
-          const prodName = item.variant.product.name;
-          const variantAttrs = (item.variant.attributeValues || [])
-            .map((av) => av.value)
-            .filter(Boolean)
-            .join(' · ');
-          const fullName = variantAttrs ? `${prodName} (${variantAttrs})` : prodName;
-
-          if (!productsSummary[sku]) {
-            productsSummary[sku] = {
-              name: fullName,
-              quantity: 0,
-              subtotal: 0,
-              discount: 0,
-              total: 0,
-            };
-          }
-          const qty = Number(item.quantity || 0);
-          const lineGross = item.subtotal !== undefined && item.subtotal > 0
-            ? Number(item.subtotal)
-            : Number(item.price || 0) * qty;
-
-          const totalLineDiscount = (item.discountAmount !== undefined && Number(item.discountAmount) > 0
-            ? Number(item.discountAmount)
-            : 0) + (item.globalDiscountAmount !== undefined && Number(item.globalDiscountAmount) > 0
-            ? Number(item.globalDiscountAmount)
-            : 0);
-
-          const lineNet = item.total !== undefined && item.total > 0
-            ? Number(item.total)
-            : Math.max(0, lineGross - totalLineDiscount);
-
-          productsSummary[sku].quantity += qty;
-          productsSummary[sku].subtotal += lineGross;
-          productsSummary[sku].discount += totalLineDiscount;
-          productsSummary[sku].total += lineNet;
-        });
-      });
-
-      const productsList = Object.entries(productsSummary).map(([sku, data]) => ({
-        sku,
-        ...data,
-      }));
-
-      // Group payments by method
-      const paymentsBreakdown: Record<string, number> = {};
-      activeSessionSales.forEach((sale) => {
-        (sale.payments || []).forEach((p) => {
-          const method = p.paymentMethod || sale.paymentMethod;
-          paymentsBreakdown[method] = (paymentsBreakdown[method] || 0) + Number(p.amount);
-        });
-      });
-
-      // Get refunds from activeSessionRefunds
-      const refundsList = activeSessionRefunds.map((ref) => ({
-        id: ref.id,
-        reason: ref.reason,
-        items: (ref.items || []).map((ri) => ({
-          name: ri.variant?.product?.name || 'Producto',
-          sku: ri.variant?.sku || 'N/A',
-          quantity: ri.quantity,
-        })),
-      }));
-
-      const salesList = activeSessionSales.map((s) => ({
-        invoiceNumber: s.invoiceNumber,
-        createdAt: s.createdAt,
-        total: Number(s.total),
-        paymentMethods: (s.payments || []).map((p) => p.paymentMethod),
-      }));
-
-      const salesSubtotal = activeSessionSales.reduce((sum, s) => {
-        const itemGross = (s.items || []).reduce((isum, it) => isum + Number(it.price || 0) * Number(it.quantity || 0), 0);
-        return sum + (s.subtotal !== undefined && s.subtotal > 0 ? Number(s.subtotal) : itemGross);
-      }, 0);
-
-      const discountsTotal = activeSessionSales.reduce((sum, s) => {
-        return sum + Number(s.discountAmount || 0);
-      }, 0);
-
-      const dataToPrint = {
-        id: activeSession.id,
-        openedAt: activeSession.openedAt,
-        closedAt: new Date().toISOString(),
-        openingBalance,
-        closingBalance: parseFloat(closingBalance) || 0,
-        expectedBalance,
-        salesTotal,
-        salesSubtotal,
-        discountsTotal,
-        expensesTotal,
-        refundsTotal,
-        expensesList: activeSessionExpenses.map((e) => ({
-          description: e.description,
-          amount: Number(e.amount),
-          createdAt: e.createdAt,
-        })),
-        productsList,
-        paymentsBreakdown,
-        refundsList,
-        salesList,
-        userName: currentUser?.name || 'Vendedor',
-        branchName: branches.find((b: any) => b.id === selectedBranchId)?.name || 'Principal',
-        branchAddress: branches.find((b: any) => b.id === selectedBranchId)?.address || '',
-        status: 'CLOSED' as const,
-      };
+      const closingSessionId = activeSession.id;
+      const branch = branches.find((b: any) => b.id === selectedBranchId);
 
       await closeSession({
-        id: activeSession.id,
-        closingBalance: parseFloat(closingBalance) || 0,
+        id: closingSessionId,
+        closingBalance: parsedClosing,
       });
+
+      // Obtener los detalles oficiales consolidados por el backend
+      try {
+        const closedDetails = await cashSessionsService.getCashSessionDetails(closingSessionId);
+        const dataToPrint = buildClosingTicketData(closedDetails, {
+          name: branch?.name,
+          address: branch?.address,
+        });
+        setClosingSessionToPrint(dataToPrint);
+      } catch (detailsErr) {
+        console.error('Error fetching closing session details for ticket:', detailsErr);
+        // Fallback básico si falla la consulta de detalles
+        setClosingSessionToPrint({
+          id: closingSessionId,
+          openedAt: activeSession.openedAt,
+          closedAt: new Date().toISOString(),
+          openingBalance: Number(activeSession.openingBalance || 0),
+          closingBalance: parsedClosing,
+          expectedBalance: parsedClosing,
+          salesTotal: 0,
+          expensesTotal: 0,
+          expensesList: [],
+          productsList: [],
+          paymentsBreakdown: {},
+          refundsList: [],
+          salesList: [],
+          userName: currentUser?.name || 'Vendedor',
+          branchName: branch?.name || 'Principal',
+          branchAddress: branch?.address || '',
+          status: 'CLOSED' as const,
+        });
+      }
 
       setActiveSession(null);
       setIsCierreModalOpen(false);
-
-      setClosingSessionToPrint(dataToPrint);
       setIsClosingTicketOpen(true);
 
       toast.success('¡Sesión de caja cerrada con éxito!');
