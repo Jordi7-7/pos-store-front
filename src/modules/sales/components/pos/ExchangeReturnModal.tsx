@@ -395,9 +395,9 @@ export function ExchangeReturnModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-xl w-full max-h-[90vh] overflow-hidden flex flex-col gap-0 p-0">
+      <DialogContent className="sm:max-w-3xl max-w-3xl w-[92vw] max-h-[90vh] overflow-hidden flex flex-col gap-0 p-0">
         {/* ── Header ── */}
-        <DialogHeader className="px-5 pt-5 pb-0 shrink-0">
+        <DialogHeader className="px-6 pt-5 pb-0 shrink-0">
           <DialogTitle className="text-xs font-bold text-secondary uppercase tracking-wider flex items-center gap-2 mb-1">
             {step === 'search' || step === 'select-items' || step === 'choose-mode' ? (
               <ArrowLeftRight className="w-4 h-4 text-primary" />
@@ -433,7 +433,7 @@ export function ExchangeReturnModal({
         </DialogHeader>
 
         {/* ── Scrollable Content ── */}
-        <div className="flex-1 overflow-y-auto px-5 pb-5 pt-3">
+        <div className="flex-1 overflow-y-auto px-6 pb-6 pt-3">
 
           {/* ══════ STEP: Search ══════ */}
           {step === 'search' && (
@@ -514,7 +514,7 @@ export function ExchangeReturnModal({
                     }`}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className={`text-sm font-medium truncate ${isFullyRefunded ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                          <p className={`text-sm font-semibold ${isFullyRefunded ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                             {item.productName}
                           </p>
                           {item.refundedQty > 0 && (
@@ -523,11 +523,17 @@ export function ExchangeReturnModal({
                             </span>
                           )}
                         </div>
-                        {item.attributes && (
-                          <p className="text-[10px] text-muted-foreground">{item.attributes}</p>
-                        )}
-                        <p className="text-[10px] text-muted-foreground font-mono">{item.sku}</p>
-                        <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                        <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                          {item.sku && (
+                            <span className="text-[11px] font-mono font-medium px-1.5 py-0.5 rounded bg-muted/80 border border-border text-foreground">
+                              SKU: {item.sku}
+                            </span>
+                          )}
+                          {item.attributes && (
+                            <span className="text-[11px] text-muted-foreground">{item.attributes}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap mt-1">
                           <span className="text-xs text-foreground font-semibold">
                             {formatMoney(getNetUnitPrice(item))} × {item.quantity}
                           </span>
@@ -644,9 +650,16 @@ export function ExchangeReturnModal({
               <div className="flex flex-col gap-2">
                 {selectedReturnItems.map((item: SaleItemRow) => (
                   <div key={item.variantId} className="flex items-center justify-between rounded-lg bg-muted/40 border border-border px-4 py-2.5">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{item.productName}</p>
-                      {item.attributes && <p className="text-[10px] text-muted-foreground">{item.attributes}</p>}
+                    <div className="min-w-0 pr-3">
+                      <p className="text-sm font-semibold text-foreground">{item.productName}</p>
+                      <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                        {item.sku && (
+                          <span className="text-[11px] font-mono font-medium px-1.5 py-0.5 rounded bg-muted/80 border border-border text-foreground">
+                            SKU: {item.sku}
+                          </span>
+                        )}
+                        {item.attributes && <span className="text-[11px] text-muted-foreground">{item.attributes}</span>}
+                      </div>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-xs text-muted-foreground">×{returnQtyMap[item.variantId]}</p>
@@ -694,13 +707,20 @@ export function ExchangeReturnModal({
                 <p className="text-[10px] text-rose-400 uppercase tracking-wider font-semibold mb-1.5">Prendas que devuelve</p>
                 <div className="flex flex-col gap-1.5">
                   {selectedReturnItems.map((item: SaleItemRow) => (
-                    <div key={item.variantId} className="flex items-center justify-between rounded-lg bg-rose-500/8 border border-rose-500/20 px-3 py-2">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{item.productName}</p>
-                        {item.attributes && <p className="text-[10px] text-muted-foreground">{item.attributes}</p>}
+                    <div key={item.variantId} className="flex items-center justify-between rounded-lg bg-rose-500/8 border border-rose-500/20 px-3.5 py-2.5">
+                      <div className="min-w-0 pr-3">
+                        <p className="text-sm font-semibold text-foreground">{item.productName}</p>
+                        <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                          {item.sku && (
+                            <span className="text-[11px] font-mono font-medium px-1.5 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400">
+                              SKU: {item.sku}
+                            </span>
+                          )}
+                          {item.attributes && <span className="text-[11px] text-muted-foreground">{item.attributes}</span>}
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-[10px] text-muted-foreground">×{returnQtyMap[item.variantId]}</p>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs text-muted-foreground">×{returnQtyMap[item.variantId]}</p>
                         <p className="text-sm font-semibold text-rose-500">-{formatMoney(getNetUnitPrice(item) * returnQtyMap[item.variantId])}</p>
                       </div>
                     </div>
@@ -734,14 +754,19 @@ export function ExchangeReturnModal({
                       const lineTotal = Math.max(0, (item.price - unitDiscount) * item.quantity);
 
                       return (
-                        <div key={item.variantId} className="flex items-center gap-2 rounded-lg bg-indigo-500/8 border border-indigo-500/20 px-3 py-2">
+                        <div key={item.variantId} className="flex items-center gap-3 rounded-lg bg-indigo-500/8 border border-indigo-500/20 px-3.5 py-2.5">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{item.productName}</p>
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              {item.attributes && <span className="text-[10px] text-muted-foreground">{item.attributes}</span>}
-                              <span className="text-[10px] font-mono text-muted-foreground">· ${item.price.toFixed(2)} c/u</span>
+                            <p className="text-sm font-semibold text-foreground">{item.productName}</p>
+                            <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                              {item.sku && (
+                                <span className="text-[11px] font-mono font-medium px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                                  SKU: {item.sku}
+                                </span>
+                              )}
+                              {item.attributes && <span className="text-[11px] text-muted-foreground">{item.attributes}</span>}
+                              <span className="text-[11px] font-mono text-muted-foreground">· ${item.price.toFixed(2)} c/u</span>
                               {unitDiscount > 0 && (
-                                <span className="text-[9px] font-mono text-emerald-400 font-medium">
+                                <span className="text-[10px] font-mono text-emerald-400 font-medium">
                                   (-${(unitDiscount * item.quantity).toFixed(2)})
                                 </span>
                               )}
