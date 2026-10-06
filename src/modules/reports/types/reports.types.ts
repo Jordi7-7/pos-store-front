@@ -43,5 +43,8 @@ export interface ProductSaleRow {
   currentStock: number;
   salePrice: number;
   totalRevenue: number;
+  createdAt: string;
+  invoiceNumber?: string;
 }
+
 

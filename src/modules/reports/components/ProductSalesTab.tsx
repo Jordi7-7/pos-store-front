@@ -6,8 +6,7 @@ import {
   Loader2, 
   CalendarIcon,
   ShoppingBag,
-  PackageCheck,
-  DollarSign
+  PackageCheck
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
@@ -67,18 +66,33 @@ export const ProductSalesTab: React.FC = () => {
     }
   }, [dateRange]);
 
-  // Totales agregados
+  // Totales agregados (únicamente piezas vendidas reales)
   const totals = useMemo(() => {
     return productSalesData.reduce(
       (acc, row) => {
         acc.soldQuantity += Number(row.soldQuantity || 0);
-        acc.currentStock += Number(row.currentStock || 0);
-        acc.totalRevenue += Number(row.totalRevenue || 0);
         return acc;
       },
-      { soldQuantity: 0, currentStock: 0, totalRevenue: 0 }
+      { soldQuantity: 0 }
     );
   }, [productSalesData]);
+
+  const formatReportDateTime = (isoStr: string) => {
+    try {
+      const d = new Date(isoStr);
+      return d.toLocaleString('es-ES', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      });
+    } catch (e) {
+      return '';
+    }
+  };
 
   // Exportar a PDF (Impresión nativa estilizada)
   const handlePrintReport = () => {
@@ -106,10 +120,10 @@ export const ProductSalesTab: React.FC = () => {
       <tr style="border-top: 1px solid #e5e7eb;">
         <td style="font-family: monospace; font-weight: bold;">${row.sku}</td>
         <td style="text-transform: uppercase;">${row.name}</td>
+        <td style="font-size: 8.5px; color: #555;">${formatReportDateTime(row.createdAt)}</td>
         <td style="text-align: right; font-weight: bold;">${row.soldQuantity}</td>
         <td style="text-align: right;">${row.currentStock}</td>
         <td style="text-align: right;">$${Number(row.salePrice).toFixed(2)}</td>
-        <td style="text-align: right; font-weight: bold;">$${Number(row.totalRevenue).toFixed(2)}</td>
       </tr>
     `).join('');
 
@@ -188,21 +202,20 @@ export const ProductSalesTab: React.FC = () => {
             <thead>
               <tr>
                 <th style="width: 15%;">SKU</th>
-                <th style="width: 40%;">Nombre del Producto</th>
-                <th style="width: 11%; text-align: right;">Vendidos</th>
-                <th style="width: 11%; text-align: right;">Stock Actual</th>
-                <th style="width: 11%; text-align: right;">Precio Vta.</th>
-                <th style="width: 12%; text-align: right;">Total Venta</th>
+                <th style="width: 37%;">Nombre del Producto</th>
+                <th style="width: 18%;">Fecha y Hora</th>
+                <th style="width: 10%; text-align: right;">Vendidos</th>
+                <th style="width: 10%; text-align: right;">Stock Actual</th>
+                <th style="width: 10%; text-align: right;">Precio Vta.</th>
               </tr>
             </thead>
             <tbody>
               ${rowsHtml}
               <tr class="total-row">
-                <td colspan="2" style="text-align: right; text-transform: uppercase;">Gran Total:</td>
+                <td colspan="3" style="text-align: right; text-transform: uppercase;">Total Piezas Vendidas:</td>
                 <td style="text-align: right;">${totals.soldQuantity}</td>
-                <td style="text-align: right;">${totals.currentStock}</td>
                 <td style="text-align: right;">-</td>
-                <td style="text-align: right;">$${Number(totals.totalRevenue).toFixed(2)}</td>
+                <td style="text-align: right;">-</td>
               </tr>
             </tbody>
           </table>
@@ -235,28 +248,30 @@ export const ProductSalesTab: React.FC = () => {
         ['Reporte de Ventas de Productos'],
         [`Período: ${startStr} al ${endStr}`],
         [],
-        ['SKU', 'Nombre del Producto', 'Stock Vendido', 'Stock Actual', 'Precio Venta', 'Total Recaudado']
+        ['SKU', 'Nombre del Producto', 'Fecha y Hora', 'Ticket/Factura', 'Stock Vendido', 'Stock Actual', 'Precio Venta']
       ];
 
       productSalesData.forEach((row) => {
         rows.push([
           row.sku,
           row.name,
+          formatReportDateTime(row.createdAt),
+          row.invoiceNumber || '-',
           row.soldQuantity,
           row.currentStock,
-          Number(row.salePrice),
-          Number(row.totalRevenue)
+          Number(row.salePrice)
         ]);
       });
 
       rows.push([]);
       rows.push([
-        'TOTAL',
+        'TOTAL PIEZAS VENDIDAS',
+        '',
+        '',
         '',
         totals.soldQuantity,
-        totals.currentStock,
         '',
-        Number(totals.totalRevenue)
+        ''
       ]);
 
       const ws = XLSX.utils.aoa_to_sheet(rows);
@@ -354,7 +369,7 @@ export const ProductSalesTab: React.FC = () => {
       </div>
 
       {/* KPI Cards summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card className="border border-border-card bg-bg-card rounded-2xl shadow-sm p-4">
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-neutral uppercase tracking-widest font-semibold">Piezas Vendidas</span>
@@ -362,29 +377,18 @@ export const ProductSalesTab: React.FC = () => {
           </div>
           <div className="mt-2">
             <h3 className="text-xl font-black text-secondary">{totals.soldQuantity}</h3>
-            <p className="text-[10px] text-neutral mt-0.5">Total de unidades despachadas</p>
+            <p className="text-[10px] text-neutral mt-0.5">Total de unidades despachadas en el período</p>
           </div>
         </Card>
 
         <Card className="border border-border-card bg-bg-card rounded-2xl shadow-sm p-4">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-neutral uppercase tracking-widest font-semibold">Stock Actual Total</span>
+            <span className="text-[10px] text-neutral uppercase tracking-widest font-semibold">Registros de Venta</span>
             <div className="p-2 bg-blue-500/10 rounded-lg"><PackageCheck className="w-4 h-4 text-blue-500" /></div>
           </div>
           <div className="mt-2">
-            <h3 className="text-xl font-black text-secondary">{totals.currentStock}</h3>
-            <p className="text-[10px] text-neutral mt-0.5">Inventario remanente en sucursales</p>
-          </div>
-        </Card>
-
-        <Card className="border border-border-card bg-bg-card rounded-2xl shadow-sm p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] text-neutral uppercase tracking-widest font-semibold">Total Recaudado</span>
-            <div className="p-2 bg-emerald-500/10 rounded-lg"><DollarSign className="w-4 h-4 text-emerald-500" /></div>
-          </div>
-          <div className="mt-2">
-            <h3 className="text-xl font-black text-emerald-500">${totals.totalRevenue.toFixed(2)}</h3>
-            <p className="text-[10px] text-emerald-600 font-medium mt-0.5">Ingresos por productos vendidos</p>
+            <h3 className="text-xl font-black text-secondary">{productSalesData.length}</h3>
+            <p className="text-[10px] text-neutral mt-0.5">Transacciones / líneas procesadas</p>
           </div>
         </Card>
       </div>
@@ -407,20 +411,26 @@ export const ProductSalesTab: React.FC = () => {
                 <TableRow className="border-border-card hover:bg-transparent">
                   <TableHead className="text-[11px] font-bold text-neutral uppercase tracking-wider">SKU</TableHead>
                   <TableHead className="text-[11px] font-bold text-neutral uppercase tracking-wider">Nombre</TableHead>
+                  <TableHead className="text-[11px] font-bold text-neutral uppercase tracking-wider">Fecha / Hora</TableHead>
                   <TableHead className="text-[11px] font-bold text-neutral uppercase tracking-wider text-right">Stock Vendido</TableHead>
                   <TableHead className="text-[11px] font-bold text-neutral uppercase tracking-wider text-right">Stock Actual</TableHead>
                   <TableHead className="text-[11px] font-bold text-neutral uppercase tracking-wider text-right">Precio Venta</TableHead>
-                  <TableHead className="text-[11px] font-bold text-neutral uppercase tracking-wider text-right">Total Venta</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {productSalesData.map((row) => (
-                  <TableRow key={row.variantId} className="border-border-card/50 hover:bg-muted/40 transition-colors">
+                {productSalesData.map((row, idx) => (
+                  <TableRow key={`${row.variantId}-${row.salePrice}-${row.createdAt}-${idx}`} className="border-border-card/50 hover:bg-muted/40 transition-colors">
                     <TableCell className="font-mono text-xs font-semibold text-secondary">
                       {row.sku}
                     </TableCell>
                     <TableCell className="text-xs font-medium text-secondary">
                       {row.name}
+                    </TableCell>
+                    <TableCell className="text-xs text-neutral whitespace-nowrap">
+                      <div className="font-medium text-secondary/90">{formatReportDateTime(row.createdAt)}</div>
+                      {row.invoiceNumber && (
+                        <div className="font-mono text-[10px] text-neutral/70">Doc: {row.invoiceNumber}</div>
+                      )}
                     </TableCell>
                     <TableCell className="text-right text-xs font-bold text-secondary">
                       {row.soldQuantity}
@@ -437,28 +447,22 @@ export const ProductSalesTab: React.FC = () => {
                     <TableCell className="text-right font-mono text-xs font-semibold text-secondary">
                       ${row.salePrice.toFixed(2)}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-xs font-bold text-emerald-500">
-                      ${row.totalRevenue.toFixed(2)}
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
               <TableFooter className="bg-bg-dark border-t border-border-card font-bold">
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={2} className="text-xs uppercase tracking-wider text-secondary">
-                    Gran Total ({productSalesData.length} productos)
+                  <TableCell colSpan={3} className="text-xs uppercase tracking-wider text-secondary">
+                    Total Piezas Vendidas ({productSalesData.length} registros)
                   </TableCell>
                   <TableCell className="text-right text-xs font-bold text-secondary">
                     {totals.soldQuantity}
                   </TableCell>
-                  <TableCell className="text-right text-xs font-bold text-secondary">
-                    {totals.currentStock}
-                  </TableCell>
                   <TableCell className="text-right text-xs text-neutral">
                     -
                   </TableCell>
-                  <TableCell className="text-right font-mono text-xs font-bold text-emerald-500">
-                    ${totals.totalRevenue.toFixed(2)}
+                  <TableCell className="text-right text-xs text-neutral">
+                    -
                   </TableCell>
                 </TableRow>
               </TableFooter>
