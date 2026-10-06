@@ -28,12 +28,6 @@ import {
   SlidersHorizontal, 
   Barcode, 
   Boxes,
-  Calendar,
-  Layers,
-  ArrowUpRight,
-  ArrowDownLeft,
-  DollarSign,
-  Tag as TagIcon
 } from 'lucide-react';
 import { BarcodePrintModal, type BarcodeLabelItem } from './barcode-printer/BarcodePrintModal';
 import { usePermissions } from '@/hooks/usePermissions';

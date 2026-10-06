@@ -13,11 +13,6 @@ import { useCustomers } from '../hooks/useCustomers';
 import type { Customer } from '../hooks/useCustomers';
 import { useCashSessionDetailsQuery } from '../../cash-sessions/hooks/useCashSessions';
 import { PaymentMethod } from '../services/sales.service';
-import type {
-  SessionSale,
-  SessionExpense,
-  SessionRefund,
-} from '../../cash-sessions/types/cash-sessions.types';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import {
   Search, Wallet, ArrowRightLeft, ArrowLeftRight, Receipt, X,
@@ -260,20 +255,6 @@ export const POSView: React.FC<POSViewProps> = ({
     },
   });
 
-  const activeSessionSales = useMemo<SessionSale[]>(() => {
-    if (!activeSession || !sessionDetails) return [];
-    return sessionDetails.sales || [];
-  }, [sessionDetails, activeSession]);
-
-  const activeSessionExpenses = useMemo<SessionExpense[]>(() => {
-    if (!activeSession || !sessionDetails) return [];
-    return sessionDetails.expenses || [];
-  }, [sessionDetails, activeSession]);
-
-  const activeSessionRefunds = useMemo<SessionRefund[]>(() => {
-    if (!activeSession || !sessionDetails) return [];
-    return sessionDetails.refunds || [];
-  }, [sessionDetails, activeSession]);
 
   const handleOpenSession = async () => {
     const branch = selectedBranchId || (branches[0] && branches[0].id);
@@ -1510,8 +1491,8 @@ export const POSView: React.FC<POSViewProps> = ({
           onCloseSession={handleCloseSession}
           isClosing={isClosing}
           activeSession={activeSession}
-          activeSessionSales={activeSessionSales}
-          activeSessionExpenses={activeSessionExpenses}
+          activeSessionSales={sessionDetails?.sales || []}
+          activeSessionExpenses={sessionDetails?.expenses || []}
           activeSessionRefunds={sessionDetails?.refunds || []}
         />
       )}
