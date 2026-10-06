@@ -13,9 +13,26 @@ export interface RegisteredImage {
   createdAt: string;
 }
 
+export interface PaginatedImages {
+  data: RegisteredImage[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 export const mediaService = {
-  getImages: async (): Promise<RegisteredImage[]> => {
-    return apiClient.get<RegisteredImage[]>('/media');
+  getImages: async (params?: { page?: number; limit?: number; search?: string }): Promise<PaginatedImages> => {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', params.page.toString());
+    if (params?.limit) query.set('limit', params.limit.toString());
+    if (params?.search) query.set('search', params.search);
+
+    const queryString = query.toString();
+    const endpoint = queryString ? `/media?${queryString}` : '/media';
+    return apiClient.get<PaginatedImages>(endpoint);
   },
 
   getPresignedUrl: async (filename: string, contentType: string): Promise<PresignedUrlResponse> => {

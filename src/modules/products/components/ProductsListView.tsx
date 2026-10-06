@@ -9,7 +9,7 @@ import { APP_PERMISSIONS } from '@/constants/permissions';
 
 interface ProductsListViewProps {
   selectedBranchId: string;
-  uploadedImages: any[];
+  uploadedImages?: any[];
 }
 
 export const ProductsListView: React.FC<ProductsListViewProps> = ({

@@ -6,7 +6,7 @@
  */
 import React, { useState } from 'react';
 import { Controller, type UseFormReturn } from 'react-hook-form';
-import { Check, Loader2, Plus, Tag as TagIcon, Upload, X } from 'lucide-react';
+import { Loader2, Plus, Tag as TagIcon, Upload, X, ImageIcon, Check } from 'lucide-react';
 import {
   Combobox,
   ComboboxContent,
@@ -42,9 +42,10 @@ export interface ProductFormProps {
   formId: string;
   onSubmit: (data: ProductFormValues) => Promise<void>;
   categories: Category[];
-  uploadedImages: UploadedImage[];
-  selectedImages: string[];
-  onToggleImage: (id: string) => void;
+  uploadedImages?: UploadedImage[];
+  selectedImages: { id: string; url: string; description?: string }[];
+  onRemoveImage: (id: string) => void;
+  onOpenGalleryModal: () => void;
   onOpenUploadModal: () => void;
   isCreatingCategoryInline: boolean;
   onToggleCategoryInline: () => void;
@@ -66,9 +67,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   formId,
   onSubmit,
   categories,
-  uploadedImages,
   selectedImages,
-  onToggleImage,
+  onRemoveImage,
+  onOpenGalleryModal,
   onOpenUploadModal,
   isCreatingCategoryInline,
   onToggleCategoryInline,
@@ -470,58 +471,79 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       </div>
 
 
-      {/* FOOTER ROW: Images Section (Optimized row style) */}
-      <div className="border-t border-border/40 pt-3 space-y-2">
-        <div className="flex justify-between items-center">
-          <span className="text-[11px] font-bold uppercase tracking-wider">
-            Imágenes de la Galería{' '}
-            <span className="text-muted-foreground font-normal">({selectedImages.length} seleccionadas)</span>
-          </span>
-          <Button
-            type="button"
-            variant="link"
-            size="sm"
-            onClick={onOpenUploadModal}
-            className="text-[11px] h-auto p-0 gap-1"
-          >
-            <Upload className="w-3.5 h-3.5" />
-            + Subir Nueva Imagen
-          </Button>
+      {/* FOOTER ROW: Selected Product Images */}
+      <div className="border-t border-border/40 pt-3 space-y-2.5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-foreground">
+              Imágenes del Producto{' '}
+              <span className="text-muted-foreground font-normal">({selectedImages.length})</span>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onOpenGalleryModal}
+              className="text-xs h-7 px-2.5 gap-1.5"
+            >
+              <ImageIcon className="w-3.5 h-3.5 text-primary" />
+              Seleccionar de la Galería
+            </Button>
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              onClick={onOpenUploadModal}
+              className="text-[11px] h-auto p-0 gap-1 text-primary"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              + Subir Nueva Imagen
+            </Button>
+          </div>
         </div>
 
-        {uploadedImages.length > 0 ? (
-          <div className="flex gap-2 overflow-x-auto pb-1 border border-border/50 rounded-xl p-2 bg-muted/10">
-            {uploadedImages.map((img) => {
-              const isSelected = selectedImages.includes(img.id);
-              return (
+        {selectedImages.length > 0 ? (
+          <div className="flex gap-2.5 overflow-x-auto pb-1.5 pt-1 border border-border/50 rounded-xl p-2.5 bg-muted/10">
+            {selectedImages.map((img, index) => (
+              <div
+                key={img.id}
+                className="group relative w-16 h-16 rounded-xl border border-border overflow-hidden shrink-0 shadow-xs bg-background"
+                title={img.description || 'Imagen del producto'}
+              >
+                <img
+                  src={img.url}
+                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                  alt={img.description || 'producto'}
+                />
+
+                {index === 0 && (
+                  <span className="absolute bottom-0 inset-x-0 bg-primary/90 text-primary-foreground text-[8px] font-semibold text-center py-0.5 leading-none">
+                    Principal
+                  </span>
+                )}
+
+                {/* Remove button */}
                 <button
-                  key={img.id}
                   type="button"
-                  onClick={() => onToggleImage(img.id)}
-                  title={img.description}
-                  className={`relative w-12 h-12 rounded-lg border-2 overflow-hidden shrink-0 transition-all ${
-                    isSelected
-                      ? 'border-primary scale-95 shadow-md shadow-primary/20'
-                      : 'border-border opacity-70 hover:opacity-100'
-                  }`}
+                  onClick={() => onRemoveImage(img.id)}
+                  className="absolute top-1 right-1 w-4.5 h-4.5 rounded-full bg-rose-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-600 shadow-sm"
+                  title="Quitar imagen"
                 >
-                  <img
-                    src={img.url}
-                    className="w-full h-full object-cover"
-                    alt={img.description}
-                  />
-                  {isSelected && (
-                    <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                      <Check className="w-3.5 h-3.5 text-white" />
-                    </div>
-                  )}
+                  <X className="w-3 h-3 stroke-[2.5]" />
                 </button>
-              );
-            })}
+              </div>
+            ))}
           </div>
         ) : (
-          <div className="h-14 border border-dashed border-border rounded-xl flex items-center justify-center text-muted-foreground text-[10px]">
-            No tienes imágenes subidas aún. Haz click en "+ Subir Nueva Imagen".
+          <div
+            onClick={onOpenGalleryModal}
+            className="h-16 border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 rounded-xl flex items-center justify-center gap-2 text-muted-foreground text-xs cursor-pointer transition-all"
+          >
+            <ImageIcon className="w-4 h-4 text-muted-foreground/60" />
+            <span>Este producto aún no tiene imágenes. Haz click para <strong>Seleccionar de la Galería</strong></span>
           </div>
         )}
       </div>

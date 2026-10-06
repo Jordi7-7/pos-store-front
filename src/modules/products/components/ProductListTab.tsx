@@ -23,7 +23,7 @@ interface ProductListTabProps {
   products: Product[];
   isLoading: boolean;
   categories: any[];
-  uploadedImages: any[];
+  uploadedImages?: any[];
   selectedBranchId: string;
   meta: {
     total: number;
@@ -320,18 +320,19 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                       {/* Image Thumbnail */}
                       <TableCell className="py-2.5">
                         <div className="w-9 h-9 rounded-lg bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0">
-                          {product.imageIds && product.imageIds.length > 0 ? (
-                            (() => {
+                          {(() => {
+                            const directUrl = product.images?.[0]?.url;
+                            if (directUrl) {
+                              return <img src={directUrl} className="w-full h-full object-cover" alt={product.name} />;
+                            }
+                            if (product.imageIds && product.imageIds.length > 0 && uploadedImages) {
                               const imgObj = uploadedImages.find(img => img.id === product.imageIds[0]);
-                              return imgObj ? (
-                                <img src={imgObj.url} className="w-full h-full object-cover" alt={product.name} />
-                              ) : (
-                                <Package className="w-4 h-4 text-muted-foreground" />
-                              );
-                            })()
-                          ) : (
-                            <Package className="w-4 h-4 text-muted-foreground" />
-                          )}
+                              if (imgObj?.url) {
+                                return <img src={imgObj.url} className="w-full h-full object-cover" alt={product.name} />;
+                              }
+                            }
+                            return <Package className="w-4 h-4 text-muted-foreground" />;
+                          })()}
                         </div>
                       </TableCell>
 

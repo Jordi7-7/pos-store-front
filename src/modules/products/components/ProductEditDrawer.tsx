@@ -21,6 +21,7 @@ import { useTags } from '../hooks/useTags';
 import { productFormSchema, type ProductFormValues } from '../schemas/product.schema';
 import { ProductForm } from './forms/ProductForm';
 import { ImageUploadModal } from './forms/ImageUploadModal';
+import { MediaGallerySelectorModal } from './forms/MediaGallerySelectorModal';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -38,7 +39,7 @@ interface ProductEditDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   categories: any[];
-  uploadedImages: any[];
+  uploadedImages?: any[];
   selectedBranchId: string;
 }
 
@@ -50,7 +51,6 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
   isOpen,
   onClose,
   categories,
-  uploadedImages,
   selectedBranchId,
 }) => {
   const { createCategory, isCreating: isCreatingCategory } = useCategories();
@@ -73,7 +73,8 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
   });
 
   // ── Image selection / Tag selection state (must be before useEffect) ─────
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [selectedImages, setSelectedImages] = useState<{ id: string; url: string; description?: string }[]>([]);
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
@@ -101,17 +102,42 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
       initialStock: stockQty,
     });
 
-    setSelectedImages(sv.imageIds ?? []);
+    // Populate images from backend (product.images o sv.images)
+    const initialImages = (product.images && product.images.length > 0)
+      ? product.images
+      : (sv.images && sv.images.length > 0)
+        ? sv.images
+        : [];
+
+    setSelectedImages(
+      initialImages.map((img: any) => ({
+        id: img.id,
+        url: img.url || '',
+        description: img.description || '',
+      }))
+    );
     setSelectedTagIds(sv.tags?.map((t: { id: string }) => t.id) ?? []);
   }, [product, selectedBranchId, form]);
 
-  const handleToggleImage = (id: string) =>
+  const handleToggleImage = (image: { id: string; url: string; description?: string }) => {
     setSelectedImages((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.some((img) => img.id === image.id)
+        ? prev.filter((img) => img.id !== image.id)
+        : [...prev, image]
     );
+  };
 
-  const handleImageSaved = (imageId: string) =>
-    setSelectedImages((prev) => [...prev, imageId]);
+  const handleRemoveImage = (id: string) => {
+    setSelectedImages((prev) => prev.filter((img) => img.id !== id));
+  };
+
+  const handleImageSaved = (imageObj: { id: string; url: string; description?: string } | string) => {
+    if (typeof imageObj === 'string') {
+      setSelectedImages((prev) => [...prev, { id: imageObj, url: '' }]);
+    } else {
+      setSelectedImages((prev) => [...prev, imageObj]);
+    }
+  };
 
   // ── Inline category creation ─────────────────────────────────────────────
   const [isCreatingCategoryInline, setIsCreatingCategoryInline] = useState(false);
@@ -143,7 +169,7 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
           name: data.name.trim(),
           description: data.description?.trim() ?? '',
           categoryId: data.categoryId || null,
-          imageIds: selectedImages,
+          imageIds: selectedImages.map((img) => img.id),
           sku: data.sku.trim(),
           barcode: data.barcode?.trim() || undefined,
           purchasePrice: data.purchasePrice,
@@ -221,9 +247,9 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
             formId="product-edit-form"
             onSubmit={onSubmit}
             categories={categories}
-            uploadedImages={uploadedImages}
             selectedImages={selectedImages}
-            onToggleImage={handleToggleImage}
+            onRemoveImage={handleRemoveImage}
+            onOpenGalleryModal={() => setIsGalleryModalOpen(true)}
             onOpenUploadModal={() => setIsUploadModalOpen(true)}
             isCreatingCategoryInline={isCreatingCategoryInline}
             onToggleCategoryInline={() => setIsCreatingCategoryInline((p) => !p)}
@@ -311,6 +337,15 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ── Media Gallery Selector modal ───────────────────────────────── */}
+      <MediaGallerySelectorModal
+        open={isGalleryModalOpen}
+        onOpenChange={setIsGalleryModalOpen}
+        selectedImages={selectedImages}
+        onToggleImage={handleToggleImage}
+        onOpenUploadModal={() => setIsUploadModalOpen(true)}
+      />
 
       {/* ── Quick upload dialog ─────────────────────────────────────────── */}
       <ImageUploadModal

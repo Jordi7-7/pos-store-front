@@ -7,7 +7,7 @@ import { APP_PERMISSIONS } from '@/constants/permissions';
 
 interface ProductCreateViewProps {
   selectedBranchId: string;
-  uploadedImages: any[];
+  uploadedImages?: any[];
   onSuccess?: () => void;
 }
 

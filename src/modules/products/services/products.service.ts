@@ -8,6 +8,7 @@ export interface ProductVariant {
   salePrice: number;
   wholesalePrice?: number | null;
   imageIds?: string[];
+  images?: { id: string; url: string; description?: string }[];
   attributeValues: { attributeValueId: string }[];
   stocks?: { branchId: string; quantity: number }[];
   tags?: Tag[];
@@ -24,6 +25,7 @@ export interface Product {
   description: string;
   variants: ProductVariant[];
   imageIds: string[];
+  images?: { id: string; url: string; description?: string }[];
   categoryId: string;
 }
 

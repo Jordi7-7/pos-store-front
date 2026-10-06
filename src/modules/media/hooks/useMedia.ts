@@ -1,16 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { mediaService } from '../services/media.service';
-import type { RegisteredImage } from '../services/media.service';
+import type { RegisteredImage, PaginatedImages } from '../services/media.service';
 
-export const useMediaUpload = (options?: { enabled?: boolean }) => {
+interface UseMediaUploadOptions {
+  enabled?: boolean;
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+export const useMediaUpload = (options?: UseMediaUploadOptions) => {
   const queryClient = useQueryClient();
+  const page = options?.page;
+  const limit = options?.limit;
+  const search = options?.search;
 
-  // Query to get all images from DB
-  const { data: uploadedImages = [], isLoading } = useQuery<RegisteredImage[]>({
-    queryKey: ['media-images'],
-    queryFn: () => mediaService.getImages(),
+  // Query to get images from DB
+  const { data: response, isLoading } = useQuery<PaginatedImages>({
+    queryKey: ['media-images', { page, limit, search }],
+    queryFn: () => mediaService.getImages({ page, limit, search }),
     enabled: options?.enabled ?? true,
   });
+
+  const uploadedImages = response?.data || [];
+  const meta = response?.meta || { total: 0, page: 1, limit: limit || 20, totalPages: 1 };
 
   // Mutation to upload a new image
   const uploadMutation = useMutation({
@@ -62,5 +75,6 @@ export const useMediaUpload = (options?: { enabled?: boolean }) => {
     isDeleting: deleteMutation.isPending,
     isLoading,
     uploadedImages,
+    meta,
   };
 };

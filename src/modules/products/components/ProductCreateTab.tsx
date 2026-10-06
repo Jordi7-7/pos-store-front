@@ -18,6 +18,7 @@ import { useTags } from '../hooks/useTags';
 import { productFormSchema, productFormDefaults, type ProductFormValues } from '../schemas/product.schema';
 import { ProductForm } from './forms/ProductForm';
 import { ImageUploadModal } from './forms/ImageUploadModal';
+import { MediaGallerySelectorModal } from './forms/MediaGallerySelectorModal';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -26,7 +27,7 @@ import { Button } from '@/components/ui/button';
 // ---------------------------------------------------------------------------
 interface ProductCreateTabProps {
   categories: any[];
-  uploadedImages: any[];
+  uploadedImages?: any[];
   selectedBranchId: string;
   createSimpleProduct: (input: any) => Promise<any>;
   onSuccess: () => void;
@@ -37,7 +38,6 @@ interface ProductCreateTabProps {
 // ---------------------------------------------------------------------------
 export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
   categories,
-  uploadedImages,
   selectedBranchId,
   createSimpleProduct,
   onSuccess,
@@ -52,7 +52,8 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
   });
 
   // ── Image selection ──────────────────────────────────────────────────────
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [selectedImages, setSelectedImages] = useState<{ id: string; url: string; description?: string }[]>([]);
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   // ── Tag selection ────────────────────────────────────────────────────────
@@ -63,13 +64,26 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
       prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
     );
 
-  const handleToggleImage = (id: string) =>
+  const handleToggleImage = (image: { id: string; url: string; description?: string }) => {
     setSelectedImages((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.some((img) => img.id === image.id)
+        ? prev.filter((img) => img.id !== image.id)
+        : [...prev, image]
     );
+  };
 
-  const handleImageSaved = (imageId: string) =>
-    setSelectedImages((prev) => [...prev, imageId]);
+  const handleRemoveImage = (id: string) => {
+    setSelectedImages((prev) => prev.filter((img) => img.id !== id));
+  };
+
+  const handleImageSaved = (imageObj: { id: string; url: string; description?: string } | string) => {
+    if (typeof imageObj === 'string') {
+      // Legacy id fallback
+      setSelectedImages((prev) => [...prev, { id: imageObj, url: '' }]);
+    } else {
+      setSelectedImages((prev) => [...prev, imageObj]);
+    }
+  };
 
   // ── Inline category creation ─────────────────────────────────────────────
   const [isCreatingCategoryInline, setIsCreatingCategoryInline] = useState(false);
@@ -98,7 +112,7 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
         name: data.name.trim(),
         description: data.description?.trim() ?? '',
         categoryId: data.categoryId || undefined,
-        imageIds: selectedImages,
+        imageIds: selectedImages.map((img) => img.id),
         sku: data.sku.trim(),
         barcode: data.barcode?.trim() || undefined,
         purchasePrice: data.purchasePrice,
@@ -141,9 +155,9 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
             formId="product-create-form"
             onSubmit={onSubmit}
             categories={categories}
-            uploadedImages={uploadedImages}
             selectedImages={selectedImages}
-            onToggleImage={handleToggleImage}
+            onRemoveImage={handleRemoveImage}
+            onOpenGalleryModal={() => setIsGalleryModalOpen(true)}
             onOpenUploadModal={() => setIsUploadModalOpen(true)}
             isCreatingCategoryInline={isCreatingCategoryInline}
             onToggleCategoryInline={() => setIsCreatingCategoryInline((p) => !p)}
@@ -171,6 +185,14 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
           </Button>
         </CardContent>
       </Card>
+
+      <MediaGallerySelectorModal
+        open={isGalleryModalOpen}
+        onOpenChange={setIsGalleryModalOpen}
+        selectedImages={selectedImages}
+        onToggleImage={handleToggleImage}
+        onOpenUploadModal={() => setIsUploadModalOpen(true)}
+      />
 
       <ImageUploadModal
         open={isUploadModalOpen}

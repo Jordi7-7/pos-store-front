@@ -1,11 +1,17 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Image as ImageIcon, FileText, Loader2, Link2, Trash2 } from 'lucide-react';
+import { Upload, Image as ImageIcon, FileText, Loader2, Link2, Trash2, Search, X } from 'lucide-react';
+import { ProductPagination } from '@/modules/products/components/ProductPagination';
 
 interface MediaViewProps {
   uploadedImages: any[];
   isUploading: boolean;
   isDeleting: boolean;
   isLoading: boolean;
+  meta?: { total: number; page: number; limit: number; totalPages: number };
+  onPageChange?: (page: number) => void;
+  onLimitChange?: (limit: number) => void;
+  search?: string;
+  onSearchChange?: (search: string) => void;
   onUpload: (file: File, description: string) => Promise<void>;
   onUploadByUrl: (url: string, description: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -62,6 +68,11 @@ export const MediaView: React.FC<MediaViewProps> = ({
   isUploading,
   isDeleting,
   isLoading,
+  meta,
+  onPageChange,
+  onLimitChange,
+  search = '',
+  onSearchChange,
   onUpload,
   onUploadByUrl,
   onDelete
@@ -161,9 +172,32 @@ export const MediaView: React.FC<MediaViewProps> = ({
         
         {/* Left Side: Images Gallery */}
         <div className="flex-1 bg-bg-card border border-border-card rounded-2xl p-6 shadow-sm">
-          <div className="border-b border-border-card pb-4 mb-6">
-            <h3 className="text-sm font-bold text-secondary">Galería de Imágenes</h3>
-            <p className="text-xs text-neutral">Imágenes registradas en tu catálogo de productos y galería multimedia.</p>
+          <div className="border-b border-border-card pb-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-secondary">Galería de Imágenes</h3>
+              <p className="text-xs text-neutral">Imágenes registradas en tu catálogo de productos y galería multimedia.</p>
+            </div>
+            {onSearchChange && (
+              <div className="relative w-full sm:w-64">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Buscar por descripción..."
+                  value={search}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  className="w-full pl-8.5 pr-8 py-1.5 text-xs bg-muted/50 border border-border rounded-lg placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                {search && (
+                  <button
+                    onClick={() => onSearchChange('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    title="Limpiar búsqueda"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {isLoading ? (
@@ -174,60 +208,72 @@ export const MediaView: React.FC<MediaViewProps> = ({
           ) : uploadedImages.length === 0 ? (
             <div className="h-80 border-2 border-dashed border-border-card rounded-xl flex flex-col items-center justify-center text-neutral gap-2">
               <ImageIcon className="w-12 h-12 opacity-40" />
-              <span className="text-xs">No hay imágenes en tu galería todavía.</span>
+              <span className="text-xs">
+                {search ? 'No se encontraron imágenes con esa descripción.' : 'No hay imágenes en tu galería todavía.'}
+              </span>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {uploadedImages.map((img) => (
-                <div key={img.id} className="bg-bg-dark border border-border-card rounded-xl overflow-hidden shadow-sm flex flex-col justify-between group transition-all duration-200 hover:border-primary/40 hover:shadow-md">
-                  <div className="aspect-square relative overflow-hidden bg-slate-100 dark:bg-bg-dark">
-                    <img src={img.url} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" alt={img.description || 'galería'} />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col justify-end p-2 transition-all">
-                      <span className="text-[10px] text-white font-mono truncate mb-1">
-                        {img.url.split('/').pop()}
-                      </span>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {uploadedImages.map((img) => (
+                  <div key={img.id} className="bg-bg-dark border border-border-card rounded-xl overflow-hidden shadow-sm flex flex-col justify-between group transition-all duration-200 hover:border-primary/40 hover:shadow-md">
+                    <div className="aspect-square relative overflow-hidden bg-slate-100 dark:bg-bg-dark">
+                      <img src={img.url} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" alt={img.description || 'galería'} />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col justify-end p-2 transition-all">
+                        <span className="text-[10px] text-white font-mono truncate mb-1">
+                          {img.url.split('/').pop()}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="p-3 border-t border-border-card bg-bg-card flex flex-col gap-1.5">
-                    {img.description ? (
-                      <p className="text-[11px] text-secondary font-medium line-clamp-2" title={img.description}>
-                        {img.description}
-                      </p>
-                    ) : (
-                      <p className="text-[10px] text-neutral italic">Sin descripción</p>
-                    )}
-                    
-                    <div className="flex items-center justify-between pt-1 border-t border-border-card/50">
-                      <span className="text-[9px] text-neutral font-mono">ID: {img.id.substring(0, 8)}...</span>
+                    <div className="p-3 border-t border-border-card bg-bg-card flex flex-col gap-1.5">
+                      {img.description ? (
+                        <p className="text-[11px] text-secondary font-medium line-clamp-2" title={img.description}>
+                          {img.description}
+                        </p>
+                      ) : (
+                        <p className="text-[10px] text-neutral italic">Sin descripción</p>
+                      )}
                       
-                      <div className="flex items-center gap-2">
-                        <a 
-                          href={img.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-[9px] text-primary font-semibold hover:underline flex items-center gap-0.5"
-                        >
-                          <Link2 className="w-3 h-3" />
-                          Original
-                        </a>
+                      <div className="flex items-center justify-between pt-1 border-t border-border-card/50">
+                        <span className="text-[9px] text-neutral font-mono">ID: {img.id.substring(0, 8)}...</span>
                         
-                        <button
-                          onClick={() => handleDelete(img.id)}
-                          disabled={isDeleting || deletingId === img.id}
-                          className="text-red-500 hover:text-red-600 disabled:text-neutral/40 p-1 rounded transition-colors"
-                          title="Eliminar imagen"
-                        >
-                          {deletingId === img.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-3.5 h-3.5" />
-                          )}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <a 
+                            href={img.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-[9px] text-primary font-semibold hover:underline flex items-center gap-0.5"
+                          >
+                            <Link2 className="w-3 h-3" />
+                            Original
+                          </a>
+                          
+                          <button
+                            onClick={() => handleDelete(img.id)}
+                            disabled={isDeleting || deletingId === img.id}
+                            className="text-red-500 hover:text-red-600 disabled:text-neutral/40 p-1 rounded transition-colors"
+                            title="Eliminar imagen"
+                          >
+                            {deletingId === img.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+
+              {meta && onPageChange && onLimitChange && (
+                <ProductPagination
+                  meta={meta}
+                  onPageChange={onPageChange}
+                  onLimitChange={onLimitChange}
+                />
+              )}
             </div>
           )}
         </div>

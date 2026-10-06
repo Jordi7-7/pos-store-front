@@ -1,5 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import type { Product } from '../services/products.service';
+import type {
+  Product,
+  ProductVariant,
+  ProductHistorySale,
+  ProductHistoryPurchase,
+  InventoryMovement,
+} from '../services/products.service';
 import { useInventoryMovementsByVariant, useProductDetail, useProductPurchases, useProductSales } from '../hooks/useProducts';
 import { ProductPagination } from './ProductPagination';
 import { StockAdjustmentForm } from './StockAdjustmentForm';
@@ -17,7 +23,7 @@ interface ProductDetailModalProps {
   product: Product | null;
   isOpen: boolean;
   onClose: () => void;
-  uploadedImages: any[];
+  uploadedImages?: any[];
   selectedBranchId: string;
 }
 
@@ -51,30 +57,50 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
   const detailProduct = fetchedProduct || product;
   const variants = detailProduct?.variants || [];
 
-  const allImageIds = useMemo(() => {
+  const allImages = useMemo(() => {
     if (!detailProduct) return [];
-    const idsSet = new Set<string>();
+    const map = new Map<string, { id: string; url: string }>();
 
-    if (detailProduct.imageIds) {
-      detailProduct.imageIds.forEach((id: string) => idsSet.add(id));
-    }
-
+    // 1. Imágenes del producto con URL
     if ((detailProduct as any).images) {
-      (detailProduct as any).images.forEach((img: any) => idsSet.add(img.id));
+      (detailProduct as any).images.forEach((img: any) => {
+        if (img?.id) map.set(img.id, { id: img.id, url: img.url || '' });
+      });
     }
 
+    // 2. Imágenes de variantes con URL
     variants.forEach((variant: any) => {
-      if (variant.imageIds) {
-        variant.imageIds.forEach((id: string) => idsSet.add(id));
-      }
       if (variant.images) {
-        variant.images.forEach((img: any) => idsSet.add(img.id));
+        variant.images.forEach((img: any) => {
+          if (img?.id) map.set(img.id, { id: img.id, url: img.url || '' });
+        });
       }
     });
 
-    return Array.from(idsSet);
-  }, [detailProduct, variants]);
+    // 3. Fallback a uploadedImages para IDs que no traían URL
+    if (uploadedImages && uploadedImages.length > 0) {
+      if (detailProduct.imageIds) {
+        detailProduct.imageIds.forEach((id: string) => {
+          if (!map.has(id)) {
+            const found = uploadedImages.find((item: any) => item.id === id);
+            if (found) map.set(id, { id, url: found.url });
+          }
+        });
+      }
+      variants.forEach((variant: any) => {
+        if (variant.imageIds) {
+          variant.imageIds.forEach((id: string) => {
+            if (!map.has(id)) {
+              const found = uploadedImages.find((item: any) => item.id === id);
+              if (found) map.set(id, { id, url: found.url });
+            }
+          });
+        }
+      });
+    }
 
+    return Array.from(map.values()).filter(img => Boolean(img.url));
+  }, [detailProduct, variants, uploadedImages]);
 
   const { movements, meta: movementsMeta, isLoading: isLoadingMovements } = useInventoryMovementsByVariant(
     variants[0]?.id,
@@ -100,14 +126,22 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
               <aside className="shrink-0 border-b border-border bg-muted/10 p-5 md:w-64 md:border-b-0 md:border-r">
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Imágenes</span>
-                  <span className="text-[10px] text-muted-foreground">{allImageIds.length}</span>
+                  <span className="text-[10px] text-muted-foreground">{allImages.length}</span>
                 </div>
                 <div className="flex gap-3 overflow-x-auto pb-1 md:grid md:grid-cols-2 md:content-start md:overflow-y-auto md:pb-0">
-                  {allImageIds.map((imageId) => {
-                    const productImage = uploadedImages.find((item) => item.id === imageId);
-                    return productImage ? <img key={imageId} src={productImage.url} alt={detailProduct.name} className="h-24 w-24 shrink-0 rounded-xl border border-border bg-background object-cover md:h-auto md:w-full md:aspect-square" /> : null;
-                  })}
-                  {allImageIds.length === 0 && <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-background md:h-auto md:w-full md:aspect-square"><Package className="w-8 h-8 text-muted-foreground/50" /></div>}
+                  {allImages.map((image) => (
+                    <img
+                      key={image.id}
+                      src={image.url}
+                      alt={detailProduct.name}
+                      className="h-24 w-24 shrink-0 rounded-xl border border-border bg-background object-cover md:h-auto md:w-full md:aspect-square"
+                    />
+                  ))}
+                  {allImages.length === 0 && (
+                    <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-background md:h-auto md:w-full md:aspect-square">
+                      <Package className="w-8 h-8 text-muted-foreground/50" />
+                    </div>
+                  )}
                 </div>
               </aside>
 
@@ -127,13 +161,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="rounded-lg border border-border p-3"><span className="text-[10px] uppercase text-muted-foreground block">Categoría</span><strong className="text-sm">{detailProduct.categoryId || 'Sin categoría'}</strong></div>
                     <div className="rounded-lg border border-border p-3"><span className="text-[10px] uppercase text-muted-foreground block">Variantes</span><strong className="text-sm">{variants.length}</strong></div>
-                    <div className="rounded-lg border border-border p-3"><span className="text-[10px] uppercase text-muted-foreground block">Stock sucursal</span><strong className="text-sm">{variants.reduce((total, variant) => total + Number(variant.stocks?.find((stock) => stock.branchId === selectedBranchId)?.quantity || 0), 0)}</strong></div>
+                    <div className="rounded-lg border border-border p-3"><span className="text-[10px] uppercase text-muted-foreground block">Stock sucursal</span><strong className="text-sm">{variants.reduce((total: number, variant: ProductVariant) => total + Number(variant.stocks?.find((stock) => stock.branchId === selectedBranchId)?.quantity || 0), 0)}</strong></div>
                     <div className="rounded-lg border border-border p-3"><span className="text-[10px] uppercase text-muted-foreground block">SKU principal</span><strong className="text-sm font-mono">{variants[0]?.sku || 'N/A'}</strong></div>
                   </div>
                   <div className="rounded-lg border border-border overflow-hidden">
                     <div className="px-4 py-3 bg-muted/40 text-xs font-bold uppercase tracking-wide">Variantes y precios</div>
                     <div className="divide-y divide-border">
-                      {variants.map((variant) => (
+                      {variants.map((variant: ProductVariant) => (
                         <div key={variant.id || variant.sku} className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-center px-4 py-3 text-xs">
                           <span className="font-mono font-semibold text-primary">{variant.sku}</span>
                           <span className="text-muted-foreground">Compra ${Number(variant.purchasePrice || 0).toFixed(2)}</span>
@@ -165,17 +199,17 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product,
 
                 <TabsContent value="sales" className="mt-0">
                   <ProductPagination meta={salesMeta} onPageChange={(page) => setPages((value) => ({ ...value, sales: page }))} onLimitChange={(nextLimit) => { setPageSize(nextLimit); setPages((value) => ({ ...value, sales: 1 })); }} />
-                  {isLoadingSales ? <LoadingRows /> : sales.length === 0 ? <p className="py-12 text-center text-sm text-muted-foreground">No hay ventas para este producto.</p> : <div className="space-y-2">{sales.map((sale) => <div key={sale.id} className="border border-border rounded-lg p-3 flex justify-between text-xs"><div><strong className="font-mono">{sale.invoiceNumber || 'S/Ref'}</strong><p className="text-muted-foreground mt-1">{new Date(sale.createdAt).toLocaleString()}</p></div><div className="text-right"><strong>${Number(sale.total || 0).toFixed(2)}</strong><p className="text-muted-foreground mt-1">{sale.customer?.name || 'Consumidor Final'}</p></div></div>)}</div>}
+                  {isLoadingSales ? <LoadingRows /> : sales.length === 0 ? <p className="py-12 text-center text-sm text-muted-foreground">No hay ventas para este producto.</p> : <div className="space-y-2">{sales.map((sale: ProductHistorySale) => <div key={sale.id} className="border border-border rounded-lg p-3 flex justify-between text-xs"><div><strong className="font-mono">{sale.invoiceNumber || 'S/Ref'}</strong><p className="text-muted-foreground mt-1">{new Date(sale.createdAt).toLocaleString()}</p></div><div className="text-right"><strong>${Number(sale.total || 0).toFixed(2)}</strong><p className="text-muted-foreground mt-1">{sale.customer?.name || 'Consumidor Final'}</p></div></div>)}</div>}
                 </TabsContent>
 
                 <TabsContent value="purchases" className="mt-0">
                   <ProductPagination meta={purchasesMeta} onPageChange={(page) => setPages((value) => ({ ...value, purchases: page }))} onLimitChange={(nextLimit) => { setPageSize(nextLimit); setPages((value) => ({ ...value, purchases: 1 })); }} />
-                  {isLoadingPurchases ? <LoadingRows /> : purchases.length === 0 ? <p className="py-12 text-center text-sm text-muted-foreground">No hay compras para este producto.</p> : <div className="space-y-2">{purchases.map((purchase) => <div key={purchase.id} className="border border-border rounded-lg p-3 flex justify-between text-xs"><div><strong className="font-mono">{purchase.invoiceNumber || 'S/Ref'}</strong><p className="text-muted-foreground mt-1">{purchase.supplier?.name || 'Proveedor General'} · {new Date(purchase.createdAt).toLocaleDateString()}</p></div><strong>${Number(purchase.totalAmount || 0).toFixed(2)}</strong></div>)}</div>}
+                  {isLoadingPurchases ? <LoadingRows /> : purchases.length === 0 ? <p className="py-12 text-center text-sm text-muted-foreground">No hay compras para este producto.</p> : <div className="space-y-2">{purchases.map((purchase: ProductHistoryPurchase) => <div key={purchase.id} className="border border-border rounded-lg p-3 flex justify-between text-xs"><div><strong className="font-mono">{purchase.invoiceNumber || 'S/Ref'}</strong><p className="text-muted-foreground mt-1">{purchase.supplier?.name || 'Proveedor General'} · {new Date(purchase.createdAt).toLocaleDateString()}</p></div><strong>${Number(purchase.totalAmount || 0).toFixed(2)}</strong></div>)}</div>}
                 </TabsContent>
 
                 <TabsContent value="movements" className="mt-0">
                   <ProductPagination meta={movementsMeta} onPageChange={(page) => setPages((value) => ({ ...value, movements: page }))} onLimitChange={(nextLimit) => { setPageSize(nextLimit); setPages((value) => ({ ...value, movements: 1 })); }} />
-                  {isLoadingMovements ? <LoadingRows /> : movements.length === 0 ? <p className="py-12 text-center text-sm text-muted-foreground">No hay movimientos para esta variante.</p> : <div className="space-y-2">{movements.map((movement) => <div key={movement.id} className="border border-border rounded-lg p-3 flex justify-between text-xs"><div><strong>{movement.reason}</strong><p className="text-muted-foreground mt-1">{new Date(movement.createdAt).toLocaleString()} · {movement.variant?.sku || 'Sin SKU'}</p></div><strong className={movement.type === 'IN' || movement.type === 'INPUT' ? 'text-emerald-600' : 'text-destructive'}>{movement.type === 'IN' || movement.type === 'INPUT' ? '+' : '-'}{Number(movement.quantity || 0)}</strong></div>)}</div>}
+                  {isLoadingMovements ? <LoadingRows /> : movements.length === 0 ? <p className="py-12 text-center text-sm text-muted-foreground">No hay movimientos para esta variante.</p> : <div className="space-y-2">{movements.map((movement: InventoryMovement) => <div key={movement.id} className="border border-border rounded-lg p-3 flex justify-between text-xs"><div><strong>{movement.reason}</strong><p className="text-muted-foreground mt-1">{new Date(movement.createdAt).toLocaleString()} · {movement.variant?.sku || 'Sin SKU'}</p></div><strong className={movement.type === 'IN' || movement.type === 'INPUT' ? 'text-emerald-600' : 'text-destructive'}>{movement.type === 'IN' || movement.type === 'INPUT' ? '+' : '-'}{Number(movement.quantity || 0)}</strong></div>)}</div>}
                 </TabsContent>
 
                 {canAdjustStock && (

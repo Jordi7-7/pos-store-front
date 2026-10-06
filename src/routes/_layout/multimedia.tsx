@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { MediaView } from '@/modules/media/components/MediaView';
 import { useMediaUpload } from '@/modules/media';
@@ -8,15 +9,34 @@ export const Route = createFileRoute('/_layout/multimedia')({
 });
 
 function MediaRoute() {
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(24);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Debounce search input by 300ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const {
     uploadedImages,
+    meta,
     isUploading,
     isDeleting,
     isLoading: isLoadingMedia,
     uploadImage,
     uploadImageByUrl,
     deleteImage,
-  } = useMediaUpload();
+  } = useMediaUpload({
+    page,
+    limit,
+    search: debouncedSearch,
+  });
 
   const handleUpload = async (params: { file: File; description: string }) => {
     try {
@@ -60,6 +80,14 @@ function MediaRoute() {
       isUploading={isUploading}
       isDeleting={isDeleting}
       isLoading={isLoadingMedia}
+      meta={meta}
+      onPageChange={setPage}
+      onLimitChange={(newLimit) => {
+        setLimit(newLimit);
+        setPage(1);
+      }}
+      search={search}
+      onSearchChange={setSearch}
       onUpload={async (file, desc) => { await handleUpload({ file, description: desc }); }}
       onUploadByUrl={async (url, desc) => { await handleUploadByUrl({ url, description: desc }); }}
       onDelete={handleDeleteImage}
