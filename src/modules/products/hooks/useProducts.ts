@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsService } from '../services/products.service';
-import type { AdjustStockInput, CreateVariableProductInput, CreateSimpleProductInput, UpdateProductInput, UpdateSimpleProductInput, UpdateVariantInput, InventoryMovement, PaginatedResult, Product, ProductHistoryPurchase, ProductHistorySale } from '../services/products.service';
+import type { AdjustStockInput, CreateVariableProductInput, CreateSimpleProductInput, UpdateProductInput, UpdateSimpleProductInput, UpdateVariantInput, InventoryMovement, PaginatedResult, Product, ProductHistoryPurchase, ProductHistorySale, VariantBatchItem } from '../services/products.service';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
 export const useProducts = (params?: { page?: number; limit?: number; search?: string }) => {
@@ -68,6 +68,22 @@ export const useProductSales = (productId?: string, page = 1, limit = 10, enable
   };
 };
 
+export const useVariantSales = (variantId?: string, page = 1, limit = 10, enabled = true) => {
+  const { tenantId, isAuthenticated } = useAuthStore();
+  const query = useQuery<PaginatedResult<ProductHistorySale>>({
+    queryKey: ['variant-sales', tenantId, variantId, page, limit],
+    queryFn: () => productsService.getVariantSales(variantId!, page, limit),
+    enabled: enabled && isAuthenticated && !!tenantId && !!variantId,
+  });
+
+  return {
+    sales: query.data?.data || [],
+    meta: query.data?.meta || { total: 0, page, limit, totalPages: 1 },
+    isLoading: query.isLoading,
+    isError: query.isError,
+  };
+};
+
 export const useProductPurchases = (productId?: string, page = 1, limit = 10, enabled = true) => {
   const { tenantId, isAuthenticated } = useAuthStore();
   const query = useQuery<PaginatedResult<ProductHistoryPurchase>>({
@@ -78,6 +94,38 @@ export const useProductPurchases = (productId?: string, page = 1, limit = 10, en
 
   return {
     purchases: query.data?.data || [],
+    meta: query.data?.meta || { total: 0, page, limit, totalPages: 1 },
+    isLoading: query.isLoading,
+    isError: query.isError,
+  };
+};
+
+export const useVariantPurchases = (variantId?: string, page = 1, limit = 10, enabled = true) => {
+  const { tenantId, isAuthenticated } = useAuthStore();
+  const query = useQuery<PaginatedResult<ProductHistoryPurchase>>({
+    queryKey: ['variant-purchases', tenantId, variantId, page, limit],
+    queryFn: () => productsService.getVariantPurchases(variantId!, page, limit),
+    enabled: enabled && isAuthenticated && !!tenantId && !!variantId,
+  });
+
+  return {
+    purchases: query.data?.data || [],
+    meta: query.data?.meta || { total: 0, page, limit, totalPages: 1 },
+    isLoading: query.isLoading,
+    isError: query.isError,
+  };
+};
+
+export const useVariantBatches = (variantId?: string, page = 1, limit = 10, branchId?: string, enabled = true) => {
+  const { tenantId, isAuthenticated } = useAuthStore();
+  const query = useQuery<PaginatedResult<VariantBatchItem>>({
+    queryKey: ['variant-batches', tenantId, variantId, page, limit, branchId],
+    queryFn: () => productsService.getVariantBatches(variantId!, page, limit, branchId),
+    enabled: enabled && isAuthenticated && !!tenantId && !!variantId,
+  });
+
+  return {
+    batches: query.data?.data || [],
     meta: query.data?.meta || { total: 0, page, limit, totalPages: 1 },
     isLoading: query.isLoading,
     isError: query.isError,
@@ -143,8 +191,9 @@ export const useUpdateSimpleProduct = () => {
   const mutation = useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateSimpleProductInput }) => 
       productsService.updateSimpleProduct(id, input),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['products', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['product-detail', tenantId, variables.id] });
     },
   });
 
@@ -162,8 +211,9 @@ export const useUpdateProduct = () => {
   const updateProductMutation = useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateProductInput }) => 
       productsService.updateProduct(id, input),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['products', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['product-detail', tenantId, variables.id] });
     },
   });
 
@@ -183,6 +233,7 @@ export const useUpdateVariant = () => {
       productsService.updateVariant(variantId, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['product-detail', tenantId] });
     },
   });
 

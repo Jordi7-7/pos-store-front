@@ -438,6 +438,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
         product={selectedProduct}
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
+        categories={categories}
         uploadedImages={uploadedImages}
         selectedBranchId={selectedBranchId}
       />

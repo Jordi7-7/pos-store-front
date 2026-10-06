@@ -27,6 +27,7 @@ export interface Product {
   imageIds: string[];
   images?: { id: string; url: string; description?: string }[];
   categoryId: string;
+  category?: { id: string; name: string } | null;
 }
 
 export interface InventoryMovement {
@@ -106,12 +107,61 @@ export interface ProductBatch {
   status: 'ACTIVE' | 'EXHAUSTED';
 }
 
+export interface VariantBatchItem {
+  id: string;
+  batchId: string;
+  batchCode: string;
+  createdAt: string;
+  branchId: string;
+  branchName: string;
+  originType: 'PURCHASE' | 'INITIAL_STOCK' | 'REFUND' | 'ADJUSTMENT' | string;
+  originLabel: string;
+  originReference: string;
+  sku: string;
+  productName: string;
+  initialQuantity: number;
+  remainingQuantity: number;
+  consumedQuantity: number;
+  unitCost: number;
+  totalCostValue: number;
+  status: 'ACTIVE' | 'DEPLETED';
+}
+
+export interface ProductHistorySaleItem {
+  id: string;
+  quantity: number;
+  price: number;
+  subtotal?: number;
+  total?: number;
+  variant?: {
+    id: string;
+    sku: string;
+    attributeValues?: { id?: string; value: string }[];
+    product?: { name: string };
+  };
+}
+
 export interface ProductHistorySale {
   id: string;
   invoiceNumber?: string | null;
   createdAt: string;
   total: number;
   customer?: { name?: string } | null;
+  payments?: { paymentMethod?: string; amount?: number }[];
+  items?: ProductHistorySaleItem[];
+}
+
+export interface ProductHistoryPurchaseItem {
+  id: string;
+  quantity: number;
+  unitPrice: number;
+  total?: number;
+  variant?: {
+    id: string;
+    sku: string;
+    attributeValues?: { id?: string; value: string }[];
+    product?: { name: string };
+  };
 }
 
 export interface ProductHistoryPurchase {
@@ -120,6 +170,8 @@ export interface ProductHistoryPurchase {
   createdAt: string;
   totalAmount: number;
   supplier?: { name?: string } | null;
+  branch?: { name?: string } | null;
+  items?: ProductHistoryPurchaseItem[];
 }
 
 export interface CreateVariableProductVariantInput {
@@ -277,8 +329,21 @@ export const productsService = {
     return apiClient.get(`/sales/by-product/${productId}?page=${page}&limit=${limit}`);
   },
 
+  getVariantSales: async (variantId: string, page = 1, limit = 10): Promise<PaginatedResult<ProductHistorySale>> => {
+    return apiClient.get(`/sales/by-variant/${encodeURIComponent(variantId)}?page=${page}&limit=${limit}`);
+  },
+
   getProductPurchases: async (productId: string, page = 1, limit = 10): Promise<PaginatedResult<ProductHistoryPurchase>> => {
     return apiClient.get(`/purchases/by-product/${productId}?page=${page}&limit=${limit}`);
+  },
+
+  getVariantPurchases: async (variantId: string, page = 1, limit = 10): Promise<PaginatedResult<ProductHistoryPurchase>> => {
+    return apiClient.get(`/purchases/by-variant/${encodeURIComponent(variantId)}?page=${page}&limit=${limit}`);
+  },
+
+  getVariantBatches: async (variantId: string, page = 1, limit = 10, branchId?: string): Promise<PaginatedResult<VariantBatchItem>> => {
+    const branchQuery = branchId ? `&branchId=${encodeURIComponent(branchId)}` : '';
+    return apiClient.get(`/batches/by-variant/${encodeURIComponent(variantId)}?page=${page}&limit=${limit}${branchQuery}`);
   },
 
   getInventoryMovementsByVariant: async (variantId: string, page = 1, limit = 10): Promise<PaginatedResult<InventoryMovement>> => {
