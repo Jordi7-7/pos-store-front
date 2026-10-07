@@ -17,12 +17,10 @@ export const TodaySalesCard: React.FC<TodaySalesCardProps> = ({
   totalSales,
   itemsCount,
   netSales,
-  netItemsCount,
   refunds,
 }) => {
   const hasRefunds = (refunds?.totalRefunded || 0) > 0;
   const effectiveNetSales = netSales !== undefined ? netSales : totalSales;
-  const effectiveNetItems = netItemsCount !== undefined ? netItemsCount : itemsCount;
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('es-EC', {

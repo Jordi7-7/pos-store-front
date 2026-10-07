@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { usePermissionsCatalog, useCreateRole, useUpdateRole, useDeleteRole } from '../hooks/useRoles';
 import type { RoleItem } from '../services/roles.service';
-import type { PermissionDefinition } from '@/constants/permissions';
 import { Shield, Check, AlertTriangle, Loader2, Trash2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
