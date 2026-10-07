@@ -11,7 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { usePermissionsCatalog, useCreateRole, useUpdateRole, useDeleteRole } from '../hooks/useRoles';
 import type { RoleItem } from '../services/roles.service';
-import { Shield, Check, AlertTriangle, Loader2, Trash2 } from 'lucide-react';
+import type { PermissionDefinition } from '@/constants/permissions';
+import { Shield, Check, AlertTriangle, Loader2, Trash2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface RoleEditorModalProps {
@@ -112,8 +113,9 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
   const isSaving = isCreating || isUpdating;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-3xl w-full bg-card border border-border rounded-2xl shadow-2xl p-6 text-foreground">
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="sm:max-w-3xl w-full bg-card border border-border rounded-2xl shadow-2xl p-6 text-foreground">
         <DialogHeader className="border-b border-border pb-3">
           <DialogTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" />
@@ -153,6 +155,74 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
               />
             </Field>
           </div>
+
+          {/* Quick Presets Toolbar */}
+          {!roleToEdit?.isSystem && (
+            <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-muted/40 rounded-xl border border-border text-xs">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-primary" /> Plantillas Rápidas:
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedPermissions([
+                    'view:pos',
+                    'action:pos.apply_discount',
+                    'view:sales',
+                    'view:customers',
+                    'action:customers.create',
+                    'action:cash.open_close',
+                    'action:cash.create_expense',
+                  ]);
+                  setActiveModuleTab('pos');
+                  toast.success('Plantilla de Cajero aplicada.');
+                }}
+                className="px-2.5 py-1 rounded-lg bg-background border border-border hover:border-primary/50 text-[11px] font-semibold text-foreground cursor-pointer transition-colors"
+              >
+                🛒 Cajero POS
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedPermissions([
+                    'view:products',
+                    'action:products.create',
+                    'action:products.edit',
+                    'action:products.adjust_stock',
+                    'action:products.print_barcodes',
+                    'view:purchases',
+                    'action:purchases.create',
+                  ]);
+                  setActiveModuleTab('products');
+                  toast.success('Plantilla de Bodeguero / Almacén aplicada.');
+                }}
+                className="px-2.5 py-1 rounded-lg bg-background border border-border hover:border-primary/50 text-[11px] font-semibold text-foreground cursor-pointer transition-colors"
+              >
+                📦 Bodega e Inventario
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedPermissions([
+                    'view:dashboard',
+                    'view:reports',
+                    'action:reports.export',
+                    'view:sales',
+                    'view:purchases',
+                    'view:cash_sessions',
+                    'view:customers',
+                  ]);
+                  setActiveModuleTab('reports');
+                  toast.success('Plantilla de Auditor / Contador aplicada.');
+                }}
+                className="px-2.5 py-1 rounded-lg bg-background border border-border hover:border-primary/50 text-[11px] font-semibold text-foreground cursor-pointer transition-colors"
+              >
+                📊 Auditor / Contador
+              </button>
+            </div>
+          )}
 
           {/* Permissions Matrix */}
           <div className="border border-border rounded-xl bg-muted/20 overflow-hidden flex flex-col md:flex-row h-[360px]">
@@ -291,56 +361,57 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
           </div>
         </form>
       </DialogContent>
-
-      {/* Modal de confirmación estilizado dentro de RoleEditorModal */}
-      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent className="sm:max-w-md bg-bg-card border border-border-card p-6">
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold text-secondary flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shrink-0">
-                <AlertTriangle className="w-4 h-4" />
-              </div>
-              <span>¿Eliminar rol permanentemente?</span>
-            </DialogTitle>
-            <DialogDescription className="text-xs text-neutral mt-1 leading-relaxed">
-              Estás a punto de eliminar el rol <strong className="text-foreground">"{roleToEdit?.name}"</strong>. Esta operación es irreversible.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="pt-3 flex justify-end gap-2 border-t border-border-card/60 mt-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowDeleteConfirm(false)}
-              disabled={isDeleting}
-              className="text-xs"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              disabled={isDeleting}
-              onClick={async () => {
-                if (!roleToEdit) return;
-                try {
-                  await deleteRole(roleToEdit.id);
-                  setShowDeleteConfirm(false);
-                  onClose();
-                } catch {
-                  // Handled by hook
-                }
-              }}
-              className="text-xs font-bold gap-1.5 bg-rose-600 hover:bg-rose-700 text-white"
-            >
-              {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-              <span>Eliminar Rol</span>
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </Dialog>
+
+    {/* Modal de confirmación estilizado separado de RoleEditorModal */}
+    <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+      <DialogContent className="sm:max-w-md bg-bg-card border border-border-card p-6">
+        <DialogHeader>
+          <DialogTitle className="text-base font-bold text-secondary flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shrink-0">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+            <span>¿Eliminar rol permanentemente?</span>
+          </DialogTitle>
+          <DialogDescription className="text-xs text-neutral mt-1 leading-relaxed">
+            Estás a punto de eliminar el rol <strong className="text-foreground">"{roleToEdit?.name}"</strong>. Esta operación es irreversible.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="pt-3 flex justify-end gap-2 border-t border-border-card/60 mt-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDeleteConfirm(false)}
+            disabled={isDeleting}
+            className="text-xs"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            disabled={isDeleting}
+            onClick={async () => {
+              if (!roleToEdit) return;
+              try {
+                await deleteRole(roleToEdit.id);
+                setShowDeleteConfirm(false);
+                onClose();
+              } catch {
+                // Handled by hook
+              }
+            }}
+            className="text-xs font-bold gap-1.5 bg-rose-600 hover:bg-rose-700 text-white"
+          >
+            {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+            <span>Eliminar Rol</span>
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };

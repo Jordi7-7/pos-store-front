@@ -1,21 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { rolesService } from '../services/roles.service';
-import type { CreateRoleInput, UpdateRoleInput } from '../services/roles.service';
+import type { RoleItem, CreateRoleInput, UpdateRoleInput } from '../services/roles.service';
+import type { PermissionDefinition, PermissionModuleGroup } from '@/constants/permissions';
+import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 import { toast } from 'sonner';
 
-export const ROLES_QUERY_KEY = ['roles'];
 export const PERMISSIONS_CATALOG_KEY = ['permissions-catalog'];
 
 export function useRoles() {
-  const { data: roles = [], isLoading, refetch } = useQuery({
-    queryKey: ROLES_QUERY_KEY,
+  const { tenantId, isAuthenticated } = useAuthStore();
+
+  const { data: roles = [], isLoading, refetch } = useQuery<RoleItem[]>({
+    queryKey: ['roles', tenantId],
     queryFn: () => rolesService.getRoles(),
+    enabled: isAuthenticated && Boolean(tenantId),
   });
 
   return { roles, isLoading, refetch };
 }
 
-export function usePermissionsCatalog() {
+export function usePermissionsCatalog(): {
+  modules: PermissionModuleGroup[];
+  permissions: PermissionDefinition[];
+  isLoading: boolean;
+} {
   const { data, isLoading } = useQuery({
     queryKey: PERMISSIONS_CATALOG_KEY,
     queryFn: () => rolesService.getPermissionsCatalog(),
@@ -23,19 +31,20 @@ export function usePermissionsCatalog() {
   });
 
   return {
-    modules: data?.modules || [],
-    permissions: data?.permissions || [],
+    modules: data?.modules ?? [],
+    permissions: data?.permissions ?? [],
     isLoading,
   };
 }
 
 export function useCreateRole() {
   const queryClient = useQueryClient();
+  const { tenantId } = useAuthStore();
 
   const mutation = useMutation({
     mutationFn: (data: CreateRoleInput) => rolesService.createRole(data),
     onSuccess: (newRole) => {
-      queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['roles', tenantId] });
       toast.success(`Rol "${newRole.name}" creado con éxito.`);
     },
     onError: (err: any) => {
@@ -51,12 +60,13 @@ export function useCreateRole() {
 
 export function useUpdateRole() {
   const queryClient = useQueryClient();
+  const { tenantId } = useAuthStore();
 
   const mutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateRoleInput }) =>
       rolesService.updateRole(id, data),
     onSuccess: (updatedRole) => {
-      queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['roles', tenantId] });
       toast.success(`Rol "${updatedRole.name}" actualizado.`);
     },
     onError: (err: any) => {
@@ -72,11 +82,12 @@ export function useUpdateRole() {
 
 export function useDeleteRole() {
   const queryClient = useQueryClient();
+  const { tenantId } = useAuthStore();
 
   const mutation = useMutation({
     mutationFn: (id: string) => rolesService.deleteRole(id),
     onSuccess: (res) => {
-      queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['roles', tenantId] });
       toast.success(res.message || 'Rol eliminado.');
     },
     onError: (err: any) => {

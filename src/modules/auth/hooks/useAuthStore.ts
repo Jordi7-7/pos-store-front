@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authService, type PublicTenantResponse, type OnboardPayload } from '../services/auth.service';
+import { queryClient } from '@/providers/QueryProvider';
 
 export type PublicTenant = PublicTenantResponse;
 
@@ -48,7 +49,6 @@ interface AuthState {
   clearTenant: () => void;
   login: (identifier: string, password: string, _targetWorkflow?: 'admin' | 'store', slugOverride?: string) => Promise<boolean>;
   pinLogin: (pin: string, slugOverride?: string) => Promise<'SUCCESS' | 'INVALID' | 'EXPIRED' | 'NOT_FOUND'>;
-  lockScreen: () => void;
   onboard: (data: any) => Promise<boolean>;
   logout: () => void;
   selectedBranchId: string | null;
@@ -216,18 +216,6 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Lock current cashier session and return to fast PIN login
-      lockScreen: () => {
-        set({
-          accessToken: null,
-          role: null,
-          roleId: null,
-          roleName: null,
-          permissions: [],
-          user: null,
-        });
-      },
-
       onboard: async (data) => {
         try {
           const payload: OnboardPayload = {
@@ -282,6 +270,13 @@ export const useAuthStore = create<AuthState>()(
           selectedCashRegisterId: null,
           isAuthenticated: false,
         });
+
+        // Limpiar completamente la caché de React Query (dashboard, métricas, ventas, etc.)
+        try {
+          queryClient.clear();
+        } catch {
+          // No-op si no está inicializado
+        }
 
         // Solo notificar al backend si efectivamente había un token antes de limpiar
         if (accessToken) {
