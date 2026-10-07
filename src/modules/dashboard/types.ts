@@ -2,6 +2,13 @@ export interface DashboardMetrics {
   today: {
     totalSales: number;
     itemsCount: number;
+    netSales?: number;
+    netItemsCount?: number;
+    refunds?: {
+      totalRefunded: number;
+      itemsCount: number;
+      count: number;
+    };
   };
   paymentMethods: {
     total: number;

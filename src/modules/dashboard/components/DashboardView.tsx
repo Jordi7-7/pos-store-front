@@ -79,6 +79,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ branchId }) => {
           <TodaySalesCard
             totalSales={metrics.today?.totalSales || 0}
             itemsCount={metrics.today?.itemsCount || 0}
+            netSales={metrics.today?.netSales}
+            netItemsCount={metrics.today?.netItemsCount}
+            refunds={metrics.today?.refunds}
           />
         </div>
         <div className="lg:col-span-4">
