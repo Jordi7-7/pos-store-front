@@ -77,9 +77,9 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
             <span>${prod.sku}</span>
             <span style="max-width: 65%; text-align: right; text-transform: uppercase;">${prod.name}</span>
           </div>
-          <div style="display: flex; justify-content: space-between; color: #222; align-items: center;">
+          <div style="display: flex; justify-content: space-between; color: #000; align-items: center;">
             <span style="padding-left: 10px;">Cant: x${prod.quantity}</span>
-            ${hasDisc ? `<span style="font-size: 8.5px; font-weight: bold; color: #b91c1c;">(Desc -$${Number(prod.discount).toFixed(2)})</span>` : ''}
+            ${hasDisc ? `<span style="font-size: 8.5px; font-weight: bold; color: #000;">(Desc -$${Number(prod.discount).toFixed(2)})</span>` : ''}
             <span style="font-weight: bold;">$${prod.total.toFixed(2)}</span>
           </div>
         </div>
@@ -267,7 +267,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
               </div>
             ` : ''}
             ${sessionData.discountsTotal !== undefined && sessionData.discountsTotal > 0 ? `
-              <div class="flex justify-between" style="color: #b91c1c;">
+              <div class="flex justify-between" style="color: #000;">
                 <span>(-) DESCUENTOS:</span>
                 <span>-$${Number(sessionData.discountsTotal).toFixed(2)}</span>
               </div>
@@ -276,12 +276,12 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
               <span>VENTAS TOTALES (FACTURADO):</span>
               <span>$${Number(sessionData.salesTotal).toFixed(2)}</span>
             </div>
-            <div class="flex justify-between font-bold" style="color: #047857;">
+            <div class="flex justify-between font-bold" style="color: #000;">
               <span>(+) ENTRADA EFECTIVO VENTAS:</span>
               <span>+$${Number(sessionData.paymentsBreakdown?.['EFECTIVO'] ?? sessionData.paymentsBreakdown?.['efectivo'] ?? 0).toFixed(2)}</span>
             </div>
             ${(sessionData.paymentsBreakdown?.['TARJETA'] ?? sessionData.paymentsBreakdown?.['tarjeta'] ?? 0) > 0 ? `
-              <div class="flex justify-between" style="color: #555; font-size: 8px;">
+              <div class="flex justify-between" style="color: #000; font-size: 8px;">
                 <span>(i) Venta Tarjeta/Digital (No en caja):</span>
                 <span>$${Number(sessionData.paymentsBreakdown?.['TARJETA'] ?? sessionData.paymentsBreakdown?.['tarjeta'] ?? 0).toFixed(2)}</span>
               </div>
@@ -313,7 +313,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
 
               <div class="flex justify-between font-bold" style="font-size: 10px;">
                 <span>DIFERENCIA:</span>
-                <span style="color: ${difference === 0 ? '#000' : difference < 0 ? '#b91c1c' : '#047857'}">
+                <span style="color: #000;">
                   ${difference === 0 ? '' : difference > 0 ? '+' : ''}$${difference.toFixed(2)}
                 </span>
               </div>
@@ -379,11 +379,26 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
     doc.close();
 
     setTimeout(() => {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
+      const win = iframe.contentWindow;
+      if (win) {
+        win.onafterprint = () => {
+          onClose();
+          setTimeout(() => {
+            if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe);
+            }
+          }, 100);
+        };
+        win.focus();
+        win.print();
+      }
+      // Fallback: cerrar modal tras invocar el diálogo de impresión
       setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 1000);
+        onClose();
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1500);
     }, 200);
   };
 
@@ -445,7 +460,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
               </div>
             )}
             {sessionData.discountsTotal !== undefined && sessionData.discountsTotal > 0 && (
-              <div className="flex justify-between text-rose-600 font-semibold">
+              <div className="flex justify-between text-black font-semibold">
                 <span>(-) Descuentos:</span>
                 <span>-${Number(sessionData.discountsTotal).toFixed(2)}</span>
               </div>
@@ -454,7 +469,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
               <span>Ventas Totales (Facturado):</span>
               <span className="font-semibold text-black">${Number(sessionData.salesTotal).toFixed(2)}</span>
             </div>
-            <div className="flex justify-between font-bold text-emerald-600">
+            <div className="flex justify-between font-bold text-black">
               <span>(+) Entrada Efectivo Ventas:</span>
               <span>+${Number(sessionData.paymentsBreakdown?.['EFECTIVO'] ?? sessionData.paymentsBreakdown?.['efectivo'] ?? 0).toFixed(2)}</span>
             </div>
@@ -469,7 +484,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
               <span className="text-black font-semibold">-${Number(sessionData.expensesTotal).toFixed(2)}</span>
             </div>
             {sessionData.refundsTotal !== undefined && sessionData.refundsTotal > 0 && (
-              <div className="flex justify-between text-amber-600 font-semibold">
+              <div className="flex justify-between text-black font-semibold">
                 <span>(-) Devoluciones:</span>
                 <span>-${Number(sessionData.refundsTotal).toFixed(2)}</span>
               </div>
@@ -488,7 +503,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
 
                 <div className="flex justify-between font-bold text-xs pt-1.5 border-t border-dashed border-gray-200">
                   <span>Diferencia:</span>
-                  <span className={difference === 0 ? 'text-black' : difference < 0 ? 'text-rose-600' : 'text-emerald-600'}>
+                  <span className="text-black">
                     {difference === 0 ? '' : difference > 0 ? '+' : ''}${difference.toFixed(2)}
                   </span>
                 </div>

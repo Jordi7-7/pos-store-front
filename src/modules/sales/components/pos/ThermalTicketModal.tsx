@@ -116,7 +116,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
           <div style="display: flex; justify-content: space-between; align-items: center; color: #000; font-weight: 600; font-size: 10px; margin-top: 1.5px;">
             <span style="padding-left: 8px;">x${qty}</span>
             <span>$${unitPrice.toFixed(2)}</span>
-            ${hasDiscount ? `<span style="font-size: 9px; font-weight: 700; color: #b91c1c;">(Desc -$${itemDisc.toFixed(2)})</span>` : ''}
+            ${hasDiscount ? `<span style="font-size: 9px; font-weight: 700; color: #000;">(Desc -$${itemDisc.toFixed(2)})</span>` : ''}
             <span style="font-weight: 800; font-size: 10.5px;">$${lineTotal.toFixed(2)}</span>
           </div>
         </div>
@@ -210,13 +210,13 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
               <span class="font-bold">$${rawSubtotal.toFixed(2)}</span>
             </div>
             ${itemsDiscount > 0 ? `
-              <div class="flex justify-between" style="color: #b91c1c;">
+              <div class="flex justify-between" style="color: #000;">
                 <span>DESC. ÍTEMS:</span>
                 <span class="font-bold">-$${itemsDiscount.toFixed(2)}</span>
               </div>
             ` : ''}
             ${globalDiscount > 0 ? `
-              <div class="flex justify-between" style="color: #b91c1c;">
+              <div class="flex justify-between" style="color: #000;">
                 <span>DESC. GLOBAL:</span>
                 <span class="font-bold">-$${globalDiscount.toFixed(2)}</span>
               </div>
@@ -245,12 +245,26 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
 
     // Print after content mounts
     setTimeout(() => {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-      // Remove element
+      const win = iframe.contentWindow;
+      if (win) {
+        win.onafterprint = () => {
+          onClose();
+          setTimeout(() => {
+            if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe);
+            }
+          }, 100);
+        };
+        win.focus();
+        win.print();
+      }
+      // Fallback: cerrar modal tras invocar el diálogo de impresión
       setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 1000);
+        onClose();
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1500);
     }, 200);
   };
 
@@ -305,7 +319,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
                     <span className="pl-4">x{qty}</span>
                     <span>${unitPrice.toFixed(2)}</span>
                     {hasDiscount && (
-                      <span className="text-[10px] text-rose-600 font-bold">
+                      <span className="text-[10px] text-black font-bold">
                         (-${itemDisc.toFixed(2)})
                       </span>
                     )}
@@ -326,13 +340,13 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
               <span className="text-black font-bold">${rawSubtotal.toFixed(2)}</span>
             </div>
             {itemsDiscount > 0 && (
-              <div className="flex justify-between text-rose-600">
+              <div className="flex justify-between text-black">
                 <span>DESC. ÍTEMS:</span>
                 <span className="font-bold">-${itemsDiscount.toFixed(2)}</span>
               </div>
             )}
             {globalDiscount > 0 && (
-              <div className="flex justify-between text-rose-600">
+              <div className="flex justify-between text-black">
                 <span>DESC. GLOBAL:</span>
                 <span className="font-bold">-${globalDiscount.toFixed(2)}</span>
               </div>
