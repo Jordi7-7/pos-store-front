@@ -271,7 +271,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent showCloseButton={false} className="sm:max-w-sm max-h-[95vh] overflow-y-auto bg-white text-black p-6 border border-gray-200 rounded-2xl shadow-2xl">
-        
+
         {/* On screen modal representation (Aesthetic White Ticket representation) */}
         <div className="space-y-4 font-mono text-xs text-gray-800">
           <div className="text-center space-y-1 pb-2 border-b border-gray-200">

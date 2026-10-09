@@ -253,9 +253,8 @@ export const POSPaymentPanel: React.FC<POSPaymentPanelProps> = ({
               <div className="text-right flex items-center gap-1.5">
                 <span className="text-[9px] uppercase font-bold text-neutral">Por Pagar:</span>
                 <span
-                  className={`text-base font-black font-mono ${
-                    remaining <= 0 ? 'text-emerald-400' : 'text-amber-400'
-                  }`}
+                  className={`text-base font-black font-mono ${remaining <= 0 ? 'text-emerald-400' : 'text-amber-400'
+                    }`}
                 >
                   ${remaining <= 0 ? '0.00' : remaining.toFixed(2)}
                 </span>
