@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useCashRegisters, useCreateCashRegister, useUpdateCashRegister, useAssignUsersToRegister } from '../hooks/useCashRegisters';
-import { useBranches } from '@/modules/branches';
+import { useBranches, type Branch } from '@/modules/branches';
 import { useUsers } from '@/modules/users/hooks/useUsers';
+import type { UserItem } from '@/modules/users';
 import { usePermissions } from '@/hooks/usePermissions';
 import { APP_PERMISSIONS } from '@/constants/permissions';
 import {
@@ -37,11 +38,11 @@ export const CashRegistersView: React.FC = () => {
   const { branches } = useBranches();
   const { users } = useUsers();
 
-  const [selectedBranchFilter, setSelectedBranchFilter] = useState<string>('ALL');
+  const [selectedBranchFilter, setSelectedBranchFilter] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   const { cashRegisters, isLoading } = useCashRegisters(
-    selectedBranchFilter === 'ALL' ? undefined : selectedBranchFilter
+    selectedBranchFilter || undefined
   );
 
   const { createRegister, isCreating } = useCreateCashRegister();
@@ -67,7 +68,7 @@ export const CashRegistersView: React.FC = () => {
 
   // Filtered registers
   const filteredRegisters = useMemo(() => {
-    return cashRegisters.filter((r) => {
+    return cashRegisters.filter((r: CashRegisterItem) => {
       const matchesSearch =
         r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.branchName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -162,7 +163,7 @@ export const CashRegistersView: React.FC = () => {
 
   // Filter users eligible for assignment (can filter by name/email/role)
   const filteredUsers = useMemo(() => {
-    return users.filter((u) => {
+    return users.filter((u: UserItem) => {
       const q = assignUserSearch.toLowerCase();
       return (
         u.name.toLowerCase().includes(q) ||
@@ -210,12 +211,12 @@ export const CashRegistersView: React.FC = () => {
             <Building className="w-3.5 h-3.5 text-neutral" />
             <span className="text-[11px] text-neutral font-medium uppercase tracking-wider">Sucursal:</span>
             <select
-              value={selectedBranchFilter}
-              onChange={(e) => setSelectedBranchFilter(e.target.value)}
+              value={selectedBranchFilter ?? ''}
+              onChange={(e) => setSelectedBranchFilter(e.target.value ? e.target.value : null)}
               className="bg-transparent font-semibold focus:outline-none cursor-pointer"
             >
-              <option value="ALL" className="bg-bg-card text-secondary">Todas las Sucursales</option>
-              {branches.map((b) => (
+              <option value="" className="bg-bg-card text-secondary">Todas las Sucursales</option>
+              {branches.map((b: Branch) => (
                 <option key={b.id} value={b.id} className="bg-bg-card text-secondary">
                   {b.name}
                 </option>
@@ -253,7 +254,7 @@ export const CashRegistersView: React.FC = () => {
             <CreditCard className="w-12 h-12 text-neutral/30 mb-3" />
             <h3 className="text-sm font-bold text-secondary">No se encontraron cajas registradoras</h3>
             <p className="text-xs text-neutral mt-1 max-w-sm">
-              {searchTerm || selectedBranchFilter !== 'ALL'
+              {searchTerm || selectedBranchFilter
                 ? 'No hay cajas que coincidan con los filtros aplicados.'
                 : 'Aún no has creado cajas registradoras para tus sucursales. Haz clic en "Nueva Caja" para habilitar tu primer punto de cobro.'}
             </p>
@@ -270,7 +271,7 @@ export const CashRegistersView: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredRegisters.map((reg) => {
+            {filteredRegisters.map((reg: CashRegisterItem) => {
               const isTurnoAbierto = reg.isOpen;
               const assignedCount = (reg.assignedUserIds || []).length;
 
@@ -411,7 +412,7 @@ export const CashRegistersView: React.FC = () => {
                 className="w-full bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-xs text-secondary focus:outline-none focus:border-primary"
                 required
               >
-                {branches.map((b) => (
+                {branches.map((b: Branch) => (
                   <option key={b.id} value={b.id} className="bg-bg-card text-secondary">
                     {b.name}
                   </option>
@@ -569,7 +570,7 @@ export const CashRegistersView: React.FC = () => {
                   No se encontraron usuarios.
                 </div>
               ) : (
-                filteredUsers.map((user) => {
+                filteredUsers.map((user: UserItem) => {
                   const isSelected = selectedUserIds.includes(user.id);
                   return (
                     <div

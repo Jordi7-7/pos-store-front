@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authService, type PublicTenantResponse, type OnboardPayload } from '../services/auth.service';
 import { queryClient } from '@/providers/QueryProvider';
+import { SystemRole, type RoleType } from '../types';
 
 export type PublicTenant = PublicTenantResponse;
 
@@ -29,7 +30,7 @@ interface AuthState {
   publicTenant: PublicTenant | null;
   isLoadingTenant: boolean;
   tenantError: string | null;
-  role: 'OWNER' | 'ADMIN' | 'CASHIER' | 'MANAGER' | string | null;
+  role: RoleType | null;
   roleId: string | null;
   roleName: string | null;
   permissions: string[];
@@ -89,14 +90,14 @@ export const useAuthStore = create<AuthState>()(
       can: (permission: string) => {
         const state = get();
         if (!state.accessToken || !state.user) return false;
-        if (state.role === 'OWNER' || state.permissions.includes('*')) return true;
+        if (state.role === SystemRole.OWNER || state.permissions.includes('*')) return true;
         return state.permissions.includes(permission);
       },
 
       canAny: (perms: string[]) => {
         const state = get();
         if (!state.accessToken || !state.user) return false;
-        if (state.role === 'OWNER' || state.permissions.includes('*')) return true;
+        if (state.role === SystemRole.OWNER || state.permissions.includes('*')) return true;
         return perms.some((p) => state.permissions.includes(p));
       },
 

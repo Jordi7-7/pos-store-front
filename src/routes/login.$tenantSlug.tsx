@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate, useParams } from '@tanstack/react-router';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
-import { LoginScreen } from '@/modules/auth';
+import { useAuthStore, LoginScreen, SystemRole } from '@/modules/auth';
 import { useEffect } from 'react';
 
 export const Route = createFileRoute('/login/$tenantSlug')({
@@ -22,9 +21,9 @@ function TenantLoginPage() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      const isPosAdmin = role === 'OWNER' || role === 'ADMIN';
+      const isOwner = role === SystemRole.OWNER;
       navigate({
-        to: isPosAdmin ? '/dashboard' : '/pos',
+        to: isOwner ? '/dashboard' : '/pos',
         replace: true,
       });
     }

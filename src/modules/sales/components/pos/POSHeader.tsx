@@ -5,10 +5,12 @@ import {
   Receipt,
   ArrowLeftRight,
   X,
+  Building,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface POSHeaderProps {
+  branchName?: string;
   currentTime: string;
   shiftDuration: string;
   activeSession: any;
@@ -23,6 +25,7 @@ interface POSHeaderProps {
 }
 
 export const POSHeader: React.FC<POSHeaderProps> = ({
+  branchName,
   currentTime,
   shiftDuration,
   activeSession,
@@ -37,8 +40,15 @@ export const POSHeader: React.FC<POSHeaderProps> = ({
 }) => {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 bg-bg-card border border-border-card rounded-2xl p-4 shadow-sm">
-      {/* Digital Clock & Shift Status */}
+      {/* Branch & Digital Clock & Shift Status */}
       <div className="flex flex-wrap items-center gap-3">
+        {branchName && (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 border border-primary/25 rounded-xl text-xs text-primary font-bold shadow-xs">
+            <Building className="w-3.5 h-3.5" />
+            <span>{branchName}</span>
+          </div>
+        )}
+
         <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-dark border border-border-card rounded-xl text-xs text-secondary font-mono font-bold">
           <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
           <span>{currentTime}</span>

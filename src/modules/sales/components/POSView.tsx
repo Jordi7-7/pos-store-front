@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useBranches } from '../../branches/hooks/useBranches';
 import { useMyCashRegisters } from '@/modules/cash-registers/hooks/useCashRegisters';
 import {
   useOpenCashSession,
@@ -15,6 +14,8 @@ import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { toast } from 'sonner';
 import { DateTime } from 'luxon';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useLayoutContext } from '@/providers/LayoutContext';
+import { Building, Store, ArrowRight } from 'lucide-react';
 
 // Modularized POS Components and Hooks
 import { usePOSCart } from '../hooks/usePOSCart';
@@ -36,27 +37,29 @@ import { ExchangeReturnModal } from './pos/ExchangeReturnModal';
 import { usePOSHotkeys } from '../hooks/usePOSHotkeys';
 
 interface POSViewProps {
-  selectedBranchId: string;
   activeSession?: any;
   setActiveSession?: (session: any) => void;
 }
 
 export const POSView: React.FC<POSViewProps> = ({
-  selectedBranchId,
   activeSession: externalActiveSession,
   setActiveSession: externalSetActiveSession,
 }) => {
-  const { branches } = useBranches();
+  const {
+    selectedBranchId,
+    branches,
+    setSelectedBranchId,
+    selectedBranchName: currentBranchName,
+  } = useLayoutContext();
   const { customers } = useCustomers();
   const { role, selectedCashRegisterId, setSelectedCashRegisterId } = useAuthStore();
-  const effectiveBranchId = selectedBranchId || (branches[0] && branches[0].id) || '';
-  const { myCashRegisters: availableRegistersForUser } = useMyCashRegisters(effectiveBranchId || undefined);
+  const { myCashRegisters: availableRegistersForUser } = useMyCashRegisters(selectedBranchId || undefined);
 
   const [selectedRegisterId, setSelectedRegisterId] = useState<string>(selectedCashRegisterId || '');
 
   // Query active cash session for the branch directly in POS
   const { activeSession: queryActiveSession } = useActiveCashSession(
-    effectiveBranchId || undefined
+    selectedBranchId || undefined
   );
 
   const [internalSession, setInternalSession] = useState<any>(null);
@@ -223,7 +226,7 @@ export const POSView: React.FC<POSViewProps> = ({
   });
 
   const handleOpenSession = async () => {
-    const branch = selectedBranchId || (branches[0] && branches[0].id);
+    const branch = selectedBranchId;
     if (!branch) {
       toast.warning('Por favor selecciona una sucursal activa.');
       return;
@@ -310,7 +313,7 @@ export const POSView: React.FC<POSViewProps> = ({
   };
 
   const handleAddExpense = async () => {
-    const branch = selectedBranchId || (branches[0] && branches[0].id);
+    const branch = selectedBranchId;
     if (!branch) return;
     if (!expenseDesc.trim()) {
       toast.warning('Por favor ingresa una descripción para el gasto.');
@@ -366,7 +369,7 @@ export const POSView: React.FC<POSViewProps> = ({
   };
 
   const handleCompletePayment = async () => {
-    const branch = selectedBranchId || (branches[0] && branches[0].id);
+    const branch = selectedBranchId;
     if (!branch) {
       toast.warning('Por favor selecciona una sucursal.');
       return;
@@ -482,10 +485,62 @@ export const POSView: React.FC<POSViewProps> = ({
     }
   };
 
+  if (!selectedBranchId) {
+    return (
+      <div className="flex h-full min-h-[500px] flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full bg-bg-card border border-border-card rounded-2xl p-8 shadow-sm flex flex-col items-center">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary mb-5">
+            <Store className="w-8 h-8" />
+          </div>
+
+          <h2 className="text-lg font-bold text-secondary mb-2">
+            Selecciona una sucursal para vender
+          </h2>
+          <p className="text-xs text-neutral leading-relaxed mb-6">
+            El Punto de Venta requiere estar vinculado a una sucursal física para gestionar la caja registradora, turnos y movimientos de inventario.
+          </p>
+
+          <div className="w-full space-y-2">
+            <span className="text-[11px] font-semibold text-neutral uppercase tracking-wider block text-left mb-1">
+              Sucursales disponibles:
+            </span>
+            {branches && branches.length > 0 ? (
+              branches.map((b: any) => (
+                <button
+                  key={b.id}
+                  onClick={() => setSelectedBranchId(b.id)}
+                  className="w-full flex items-center justify-between p-3 rounded-xl bg-bg-dark hover:bg-primary/5 border border-border-card hover:border-primary/40 transition-all group text-left cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Building className="w-4 h-4 text-neutral group-hover:text-primary transition-colors" />
+                    <div>
+                      <div className="text-xs font-bold text-secondary group-hover:text-primary transition-colors">
+                        {b.name}
+                      </div>
+                      {b.address && (
+                        <div className="text-[10px] text-neutral line-clamp-1">{b.address}</div>
+                      )}
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-neutral/50 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                </button>
+              ))
+            ) : (
+              <div className="p-3 text-xs text-neutral bg-bg-dark rounded-xl border border-border-card">
+                No tienes sucursales asignadas. Contacta al administrador.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-6 lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
       {/* Header Bar */}
       <POSHeader
+        branchName={currentBranchName}
         currentTime={currentTime}
         shiftDuration={shiftDuration}
         activeSession={activeSession}
@@ -503,7 +558,7 @@ export const POSView: React.FC<POSViewProps> = ({
         {/* LEFT COLUMN: Barcode scan input & cart products list (3/5 width) */}
         <div className="lg:col-span-3 min-h-0 space-y-4 bg-bg-card border border-border-card rounded-2xl p-5 shadow-sm flex flex-col">
           <POSProductSearch
-            branchId={effectiveBranchId}
+            branchId={selectedBranchId!}
             searchInputRef={searchInputRef}
             onAddVariantToCart={addVariantToCart}
             onOpenImageZoom={(url) => setSelectedImageForZoom(url)}
@@ -637,7 +692,7 @@ export const POSView: React.FC<POSViewProps> = ({
           isOpen={isExchangeReturnModalOpen}
           onClose={() => setIsExchangeReturnModalOpen(false)}
           activeSession={activeSession}
-          branchId={selectedBranchId}
+          branchId={selectedBranchId!}
           cashSessionId={activeSession?.id || ''}
         />
       )}

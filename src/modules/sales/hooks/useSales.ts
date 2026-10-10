@@ -3,26 +3,10 @@ import { salesService } from '../services/sales.service';
 import type { ProcessSaleInput, OpenCashSessionInput, RegisterExpenseInput, ProcessRefundInput, PaginatedSales, SaleDetail } from '../services/sales.service';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
-export const useSales = (options?: { enabled?: boolean }) => {
-  const { tenantId, isAuthenticated } = useAuthStore();
-
-  const salesQuery = useQuery({
-    queryKey: ['sales', tenantId],
-    queryFn: () => salesService.getSales(),
-    enabled: (options?.enabled ?? true) && isAuthenticated && !!tenantId,
-  });
-
-  return {
-    sales: salesQuery.data || [],
-    isLoading: salesQuery.isLoading,
-    isError: salesQuery.isError,
-  };
-};
-
-export const usePaginatedSales = (params: { startDate?: string; endDate?: string; page: number; limit: number }) => {
+export const usePaginatedSales = (params: { startDate?: string; endDate?: string; page: number; limit: number; branchId?: string }) => {
   const { tenantId, isAuthenticated } = useAuthStore();
   const salesQuery = useQuery<PaginatedSales>({
-    queryKey: ['sales-paginated', tenantId, params.startDate, params.endDate, params.page, params.limit],
+    queryKey: ['sales-paginated', tenantId, params.startDate, params.endDate, params.page, params.limit, params.branchId],
     queryFn: () => salesService.getPaginatedSales(params),
     enabled: isAuthenticated && !!tenantId,
   });

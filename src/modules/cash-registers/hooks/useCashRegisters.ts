@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   cashRegistersService,
+  type CashRegisterItem,
+  type MyCashRegisterItem,
   type CreateCashRegisterInput,
   type UpdateCashRegisterInput,
 } from '../services/cash-registers.service';
@@ -10,7 +12,7 @@ import { toast } from 'sonner';
 export const useMyCashRegisters = (branchId?: string) => {
   const { tenantId, isAuthenticated } = useAuthStore();
 
-  const query = useQuery({
+  const query = useQuery<MyCashRegisterItem[]>({
     queryKey: ['my-cash-registers', tenantId, branchId || 'all'],
     queryFn: () => cashRegistersService.getMyCashRegisters(branchId),
     enabled: isAuthenticated && !!tenantId,
@@ -27,7 +29,7 @@ export const useMyCashRegisters = (branchId?: string) => {
 export const useCashRegisters = (branchId?: string) => {
   const { tenantId, isAuthenticated } = useAuthStore();
 
-  const query = useQuery({
+  const query = useQuery<CashRegisterItem[]>({
     queryKey: ['cash-registers', tenantId, branchId || 'all'],
     queryFn: () => cashRegistersService.getCashRegisters(branchId),
     enabled: isAuthenticated && !!tenantId,

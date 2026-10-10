@@ -55,12 +55,12 @@ export const useRegisterPurchase = () => {
   };
 };
 
-export const usePurchases = () => {
+export const usePurchases = (branchId?: string) => {
   const { tenantId, isAuthenticated } = useAuthStore();
 
   const purchasesQuery = useQuery({
-    queryKey: ['purchases', tenantId],
-    queryFn: () => purchasesService.getPurchases(),
+    queryKey: ['purchases', tenantId, branchId],
+    queryFn: () => purchasesService.getPurchases(branchId),
     enabled: isAuthenticated && !!tenantId,
   });
 

@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Receipt,
   Layers,
+  SlidersHorizontal,
   X
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -134,7 +135,14 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-blue-500/10 text-blue-500 border border-blue-500/20">
             <Package className="w-3 h-3" />
-            {originLabel}
+            {originLabel || 'Stock inicial'}
+          </span>
+        );
+      case 'ADJUSTMENT':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
+            <SlidersHorizontal className="w-3 h-3" />
+            {originLabel || 'Ajuste de inventario'}
           </span>
         );
       case 'REFUND':

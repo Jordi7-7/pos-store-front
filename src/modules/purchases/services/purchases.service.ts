@@ -71,8 +71,10 @@ export const purchasesService = {
     return apiClient.post<Purchase>('/purchases', input);
   },
 
-  getPurchases: async (): Promise<Purchase[]> => {
-    return apiClient.get<Purchase[]>('/purchases');
+  getPurchases: async (branchId?: string): Promise<Purchase[]> => {
+    const params = new URLSearchParams();
+    if (branchId) params.set('branchId', branchId);
+    return apiClient.get<Purchase[]>(`/purchases${params.size ? `?${params}` : ''}`);
   },
 
   cancelPurchase: async (id: string): Promise<void> => {

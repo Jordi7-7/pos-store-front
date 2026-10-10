@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { mediaService } from '@/modules/media/services/media.service';
 import { getSavedTheme, saveTheme, DEFAULT_THEME, type TenantThemeColors } from '@/lib/themeManager';
+import { BranchesManagementTab } from '@/modules/branches';
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -69,6 +70,7 @@ export const TenantSettings: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [activeTab, setActiveTab] = useState<'general' | 'branches'>('general');
 
   // Theme Colors state
   const currentTenantId = useAuthStore((s) => s.tenantId || s.publicTenant?.id);
@@ -207,7 +209,39 @@ export const TenantSettings: React.FC = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
+    <div className="max-w-3xl mx-auto space-y-5">
+      {/* Tabs navigation */}
+      <div className="flex items-center gap-2 border-b border-border-card pb-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab('general')}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            activeTab === 'general'
+              ? 'bg-neutral/10 text-secondary border-b-2 border-primary'
+              : 'text-neutral hover:text-secondary hover:bg-neutral/5'
+          }`}
+        >
+          <Building className="w-3.5 h-3.5 text-primary" />
+          <span>Datos Generales</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('branches')}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            activeTab === 'branches'
+              ? 'bg-neutral/10 text-secondary border-b-2 border-primary'
+              : 'text-neutral hover:text-secondary hover:bg-neutral/5'
+          }`}
+        >
+          <Building className="w-3.5 h-3.5 text-indigo-400" />
+          <span>Sucursales</span>
+        </button>
+      </div>
+
+      {activeTab === 'branches' ? (
+        <BranchesManagementTab />
+      ) : (
       <Card className="border border-border-card shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-bold text-secondary">Configuración del Negocio</CardTitle>
@@ -564,6 +598,7 @@ export const TenantSettings: React.FC = () => {
           </form>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 };

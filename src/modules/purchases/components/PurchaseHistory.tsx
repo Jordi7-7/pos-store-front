@@ -14,8 +14,13 @@ import {
 import type { Purchase, PurchaseItem } from '../services/purchases.service';
 import { toast } from 'sonner';
 
-export const PurchaseHistory: React.FC = () => {
-  const { purchases, isLoading } = usePurchases();
+interface PurchaseHistoryProps {
+  selectedBranchId?: string;
+}
+
+export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranchId }) => {
+  const isAll = !selectedBranchId;
+  const { purchases, isLoading } = usePurchases(selectedBranchId || undefined);
   const { cancelPurchase, isCancelling, cancellingId } = useCancelPurchase();
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -79,6 +84,11 @@ export const PurchaseHistory: React.FC = () => {
                     <span className="text-xs font-mono font-bold text-primary">
                       {pur.invoiceNumber || 'S/Ref'}
                     </span>
+                    {isAll && pur.branch?.name && (
+                      <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">
+                        {pur.branch.name}
+                      </span>
+                    )}
                     <span className="text-[10px] text-neutral flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5" />
                       {new Date(pur.createdAt).toLocaleString(undefined, { timeZone: timezone })}

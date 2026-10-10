@@ -46,7 +46,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ selectedBranchId }
       )}
 
       {activeTab === 'history' && (
-        <PurchaseHistory />
+        <PurchaseHistory selectedBranchId={selectedBranchId} />
       )}
 
     </div>

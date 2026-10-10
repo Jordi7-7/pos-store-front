@@ -18,26 +18,29 @@ import * as XLSX from 'xlsx';
 interface BulkImportModalProps {
   isOpen: boolean;
   onClose: () => void;
+  selectedBranchId?: string;
 }
 
-export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClose }) => {
+export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClose, selectedBranchId: contextBranchId }) => {
   const queryClient = useQueryClient();
   const { branches = [] } = useBranches();
   
   // States
-  const [selectedBranchId, setSelectedBranchId] = useState('');
+  const [selectedBranchId, setSelectedBranchId] = useState(contextBranchId || '');
   const [parsedData, setParsedData] = useState<any[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isValidating, setIsValidating] = useState(false);
   const [fileName, setFileName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Set default branch
+  // Sync selected branch with contextBranchId when modal opens or branches change
   React.useEffect(() => {
-    if (branches.length > 0 && !selectedBranchId) {
-      setSelectedBranchId(branches[0].id);
+    if (contextBranchId) {
+      setSelectedBranchId(contextBranchId);
+    } else {
+      setSelectedBranchId('');
     }
-  }, [branches, selectedBranchId]);
+  }, [contextBranchId, isOpen]);
 
   // Mutation for validation
   const validateMutation = useMutation({
@@ -71,6 +74,12 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
   });
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!selectedBranchId) {
+      toast.warning('Debes seleccionar una sucursal para cargar las existencias iniciales antes de subir el archivo.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -197,39 +206,59 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
             </div>
 
             {/* Sucursal Destino para existencias iniciales */}
-            <div className="max-w-xs">
-              <label className="block text-[10px] uppercase tracking-wider font-bold mb-1 text-muted-foreground">
-                Sucursal para Cargar Existencias Iniciales
+            <div className="max-w-md space-y-1.5">
+              <label className="block text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                Sucursal para Cargar Existencias Iniciales <span className="text-destructive">*</span>
               </label>
               <select
                 value={selectedBranchId}
                 onChange={(e) => setSelectedBranchId(e.target.value)}
-                className="w-full bg-muted/40 border border-border rounded-xl py-2 px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                className={`w-full bg-muted/40 border rounded-xl py-2 px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary ${
+                  !selectedBranchId ? 'border-amber-500/50 bg-amber-500/5' : 'border-border'
+                }`}
               >
-                <option value="">No cargar existencias (Solo crear catálogo)</option>
+                <option value="" disabled>Selecciona la sucursal donde ingresará el inventario...</option>
                 {branches.map((b: Branch) => (
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
               </select>
+              {!selectedBranchId && (
+                <p className="text-[11px] text-amber-400 font-medium">
+                  ⚠️ Debes seleccionar una sucursal para poder subir y cargar el archivo de Excel.
+                </p>
+              )}
             </div>
 
             {/* Drop Zone */}
             <div 
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-border hover:border-primary/50 bg-muted/10 hover:bg-muted/20 transition-all rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer group"
+              onClick={() => {
+                if (!selectedBranchId) {
+                  toast.warning('Por favor selecciona una sucursal para cargar las existencias iniciales.');
+                  return;
+                }
+                fileInputRef.current?.click();
+              }}
+              className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center gap-3 transition-all ${
+                !selectedBranchId
+                  ? 'border-border/40 bg-muted/5 opacity-60 cursor-not-allowed'
+                  : 'border-border hover:border-primary/50 bg-muted/10 hover:bg-muted/20 cursor-pointer group'
+              }`}
             >
               <input
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileUpload}
                 accept=".xlsx, .xls"
+                disabled={!selectedBranchId}
                 className="hidden"
               />
               <div className="w-12 h-12 rounded-full bg-primary/5 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
                 <Upload className="w-6 h-6 text-primary" />
               </div>
               <div className="text-center space-y-1">
-                <p className="text-xs font-bold text-secondary">Sube o arrastra tu archivo de Excel aquí</p>
+                <p className="text-xs font-bold text-secondary">
+                  {!selectedBranchId ? 'Selecciona una sucursal para habilitar la carga' : 'Sube o arrastra tu archivo de Excel aquí'}
+                </p>
                 <p className="text-[10px] text-muted-foreground">Soporta formatos estándar .xlsx o .xls</p>
               </div>
             </div>

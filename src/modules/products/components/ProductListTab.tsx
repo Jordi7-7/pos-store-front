@@ -177,13 +177,28 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
 
   const isAllSelected = products.length > 0 && products.every((p) => selectedProductsMap.has(p.id));
 
+  const isAll = !selectedBranchId;
+
   return (
     <Card className="border border-border/80 shadow-xs">
       <CardHeader>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <CardTitle className="text-sm font-bold">Catálogo de Productos ({meta.total})</CardTitle>
-            <CardDescription className="text-xs">Visualiza y edita los productos de tu inventario.</CardDescription>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-bold">Catálogo de Productos ({meta.total})</CardTitle>
+              <Badge variant="outline" className={`text-[10px] font-semibold gap-1 ${
+                isAll 
+                  ? 'text-amber-400 border-amber-500/30 bg-amber-500/5' 
+                  : 'text-primary border-primary/30 bg-primary/5'
+              }`}>
+                {isAll ? 'Existencias Consolidadas (Toda la Empresa)' : 'Existencias de esta Sucursal'}
+              </Badge>
+            </div>
+            <CardDescription className="text-xs">
+              {isAll 
+                ? 'Visualizando las existencias totales sumadas de todas las sucursales de tu empresa.' 
+                : 'El catálogo es compartido por toda la empresa; las existencias corresponden a la sucursal seleccionada.'}
+            </CardDescription>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
@@ -280,7 +295,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                   <TableHead className="font-semibold text-xs text-right">Compra</TableHead>
                   <TableHead className="font-semibold text-xs text-right">Venta</TableHead>
                   <TableHead className="font-semibold text-xs text-right">Precio Mayoreo</TableHead>
-                  <TableHead className="font-semibold text-xs text-center">Stock Sucursal</TableHead>
+                  <TableHead className="font-semibold text-xs text-center">{isAll ? 'Stock Total' : 'Stock Sucursal'}</TableHead>
                   <TableHead className="w-[80px] text-center">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -292,7 +307,9 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                   const wholesalePrice = defaultVariant?.wholesalePrice;
                   const sku = defaultVariant?.sku ?? 'N/A';
                   const barcode = defaultVariant?.barcode ?? 'N/A';
-                  const currentStock = defaultVariant?.stocks?.find(s => s.branchId === selectedBranchId)?.quantity ?? 0;
+                  const currentStock = isAll
+                    ? (defaultVariant?.stocks?.reduce((acc: number, s: any) => acc + Number(s.quantity || 0), 0) ?? 0)
+                    : (defaultVariant?.stocks?.find(s => s.branchId === selectedBranchId)?.quantity ?? 0);
                   const isSelected = selectedProductsMap.has(product.id);
 
                   return (

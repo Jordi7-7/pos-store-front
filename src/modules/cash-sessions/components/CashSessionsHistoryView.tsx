@@ -12,7 +12,7 @@ import {
 import { useCashSessionsList } from '../hooks/useCashSessions';
 import type { CashSessionHeader } from '../types/cash-sessions.types';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
-import { useBranches } from '../../branches/hooks/useBranches';
+import { useLayoutContext } from '@/providers/LayoutContext';
 import { cashSessionsService } from '../services/cash-sessions.service';
 import { ThermalClosingTicketModal } from '../../sales/components/pos/ThermalClosingTicketModal';
 import { buildClosingTicketData } from '../utils/buildClosingTicketData';
@@ -31,10 +31,10 @@ import { CashSessionAuditModal } from './CashSessionAuditModal';
 
 export const CashSessionsHistoryView: React.FC = () => {
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
-  const selectedBranchId = useAuthStore((state) => state.selectedBranchId);
+  const { selectedBranchId, branches } = useLayoutContext();
   const publicTenant = useAuthStore((state) => state.publicTenant);
-  const { branches } = useBranches();
 
+  const isAllBranches = !selectedBranchId;
   const { sessions, isLoading: listLoading, refetch } = useCashSessionsList(selectedBranchId || undefined);
 
   // Selected session for detail modal
@@ -175,6 +175,7 @@ export const CashSessionsHistoryView: React.FC = () => {
               <TableHeader>
                 <TableRow className="uppercase tracking-wider text-[10px] font-bold border-b border-border-card/60">
                   <TableHead className="pr-3">Caja Registradora</TableHead>
+                  {isAllBranches && <TableHead className="px-3">Sucursal</TableHead>}
                   <TableHead className="px-3">Horario de Sesión</TableHead>
                   <TableHead className="px-3 text-right">Ventas Totales</TableHead>
                   <TableHead className="px-3 text-right">Diferencia / Arqueo</TableHead>
@@ -203,6 +204,15 @@ export const CashSessionsHistoryView: React.FC = () => {
                           </div>
                         </div>
                       </TableCell>
+
+                      {/* Sucursal (Modo Consolidado) */}
+                      {isAllBranches && (
+                        <TableCell className="py-3 px-3">
+                          <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20 whitespace-nowrap">
+                            {s.branch?.name || 'Sucursal'}
+                          </span>
+                        </TableCell>
+                      )}
 
                       {/* Horario de Sesión */}
                       <TableCell className="py-3 px-3 text-xs whitespace-nowrap">

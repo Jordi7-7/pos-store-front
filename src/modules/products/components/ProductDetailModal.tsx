@@ -105,11 +105,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   const activeVariantId = selectedVariantId || variants[0]?.id || '';
   const activeVariant = variants.find((v: any) => v.id === activeVariantId) || variants[0];
 
-  // Queries basadas en variantId
+  // Queries basadas en variantId y filtradas por la sucursal seleccionada (o undefined si es consolidado)
+  const effectiveBranchId = selectedBranchId || undefined;
+
   const { sales, meta: salesMeta, isLoading: isLoadingSales } = useVariantSales(
     activeVariantId,
     pages.sales,
     pageSize,
+    effectiveBranchId,
     isOpen && tab === 'sales' && Boolean(activeVariantId)
   );
 
@@ -117,6 +120,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     activeVariantId,
     pages.purchases,
     pageSize,
+    effectiveBranchId,
     isOpen && tab === 'purchases' && Boolean(activeVariantId)
   );
 
@@ -124,14 +128,15 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     activeVariantId,
     pages.batches,
     pageSize,
-    undefined,
+    effectiveBranchId,
     isOpen && tab === 'batches' && Boolean(activeVariantId)
   );
 
   const { movements, meta: movementsMeta, isLoading: isLoadingMovements } = useInventoryMovementsByVariant(
     activeVariantId,
     pages.movements,
-    pageSize
+    pageSize,
+    effectiveBranchId,
   );
 
   // Imágenes consolidadas

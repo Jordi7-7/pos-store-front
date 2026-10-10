@@ -7,6 +7,7 @@ import { SaleDetailModal } from './SaleDetailModal';
 import { ThermalTicketModal } from './pos/ThermalTicketModal';
 import { salesService, PaymentMethod, type PaginatedSaleSummary } from '../services/sales.service';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useLayoutContext } from '@/providers/LayoutContext';
 import { ProductPagination } from '@/modules/products/components/ProductPagination';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
@@ -15,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 
 export const SalesView: React.FC = () => {
+  const { selectedBranchId } = useLayoutContext();
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     to: new Date(),
@@ -30,7 +32,14 @@ export const SalesView: React.FC = () => {
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
   const startDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined;
   const endDate = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined;
-  const { sales, meta, isLoading } = usePaginatedSales({ startDate, endDate, page, limit });
+  const isAllBranches = !selectedBranchId;
+  const { sales, meta, isLoading } = usePaginatedSales({
+    startDate,
+    endDate,
+    page,
+    limit,
+    branchId: selectedBranchId || undefined,
+  });
 
   const updateDateRange = (range: DateRange | undefined) => {
     setDateRange(range);
@@ -124,6 +133,7 @@ export const SalesView: React.FC = () => {
                   <tr className="bg-muted/50 border-b border-border">
                     <th className="p-3">Factura</th>
                     <th className="p-3">Fecha</th>
+                    {isAllBranches && <th className="p-3">Sucursal</th>}
                     <th className="p-3">Cliente</th>
                     <th className="p-3 text-right">Total</th>
                     <th className="p-3">Estado</th>
@@ -144,6 +154,13 @@ export const SalesView: React.FC = () => {
                           {new Date(sale.createdAt).toLocaleString(undefined, { timeZone: timezone })}
                         </span>
                       </td>
+                      {isAllBranches && (
+                        <td className="p-3 font-medium text-foreground">
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-muted border border-border">
+                            {sale.branch?.name || 'Principal'}
+                          </span>
+                        </td>
+                      )}
                       <td className="p-3">{sale.customer?.name || 'Consumidor Final'}</td>
                       <td className="p-3 text-right font-mono font-bold">${Number(sale.total || 0).toFixed(2)}</td>
                       <td className="p-3">

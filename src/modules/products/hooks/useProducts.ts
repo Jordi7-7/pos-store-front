@@ -21,11 +21,11 @@ export const useProducts = (params?: { page?: number; limit?: number; search?: s
   };
 };
 
-export const useInventoryMovementsByVariant = (variantId?: string, page = 1, limit = 10) => {
+export const useInventoryMovementsByVariant = (variantId?: string, page = 1, limit = 10, branchId?: string) => {
   const { tenantId, isAuthenticated } = useAuthStore();
   const movementsQuery = useQuery<PaginatedResult<InventoryMovement>>({
-    queryKey: ['variant-movements', tenantId, variantId, page, limit],
-    queryFn: () => productsService.getInventoryMovementsByVariant(variantId!, page, limit),
+    queryKey: ['variant-movements', tenantId, variantId, page, limit, branchId],
+    queryFn: () => productsService.getInventoryMovementsByVariant(variantId!, page, limit, branchId),
     enabled: isAuthenticated && !!tenantId && !!variantId,
   });
 
@@ -68,11 +68,11 @@ export const useProductSales = (productId?: string, page = 1, limit = 10, enable
   };
 };
 
-export const useVariantSales = (variantId?: string, page = 1, limit = 10, enabled = true) => {
+export const useVariantSales = (variantId?: string, page = 1, limit = 10, branchId?: string, enabled = true) => {
   const { tenantId, isAuthenticated } = useAuthStore();
   const query = useQuery<PaginatedResult<ProductHistorySale>>({
-    queryKey: ['variant-sales', tenantId, variantId, page, limit],
-    queryFn: () => productsService.getVariantSales(variantId!, page, limit),
+    queryKey: ['variant-sales', tenantId, variantId, page, limit, branchId],
+    queryFn: () => productsService.getVariantSales(variantId!, page, limit, branchId),
     enabled: enabled && isAuthenticated && !!tenantId && !!variantId,
   });
 
@@ -100,11 +100,11 @@ export const useProductPurchases = (productId?: string, page = 1, limit = 10, en
   };
 };
 
-export const useVariantPurchases = (variantId?: string, page = 1, limit = 10, enabled = true) => {
+export const useVariantPurchases = (variantId?: string, page = 1, limit = 10, branchId?: string, enabled = true) => {
   const { tenantId, isAuthenticated } = useAuthStore();
   const query = useQuery<PaginatedResult<ProductHistoryPurchase>>({
-    queryKey: ['variant-purchases', tenantId, variantId, page, limit],
-    queryFn: () => productsService.getVariantPurchases(variantId!, page, limit),
+    queryKey: ['variant-purchases', tenantId, variantId, page, limit, branchId],
+    queryFn: () => productsService.getVariantPurchases(variantId!, page, limit, branchId),
     enabled: enabled && isAuthenticated && !!tenantId && !!variantId,
   });
 

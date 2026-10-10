@@ -10,7 +10,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useCategories } from '../hooks/useCategories';
@@ -107,6 +107,11 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
 
   // ── Submit ───────────────────────────────────────────────────────────────
   const onSubmit = async (data: ProductFormValues) => {
+    if (!selectedBranchId) {
+      toast.warning('Por favor selecciona una sucursal específica en la barra superior para registrar el producto.');
+      return;
+    }
+
     try {
       const newProduct = await createSimpleProduct({
         name: data.name.trim(),
@@ -118,9 +123,7 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
         purchasePrice: data.purchasePrice,
         salePrice: data.salePrice,
         wholesalePrice: data.wholesalePrice !== undefined ? data.wholesalePrice : null,
-        stocks: selectedBranchId
-          ? [{ branchId: selectedBranchId, quantity: data.initialStock }]
-          : [],
+        stocks: [{ branchId: selectedBranchId, quantity: data.initialStock }],
       });
       // Assign tags to the first variant of the newly created product
       const newVariantId = newProduct?.variants?.[0]?.id;
@@ -137,6 +140,8 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
       toast.error(err.message || 'Error al registrar el producto en el servidor.');
     }
   };
+
+  const isAllBranches = !selectedBranchId;
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
@@ -172,16 +177,28 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
             isCreatingTag={isCreatingTag}
           />
 
+          {/* Warning banner when in Global / All branches view */}
+          {isAllBranches && (
+            <div className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-300 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
+                <span>
+                  Estás en <strong>Todas las Sucursales</strong>. Selecciona una sucursal específica en la barra superior para asignar el stock inicial y poder guardar el producto.
+                </span>
+              </div>
+            </div>
+          )}
+
           <Button
             type="submit"
             form="product-create-form"
-            disabled={form.formState.isSubmitting}
+            disabled={form.formState.isSubmitting || isAllBranches}
             className="w-full"
           >
             {form.formState.isSubmitting && (
               <Loader2 className="w-4 h-4 animate-spin mr-2" />
             )}
-            Crear Producto e Inventario
+            {isAllBranches ? 'Selecciona una sucursal específica para guardar' : 'Crear Producto e Inventario'}
           </Button>
         </CardContent>
       </Card>

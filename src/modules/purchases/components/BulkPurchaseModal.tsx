@@ -26,6 +26,7 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
 
   // States
   const [selectedBranchId, setSelectedBranchId] = useState('');
+  const [invoiceNumber, setInvoiceNumber] = useState('');
   const [parsedData, setParsedData] = useState<any[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [productNames, setProductNames] = useState<Record<string, string>>({});
@@ -65,7 +66,7 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
 
   // Mutation to confirm and run bulk stock entry
   const importMutation = useMutation({
-    mutationFn: async (data: { branchId: string; items: any[] }) => {
+    mutationFn: async (data: { branchId: string; items: any[]; invoiceNumber?: string }) => {
       return apiClient.post('/purchases/import', data);
     },
     onSuccess: () => {
@@ -157,6 +158,7 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
     setValidationErrors({});
     setProductNames({});
     setFileName('');
+    setInvoiceNumber('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -167,6 +169,7 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
     importMutation.mutate({
       branchId: selectedBranchId,
       items: parsedData,
+      invoiceNumber: invoiceNumber.trim() || undefined,
     });
   };
 
@@ -183,7 +186,7 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
         </DialogHeader>
 
         {parsedData.length === 0 ? (
-          /* Step 1: Destination branch, template and upload */
+          /* Step 1: Destination branch, reference/invoice, template and upload */
           <div className="space-y-6 py-4">
             <div className="bg-muted/30 border border-border rounded-xl p-4 space-y-3">
               <h5 className="text-xs font-bold uppercase tracking-wide text-secondary flex items-center gap-1.5">
@@ -203,21 +206,36 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
               </button>
             </div>
 
-            {/* Sucursal Destino */}
-            <div className="max-w-xs space-y-1">
-              <label className="block text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
-                Sucursal de Destino (Kardex) *
-              </label>
-              <select
-                value={selectedBranchId}
-                onChange={(e) => setSelectedBranchId(e.target.value)}
-                className="w-full bg-muted/40 border border-border rounded-xl py-2 px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              >
-                <option value="">Selecciona sucursal destino</option>
-                {branches.map((b: Branch) => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
-                ))}
-              </select>
+            {/* Inputs: Sucursal Destino & Nro Factura / Referencia */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="block text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                  Sucursal de Destino (Kardex) *
+                </label>
+                <select
+                  value={selectedBranchId}
+                  onChange={(e) => setSelectedBranchId(e.target.value)}
+                  className="w-full bg-muted/40 border border-border rounded-xl py-2 px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">Selecciona sucursal destino</option>
+                  {branches.map((b: Branch) => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                  N° de Factura o Referencia (Opcional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej: F-001293 o REF-99"
+                  value={invoiceNumber}
+                  onChange={(e) => setInvoiceNumber(e.target.value)}
+                  className="w-full bg-muted/40 border border-border rounded-xl py-2 px-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
             </div>
 
             {/* Upload Zone */}
@@ -251,13 +269,23 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
         ) : (
           /* Step 2: Preview table, error highlights, confirm button */
           <div className="space-y-4 py-3">
-            <div className="flex justify-between items-center bg-muted/20 border border-border rounded-xl p-3">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap justify-between items-center gap-2 bg-muted/20 border border-border rounded-xl p-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <FileSpreadsheet className="w-4 h-4 text-primary" />
                 <span className="text-xs font-mono font-bold text-secondary truncate max-w-[200px]">{fileName}</span>
                 <span className="text-[10px] text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-md font-mono">
-                  {parsedData.length} registros de ingresos
+                  {parsedData.length} registros
                 </span>
+                {invoiceNumber && (
+                  <span className="text-[10px] text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md font-mono font-bold">
+                    Ref: {invoiceNumber}
+                  </span>
+                )}
+                {selectedBranchId && (
+                  <span className="text-[10px] text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-md">
+                    {branches.find(b => b.id === selectedBranchId)?.name || 'Sucursal'}
+                  </span>
+                )}
               </div>
 
               <button

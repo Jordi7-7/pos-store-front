@@ -15,6 +15,7 @@ export interface PaginatedSaleSummary {
   discountAmount: number;
   status: string;
   customer?: { id?: string; name?: string } | null;
+  branch?: { id?: string; name?: string } | null;
 }
 
 export interface PaginatedSales {
@@ -159,14 +160,11 @@ export interface ProcessRefundInput {
 }
 
 export const salesService = {
-  getSales: async (): Promise<Sale[]> => {
-    return apiClient.get<Sale[]>('/sales');
-  },
-
-  getPaginatedSales: async (params: { startDate?: string; endDate?: string; page?: number; limit?: number }): Promise<PaginatedSales> => {
+  getPaginatedSales: async (params: { startDate?: string; endDate?: string; page?: number; limit?: number; branchId?: string }): Promise<PaginatedSales> => {
     const query = new URLSearchParams();
     if (params.startDate) query.set('startDate', params.startDate);
     if (params.endDate) query.set('endDate', params.endDate);
+    if (params.branchId) query.set('branchId', params.branchId);
     query.set('page', String(params.page || 1));
     query.set('limit', String(params.limit || 10));
     return apiClient.get<PaginatedSales>(`/sales/paginated?${query.toString()}`);
