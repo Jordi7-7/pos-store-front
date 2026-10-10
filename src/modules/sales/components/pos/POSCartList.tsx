@@ -193,14 +193,14 @@ export const POSCartList: React.FC<POSCartListProps> = ({
                     {item.maxStock <= 0 ? (
                       <Badge
                         variant="destructive"
-                        className="text-[8px] h-3.5 px-1 leading-none font-extrabold"
+                        className="text-[11px] h-5 px-2 py-0.5 leading-none font-bold"
                       >
                         Stock: {item.maxStock}
                       </Badge>
                     ) : (
                       <Badge
                         variant="outline"
-                        className="text-[8px] h-3.5 px-1 leading-none font-extrabold text-neutral border-neutral/30 bg-neutral/10"
+                        className="text-[11px] h-5 px-2 py-0.5 leading-none font-bold text-neutral border-neutral/30 bg-neutral/10"
                       >
                         Stock: {item.maxStock}
                       </Badge>

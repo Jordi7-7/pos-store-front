@@ -232,7 +232,7 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
                         ${Number(variant.salePrice || 0).toFixed(2)}
                       </span>
                       <span
-                        className={`text-[9px] font-bold mt-0.5 block ${
+                        className={`text-[11px] font-bold mt-0.5 block ${
                           stockQty > 0 ? 'text-emerald-500' : 'text-rose-500'
                         }`}
                       >
