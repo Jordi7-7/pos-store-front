@@ -17,7 +17,7 @@ import { cashSessionsService } from '../services/cash-sessions.service';
 import { ThermalClosingTicketModal } from '../../sales/components/pos/ThermalClosingTicketModal';
 import { buildClosingTicketData } from '../utils/buildClosingTicketData';
 import { toast } from 'sonner';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -120,67 +120,78 @@ export const CashSessionsHistoryView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4 animate-fadeIn">
-      {/* Compact Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-bg-card border border-border-card p-4 rounded-2xl shadow-sm">
-        <div>
-          <h2 className="text-base font-bold text-secondary flex items-center gap-2">
-            <History className="w-4 h-4 text-primary" />
-            Historial de Sesiones de Caja
-          </h2>
-          <p className="text-[11px] text-neutral">Auditoría de aperturas, ventas facturadas y arqueos de cierre por caja.</p>
-        </div>
+    <div className="space-y-6">
+      <Card className="border border-border/80 shadow-xs">
+        <CardHeader className="border-b border-border/60 pb-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <History className="w-4 h-4 text-primary" />
+                  Historial de Sesiones de Caja ({filteredSessions.length})
+                </CardTitle>
+              </div>
+              <CardDescription className="text-xs">
+                Auditoría de aperturas, ventas facturadas y arqueos de cierre por caja.
+              </CardDescription>
+            </div>
 
-        <div className="flex items-center gap-2">
-          {/* Compact Search */}
-          <div className="flex items-center gap-2 bg-bg-dark border border-border-card rounded-xl px-2.5 py-1.5 shadow-xs w-48 sm:w-60">
-            <Search className="w-3.5 h-3.5 text-neutral shrink-0" />
-            <input 
-              type="text" 
-              placeholder="Buscar por caja..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-transparent text-xs text-secondary focus:outline-none w-full placeholder-neutral font-medium"
-            />
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+              {/* Search input */}
+              <div className="relative w-full sm:w-60">
+                <Search className="w-3.5 h-3.5 text-neutral absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Buscar por caja..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 bg-bg-dark border border-border-card rounded-xl text-xs text-secondary placeholder:text-neutral/60 focus:outline-none focus:border-primary/50"
+                />
+              </div>
+
+              {/* Refresh Button */}
+              <Button
+                onClick={() => refetch()}
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 rounded-xl border-border bg-card hover:bg-muted text-xs font-medium text-foreground shadow-xs cursor-pointer flex items-center gap-1.5"
+                title="Sincronizar sesiones"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-muted-foreground" />
+                <span>Sincronizar</span>
+              </Button>
+            </div>
           </div>
-
-          {/* Compact Refresh Button */}
-          <Button 
-            onClick={() => refetch()} 
-            variant="outline"
-            size="sm"
-            className="h-8 px-2.5 rounded-xl border-border-card bg-bg-card hover:bg-bg-dark text-xs font-medium text-secondary shadow-xs cursor-pointer flex items-center gap-1.5"
-            title="Sincronizar sesiones"
-          >
-            <RotateCcw className="w-3.5 h-3.5 text-neutral" />
-            <span className="hidden sm:inline">Sincronizar</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* Main Sessions Table */}
-      <Card className="border border-border-card bg-bg-card rounded-2xl shadow-sm p-4 overflow-hidden">
+        </CardHeader>
+        <CardContent className="p-0">
         {listLoading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-3">
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
-            <p className="text-xs text-neutral">Cargando historial de cajas...</p>
+            <p className="text-xs text-muted-foreground">Cargando historial de cajas...</p>
           </div>
         ) : filteredSessions.length === 0 ? (
-          <div className="text-center py-16 text-neutral text-xs italic">
-            No se encontraron sesiones de caja en el historial.
+          <div className="py-16 text-center flex flex-col items-center justify-center gap-3">
+            <History className="w-10 h-10 text-muted-foreground opacity-40" />
+            <p className="text-sm text-muted-foreground">No se encontraron sesiones de caja en el historial.</p>
+            {searchTerm && (
+              <Button variant="link" size="sm" onClick={() => setSearchTerm('')} className="text-xs">
+                Limpiar búsqueda
+              </Button>
+            )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-b-xl border-t border-border bg-card">
             <Table>
               <TableHeader>
-                <TableRow className="uppercase tracking-wider text-[10px] font-bold border-b border-border-card/60">
-                  <TableHead className="pr-3">Caja Registradora</TableHead>
-                  {isAllBranches && <TableHead className="px-3">Sucursal</TableHead>}
-                  <TableHead className="px-3">Horario de Sesión</TableHead>
-                  <TableHead className="px-3 text-right">Ventas Totales</TableHead>
-                  <TableHead className="px-3 text-right">Diferencia / Arqueo</TableHead>
-                  <TableHead className="px-3 text-center">Estado</TableHead>
-                  <TableHead className="pl-3 text-right">Acción</TableHead>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="w-[50px]"></TableHead>
+                  <TableHead className="font-semibold text-xs">Caja Registradora</TableHead>
+                  {isAllBranches && <TableHead className="font-semibold text-xs">Sucursal</TableHead>}
+                  <TableHead className="font-semibold text-xs">Horario de Sesión</TableHead>
+                  <TableHead className="font-semibold text-xs text-right">Ventas Totales</TableHead>
+                  <TableHead className="font-semibold text-xs text-center">Diferencia / Arqueo</TableHead>
+                  <TableHead className="font-semibold text-xs text-center">Estado</TableHead>
+                  <TableHead className="w-[120px] text-right font-semibold text-xs pr-4">Acción</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -190,64 +201,64 @@ export const CashSessionsHistoryView: React.FC = () => {
                   const isExact = hasDiff && Math.abs(diffVal) < 0.05;
 
                   return (
-                    <TableRow key={s.id} className="text-secondary hover:bg-muted/10 transition-colors">
+                    <TableRow key={s.id} className="border-b border-border/60 last:border-0 hover:bg-muted/30 transition-colors">
+                      {/* Avatar / Number badge */}
+                      <TableCell className="py-2.5 pl-4 pr-1">
+                        <div className="w-8 h-8 rounded-lg bg-muted border border-border flex items-center justify-center text-primary font-mono font-bold text-xs shrink-0">
+                          #{s.cashRegister?.code || '1'}
+                        </div>
+                      </TableCell>
+
                       {/* Caja Registradora */}
-                      <TableCell className="py-3 pr-3 font-semibold text-secondary">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-xs font-black shrink-0">
-                            #{s.cashRegister?.code || '1'}
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold leading-tight text-secondary">
-                              {s.cashRegister?.name || 'Caja Registradora'}
-                            </p>
-                          </div>
+                      <TableCell className="py-2.5">
+                        <div className="font-semibold text-xs text-foreground leading-tight">
+                          {s.cashRegister?.name || 'Caja Registradora'}
                         </div>
                       </TableCell>
 
                       {/* Sucursal (Modo Consolidado) */}
                       {isAllBranches && (
-                        <TableCell className="py-3 px-3">
-                          <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20 whitespace-nowrap">
+                        <TableCell className="py-2.5">
+                          <span className="text-[10px] font-semibold bg-muted text-foreground/80 px-2 py-0.5 rounded-md border border-border whitespace-nowrap">
                             {s.branch?.name || 'Sucursal'}
                           </span>
                         </TableCell>
                       )}
 
                       {/* Horario de Sesión */}
-                      <TableCell className="py-3 px-3 text-xs whitespace-nowrap">
+                      <TableCell className="py-2.5 text-xs whitespace-nowrap text-foreground/90">
                         {formatSessionTime(s.openedAt, s.closedAt)}
                       </TableCell>
 
                       {/* Ventas Totales */}
-                      <TableCell className="py-3 px-3 text-right font-mono font-black text-sm text-secondary">
+                      <TableCell className="py-2.5 text-right font-mono font-semibold text-xs text-foreground">
                         ${Number(s.totalSales || 0).toFixed(2)}
                       </TableCell>
 
                       {/* Diferencia / Arqueo */}
-                      <TableCell className="py-3 px-3 text-right font-mono">
+                      <TableCell className="py-2.5 text-center font-mono text-xs">
                         {s.status === 'OPEN' ? (
-                          <span className="text-neutral text-xs italic">En turno</span>
+                          <span className="text-muted-foreground/60 text-xs italic">En turno</span>
                         ) : isExact ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
                             Exacto ($0.00)
                           </span>
                         ) : diffVal > 0 ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-500 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">
                             +${diffVal.toFixed(2)}
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
                             -${Math.abs(diffVal).toFixed(2)}
                           </span>
                         )}
                       </TableCell>
 
                       {/* Estado */}
-                      <TableCell className="py-3 px-3 text-center">
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                      <TableCell className="py-2.5 text-center">
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
                           s.status === 'CLOSED' 
-                            ? 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20' 
+                            ? 'bg-muted text-muted-foreground border border-border' 
                             : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
                         }`}>
                           {s.status === 'CLOSED' ? <Lock className="w-2.5 h-2.5" /> : <Unlock className="w-2.5 h-2.5 animate-pulse" />}
@@ -256,29 +267,31 @@ export const CashSessionsHistoryView: React.FC = () => {
                       </TableCell>
 
                       {/* Acción */}
-                      <TableCell className="py-3 pl-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
+                      <TableCell className="py-2.5 pr-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => handlePrintSessionById(s.id)}
                             disabled={printingSessionId === s.id}
-                            className="p-1.5 rounded-xl border border-primary/20 bg-primary/10 hover:bg-primary/20 text-primary transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
                             title="Imprimir ticket de sesión / arqueo"
                           >
                             {printingSessionId === s.id ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             ) : (
-                              <Printer className="w-3.5 h-3.5" />
+                              <Printer className="w-4 h-4" />
                             )}
-                          </button>
-                          <button
-                            type="button"
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => setSelectedSessionId(s.id)}
-                            className="flex items-center gap-1 text-[11px] font-bold text-primary hover:text-primary-hover bg-primary/5 hover:bg-primary/10 px-2.5 py-1.5 rounded-xl transition-all cursor-pointer shadow-xs border border-primary/10"
+                            className="h-7 px-2.5 rounded-lg border-border hover:bg-muted text-xs font-medium text-foreground cursor-pointer flex items-center gap-1"
                           >
-                            Auditar Caja
-                            <ArrowRight className="w-3 h-3" />
-                          </button>
+                            <span>Auditar Caja</span>
+                            <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -288,6 +301,7 @@ export const CashSessionsHistoryView: React.FC = () => {
             </Table>
           </div>
         )}
+        </CardContent>
       </Card>
 
       {/* Details Dialog Reusable Component */}
