@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useCashRegisters, useCreateCashRegister, useUpdateCashRegister, useAssignUsersToRegister } from '../hooks/useCashRegisters';
-import { useBranches, type Branch } from '@/modules/branches';
+import type { Branch } from '@/modules/branches';
+import { useLayoutContext } from '@/providers/LayoutContext';
 import { useUsers } from '@/modules/users/hooks/useUsers';
 import type { UserItem } from '@/modules/users';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -35,14 +36,13 @@ export const CashRegistersView: React.FC = () => {
   const { can } = usePermissions();
   const canManage = can(APP_PERMISSIONS.CASH_REGISTERS_MANAGE);
 
-  const { branches } = useBranches();
+  const { selectedBranchId, branches } = useLayoutContext();
   const { users } = useUsers();
 
-  const [selectedBranchFilter, setSelectedBranchFilter] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   const { cashRegisters, isLoading } = useCashRegisters(
-    selectedBranchFilter || undefined
+    selectedBranchId || undefined
   );
 
   const { createRegister, isCreating } = useCreateCashRegister();
@@ -79,7 +79,7 @@ export const CashRegistersView: React.FC = () => {
 
   // Open Create Modal
   const handleOpenCreate = () => {
-    setCreateBranchId(branches[0]?.id || '');
+    setCreateBranchId(selectedBranchId || '');
     setCreateName(`Caja ${cashRegisters.length + 1}`);
     setShowCreateModal(true);
   };
@@ -206,30 +206,12 @@ export const CashRegistersView: React.FC = () => {
       {/* Filters Toolbar */}
       <div className="px-6 py-3 border-b border-border-card bg-bg-card/50 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          {/* Branch filter */}
-          <div className="flex items-center gap-1.5 bg-bg-dark border border-border-card rounded-xl px-3 py-1.5 text-xs text-secondary">
-            <Building className="w-3.5 h-3.5 text-neutral" />
-            <span className="text-[11px] text-neutral font-medium uppercase tracking-wider">Sucursal:</span>
-            <select
-              value={selectedBranchFilter ?? ''}
-              onChange={(e) => setSelectedBranchFilter(e.target.value ? e.target.value : null)}
-              className="bg-transparent font-semibold focus:outline-none cursor-pointer"
-            >
-              <option value="" className="bg-bg-card text-secondary">Todas las Sucursales</option>
-              {branches.map((b: Branch) => (
-                <option key={b.id} value={b.id} className="bg-bg-card text-secondary">
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Search bar */}
-          <div className="relative flex-1 sm:w-64">
+          <div className="relative w-full sm:w-72">
             <Search className="w-3.5 h-3.5 text-neutral absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Buscar por caja o sucursal..."
+              placeholder="Buscar caja registradora..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 bg-bg-dark border border-border-card rounded-xl text-xs text-secondary placeholder:text-neutral/60 focus:outline-none focus:border-primary/50"
@@ -254,7 +236,7 @@ export const CashRegistersView: React.FC = () => {
             <CreditCard className="w-12 h-12 text-neutral/30 mb-3" />
             <h3 className="text-sm font-bold text-secondary">No se encontraron cajas registradoras</h3>
             <p className="text-xs text-neutral mt-1 max-w-sm">
-              {searchTerm || selectedBranchFilter
+              {searchTerm || selectedBranchId
                 ? 'No hay cajas que coincidan con los filtros aplicados.'
                 : 'Aún no has creado cajas registradoras para tus sucursales. Haz clic en "Nueva Caja" para habilitar tu primer punto de cobro.'}
             </p>
