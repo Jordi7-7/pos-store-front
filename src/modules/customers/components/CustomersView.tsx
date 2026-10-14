@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useCustomers } from '../hooks/useCustomers';
 import type { Customer } from '../types/customers.types';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -135,115 +135,141 @@ export const CustomersView: React.FC = () => {
   return (
     <div className="space-y-6">
       
-      {/* Top Banner & Action */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-primary/5 to-bg-card p-6 rounded-2xl border border-primary/10 shadow-sm">
-        <div>
-          <h2 className="text-lg font-bold text-secondary flex items-center gap-2">
-            <Users className="w-5 h-5 text-primary" />
-            Directorio de Clientes
-          </h2>
-          <p className="text-xs text-neutral">Administra y organiza el registro de tus clientes frecuentes para ventas y reportes.</p>
-        </div>
-        <Button 
-          onClick={handleOpenCreate} 
-          className="flex items-center gap-1.5 text-xs font-semibold h-9 rounded-xl shadow-md shadow-primary/10 cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          Nuevo Cliente
-        </Button>
-      </div>
+      <Card className="border border-border/80 shadow-xs">
+        <CardHeader className="border-b border-border/60 pb-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <Users className="w-4 h-4 text-primary" />
+                  Directorio de Clientes ({filteredCustomers.length})
+                </CardTitle>
+              </div>
+              <CardDescription className="text-xs">
+                Administra y organiza el registro de tus clientes frecuentes para ventas y reportes.
+              </CardDescription>
+            </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4 border border-border-card bg-bg-card flex items-center gap-4 rounded-2xl shadow-sm">
-          <div className="p-3 bg-primary/10 text-primary rounded-xl">
-            <Users className="w-5 h-5" />
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              {/* Search input */}
+              <div className="relative w-full sm:w-64">
+                <Search className="w-3.5 h-3.5 text-neutral absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre o cédula..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 bg-bg-dark border border-border-card rounded-xl text-xs text-secondary placeholder:text-neutral/60 focus:outline-none focus:border-primary/50"
+                />
+              </div>
+
+              <Button
+                onClick={handleOpenCreate}
+                size="sm"
+                className="flex items-center gap-1.5 text-xs font-semibold h-8 rounded-xl shadow-xs cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Nuevo Cliente
+              </Button>
+            </div>
           </div>
-          <div>
-            <span className="text-[10px] text-neutral font-bold uppercase tracking-wider block">Clientes Registrados</span>
-            <span className="text-xl font-bold text-secondary font-mono">{customers.length}</span>
-          </div>
-        </Card>
-      </div>
-
-      {/* Filter and Search Bar */}
-      <div className="flex items-center gap-3 bg-bg-card border border-border-card rounded-2xl px-3 py-1.5 shadow-sm max-w-md">
-        <Search className="w-4 h-4 text-neutral" />
-        <input 
-          type="text" 
-          placeholder="Buscar por nombre o identificación..." 
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="bg-transparent text-xs text-secondary focus:outline-none w-full placeholder-neutral font-medium"
-        />
-      </div>
-
-      {/* Customers Table */}
-      <Card className="border border-border-card bg-bg-card rounded-2xl shadow-sm p-6 overflow-hidden">
+        </CardHeader>
+        <CardContent className="p-0">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-3">
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
-            <p className="text-xs text-neutral">Cargando directorio de clientes...</p>
+            <p className="text-xs text-muted-foreground">Cargando directorio de clientes...</p>
           </div>
         ) : filteredCustomers.length === 0 ? (
-          <div className="text-center py-16 text-neutral text-xs italic">
-            No se encontraron clientes registrados.
+          <div className="py-16 text-center flex flex-col items-center justify-center gap-3">
+            <Users className="w-10 h-10 text-muted-foreground opacity-40" />
+            <p className="text-sm text-muted-foreground">No se encontraron clientes registrados.</p>
+            {searchTerm && (
+              <Button variant="link" size="sm" onClick={() => setSearchTerm('')} className="text-xs">
+                Limpiar búsqueda
+              </Button>
+            )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-b-xl border-t border-border bg-card">
             <Table>
               <TableHeader>
-                <TableRow className="uppercase tracking-wider text-[10px] font-bold">
-                  <TableHead className="pr-2">ID / Cédula</TableHead>
-                  <TableHead className="px-2">Nombre Completo</TableHead>
-                  <TableHead className="px-2">Teléfono</TableHead>
-                  <TableHead className="px-2">Correo Electrónico</TableHead>
-                  <TableHead className="pl-2 text-right">Acciones</TableHead>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="w-[50px]"></TableHead>
+                  <TableHead className="font-semibold text-xs">Cédula / RUC</TableHead>
+                  <TableHead className="font-semibold text-xs">Cliente</TableHead>
+                  <TableHead className="font-semibold text-xs">Teléfono</TableHead>
+                  <TableHead className="font-semibold text-xs">Correo Electrónico</TableHead>
+                  <TableHead className="w-[90px] text-center font-semibold text-xs">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredCustomers.map((c) => (
-                  <TableRow key={c.id} className="text-secondary hover:bg-muted/10 transition-colors">
-                    <TableCell className="py-3 pr-2 font-mono font-bold text-primary">{c.identityNumber}</TableCell>
-                    <TableCell className="py-3 px-2 uppercase font-medium">{c.name}</TableCell>
-                    <TableCell className="py-3 px-2 font-mono font-medium">
+                  <TableRow key={c.id} className="border-b border-border/60 last:border-0 hover:bg-muted/30 transition-colors">
+                    {/* Avatar / Icon */}
+                    <TableCell className="py-2.5 pl-4 pr-1">
+                      <div className="w-8 h-8 rounded-lg bg-muted border border-border flex items-center justify-center text-muted-foreground shrink-0 font-bold text-xs uppercase">
+                        {c.name ? c.name.charAt(0) : <User className="w-4 h-4" />}
+                      </div>
+                    </TableCell>
+
+                    {/* ID / Cédula */}
+                    <TableCell className="py-2.5 font-mono text-[11px] font-bold text-primary">
+                      {c.identityNumber}
+                    </TableCell>
+
+                    {/* Name */}
+                    <TableCell className="py-2.5">
+                      <div className="font-semibold text-xs text-foreground leading-tight" title={c.name}>
+                        {c.name}
+                      </div>
+                    </TableCell>
+
+                    {/* Phone */}
+                    <TableCell className="py-2.5 font-mono text-xs text-foreground/90">
                       {c.phone ? (
-                        <span className="flex items-center gap-1">
-                          <Phone className="w-3.5 h-3.5 text-neutral" />
+                        <span className="inline-flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5 text-muted-foreground" />
                           {c.phone}
                         </span>
                       ) : (
-                        <span className="text-neutral italic text-[11px]">-</span>
+                        <span className="text-muted-foreground/50 text-xs">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="py-3 px-2 font-medium">
+
+                    {/* Email */}
+                    <TableCell className="py-2.5 text-xs text-foreground/90">
                       {c.email ? (
-                        <span className="flex items-center gap-1.5">
-                          <Mail className="w-3.5 h-3.5 text-neutral" />
-                          {c.email}
+                        <span className="inline-flex items-center gap-1.5 truncate max-w-[260px]" title={c.email}>
+                          <Mail className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          <span className="truncate">{c.email}</span>
                         </span>
                       ) : (
-                        <span className="text-neutral italic text-[11px]">-</span>
+                        <span className="text-muted-foreground/50 text-xs">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="py-3 pl-2 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          type="button"
+
+                    {/* Actions */}
+                    <TableCell className="py-2.5 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleOpenEdit(c)}
                           title="Editar Cliente"
-                          className="flex items-center justify-center bg-bg-dark border border-border-card hover:bg-muted text-secondary w-8 h-8 rounded-xl transition-all cursor-pointer shadow-sm"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
                         >
-                          <Edit className="w-3.5 h-3.5 text-primary" />
-                        </button>
-                        <button
-                          type="button"
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleOpenDelete(c)}
                           title="Eliminar Cliente"
-                          className="flex items-center justify-center bg-bg-dark border border-border-card hover:bg-muted text-secondary w-8 h-8 rounded-xl transition-all cursor-pointer shadow-sm"
+                          className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 cursor-pointer"
                         >
-                          <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                        </button>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -252,6 +278,7 @@ export const CustomersView: React.FC = () => {
             </Table>
           </div>
         )}
+        </CardContent>
       </Card>
 
       {/* Form Dialog (Create / Edit) */}
