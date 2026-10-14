@@ -24,6 +24,7 @@ import { Route as LoginTenantSlugRouteImport } from './routes/login.$tenantSlug'
 import { Route as LayoutCajasHistorialRouteImport } from './routes/_layout/cajas/historial'
 import { Route as LayoutCajasRegistradorasRouteImport } from './routes/_layout/cajas/registradoras'
 import { Route as LayoutInventarioCrearRouteImport } from './routes/_layout/inventario/crear'
+import { Route as LayoutInventarioCrearCompuestoRouteImport } from './routes/_layout/inventario/crear-compuesto'
 import { Route as LayoutInventarioLotesRouteImport } from './routes/_layout/inventario/lotes'
 import { Route as LayoutInventarioProductosRouteImport } from './routes/_layout/inventario/productos'
 import { Route as LayoutReportesIndexRouteImport } from './routes/_layout/reportes/index'
@@ -106,6 +107,12 @@ const LayoutInventarioCrearRoute = LayoutInventarioCrearRouteImport.update({
   path: '/inventario/crear',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutInventarioCrearCompuestoRoute =
+  LayoutInventarioCrearCompuestoRouteImport.update({
+    id: '/inventario/crear-compuesto',
+    path: '/inventario/crear-compuesto',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 const LayoutInventarioLotesRoute = LayoutInventarioLotesRouteImport.update({
   id: '/inventario/lotes',
   path: '/inventario/lotes',
@@ -156,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/cajas/historial': typeof LayoutCajasHistorialRoute
   '/cajas/registradoras': typeof LayoutCajasRegistradorasRoute
   '/inventario/crear': typeof LayoutInventarioCrearRoute
+  '/inventario/crear-compuesto': typeof LayoutInventarioCrearCompuestoRoute
   '/inventario/lotes': typeof LayoutInventarioLotesRoute
   '/inventario/productos': typeof LayoutInventarioProductosRoute
   '/reportes/costo-ventas': typeof LayoutReportesCostoVentasRoute
@@ -178,6 +186,7 @@ export interface FileRoutesByTo {
   '/cajas/historial': typeof LayoutCajasHistorialRoute
   '/cajas/registradoras': typeof LayoutCajasRegistradorasRoute
   '/inventario/crear': typeof LayoutInventarioCrearRoute
+  '/inventario/crear-compuesto': typeof LayoutInventarioCrearCompuestoRoute
   '/inventario/lotes': typeof LayoutInventarioLotesRoute
   '/inventario/productos': typeof LayoutInventarioProductosRoute
   '/reportes/costo-ventas': typeof LayoutReportesCostoVentasRoute
@@ -202,6 +211,7 @@ export interface FileRoutesById {
   '/_layout/cajas/historial': typeof LayoutCajasHistorialRoute
   '/_layout/cajas/registradoras': typeof LayoutCajasRegistradorasRoute
   '/_layout/inventario/crear': typeof LayoutInventarioCrearRoute
+  '/_layout/inventario/crear-compuesto': typeof LayoutInventarioCrearCompuestoRoute
   '/_layout/inventario/lotes': typeof LayoutInventarioLotesRoute
   '/_layout/inventario/productos': typeof LayoutInventarioProductosRoute
   '/_layout/reportes/costo-ventas': typeof LayoutReportesCostoVentasRoute
@@ -226,6 +236,7 @@ export interface FileRouteTypes {
     | '/cajas/historial'
     | '/cajas/registradoras'
     | '/inventario/crear'
+    | '/inventario/crear-compuesto'
     | '/inventario/lotes'
     | '/inventario/productos'
     | '/reportes/costo-ventas'
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '/cajas/historial'
     | '/cajas/registradoras'
     | '/inventario/crear'
+    | '/inventario/crear-compuesto'
     | '/inventario/lotes'
     | '/inventario/productos'
     | '/reportes/costo-ventas'
@@ -271,6 +283,7 @@ export interface FileRouteTypes {
     | '/_layout/cajas/historial'
     | '/_layout/cajas/registradoras'
     | '/_layout/inventario/crear'
+    | '/_layout/inventario/crear-compuesto'
     | '/_layout/inventario/lotes'
     | '/_layout/inventario/productos'
     | '/_layout/reportes/costo-ventas'
@@ -392,6 +405,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutInventarioCrearRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/inventario/crear-compuesto': {
+      id: '/_layout/inventario/crear-compuesto'
+      path: '/inventario/crear-compuesto'
+      fullPath: '/inventario/crear-compuesto'
+      preLoaderRoute: typeof LayoutInventarioCrearCompuestoRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/inventario/lotes': {
       id: '/_layout/inventario/lotes'
       path: '/inventario/lotes'
@@ -449,6 +469,7 @@ interface LayoutRouteChildren {
   LayoutCajasHistorialRoute: typeof LayoutCajasHistorialRoute
   LayoutCajasRegistradorasRoute: typeof LayoutCajasRegistradorasRoute
   LayoutInventarioCrearRoute: typeof LayoutInventarioCrearRoute
+  LayoutInventarioCrearCompuestoRoute: typeof LayoutInventarioCrearCompuestoRoute
   LayoutInventarioLotesRoute: typeof LayoutInventarioLotesRoute
   LayoutInventarioProductosRoute: typeof LayoutInventarioProductosRoute
   LayoutReportesCostoVentasRoute: typeof LayoutReportesCostoVentasRoute
@@ -469,6 +490,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutCajasHistorialRoute: LayoutCajasHistorialRoute,
   LayoutCajasRegistradorasRoute: LayoutCajasRegistradorasRoute,
   LayoutInventarioCrearRoute: LayoutInventarioCrearRoute,
+  LayoutInventarioCrearCompuestoRoute: LayoutInventarioCrearCompuestoRoute,
   LayoutInventarioLotesRoute: LayoutInventarioLotesRoute,
   LayoutInventarioProductosRoute: LayoutInventarioProductosRoute,
   LayoutReportesCostoVentasRoute: LayoutReportesCostoVentasRoute,

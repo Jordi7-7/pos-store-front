@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useProducts } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
 import { ProductListTab } from './ProductListTab';
+import { ProductType } from '../services/products.service';
 
 interface ProductsListViewProps {
   selectedBranchId: string;
@@ -15,8 +16,14 @@ export const ProductsListView: React.FC<ProductsListViewProps> = ({
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
+  const [productType, setProductType] = useState<ProductType | undefined>(undefined);
 
-  const { products, meta, isLoading: isLoadingProducts } = useProducts({ page, limit, search });
+  const { products, meta, isLoading: isLoadingProducts } = useProducts({
+    page,
+    limit,
+    search,
+    type: productType,
+  });
   const { categories } = useCategories();
 
   return (
@@ -39,6 +46,11 @@ export const ProductsListView: React.FC<ProductsListViewProps> = ({
         onLimitChange={(nextLimit) => { setLimit(nextLimit); setPage(1); }}
         search={search}
         onSearchChange={setSearch}
+        productType={productType}
+        onProductTypeChange={(type) => {
+          setProductType(type);
+          setPage(1);
+        }}
       />
     </div>
   );

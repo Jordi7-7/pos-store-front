@@ -145,7 +145,7 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6">
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="text-sm">Ficha del Producto</CardTitle>

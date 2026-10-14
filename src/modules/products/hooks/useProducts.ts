@@ -1,13 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { productsService } from '../services/products.service';
+import { productsService, ProductType } from '../services/products.service';
 import type { AdjustStockInput, CreateVariableProductInput, CreateSimpleProductInput, UpdateProductInput, UpdateSimpleProductInput, UpdateVariantInput, InventoryMovement, PaginatedResult, Product, ProductHistoryPurchase, ProductHistorySale, VariantBatchItem } from '../services/products.service';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
-export const useProducts = (params?: { page?: number; limit?: number; search?: string }) => {
+export const useProducts = (params?: { page?: number; limit?: number; search?: string; type?: ProductType }) => {
   const { tenantId, isAuthenticated } = useAuthStore();
 
   const productsQuery = useQuery({
-    queryKey: ['products', tenantId, params?.page, params?.limit, params?.search],
+    queryKey: ['products', tenantId, params?.page, params?.limit, params?.search, params?.type],
     queryFn: () => productsService.getProducts(params),
     enabled: isAuthenticated && !!tenantId,
   });
@@ -280,3 +280,23 @@ export const useCreateVariant = () => {
     isError: createVariantMutation.isError,
   };
 };
+
+export const useDeleteVariant = () => {
+  const queryClient = useQueryClient();
+  const { tenantId } = useAuthStore();
+
+  const deleteVariantMutation = useMutation({
+    mutationFn: (variantId: string) => productsService.deleteVariant(variantId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['product-detail', tenantId] });
+    },
+  });
+
+  return {
+    deleteVariant: deleteVariantMutation.mutateAsync,
+    isDeleting: deleteVariantMutation.isPending,
+    isError: deleteVariantMutation.isError,
+  };
+};
+

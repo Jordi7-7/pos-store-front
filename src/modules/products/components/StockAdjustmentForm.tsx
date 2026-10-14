@@ -3,17 +3,29 @@ import { toast } from 'sonner';
 import { useAdjustStock } from '../hooks/useProducts';
 import type { Product } from '../services/products.service';
 import { AlertCircle, ArrowDownToLine, ArrowUpToLine, Loader2 } from 'lucide-react';
+import { ProductType, InventoryMovementType } from '../services/products.service';
 
 interface StockAdjustmentFormProps {
   product: Product;
   selectedBranchId: string;
+  selectedVariantId?: string;
 }
 
-export const StockAdjustmentForm: React.FC<StockAdjustmentFormProps> = ({ product, selectedBranchId }) => {
+export const StockAdjustmentForm: React.FC<StockAdjustmentFormProps> = ({
+  product,
+  selectedBranchId,
+  selectedVariantId,
+}) => {
   const { adjustStock, isAdjusting } = useAdjustStock();
   const isAllBranches = !selectedBranchId;
-  const variantId = product.variants[0]?.id || '';
-  const [type, setType] = useState<'IN' | 'OUT'>('IN');
+  const isSimple = product.type === ProductType.SIMPLE;
+
+  // Si es simple toma por defecto la única variante; si es compuesto toma la variante seleccionada (o la primera como fallback)
+  const variantId = isSimple
+    ? product.variants[0]?.id || ''
+    : selectedVariantId || '';
+
+  const [type, setType] = useState<InventoryMovementType>(InventoryMovementType.IN);
   const [quantity, setQuantity] = useState('1');
   const [comment, setComment] = useState('');
   const variant = useMemo(() => product.variants.find((item) => item.id === variantId), [product.variants, variantId]);
@@ -27,7 +39,7 @@ export const StockAdjustmentForm: React.FC<StockAdjustmentFormProps> = ({ produc
     const parsedQuantity = Number(quantity);
     if (!variantId || !selectedBranchId) return toast.warning('Selecciona una variante y sucursal válidas.');
     if (!Number.isInteger(parsedQuantity) || parsedQuantity <= 0) return toast.warning('La cantidad debe ser un entero mayor a 0.');
-    if (type === 'OUT' && parsedQuantity > stock) return toast.warning(`Stock insuficiente. Disponible: ${stock}`);
+    if (type === InventoryMovementType.OUT && parsedQuantity > stock) return toast.warning(`Stock insuficiente. Disponible: ${stock}`);
 
     try {
       await adjustStock({ branchId: selectedBranchId, variantId, quantity: parsedQuantity, type, comment: comment.trim() || undefined });
@@ -57,19 +69,33 @@ export const StockAdjustmentForm: React.FC<StockAdjustmentFormProps> = ({ produc
 
       <div className="rounded-xl border border-border bg-muted/30 p-4 text-xs">
         <strong className="block text-sm">{product.name}</strong>
-        <span className="font-mono text-primary">{variant?.sku || 'Sin SKU'}</span>
-        <span className="ml-3 text-muted-foreground">
-          {isAllBranches ? 'Stock: Selecciona una sucursal' : `Stock actual: ${stock}`}
-        </span>
+        <div className="flex flex-wrap items-center gap-2 mt-1">
+          <span className="font-mono font-bold text-primary">{variant?.sku || 'Sin SKU'}</span>
+          {!isSimple && variant?.attributeValues && variant.attributeValues.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {variant.attributeValues.map((av: any, idx: number) => (
+                <span
+                  key={av.id || idx}
+                  className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-primary/10 text-primary border border-primary/20"
+                >
+                  {av.value || av.attributeValueId}
+                </span>
+              ))}
+            </div>
+          )}
+          <span className="text-muted-foreground ml-auto font-mono">
+            {isAllBranches ? 'Stock: Selecciona una sucursal' : `Stock actual: ${stock} pzs`}
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
           disabled={isAllBranches}
-          onClick={() => setType('IN')}
+          onClick={() => setType(InventoryMovementType.IN)}
           className={`flex items-center justify-center gap-2 rounded-lg border p-3 text-xs font-semibold transition-opacity disabled:opacity-50 ${
-            type === 'IN' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600' : 'border-border text-muted-foreground'
+            type === InventoryMovementType.IN ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600' : 'border-border text-muted-foreground'
           }`}
         >
           <ArrowUpToLine className="h-4 w-4" />
@@ -78,9 +104,9 @@ export const StockAdjustmentForm: React.FC<StockAdjustmentFormProps> = ({ produc
         <button
           type="button"
           disabled={isAllBranches}
-          onClick={() => setType('OUT')}
+          onClick={() => setType(InventoryMovementType.OUT)}
           className={`flex items-center justify-center gap-2 rounded-lg border p-3 text-xs font-semibold transition-opacity disabled:opacity-50 ${
-            type === 'OUT' ? 'border-rose-500 bg-rose-500/10 text-rose-600' : 'border-border text-muted-foreground'
+            type === InventoryMovementType.OUT ? 'border-rose-500 bg-rose-500/10 text-rose-600' : 'border-border text-muted-foreground'
           }`}
         >
           <ArrowDownToLine className="h-4 w-4" />

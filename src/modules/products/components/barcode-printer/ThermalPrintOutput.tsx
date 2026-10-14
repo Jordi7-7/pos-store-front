@@ -43,12 +43,26 @@ export const printThermalLabels = (items: BarcodeLabelItem[], storeName: string)
       // Crear elemento SVG temporal para convertir el código de barras a XML puro
       const tempSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       try {
-        JsBarcode(tempSvg, item.sku, {
+        const cleanSku = item.sku.trim();
+        let barWidth = 1.35;
+        let fontSize = 10;
+        if (cleanSku.length > 14) {
+          barWidth = 0.95;
+          fontSize = 8;
+        } else if (cleanSku.length > 10) {
+          barWidth = 1.1;
+          fontSize = 9;
+        } else if (cleanSku.length > 8) {
+          barWidth = 1.25;
+          fontSize = 9.5;
+        }
+
+        JsBarcode(tempSvg, cleanSku, {
           format: 'CODE128',
-          width: 1.4,
-          height: 24,
+          width: barWidth,
+          height: 22,
           displayValue: true,
-          fontSize: 10,
+          fontSize: fontSize,
           font: 'monospace',
           fontOptions: 'bold',
           textMargin: 1,

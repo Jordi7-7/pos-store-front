@@ -118,9 +118,57 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       className="space-y-4 text-secondary"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* LEFT COLUMN: Main Info */}
+        {/* LEFT COLUMN: Identifiers & Details */}
         <div className="space-y-3.5">
-          {/* Nombre */}
+          {/* 1. Código SKU */}
+          <Controller
+            name="sku"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={`${formId}-sku`} className="text-[11px] font-bold uppercase tracking-wider">
+                  Código SKU <span className="text-destructive">*</span>
+                </FieldLabel>
+                <div className="relative">
+                  <TagIcon className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input
+                    {...field}
+                    id={`${formId}-sku`}
+                    placeholder="HM-1230 (Para etiquetas propias)"
+                    aria-invalid={fieldState.invalid}
+                    className="pl-8 text-xs h-9"
+                  />
+                </div>
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          {/* 2. Código de Barras Proveedor */}
+          <Controller
+            name="barcode"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={`${formId}-barcode`} className="text-[11px] font-bold uppercase tracking-wider">
+                  Código de Barras Proveedor
+                </FieldLabel>
+                <div className="relative">
+                  <TagIcon className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
+                  <Input
+                    {...field}
+                    id={`${formId}-barcode`}
+                    placeholder="Código de barras original (Opcional)"
+                    aria-invalid={fieldState.invalid}
+                    className="pl-8 text-xs h-9"
+                  />
+                </div>
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          {/* 3. Nombre del Producto */}
           <Controller
             name="name"
             control={form.control}
@@ -141,7 +189,105 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             )}
           />
 
-          {/* Categoría */}
+          {/* 4. Precios (Compra, Venta, Mayoreo) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <Controller
+              name="purchasePrice"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={`${formId}-purchase-price`} className="text-[11px] font-bold uppercase tracking-wider truncate">
+                    Compra ($) <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Input
+                    id={`${formId}-purchase-price`}
+                    type="number"
+                    step="0.01"
+                    aria-invalid={fieldState.invalid}
+                    className="text-xs h-9"
+                    value={field.value}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                    onBlur={field.onBlur}
+                  />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="salePrice"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={`${formId}-sale-price`} className="text-[11px] font-bold uppercase tracking-wider truncate">
+                    Venta ($) <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Input
+                    id={`${formId}-sale-price`}
+                    type="number"
+                    step="0.01"
+                    aria-invalid={fieldState.invalid}
+                    className="text-xs h-9"
+                    value={field.value}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                    onBlur={field.onBlur}
+                  />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="wholesalePrice"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={`${formId}-wholesale-price`} className="text-[11px] font-bold uppercase tracking-wider truncate">
+                    Precio Mayoreo ($)
+                  </FieldLabel>
+                  <Input
+                    id={`${formId}-wholesale-price`}
+                    type="number"
+                    step="0.01"
+                    placeholder="Opcional"
+                    aria-invalid={fieldState.invalid}
+                    className="text-xs h-9"
+                    value={field.value ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? null : parseFloat(e.target.value);
+                      field.onChange(val);
+                    }}
+                    onBlur={field.onBlur}
+                  />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Description, Category, Stock & Tags */}
+        <div className="space-y-3.5">
+          {/* 1. Descripción */}
+          <Controller
+            name="description"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={`${formId}-description`} className="text-[11px] font-bold uppercase tracking-wider">Descripción</FieldLabel>
+                <Textarea
+                  {...field}
+                  id={`${formId}-description`}
+                  placeholder="Ingresa descripción o notas del artículo..."
+                  aria-invalid={fieldState.invalid}
+                  className="text-xs h-9 py-2 resize-none"
+                />
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
+
+          {/* 2. Categoría */}
           <Controller
             name="categoryId"
             control={form.control}
@@ -225,153 +371,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </div>
           )}
 
-          {/* Descripción */}
-          <Controller
-            name="description"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={`${formId}-description`} className="text-[11px] font-bold uppercase tracking-wider">Descripción</FieldLabel>
-                <Textarea
-                  {...field}
-                  id={`${formId}-description`}
-                  placeholder="Ingresa descripción o notas del artículo..."
-                  aria-invalid={fieldState.invalid}
-                  className="text-xs h-[72px] resize-none"
-                />
-                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-              </Field>
-            )}
-          />
-        </div>
-
-        {/* RIGHT COLUMN: Inventory & Prices */}
-        <div className="space-y-3.5">
-          {/* SKU / Código */}
-          <Controller
-            name="sku"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={`${formId}-sku`} className="text-[11px] font-bold uppercase tracking-wider">
-                  Código SKU <span className="text-destructive">*</span>
-                </FieldLabel>
-                <div className="relative">
-                  <TagIcon className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
-                  <Input
-                    {...field}
-                    id={`${formId}-sku`}
-                    placeholder="HM-1230 (Para etiquetas propias)"
-                    aria-invalid={fieldState.invalid}
-                    className="pl-8 text-xs h-9"
-                  />
-                </div>
-                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-              </Field>
-            )}
-          />
-
-          {/* Código de Barras Proveedor */}
-          <Controller
-            name="barcode"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={`${formId}-barcode`} className="text-[11px] font-bold uppercase tracking-wider">
-                  Código de Barras Proveedor
-                </FieldLabel>
-                <div className="relative">
-                  <TagIcon className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
-                  <Input
-                    {...field}
-                    id={`${formId}-barcode`}
-                    placeholder="Código de barras original (Opcional)"
-                    aria-invalid={fieldState.invalid}
-                    className="pl-8 text-xs h-9"
-                  />
-                </div>
-                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-              </Field>
-            )}
-          />
-
-          {/* Precios (3 columnas: Compra, Venta Unidad, Venta Mayorista) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <Controller
-              name="purchasePrice"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={`${formId}-purchase-price`} className="text-[11px] font-bold uppercase tracking-wider truncate">
-                    Compra ($) <span className="text-destructive">*</span>
-                  </FieldLabel>
-                  <Input
-                    id={`${formId}-purchase-price`}
-                    type="number"
-                    step="0.01"
-                    aria-invalid={fieldState.invalid}
-                    className="text-xs h-9"
-                    value={field.value}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                    onBlur={field.onBlur}
-                  />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                </Field>
-              )}
-            />
-
-            <Controller
-              name="salePrice"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={`${formId}-sale-price`} className="text-[11px] font-bold uppercase tracking-wider truncate">
-                    Venta ($) <span className="text-destructive">*</span>
-                  </FieldLabel>
-                  <Input
-                    id={`${formId}-sale-price`}
-                    type="number"
-                    step="0.01"
-                    aria-invalid={fieldState.invalid}
-                    className="text-xs h-9"
-                    value={field.value}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                    onBlur={field.onBlur}
-                  />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                </Field>
-              )}
-            />
-
-            <Controller
-              name="wholesalePrice"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={`${formId}-wholesale-price`} className="text-[11px] font-bold uppercase tracking-wider truncate">
-                    Precio Mayoreo ($)
-                  </FieldLabel>
-                  <Input
-                    id={`${formId}-wholesale-price`}
-                    type="number"
-                    step="0.01"
-                    placeholder="Opcional"
-                    aria-invalid={fieldState.invalid}
-                    className="text-xs h-9"
-                    value={field.value ?? ''}
-                    onChange={(e) => {
-                      const val = e.target.value === '' ? null : parseFloat(e.target.value);
-                      field.onChange(val);
-                    }}
-                    onBlur={field.onBlur}
-                  />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                </Field>
-              )}
-            />
-          </div>
-
-          {/* Stock */}
+          {/* 4. Stock Inicial */}
           <Controller
             name="initialStock"
             control={form.control}
@@ -395,7 +395,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             )}
           />
 
-          {/* Tags */}
+          {/* 5. Tags */}
           <div>
             <label className="text-[11px] font-bold uppercase tracking-wider block mb-1.5">
               Tags

@@ -1,5 +1,22 @@
 import { apiClient } from '@/lib/apiClient';
 
+export interface ProductImage {
+  id: string;
+  url: string;
+  description?: string;
+}
+
+export interface VariantAttribute {
+  name: string;
+  value: string;
+}
+
+export interface VariantStock {
+  branchId: string;
+  branchName?: string;
+  quantity: number;
+}
+
 export interface ProductVariant {
   id?: string;
   sku: string;
@@ -8,10 +25,16 @@ export interface ProductVariant {
   salePrice: number;
   wholesalePrice?: number | null;
   imageIds?: string[];
-  images?: { id: string; url: string; description?: string }[];
-  attributeValues: { attributeValueId: string }[];
-  stocks?: { branchId: string; quantity: number }[];
+  images?: ProductImage[];
+  attributeValues?: any[];
+  attributes?: VariantAttribute[];
+  stocks?: VariantStock[];
   tags?: Tag[];
+}
+
+export enum ProductType {
+  SIMPLE = 'SIMPLE',
+  VARIABLE = 'VARIABLE',
 }
 
 export interface Tag {
@@ -23,17 +46,25 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  variants: ProductVariant[];
-  imageIds: string[];
-  images?: { id: string; url: string; description?: string }[];
-  categoryId: string;
+  type?: ProductType;
+  baseSku?: string | null;
+  categoryId?: string | null;
+  categoryName?: string | null;
   category?: { id: string; name: string } | null;
+  images?: ProductImage[];
+  imageIds?: string[];
+  variants: ProductVariant[];
+}
+
+export enum InventoryMovementType {
+  IN = 'IN',
+  OUT = 'OUT',
 }
 
 export interface InventoryMovement {
   id: string;
   quantity: number;
-  type: string;
+  type: InventoryMovementType | string;
   reason: string;
   createdAt: string;
   variant?: { sku: string; product?: { name: string } };
@@ -50,7 +81,7 @@ export interface AdjustStockInput {
   branchId: string;
   variantId: string;
   quantity: number;
-  type: 'IN' | 'OUT';
+  type: InventoryMovementType;
   comment?: string;
 }
 
@@ -188,6 +219,7 @@ export interface CreateVariableProductVariantInput {
 export interface CreateVariableProductInput {
   name: string;
   description: string;
+  baseSku?: string;
   categoryId?: string;
   imageIds?: string[];
   variants: CreateVariableProductVariantInput[];
@@ -196,6 +228,7 @@ export interface CreateVariableProductInput {
 export interface UpdateProductInput {
   name?: string;
   description?: string;
+  baseSku?: string | null;
   categoryId?: string | null;
   imageIds?: string[];
 }
@@ -248,11 +281,12 @@ export interface Attribute {
 }
 
 export const productsService = {
-  getProducts: async (params?: { page?: number; limit?: number; search?: string }): Promise<{ data: Product[]; meta: { total: number; page: number; limit: number; totalPages: number } }> => {
+  getProducts: async (params?: { page?: number; limit?: number; search?: string; type?: ProductType }): Promise<{ data: Product[]; meta: { total: number; page: number; limit: number; totalPages: number } }> => {
     const query = new URLSearchParams();
     if (params?.page) query.append('page', String(params.page));
     if (params?.limit) query.append('limit', String(params.limit));
     if (params?.search) query.append('search', params.search);
+    if (params?.type) query.append('type', params.type);
     const queryString = query.toString();
     return apiClient.get(`/products${queryString ? `?${queryString}` : ''}`);
   },
@@ -297,6 +331,10 @@ export const productsService = {
     return apiClient.post<ProductVariant>(`/products/${productId}/variants`, input);
   },
 
+  deleteVariant: async (variantId: string): Promise<{ success: boolean; message: string }> => {
+    return apiClient.delete(`/products/variants/${variantId}`);
+  },
+
   getTags: async (): Promise<Tag[]> => {
     return apiClient.get<Tag[]>('/products/tags');
   },
@@ -313,7 +351,7 @@ export const productsService = {
     return apiClient.get(`/products/variant/sku/${sku}`);
   },
 
-  getPosVariantBySku: async (sku: string, branchId: string): Promise<{ id: string; sku: string; purchasePrice: number; salePrice: number; wholesalePrice?: number | null; productName: string; stock: number; attributeValues?: any[]; imageUrl?: string | null }[]> => {
+  getPosVariantBySku: async (sku: string, branchId: string): Promise<any> => {
     return apiClient.get(`/products/pos/variant/sku/${sku}?branchId=${branchId}`);
   },
 

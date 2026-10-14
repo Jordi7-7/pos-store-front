@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import type {
-  Product,
-  ProductVariant,
-  ProductHistorySale,
-  ProductHistoryPurchase,
-  InventoryMovement,
-  VariantBatchItem,
+import {
+  type Product,
+  type ProductVariant,
+  type ProductHistorySale,
+  type ProductHistoryPurchase,
+  type InventoryMovement,
+  type VariantBatchItem,
+  InventoryMovementType,
+  ProductType,
 } from '../services/products.service';
 import {
   useInventoryMovementsByVariant,
@@ -139,26 +141,43 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     effectiveBranchId,
   );
 
-  // Imágenes consolidadas
+  // Imágenes consolidadas priorizando la variante activa si tiene imágenes propias
   const allImages = useMemo(() => {
     if (!detailProduct) return [];
     const map = new Map<string, { id: string; url: string }>();
 
-    if ((detailProduct as any).images) {
-      (detailProduct as any).images.forEach((img: any) => {
+    // 1. Si la variante activa tiene imágenes, ponerlas primero
+    if (activeVariant?.images && activeVariant.images.length > 0) {
+      activeVariant.images.forEach((img: any) => {
         if (img?.id) map.set(img.id, { id: img.id, url: img.url || '' });
       });
     }
 
+    // 2. Imágenes del producto padre
+    if ((detailProduct as any).images) {
+      (detailProduct as any).images.forEach((img: any) => {
+        if (img?.id && !map.has(img.id)) map.set(img.id, { id: img.id, url: img.url || '' });
+      });
+    }
+
+    // 3. Imágenes de las demás variantes
     variants.forEach((variant: any) => {
       if (variant.images) {
         variant.images.forEach((img: any) => {
-          if (img?.id) map.set(img.id, { id: img.id, url: img.url || '' });
+          if (img?.id && !map.has(img.id)) map.set(img.id, { id: img.id, url: img.url || '' });
         });
       }
     });
 
     if (uploadedImages && uploadedImages.length > 0) {
+      if (activeVariant?.imageIds) {
+        activeVariant.imageIds.forEach((id: string) => {
+          if (!map.has(id)) {
+            const found = uploadedImages.find((item: any) => item.id === id);
+            if (found) map.set(id, { id, url: found.url });
+          }
+        });
+      }
       if (detailProduct.imageIds) {
         detailProduct.imageIds.forEach((id: string) => {
           if (!map.has(id)) {
@@ -180,9 +199,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     }
 
     return Array.from(map.values()).filter((img) => Boolean(img.url));
-  }, [detailProduct, variants, uploadedImages]);
+  }, [detailProduct, variants, activeVariant, uploadedImages]);
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  // Al cambiar la variante seleccionada, reiniciar al primer elemento de la galería
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [activeVariantId]);
 
   // KPIs calculados
   const totalStockSucursal = useMemo(() => {
@@ -199,7 +223,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         {detailProduct && (
           <>
             {/* Header */}
-            <DialogHeader className="shrink-0 px-6 py-4 border-b border-border bg-muted/25">
+            <DialogHeader className="shrink-0 px-6 pr-14 py-4 border-b border-border bg-muted/25">
               <div className="flex flex-wrap items-center justify-between gap-3 min-w-0">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -214,31 +238,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     {detailProduct.description || 'Sin descripción adicional'}
                   </p>
                 </div>
-
-                {variants.length > 1 && (
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      Variante:
-                    </span>
-                    <select
-                      value={activeVariantId}
-                      onChange={(e) => {
-                        setSelectedVariantId(e.target.value);
-                        setPages({ sales: 1, purchases: 1, batches: 1, movements: 1 });
-                      }}
-                      className="bg-background border border-border text-foreground text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      {variants.map((v: any) => {
-                        const attrs = (v.attributeValues || []).map((av: any) => av.value).join(' / ');
-                        return (
-                          <option key={v.id} value={v.id}>
-                            {v.sku} {attrs ? `(${attrs})` : ''}
-                          </option>
-                        );
-                      })}
-                    </select>
-                  </div>
-                )}
               </div>
             </DialogHeader>
 
@@ -374,7 +373,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                         <span className="text-[10px] uppercase font-bold text-muted-foreground block tracking-wider">
                           SKU principal
                         </span>
-                        <strong className="text-sm font-mono mt-0.5 block">{variants[0]?.sku || 'N/A'}</strong>
+                        <strong className="text-sm font-mono mt-0.5 block">
+                          {detailProduct.type === ProductType.VARIABLE
+                            ? detailProduct.baseSku || variants[0]?.sku || 'N/A'
+                            : variants[0]?.sku || detailProduct.baseSku || 'N/A'}
+                        </strong>
                       </div>
                     </div>
 
@@ -383,52 +386,90 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                         Variantes y Precios
                       </div>
                       <div className="divide-y divide-border">
-                        {variants.map((variant: ProductVariant) => (
-                          <div
-                            key={variant.id || variant.sku}
-                            className={`grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-center px-4 py-3 text-xs transition-colors ${
-                              variant.id === activeVariantId ? 'bg-primary/5' : 'hover:bg-muted/20'
-                            }`}
-                          >
-                            <div>
-                              <span className="font-mono font-bold text-primary block">{variant.sku}</span>
-                              {variant.barcode && (
-                                <span className="text-[10px] font-mono text-muted-foreground">
-                                  Cod: {variant.barcode}
-                                </span>
-                              )}
+                        {variants.map((variant: ProductVariant) => {
+                          const isSelected = variant.id === activeVariantId;
+
+                          return (
+                            <div
+                              key={variant.id || variant.sku}
+                              onClick={() => {
+                                if (variant.id) {
+                                  setSelectedVariantId(variant.id);
+                                  setPages({ sales: 1, purchases: 1, batches: 1, movements: 1 });
+                                }
+                              }}
+                              className={`grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-center px-4 py-3 text-xs transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-primary/10 border-l-4 border-l-primary font-medium shadow-2xs'
+                                  : 'hover:bg-muted/30 border-l-4 border-l-transparent'
+                              }`}
+                              title="Haz clic para seleccionar esta variante"
+                            >
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className={`font-mono font-bold block ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                                    {variant.sku}
+                                  </span>
+                                  {detailProduct?.type === ProductType.VARIABLE && variant.attributeValues && variant.attributeValues.length > 0 && (
+                                    <div className="flex flex-wrap gap-1">
+                                      {variant.attributeValues.map((av: any, idx: number) => (
+                                        <span
+                                          key={av.id || idx}
+                                          className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                                            isSelected ? 'bg-primary text-white font-bold' : 'bg-primary/10 text-primary'
+                                          }`}
+                                        >
+                                          {av.value || av.attributeValueId}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                  {isSelected && (
+                                    <span className="text-[9.5px] uppercase font-bold text-primary bg-primary/15 px-1.5 py-0.5 rounded">
+                                      Seleccionada
+                                    </span>
+                                  )}
+                                </div>
+                                {variant.barcode && (
+                                  <span className="text-[10px] font-mono text-muted-foreground">
+                                    Cod: {variant.barcode}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-muted-foreground font-mono">
+                                Costo: ${Number(variant.purchasePrice || 0).toFixed(2)}
+                              </span>
+                              <span className="font-bold font-mono text-foreground">
+                                Venta: ${Number(variant.salePrice || 0).toFixed(2)}
+                              </span>
+                              <Badge variant={isSelected ? "default" : "secondary"} className="font-mono">
+                                {variant.stocks?.find((stock) => stock.branchId === selectedBranchId)?.quantity || 0} pzs
+                              </Badge>
+                              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                {canPrintBarcodes && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setBarcodeQueue([
+                                        {
+                                          sku: variant.sku || 'SIN-SKU',
+                                          name: detailProduct.name,
+                                          price: Number(variant.salePrice || 0),
+                                          quantity: 1,
+                                        },
+                                      ]);
+                                      setBarcodeModalOpen(true);
+                                    }}
+                                    className="p-1.5 rounded-lg hover:bg-primary/10 text-primary transition-all cursor-pointer"
+                                    title="Imprimir Código de Barras Térmico"
+                                  >
+                                    <Barcode className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                            <span className="text-muted-foreground font-mono">
-                              Costo: ${Number(variant.purchasePrice || 0).toFixed(2)}
-                            </span>
-                            <span className="font-bold font-mono text-foreground">
-                              Venta: ${Number(variant.salePrice || 0).toFixed(2)}
-                            </span>
-                            <Badge variant="secondary" className="font-mono">
-                              {variant.stocks?.find((stock) => stock.branchId === selectedBranchId)?.quantity || 0} pzs
-                            </Badge>
-                            {canPrintBarcodes && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setBarcodeQueue([
-                                    {
-                                      sku: variant.sku || 'SIN-SKU',
-                                      name: detailProduct.name,
-                                      price: Number(variant.salePrice || 0),
-                                      quantity: 1,
-                                    },
-                                  ]);
-                                  setBarcodeModalOpen(true);
-                                }}
-                                className="p-1.5 rounded-lg hover:bg-primary/10 text-primary transition-all cursor-pointer"
-                                title="Imprimir Código de Barras Térmico"
-                              >
-                                <Barcode className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   </TabsContent>
@@ -716,7 +757,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                             </thead>
                             <tbody className="divide-y divide-border">
                               {movements.map((movement: InventoryMovement) => {
-                                const isPositive = movement.type === 'IN' || movement.type === 'INPUT';
+                                const isPositive = movement.type === InventoryMovementType.IN;
                                 return (
                                   <tr key={movement.id} className="hover:bg-muted/20 transition-colors">
                                     <td className="px-4 py-3">
@@ -757,7 +798,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   {/* TAB 6: AJUSTE DE STOCK */}
                   {canAdjustStock && (
                     <TabsContent value="adjustment" className="mt-0">
-                      <StockAdjustmentForm product={detailProduct} selectedBranchId={selectedBranchId} />
+                      <StockAdjustmentForm
+                        product={detailProduct}
+                        selectedBranchId={selectedBranchId}
+                        selectedVariantId={activeVariantId}
+                      />
                     </TabsContent>
                   )}
                 </div>

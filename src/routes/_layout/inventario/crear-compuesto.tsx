@@ -1,0 +1,35 @@
+import { createFileRoute, useNavigate, redirect } from '@tanstack/react-router';
+import { ProductCreateVariableView } from '@/modules/products';
+import { useLayoutContext } from '@/providers/LayoutContext';
+import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { APP_PERMISSIONS } from '@/constants/permissions';
+import { toast } from 'sonner';
+
+export const Route = createFileRoute('/_layout/inventario/crear-compuesto')({
+  beforeLoad: () => {
+    const auth = useAuthStore.getState();
+    if (!auth.can(APP_PERMISSIONS.PRODUCTS_CREATE)) {
+      toast.error('Acceso denegado: No tienes permiso para crear productos');
+      throw redirect({
+        to: '/inventario/productos',
+      });
+    }
+  },
+  component: InventoryCreateVariableRoute,
+});
+
+function InventoryCreateVariableRoute() {
+  const navigate = useNavigate();
+  const { selectedBranchId } = useLayoutContext();
+
+  return (
+    <ProductCreateVariableView
+      selectedBranchId={selectedBranchId || ''}
+      onSuccess={() => {
+        navigate({
+          to: '/inventario/productos',
+        });
+      }}
+    />
+  );
+}

@@ -19,12 +19,30 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({
   useEffect(() => {
     if (svgRef.current && sku) {
       try {
-        JsBarcode(svgRef.current, sku, {
+        const cleanSku = sku.trim();
+        // Ajuste dinámico de ancho de barras según la longitud del SKU:
+        // SKUs cortos (<= 8 chars): 1.4
+        // SKUs medianos (9-12 chars): 1.15
+        // SKUs largos (> 12 chars): 0.95 - 1.05
+        let barWidth = 1.35;
+        let fontSize = 10;
+        if (cleanSku.length > 14) {
+          barWidth = 0.95;
+          fontSize = 8;
+        } else if (cleanSku.length > 10) {
+          barWidth = 1.1;
+          fontSize = 9;
+        } else if (cleanSku.length > 8) {
+          barWidth = 1.25;
+          fontSize = 9.5;
+        }
+
+        JsBarcode(svgRef.current, cleanSku, {
           format: 'CODE128',
-          width: 1.4,
-          height: 24,
+          width: barWidth,
+          height: 22,
           displayValue: true,
-          fontSize: 10,
+          fontSize: fontSize,
           font: 'monospace',
           fontOptions: 'bold',
           textMargin: 1,

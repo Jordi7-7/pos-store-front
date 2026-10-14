@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import type { CartItem } from '../types/pos.types';
+import { ProductType } from '@/modules/products/services/products.service';
 
 export function usePOSCart() {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -19,11 +20,10 @@ export function usePOSCart() {
       );
     }
 
+    const isSimple = product.type === ProductType.SIMPLE;
     const combText =
-      variant.attributeValues && variant.attributeValues.length > 0
-        ? variant.attributeValues
-            .map((av: any) => `${av.attribute?.name || 'Attr'}: ${av.value}`)
-            .join(' / ')
+      !isSimple && variant.attributes && variant.attributes.length > 0
+        ? variant.attributes.map((a: { name: string; value: string }) => `${a.name}: ${a.value}`).join(' / ')
         : 'Estándar';
 
     const imageUrl = variant.imageUrl;

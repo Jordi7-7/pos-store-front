@@ -5,3 +5,8 @@ export * from './hooks/useProducts';
 export * from './components/ProductsListView';
 export * from './components/ProductBatchesView';
 export * from './components/ProductCreateView';
+export * from './components/ProductCreateVariableView';
+export * from './components/ProductCreateVariableTab';
+export * from './components/AttributeCatalogManager';
+
+

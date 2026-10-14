@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Search, CornerDownLeft, X, Package, Maximize2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { productsService } from '@/modules/products/services/products.service';
+import { productsService, ProductType } from '@/modules/products/services/products.service';
+import { PosVariableProductModal } from './PosVariableProductModal';
 
 interface POSProductSearchProps {
   branchId: string;
@@ -21,6 +22,10 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
   const [showSearchModal, setShowSearchModal] = useState<boolean>(false);
   const [isSearching, setIsSearching] = useState<boolean>(false);
 
+  // Variable product modal state
+  const [variableProductData, setVariableProductData] = useState<any | null>(null);
+  const [showVariableModal, setShowVariableModal] = useState<boolean>(false);
+
   const executeSearch = async () => {
     const code = searchTerm.trim();
     if (!code) return;
@@ -28,12 +33,23 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
     try {
       setIsSearching(true);
       const res = await productsService.getPosVariantBySku(code, branchId);
-      if (res && res.length > 0) {
+
+      // Case 1: Returned a variable product wrapper object by baseSku
+      if (res && !Array.isArray(res) && (res as any).variants) {
+        setVariableProductData(res);
+        setShowVariableModal(true);
+        setSearchTerm('');
+        return;
+      }
+
+      // Case 2: Returned array of direct variants (or multiple matches)
+      if (Array.isArray(res) && res.length > 0) {
         if (res.length === 1) {
           const singleRes = res[0];
           const fakeProduct = {
             id: singleRes.id,
             name: singleRes.productName,
+            type: singleRes.productType,
           };
           const fakeVariant = {
             id: singleRes.id,
@@ -43,6 +59,7 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
               singleRes.wholesalePrice !== undefined && singleRes.wholesalePrice !== null
                 ? Number(singleRes.wholesalePrice)
                 : null,
+            attributes: singleRes.attributes || [],
             attributeValues: singleRes.attributeValues || [],
             imageUrl: singleRes.imageUrl,
           };
@@ -135,8 +152,9 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
             <div className="p-3 overflow-y-auto space-y-2 flex-1">
               {searchResults.map((variant) => {
                 const stockQty = Number(variant.stock || 0);
+                const isSimple = variant.productType === ProductType.SIMPLE;
                 const hasAttributes =
-                  variant.attributeValues && variant.attributeValues.length > 0;
+                  !isSimple && variant.attributeValues && variant.attributeValues.length > 0;
 
                 return (
                   <div
@@ -145,6 +163,7 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
                       const fakeProduct = {
                         id: variant.id,
                         name: variant.productName,
+                        type: variant.productType,
                       };
                       const fakeVariant = {
                         id: variant.id,
@@ -155,6 +174,7 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
                           variant.wholesalePrice !== null
                             ? Number(variant.wholesalePrice)
                             : null,
+                        attributes: variant.attributes || [],
                         attributeValues: variant.attributeValues || [],
                         imageUrl: variant.imageUrl,
                       };
@@ -218,8 +238,8 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
                           <>
                             <span className="text-border-card">•</span>
                             <span className="text-neutral font-semibold">
-                              {variant.attributeValues
-                                .map((av: any) => `${av.attribute.name}: ${av.value}`)
+                              {(variant.attributes || [])
+                                .map((a: any) => `${a.name}: ${a.value}`)
                                 .join(', ')}
                             </span>
                           </>
@@ -246,6 +266,18 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
           </div>
         </div>
       )}
+
+      {/* Dynamic Variable Product Attributes Modal (Base SKU match) */}
+      <PosVariableProductModal
+        isOpen={showVariableModal}
+        onClose={() => {
+          setShowVariableModal(false);
+          setVariableProductData(null);
+          searchInputRef.current?.focus();
+        }}
+        productData={variableProductData}
+        onAddToCart={onAddVariantToCart}
+      />
     </>
   );
 };

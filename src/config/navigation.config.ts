@@ -14,6 +14,7 @@ import {
   CreditCard,
   Boxes,
   PlusCircle,
+  Layers,
   List,
   FileText,
 } from 'lucide-react';
@@ -83,6 +84,13 @@ export const navigationConfig: NavItem[] = [
         label: 'Crear Producto',
         path: '/inventario/crear',
         icon: PlusCircle,
+        permission: APP_PERMISSIONS.PRODUCTS_CREATE,
+      },
+      {
+        id: 'inventory-create-variable',
+        label: 'Crear Producto Compuesto',
+        path: '/inventario/crear-compuesto',
+        icon: Layers,
         permission: APP_PERMISSIONS.PRODUCTS_CREATE,
       },
     ],
