@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutClientesRouteImport } from './routes/_layout/clientes'
-import { Route as LayoutComprasRouteImport } from './routes/_layout/compras'
 import { Route as LayoutConfiguracionRouteImport } from './routes/_layout/configuracion'
 import { Route as LayoutDashboardRouteImport } from './routes/_layout/dashboard'
 import { Route as LayoutMultimediaRouteImport } from './routes/_layout/multimedia'
@@ -23,6 +22,9 @@ import { Route as LayoutVentasRouteImport } from './routes/_layout/ventas'
 import { Route as LoginTenantSlugRouteImport } from './routes/login.$tenantSlug'
 import { Route as LayoutCajasHistorialRouteImport } from './routes/_layout/cajas/historial'
 import { Route as LayoutCajasRegistradorasRouteImport } from './routes/_layout/cajas/registradoras'
+import { Route as LayoutComprasHistorialRouteImport } from './routes/_layout/compras/historial'
+import { Route as LayoutComprasProveedoresRouteImport } from './routes/_layout/compras/proveedores'
+import { Route as LayoutComprasRegistrarRouteImport } from './routes/_layout/compras/registrar'
 import { Route as LayoutInventarioCrearRouteImport } from './routes/_layout/inventario/crear'
 import { Route as LayoutInventarioCrearCompuestoRouteImport } from './routes/_layout/inventario/crear-compuesto'
 import { Route as LayoutInventarioLotesRouteImport } from './routes/_layout/inventario/lotes'
@@ -49,11 +51,6 @@ const LoginRoute = LoginRouteImport.update({
 const LayoutClientesRoute = LayoutClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
-  getParentRoute: () => LayoutRoute,
-} as any)
-const LayoutComprasRoute = LayoutComprasRouteImport.update({
-  id: '/compras',
-  path: '/compras',
   getParentRoute: () => LayoutRoute,
 } as any)
 const LayoutConfiguracionRoute = LayoutConfiguracionRouteImport.update({
@@ -102,6 +99,22 @@ const LayoutCajasRegistradorasRoute =
     path: '/cajas/registradoras',
     getParentRoute: () => LayoutRoute,
   } as any)
+const LayoutComprasHistorialRoute = LayoutComprasHistorialRouteImport.update({
+  id: '/compras/historial',
+  path: '/compras/historial',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutComprasProveedoresRoute =
+  LayoutComprasProveedoresRouteImport.update({
+    id: '/compras/proveedores',
+    path: '/compras/proveedores',
+    getParentRoute: () => LayoutRoute,
+  } as any)
+const LayoutComprasRegistrarRoute = LayoutComprasRegistrarRouteImport.update({
+  id: '/compras/registrar',
+  path: '/compras/registrar',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutInventarioCrearRoute = LayoutInventarioCrearRouteImport.update({
   id: '/inventario/crear',
   path: '/inventario/crear',
@@ -152,7 +165,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRouteWithChildren
   '/clientes': typeof LayoutClientesRoute
-  '/compras': typeof LayoutComprasRoute
   '/configuracion': typeof LayoutConfiguracionRoute
   '/dashboard': typeof LayoutDashboardRoute
   '/multimedia': typeof LayoutMultimediaRoute
@@ -162,6 +174,9 @@ export interface FileRoutesByFullPath {
   '/login/$tenantSlug': typeof LoginTenantSlugRoute
   '/cajas/historial': typeof LayoutCajasHistorialRoute
   '/cajas/registradoras': typeof LayoutCajasRegistradorasRoute
+  '/compras/historial': typeof LayoutComprasHistorialRoute
+  '/compras/proveedores': typeof LayoutComprasProveedoresRoute
+  '/compras/registrar': typeof LayoutComprasRegistrarRoute
   '/inventario/crear': typeof LayoutInventarioCrearRoute
   '/inventario/crear-compuesto': typeof LayoutInventarioCrearCompuestoRoute
   '/inventario/lotes': typeof LayoutInventarioLotesRoute
@@ -175,7 +190,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRouteWithChildren
   '/clientes': typeof LayoutClientesRoute
-  '/compras': typeof LayoutComprasRoute
   '/configuracion': typeof LayoutConfiguracionRoute
   '/dashboard': typeof LayoutDashboardRoute
   '/multimedia': typeof LayoutMultimediaRoute
@@ -185,6 +199,9 @@ export interface FileRoutesByTo {
   '/login/$tenantSlug': typeof LoginTenantSlugRoute
   '/cajas/historial': typeof LayoutCajasHistorialRoute
   '/cajas/registradoras': typeof LayoutCajasRegistradorasRoute
+  '/compras/historial': typeof LayoutComprasHistorialRoute
+  '/compras/proveedores': typeof LayoutComprasProveedoresRoute
+  '/compras/registrar': typeof LayoutComprasRegistrarRoute
   '/inventario/crear': typeof LayoutInventarioCrearRoute
   '/inventario/crear-compuesto': typeof LayoutInventarioCrearCompuestoRoute
   '/inventario/lotes': typeof LayoutInventarioLotesRoute
@@ -200,7 +217,6 @@ export interface FileRoutesById {
   '/_layout': typeof LayoutRouteWithChildren
   '/login': typeof LoginRouteWithChildren
   '/_layout/clientes': typeof LayoutClientesRoute
-  '/_layout/compras': typeof LayoutComprasRoute
   '/_layout/configuracion': typeof LayoutConfiguracionRoute
   '/_layout/dashboard': typeof LayoutDashboardRoute
   '/_layout/multimedia': typeof LayoutMultimediaRoute
@@ -210,6 +226,9 @@ export interface FileRoutesById {
   '/login/$tenantSlug': typeof LoginTenantSlugRoute
   '/_layout/cajas/historial': typeof LayoutCajasHistorialRoute
   '/_layout/cajas/registradoras': typeof LayoutCajasRegistradorasRoute
+  '/_layout/compras/historial': typeof LayoutComprasHistorialRoute
+  '/_layout/compras/proveedores': typeof LayoutComprasProveedoresRoute
+  '/_layout/compras/registrar': typeof LayoutComprasRegistrarRoute
   '/_layout/inventario/crear': typeof LayoutInventarioCrearRoute
   '/_layout/inventario/crear-compuesto': typeof LayoutInventarioCrearCompuestoRoute
   '/_layout/inventario/lotes': typeof LayoutInventarioLotesRoute
@@ -225,7 +244,6 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/clientes'
-    | '/compras'
     | '/configuracion'
     | '/dashboard'
     | '/multimedia'
@@ -235,6 +253,9 @@ export interface FileRouteTypes {
     | '/login/$tenantSlug'
     | '/cajas/historial'
     | '/cajas/registradoras'
+    | '/compras/historial'
+    | '/compras/proveedores'
+    | '/compras/registrar'
     | '/inventario/crear'
     | '/inventario/crear-compuesto'
     | '/inventario/lotes'
@@ -248,7 +269,6 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/clientes'
-    | '/compras'
     | '/configuracion'
     | '/dashboard'
     | '/multimedia'
@@ -258,6 +278,9 @@ export interface FileRouteTypes {
     | '/login/$tenantSlug'
     | '/cajas/historial'
     | '/cajas/registradoras'
+    | '/compras/historial'
+    | '/compras/proveedores'
+    | '/compras/registrar'
     | '/inventario/crear'
     | '/inventario/crear-compuesto'
     | '/inventario/lotes'
@@ -272,7 +295,6 @@ export interface FileRouteTypes {
     | '/_layout'
     | '/login'
     | '/_layout/clientes'
-    | '/_layout/compras'
     | '/_layout/configuracion'
     | '/_layout/dashboard'
     | '/_layout/multimedia'
@@ -282,6 +304,9 @@ export interface FileRouteTypes {
     | '/login/$tenantSlug'
     | '/_layout/cajas/historial'
     | '/_layout/cajas/registradoras'
+    | '/_layout/compras/historial'
+    | '/_layout/compras/proveedores'
+    | '/_layout/compras/registrar'
     | '/_layout/inventario/crear'
     | '/_layout/inventario/crear-compuesto'
     | '/_layout/inventario/lotes'
@@ -326,13 +351,6 @@ declare module '@tanstack/react-router' {
       path: '/clientes'
       fullPath: '/clientes'
       preLoaderRoute: typeof LayoutClientesRouteImport
-      parentRoute: typeof LayoutRoute
-    }
-    '/_layout/compras': {
-      id: '/_layout/compras'
-      path: '/compras'
-      fullPath: '/compras'
-      preLoaderRoute: typeof LayoutComprasRouteImport
       parentRoute: typeof LayoutRoute
     }
     '/_layout/configuracion': {
@@ -398,6 +416,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutCajasRegistradorasRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/compras/historial': {
+      id: '/_layout/compras/historial'
+      path: '/compras/historial'
+      fullPath: '/compras/historial'
+      preLoaderRoute: typeof LayoutComprasHistorialRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/compras/proveedores': {
+      id: '/_layout/compras/proveedores'
+      path: '/compras/proveedores'
+      fullPath: '/compras/proveedores'
+      preLoaderRoute: typeof LayoutComprasProveedoresRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/compras/registrar': {
+      id: '/_layout/compras/registrar'
+      path: '/compras/registrar'
+      fullPath: '/compras/registrar'
+      preLoaderRoute: typeof LayoutComprasRegistrarRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/inventario/crear': {
       id: '/_layout/inventario/crear'
       path: '/inventario/crear'
@@ -459,7 +498,6 @@ declare module '@tanstack/react-router' {
 
 interface LayoutRouteChildren {
   LayoutClientesRoute: typeof LayoutClientesRoute
-  LayoutComprasRoute: typeof LayoutComprasRoute
   LayoutConfiguracionRoute: typeof LayoutConfiguracionRoute
   LayoutDashboardRoute: typeof LayoutDashboardRoute
   LayoutMultimediaRoute: typeof LayoutMultimediaRoute
@@ -468,6 +506,9 @@ interface LayoutRouteChildren {
   LayoutVentasRoute: typeof LayoutVentasRoute
   LayoutCajasHistorialRoute: typeof LayoutCajasHistorialRoute
   LayoutCajasRegistradorasRoute: typeof LayoutCajasRegistradorasRoute
+  LayoutComprasHistorialRoute: typeof LayoutComprasHistorialRoute
+  LayoutComprasProveedoresRoute: typeof LayoutComprasProveedoresRoute
+  LayoutComprasRegistrarRoute: typeof LayoutComprasRegistrarRoute
   LayoutInventarioCrearRoute: typeof LayoutInventarioCrearRoute
   LayoutInventarioCrearCompuestoRoute: typeof LayoutInventarioCrearCompuestoRoute
   LayoutInventarioLotesRoute: typeof LayoutInventarioLotesRoute
@@ -480,7 +521,6 @@ interface LayoutRouteChildren {
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutClientesRoute: LayoutClientesRoute,
-  LayoutComprasRoute: LayoutComprasRoute,
   LayoutConfiguracionRoute: LayoutConfiguracionRoute,
   LayoutDashboardRoute: LayoutDashboardRoute,
   LayoutMultimediaRoute: LayoutMultimediaRoute,
@@ -489,6 +529,9 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutVentasRoute: LayoutVentasRoute,
   LayoutCajasHistorialRoute: LayoutCajasHistorialRoute,
   LayoutCajasRegistradorasRoute: LayoutCajasRegistradorasRoute,
+  LayoutComprasHistorialRoute: LayoutComprasHistorialRoute,
+  LayoutComprasProveedoresRoute: LayoutComprasProveedoresRoute,
+  LayoutComprasRegistrarRoute: LayoutComprasRegistrarRoute,
   LayoutInventarioCrearRoute: LayoutInventarioCrearRoute,
   LayoutInventarioCrearCompuestoRoute: LayoutInventarioCrearCompuestoRoute,
   LayoutInventarioLotesRoute: LayoutInventarioLotesRoute,

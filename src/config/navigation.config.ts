@@ -17,6 +17,8 @@ import {
   Layers,
   List,
   FileText,
+  ShoppingCart,
+  Building2,
 } from 'lucide-react';
 import { APP_PERMISSIONS } from '@/constants/permissions';
 
@@ -96,11 +98,33 @@ export const navigationConfig: NavItem[] = [
     ],
   },
   {
-    id: 'purchases',
+    id: 'purchases-group',
     label: 'Compras',
-    path: '/compras',
     icon: Truck,
     permission: APP_PERMISSIONS.VIEW_PURCHASES,
+    children: [
+      {
+        id: 'purchases-create',
+        label: 'Registrar Compra',
+        path: '/compras/registrar',
+        icon: ShoppingCart,
+        permission: APP_PERMISSIONS.PURCHASES_CREATE,
+      },
+      {
+        id: 'purchases-history',
+        label: 'Historial de Compras',
+        path: '/compras/historial',
+        icon: History,
+        permission: APP_PERMISSIONS.VIEW_PURCHASES,
+      },
+      {
+        id: 'purchases-suppliers',
+        label: 'Proveedores',
+        path: '/compras/proveedores',
+        icon: Building2,
+        permission: APP_PERMISSIONS.VIEW_PURCHASES,
+      },
+    ],
   },
   {
     id: 'customers',

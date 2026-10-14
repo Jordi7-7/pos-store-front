@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { Purchase, PurchaseItem } from '../services/purchases.service';
 import { toast } from 'sonner';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 interface PurchaseHistoryProps {
   selectedBranchId?: string;
@@ -44,14 +45,22 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
   };
 
   return (
-    <div className="bg-bg-card border border-border-card rounded-2xl p-6 shadow-sm space-y-4 animate-fade-in">
-      <div className="border-b border-border-card pb-3">
-        <h4 className="text-xs font-bold text-secondary uppercase tracking-wide flex items-center gap-1.5">
-          <ClipboardList className="w-4 h-4 text-primary" />
-          <span>Historial de Órdenes de Compra</span>
-        </h4>
-        <p className="text-xs text-neutral mt-0.5 font-medium">Auditoría y registro de abastecimientos cargados al Kardex general.</p>
-      </div>
+    <div className="space-y-6 animate-fade-in">
+      <Card className="border border-border/80 shadow-xs">
+        <CardHeader className="border-b border-border/60 pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-primary" />
+                Historial de Órdenes de Compra ({purchases.length})
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Auditoría y registro de abastecimientos cargados al Kardex general.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6">
 
       {isLoading ? (
         <div className="py-16 text-center text-xs text-neutral flex flex-col items-center justify-center gap-2">
@@ -217,6 +226,8 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
           })}
         </div>
       )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

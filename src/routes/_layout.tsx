@@ -61,6 +61,9 @@ function DashboardShell() {
     if (currentPath.startsWith('/dashboard')) return 'Dashboard';
     if (currentPath.startsWith('/pos')) return 'Punto de Venta (POS)';
     if (currentPath.startsWith('/ventas')) return 'Ventas e Historial';
+    if (currentPath.startsWith('/compras/registrar')) return 'Compras - Registrar Compra';
+    if (currentPath.startsWith('/compras/historial')) return 'Compras - Historial de Compras';
+    if (currentPath.startsWith('/compras/proveedores')) return 'Compras - Directorio de Proveedores';
     if (currentPath.startsWith('/compras')) return 'Compras';
     if (currentPath.startsWith('/clientes')) return 'Directorio de Clientes';
     if (currentPath.startsWith('/cajas/historial')) return 'Historial de Cajas';

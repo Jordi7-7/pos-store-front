@@ -3,16 +3,25 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
 import { downloadPurchasesTemplate } from '@/lib/excelTemplates';
 import { BulkImportPreviewTable } from '@/components/BulkImportPreviewTable';
-import { useBranches } from '../../branches/hooks/useBranches';
-import type { Branch } from '../../branches/services/branches.service';
+import { useSuppliers } from '../hooks/usePurchases';
+import type { Supplier } from '../services/purchases.service';
+import { useLayoutContext } from '@/providers/LayoutContext';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
+  ComboboxEmpty,
+} from '@/components/ui/combobox';
 import { toast } from 'sonner';
-import { FileDown, Upload, FileSpreadsheet, Loader2, RefreshCw, AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { FileDown, Upload, FileSpreadsheet, Loader2, RefreshCw, AlertTriangle, ArrowRight, CheckCircle2, Building, AlertCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface BulkPurchaseModalProps {
@@ -22,10 +31,11 @@ interface BulkPurchaseModalProps {
 
 export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, onClose }) => {
   const queryClient = useQueryClient();
-  const { branches = [] } = useBranches();
+  const { selectedBranchId, selectedBranchName } = useLayoutContext();
+  const { suppliers = [] } = useSuppliers();
 
   // States
-  const [selectedBranchId, setSelectedBranchId] = useState('');
+  const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [parsedData, setParsedData] = useState<any[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -34,12 +44,21 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
   const [fileName, setFileName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Set default branch
+  // Set default generic supplier
   React.useEffect(() => {
-    if (branches.length > 0 && !selectedBranchId) {
-      setSelectedBranchId(branches[0].id);
+    if (!selectedSupplierId && suppliers.length > 0) {
+      const generic = suppliers.find(
+        (s: Supplier) =>
+          s.identityNumber?.toUpperCase() === 'GENERICO' ||
+          s.name?.toUpperCase().includes('GENERICO')
+      );
+      if (generic) {
+        setSelectedSupplierId(generic.id);
+      } else {
+        setSelectedSupplierId(suppliers[0].id);
+      }
     }
-  }, [branches, selectedBranchId]);
+  }, [suppliers, selectedSupplierId]);
 
   // Mutation to validate bulk purchases list
   const validateMutation = useMutation({
@@ -66,7 +85,7 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
 
   // Mutation to confirm and run bulk stock entry
   const importMutation = useMutation({
-    mutationFn: async (data: { branchId: string; items: any[]; invoiceNumber?: string }) => {
+    mutationFn: async (data: { branchId: string; items: any[]; invoiceNumber?: string; supplierId?: string }) => {
       return apiClient.post('/purchases/import', data);
     },
     onSuccess: () => {
@@ -168,6 +187,7 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
     if (parsedData.length === 0 || !selectedBranchId) return;
     importMutation.mutate({
       branchId: selectedBranchId,
+      supplierId: selectedSupplierId || undefined,
       items: parsedData,
       invoiceNumber: invoiceNumber.trim() || undefined,
     });
@@ -206,22 +226,58 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
               </button>
             </div>
 
-            {/* Inputs: Sucursal Destino & Nro Factura / Referencia */}
+            {!selectedBranchId && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>Para ingresar compras masivas, selecciona una sucursal en la barra superior.</span>
+              </div>
+            )}
+
+            {/* Inputs: Proveedor Comercial & Nro Factura / Referencia */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="block text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
-                  Sucursal de Destino (Kardex) *
-                </label>
-                <select
-                  value={selectedBranchId}
-                  onChange={(e) => setSelectedBranchId(e.target.value)}
-                  className="w-full bg-muted/40 border border-border rounded-xl py-2 px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                <div className="flex items-center justify-between">
+                  <label className="block text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                    Proveedor Comercial *
+                  </label>
+                  {selectedBranchId && (
+                    <span className="inline-flex items-center gap-1 text-[10px] text-primary font-semibold bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
+                      <Building className="w-2.5 h-2.5" />
+                      {selectedBranchName}
+                    </span>
+                  )}
+                </div>
+                <Combobox
+                  value={selectedSupplierId || ''}
+                  onValueChange={(val) => setSelectedSupplierId(val || '')}
                 >
-                  <option value="">Selecciona sucursal destino</option>
-                  {branches.map((b: Branch) => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
-                  ))}
-                </select>
+                  <ComboboxInput
+                    placeholder="Buscar o seleccionar proveedor..."
+                    className="text-xs shadow-none h-9 bg-muted/40 border-border rounded-xl"
+                    showTrigger
+                    value={(() => {
+                      const s = suppliers.find((sup: Supplier) => sup.id === selectedSupplierId);
+                      return s ? `${s.name} (${s.identityNumber})` : '';
+                    })()}
+                  />
+                  <ComboboxContent className="bg-popover border border-border rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto">
+                    <ComboboxEmpty className="p-3 text-center text-xs text-muted-foreground">
+                      No se encontraron proveedores.
+                    </ComboboxEmpty>
+                    <ComboboxList className="p-1">
+                      {suppliers.map((sup: Supplier) => (
+                        <ComboboxItem key={sup.id} value={sup.id} className="text-xs py-1.5 cursor-pointer">
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-foreground">{sup.name}</span>
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              RUC / ID: {sup.identityNumber}
+                            </span>
+                          </div>
+                        </ComboboxItem>
+                      ))}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
               </div>
 
               <div className="space-y-1">
@@ -233,7 +289,7 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
                   placeholder="Ej: F-001293 o REF-99"
                   value={invoiceNumber}
                   onChange={(e) => setInvoiceNumber(e.target.value)}
-                  className="w-full bg-muted/40 border border-border rounded-xl py-2 px-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full bg-muted/40 border border-border rounded-xl py-2 px-3 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary h-9"
                 />
               </div>
             </div>
@@ -282,8 +338,9 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
                   </span>
                 )}
                 {selectedBranchId && (
-                  <span className="text-[10px] text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-md">
-                    {branches.find(b => b.id === selectedBranchId)?.name || 'Sucursal'}
+                  <span className="inline-flex items-center gap-1 text-[10px] text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md font-semibold">
+                    <Building className="w-2.5 h-2.5" />
+                    {selectedBranchName}
                   </span>
                 )}
               </div>
