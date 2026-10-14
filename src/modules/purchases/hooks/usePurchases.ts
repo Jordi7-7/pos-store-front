@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { purchasesService } from '../services/purchases.service';
-import type { CreateSupplierInput, UpdateSupplierInput, RegisterPurchaseInput } from '../services/purchases.service';
+import type { CreateSupplierInput, UpdateSupplierInput, RegisterPurchaseInput, GetPurchasesParams } from '../services/purchases.service';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
 export const useSuppliers = (options?: { enabled?: boolean }) => {
@@ -91,17 +91,36 @@ export const useRegisterPurchase = () => {
   };
 };
 
-export const usePurchases = (branchId?: string) => {
+export const usePurchases = (params?: GetPurchasesParams | string) => {
   const { tenantId, isAuthenticated } = useAuthStore();
+  const normalizedParams: GetPurchasesParams | undefined =
+    typeof params === 'string'
+      ? { branchId: params }
+      : params;
 
   const purchasesQuery = useQuery({
-    queryKey: ['purchases', tenantId, branchId],
-    queryFn: () => purchasesService.getPurchases(branchId),
+    queryKey: [
+      'purchases',
+      tenantId,
+      normalizedParams?.branchId,
+      normalizedParams?.startDate,
+      normalizedParams?.endDate,
+      normalizedParams?.supplierId,
+      normalizedParams?.page,
+      normalizedParams?.limit,
+    ],
+    queryFn: () => purchasesService.getPurchases(normalizedParams),
     enabled: isAuthenticated && !!tenantId,
   });
 
   return {
-    purchases: purchasesQuery.data || [],
+    purchases: purchasesQuery.data?.data || [],
+    meta: purchasesQuery.data?.meta || {
+      total: 0,
+      page: normalizedParams?.page || 1,
+      limit: normalizedParams?.limit || 10,
+      totalPages: 1,
+    },
     isLoading: purchasesQuery.isLoading,
     isError: purchasesQuery.isError,
     refetchPurchases: purchasesQuery.refetch,

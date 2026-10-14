@@ -66,6 +66,27 @@ export interface Purchase {
   items: PurchaseItem[];
 }
 
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface PaginatedPurchasesResponse {
+  data: Purchase[];
+  meta: PaginationMeta;
+}
+
+export interface GetPurchasesParams {
+  branchId?: string;
+  startDate?: string;
+  endDate?: string;
+  supplierId?: string;
+  page?: number;
+  limit?: number;
+}
+
 export const purchasesService = {
   getSuppliers: async (): Promise<Supplier[]> => {
     return apiClient.get<Supplier[]>('/purchases/suppliers');
@@ -87,10 +108,15 @@ export const purchasesService = {
     return apiClient.post<Purchase>('/purchases', input);
   },
 
-  getPurchases: async (branchId?: string): Promise<Purchase[]> => {
+  getPurchases: async (paramsObj?: GetPurchasesParams): Promise<PaginatedPurchasesResponse> => {
     const params = new URLSearchParams();
-    if (branchId) params.set('branchId', branchId);
-    return apiClient.get<Purchase[]>(`/purchases${params.size ? `?${params}` : ''}`);
+    if (paramsObj?.branchId) params.set('branchId', paramsObj.branchId);
+    if (paramsObj?.startDate) params.set('startDate', paramsObj.startDate);
+    if (paramsObj?.endDate) params.set('endDate', paramsObj.endDate);
+    if (paramsObj?.supplierId) params.set('supplierId', paramsObj.supplierId);
+    if (paramsObj?.page) params.set('page', String(paramsObj.page));
+    if (paramsObj?.limit) params.set('limit', String(paramsObj.limit));
+    return apiClient.get<PaginatedPurchasesResponse>(`/purchases${params.size ? `?${params}` : ''}`);
   },
 
   cancelPurchase: async (id: string): Promise<void> => {

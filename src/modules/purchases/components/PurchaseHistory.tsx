@@ -1,19 +1,35 @@
 import React, { useState } from 'react';
-import { usePurchases, useCancelPurchase } from '../hooks/usePurchases';
+import { usePurchases, useCancelPurchase, useSuppliers } from '../hooks/usePurchases';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import {
   ClipboardList,
-  Calendar,
+  Calendar as CalendarIcon,
   User,
   MapPin,
   Loader2,
   XCircle,
   CheckCircle2,
   AlertTriangle,
+  RotateCcw,
 } from 'lucide-react';
-import type { Purchase, PurchaseItem } from '../services/purchases.service';
+import type { Purchase, PurchaseItem, Supplier } from '../services/purchases.service';
 import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { ProductPagination } from '@/modules/products/components/ProductPagination';
+import { format } from 'date-fns';
+import { type DateRange } from 'react-day-picker';
+import { Calendar } from '@/components/ui/calendar';
+import { Field } from '@/components/ui/field';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
+  ComboboxEmpty,
+} from '@/components/ui/combobox';
 
 interface PurchaseHistoryProps {
   selectedBranchId?: string;
@@ -21,10 +37,51 @@ interface PurchaseHistoryProps {
 
 export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranchId }) => {
   const isAll = !selectedBranchId;
-  const { purchases, isLoading } = usePurchases(selectedBranchId || undefined);
-  const { cancelPurchase, isCancelling, cancellingId } = useCancelPurchase();
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
+
+  // Date Range Defaults: Start of month to today
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+    to: new Date(),
+  });
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>('');
+  const [page, setPage] = useState<number>(1);
+  const [limit, setLimit] = useState<number>(10);
+
+  const startDateStr = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined;
+  const endDateStr = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined;
+
+  const { suppliers } = useSuppliers();
+  const { purchases, meta, isLoading } = usePurchases({
+    branchId: selectedBranchId || undefined,
+    startDate: startDateStr,
+    endDate: endDateStr,
+    supplierId: selectedSupplierId || undefined,
+    page,
+    limit,
+  });
+
+  const { cancelPurchase, isCancelling, cancellingId } = useCancelPurchase();
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
+  const handleResetFilters = () => {
+    setDateRange({
+      from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      to: new Date(),
+    });
+    setSelectedSupplierId('');
+    setPage(1);
+  };
+
+  const handleDateRangeSelect = (range: DateRange | undefined) => {
+    setDateRange(range);
+    setPage(1);
+  };
+
+  const handleSupplierSelect = (val: string | null) => {
+    setSelectedSupplierId(val || '');
+    setPage(1);
+  };
 
   const handleCancelClick = (id: string) => {
     setConfirmingId(id);
@@ -48,7 +105,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
     <div className="space-y-6 animate-fade-in">
       <Card className="border border-border/80 shadow-xs">
         <CardHeader className="border-b border-border/60 pb-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
               <CardTitle className="text-sm font-bold flex items-center gap-2">
                 <ClipboardList className="w-4 h-4 text-primary" />
@@ -58,9 +115,100 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                 Auditoría y registro de abastecimientos cargados al Kardex general.
               </CardDescription>
             </div>
+
+            {/* Filter Bar: Date Range Picker & Supplier Selector */}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Date Range Picker */}
+              <Field className="w-64">
+                <Popover>
+                  <PopoverTrigger render={
+                    <Button
+                      variant="outline"
+                      id="purchases-date-picker-range"
+                      className="w-full justify-start px-3 py-2 text-xs font-semibold bg-bg-dark border border-border-card rounded-xl h-9 hover:bg-muted text-secondary"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4 text-neutral shrink-0" />
+                      <span className="truncate">
+                        {dateRange?.from ? (
+                          dateRange.to
+                            ? `${format(dateRange.from, 'dd/MM/yyyy')} - ${format(dateRange.to, 'dd/MM/yyyy')}`
+                            : format(dateRange.from, 'dd/MM/yyyy')
+                        ) : <span>Selecciona fechas</span>}
+                      </span>
+                    </Button>
+                  } />
+                  <PopoverContent className="w-auto p-0 z-50 bg-popover border border-border rounded-xl shadow-xl" align="end">
+                    <Calendar
+                      mode="range"
+                      defaultMonth={dateRange?.from}
+                      selected={dateRange}
+                      onSelect={handleDateRangeSelect}
+                      numberOfMonths={2}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </Field>
+
+              {/* Supplier Filter Combobox */}
+              <div className="w-56">
+                <Combobox
+                  value={selectedSupplierId}
+                  onValueChange={handleSupplierSelect}
+                >
+                  <ComboboxInput
+                    placeholder="Filtrar por proveedor..."
+                    className="text-xs shadow-none h-9 bg-bg-dark border-border-card rounded-xl"
+                    showTrigger
+                    value={(() => {
+                      const s = suppliers.find((sup: Supplier) => sup.id === selectedSupplierId);
+                      return s ? s.name : '';
+                    })()}
+                  />
+                  <ComboboxContent className="bg-popover border border-border rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto">
+                    <ComboboxEmpty className="p-3 text-center text-xs text-muted-foreground">
+                      No hay proveedores.
+                    </ComboboxEmpty>
+                    <ComboboxList className="p-1">
+                      <ComboboxItem value="" className="text-xs py-1.5 cursor-pointer font-semibold text-primary">
+                        Todos los Proveedores
+                      </ComboboxItem>
+                      {suppliers.map((sup: Supplier) => (
+                        <ComboboxItem key={sup.id} value={sup.id} className="text-xs py-1.5 cursor-pointer">
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-foreground">{sup.name}</span>
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              RUC / ID: {sup.identityNumber}
+                            </span>
+                          </div>
+                        </ComboboxItem>
+                      ))}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
+              </div>
+
+              {(selectedSupplierId || dateRange) && (
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  title="Restablecer filtros"
+                  className="h-9 px-2.5 flex items-center justify-center text-xs text-muted-foreground hover:text-foreground border border-border-card hover:bg-muted/40 rounded-xl transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-6">
+          <ProductPagination
+            meta={meta}
+            onPageChange={setPage}
+            onLimitChange={(nextLimit) => {
+              setLimit(nextLimit);
+              setPage(1);
+            }}
+          />
 
       {isLoading ? (
         <div className="py-16 text-center text-xs text-neutral flex flex-col items-center justify-center gap-2">
@@ -69,7 +217,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
         </div>
       ) : purchases.length === 0 ? (
         <div className="text-center py-16 text-xs text-neutral italic border-2 border-dashed border-border-card rounded-2xl">
-          No se han registrado compras en el historial todavía.
+          No se han registrado compras con los filtros seleccionados.
         </div>
       ) : (
         <div className="space-y-4">
@@ -99,7 +247,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                       </span>
                     )}
                     <span className="text-[10px] text-neutral flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
+                      <CalendarIcon className="w-3.5 h-3.5" />
                       {new Date(pur.createdAt).toLocaleString(undefined, { timeZone: timezone })}
                     </span>
                   </div>
@@ -224,6 +372,18 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
               </div>
             );
           })}
+          {purchases.length > 0 && (
+            <div className="pt-4">
+              <ProductPagination
+                meta={meta}
+                onPageChange={setPage}
+                onLimitChange={(nextLimit) => {
+                  setLimit(nextLimit);
+                  setPage(1);
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
         </CardContent>
