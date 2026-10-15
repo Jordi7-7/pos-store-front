@@ -7,10 +7,10 @@ export const useSalesCostReport = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<SalesCostReportRow[]>([]);
 
-  const fetchSalesCost = async (startDate: string, endDate: string) => {
+  const fetchSalesCost = async (startDate: string, endDate: string, branchId?: string) => {
     try {
       setLoading(true);
-      const res = await reportsService.getSalesCost(startDate, endDate);
+      const res = await reportsService.getSalesCost(startDate, endDate, branchId);
       setData(res);
       return res;
     } catch (error) {
@@ -39,7 +39,7 @@ export const useValuedInventoryReport = () => {
     totalPages: 1,
   });
 
-  const fetchValuedInventory = async (params?: { page?: number; limit?: number }) => {
+  const fetchValuedInventory = async (params?: { page?: number; limit?: number; branchId?: string }) => {
     try {
       setLoading(true);
       const res = await reportsService.getValuedInventory(params);
@@ -67,10 +67,10 @@ export const useProductSalesReport = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ProductSaleRow[]>([]);
 
-  const fetchProductSales = async (startDate: string, endDate: string) => {
+  const fetchProductSales = async (startDate: string, endDate: string, branchId?: string) => {
     try {
       setLoading(true);
-      const res = await reportsService.getProductSales(startDate, endDate);
+      const res = await reportsService.getProductSales(startDate, endDate, branchId);
       setData(res);
       return res;
     } catch (error) {

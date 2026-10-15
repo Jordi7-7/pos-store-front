@@ -24,7 +24,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export const ValuedInventoryTab: React.FC = () => {
+interface ValuedInventoryTabProps {
+  selectedBranchId?: string;
+}
+
+export const ValuedInventoryTab: React.FC<ValuedInventoryTabProps> = ({ selectedBranchId }) => {
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
   const [currentTenant, setCurrentTenant] = useState<any>(null);
 
@@ -34,9 +38,14 @@ export const ValuedInventoryTab: React.FC = () => {
   const { loading: inventoryLoading, data: inventoryData, meta, fetchValuedInventory } = useValuedInventoryReport();
 
   useEffect(() => {
+    // Reset to page 1 if branch changes
+    setPage(1);
+  }, [selectedBranchId]);
+
+  useEffect(() => {
     // Fetch paginated report
-    fetchValuedInventory({ page, limit });
-  }, [page, limit]);
+    fetchValuedInventory({ page, limit, branchId: selectedBranchId });
+  }, [page, limit, selectedBranchId]);
 
   useEffect(() => {
     // Fetch tenant name
@@ -63,7 +72,7 @@ export const ValuedInventoryTab: React.FC = () => {
     let printTotals = totals;
 
     try {
-      const fullRes = await reportsService.getValuedInventory();
+      const fullRes = await reportsService.getValuedInventory({ branchId: selectedBranchId });
       printData = fullRes.data;
       printTotals = printData.reduce(
         (acc, row) => {
@@ -214,7 +223,7 @@ export const ValuedInventoryTab: React.FC = () => {
     let exportTotals = totals;
 
     try {
-      const fullRes = await reportsService.getValuedInventory();
+      const fullRes = await reportsService.getValuedInventory({ branchId: selectedBranchId });
       exportData = fullRes.data;
       exportTotals = exportData.reduce(
         (acc, row) => {

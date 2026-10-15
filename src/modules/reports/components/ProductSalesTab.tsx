@@ -32,7 +32,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export const ProductSalesTab: React.FC = () => {
+interface ProductSalesTabProps {
+  selectedBranchId?: string;
+}
+
+export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranchId }) => {
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
   const [currentTenant, setCurrentTenant] = useState<any>(null);
 
@@ -57,14 +61,14 @@ export const ProductSalesTab: React.FC = () => {
     }
     const startStr = format(dateRange.from, 'yyyy-MM-dd');
     const endStr = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : startStr;
-    fetchProductSales(startStr, endStr);
+    fetchProductSales(startStr, endStr, selectedBranchId);
   };
 
   useEffect(() => {
     if (dateRange?.from) {
       loadReport();
     }
-  }, [dateRange]);
+  }, [dateRange, selectedBranchId]);
 
   // Totales agregados (únicamente piezas vendidas reales)
   const totals = useMemo(() => {

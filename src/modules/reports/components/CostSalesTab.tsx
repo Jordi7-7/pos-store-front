@@ -33,7 +33,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export const CostSalesTab: React.FC = () => {
+interface CostSalesTabProps {
+  selectedBranchId?: string;
+}
+
+export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) => {
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
   const [currentTenant, setCurrentTenant] = useState<any>(null);
 
@@ -75,15 +79,15 @@ export const CostSalesTab: React.FC = () => {
     }
     const startStr = format(dateRange.from, 'yyyy-MM-dd');
     const endStr = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : startStr;
-    fetchSalesCost(startStr, endStr);
+    fetchSalesCost(startStr, endStr, selectedBranchId);
   };
 
-  // Initial load when dateRange is set
+  // Initial load when dateRange or selectedBranchId changes
   useEffect(() => {
     if (dateRange?.from) {
       loadCostReport();
     }
-  }, [dateRange]);
+  }, [dateRange, selectedBranchId]);
 
   // Aggregate totals
   const totals = useMemo(() => {
