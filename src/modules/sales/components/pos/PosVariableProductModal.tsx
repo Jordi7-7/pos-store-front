@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, Package, Check, ShoppingCart, AlertCircle } from 'lucide-react';
+import { X, Package, Check, ShoppingCart,} from 'lucide-react';
 import { toast } from 'sonner';
 
 export interface PosVariableProductModalProps {
