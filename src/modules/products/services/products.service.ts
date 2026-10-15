@@ -363,17 +363,9 @@ export const productsService = {
     return apiClient.get<Product>(`/products/${id}`);
   },
 
-  getProductSales: async (productId: string, page = 1, limit = 10): Promise<PaginatedResult<ProductHistorySale>> => {
-    return apiClient.get(`/sales/by-product/${productId}?page=${page}&limit=${limit}`);
-  },
-
   getVariantSales: async (variantId: string, page = 1, limit = 10, branchId?: string): Promise<PaginatedResult<ProductHistorySale>> => {
     const branchQuery = branchId ? `&branchId=${encodeURIComponent(branchId)}` : '';
     return apiClient.get(`/sales/by-variant/${encodeURIComponent(variantId)}?page=${page}&limit=${limit}${branchQuery}`);
-  },
-
-  getProductPurchases: async (productId: string, page = 1, limit = 10): Promise<PaginatedResult<ProductHistoryPurchase>> => {
-    return apiClient.get(`/purchases/by-product/${productId}?page=${page}&limit=${limit}`);
   },
 
   getVariantPurchases: async (variantId: string, page = 1, limit = 10, branchId?: string): Promise<PaginatedResult<ProductHistoryPurchase>> => {

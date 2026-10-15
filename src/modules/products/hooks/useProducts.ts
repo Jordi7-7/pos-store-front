@@ -52,22 +52,6 @@ export const useProductDetail = (productId?: string, enabled = true) => {
   };
 };
 
-export const useProductSales = (productId?: string, page = 1, limit = 10, enabled = true) => {
-  const { tenantId, isAuthenticated } = useAuthStore();
-  const query = useQuery<PaginatedResult<ProductHistorySale>>({
-    queryKey: ['product-sales', tenantId, productId, page, limit],
-    queryFn: () => productsService.getProductSales(productId!, page, limit),
-    enabled: enabled && isAuthenticated && !!tenantId && !!productId,
-  });
-
-  return {
-    sales: query.data?.data || [],
-    meta: query.data?.meta || { total: 0, page, limit, totalPages: 1 },
-    isLoading: query.isLoading,
-    isError: query.isError,
-  };
-};
-
 export const useVariantSales = (variantId?: string, page = 1, limit = 10, branchId?: string, enabled = true) => {
   const { tenantId, isAuthenticated } = useAuthStore();
   const query = useQuery<PaginatedResult<ProductHistorySale>>({
@@ -78,22 +62,6 @@ export const useVariantSales = (variantId?: string, page = 1, limit = 10, branch
 
   return {
     sales: query.data?.data || [],
-    meta: query.data?.meta || { total: 0, page, limit, totalPages: 1 },
-    isLoading: query.isLoading,
-    isError: query.isError,
-  };
-};
-
-export const useProductPurchases = (productId?: string, page = 1, limit = 10, enabled = true) => {
-  const { tenantId, isAuthenticated } = useAuthStore();
-  const query = useQuery<PaginatedResult<ProductHistoryPurchase>>({
-    queryKey: ['product-purchases', tenantId, productId, page, limit],
-    queryFn: () => productsService.getProductPurchases(productId!, page, limit),
-    enabled: enabled && isAuthenticated && !!tenantId && !!productId,
-  });
-
-  return {
-    purchases: query.data?.data || [],
     meta: query.data?.meta || { total: 0, page, limit, totalPages: 1 },
     isLoading: query.isLoading,
     isError: query.isError,
