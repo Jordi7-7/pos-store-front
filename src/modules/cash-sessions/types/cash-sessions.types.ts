@@ -160,6 +160,7 @@ export interface DetailedSessionHeader extends CashSessionHeader {
   durationFormatted?: string;
   openedBy?: string;
   branchName?: string;
+  branchAddress?: string;
 }
 
 export interface DetailedSessionSale extends SessionSale {

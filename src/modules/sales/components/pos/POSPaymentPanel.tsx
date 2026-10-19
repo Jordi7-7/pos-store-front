@@ -6,7 +6,7 @@ import {
   Check,
   Loader2,
 } from 'lucide-react';
-import { PaymentMethod } from '../../services/sales.service';
+import { PaymentMethod } from '../../types';
 import { Combobox, ComboboxInput, ComboboxContent, ComboboxList, ComboboxItem, ComboboxEmpty, ComboboxTrigger } from '@/components/ui/combobox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

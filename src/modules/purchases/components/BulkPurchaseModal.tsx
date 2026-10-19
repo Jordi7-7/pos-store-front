@@ -3,8 +3,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/apiClient';
 import { downloadPurchasesTemplate } from '@/lib/excelTemplates';
 import { BulkImportPreviewTable } from '@/components/BulkImportPreviewTable';
-import { useSuppliers } from '../hooks/usePurchases';
-import type { Supplier } from '../services/purchases.service';
+import { useSuppliers } from '../hooks';
+import type { Supplier } from '../types';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import {
   Dialog,

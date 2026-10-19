@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Search, CornerDownLeft, X, Package, Maximize2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { productsService, ProductType } from '@/modules/products/services/products.service';
+import { productsService } from '@/modules/products/services/products.service';
+import { ProductType } from '@/modules/products/enums';
 import { PosVariableProductModal } from './PosVariableProductModal';
 
 interface POSProductSearchProps {

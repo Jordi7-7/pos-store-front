@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useCategories } from '../hooks/useCategories';
-import { useCreateSimpleProduct } from '../hooks/useProducts';
-import { ProductCreateTab } from './ProductCreateTab';
-import { BulkImportModal } from './BulkImportModal';
+import { useProductMutations } from '../hooks';
+import { ProductCreateTab } from '../components/ProductCreateTab';
+import { BulkImportModal } from '../components/BulkImportModal';
 import { FileSpreadsheet } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { APP_PERMISSIONS } from '@/constants/permissions';
 
-interface ProductCreateViewProps {
+export interface ProductCreateViewProps {
   selectedBranchId: string;
   uploadedImages?: any[];
   onSuccess?: () => void;
@@ -24,7 +24,7 @@ export const ProductCreateView: React.FC<ProductCreateViewProps> = ({
   const [isImportOpen, setIsImportOpen] = useState(false);
 
   const { categories } = useCategories();
-  const { createSimpleProduct } = useCreateSimpleProduct();
+  const { createSimpleProduct } = useProductMutations();
 
   if (!canCreate) {
     return (

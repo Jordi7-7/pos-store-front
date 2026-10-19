@@ -3,11 +3,11 @@ import { Layers, Tag as TagIcon } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { APP_PERMISSIONS } from '@/constants/permissions';
 import { useAttributes } from '../hooks/useAttributes';
-import { ProductCreateVariableTab } from './ProductCreateVariableTab';
-import { AttributeCatalogManager } from './AttributeCatalogManager';
+import { ProductCreateVariableTab } from '../components/ProductCreateVariableTab';
+import { AttributeCatalogManager } from '../components/AttributeCatalogManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-interface ProductCreateVariableViewProps {
+export interface ProductCreateVariableViewProps {
   selectedBranchId: string;
   onSuccess?: () => void;
 }

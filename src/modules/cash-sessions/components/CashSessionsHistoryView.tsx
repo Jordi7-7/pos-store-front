@@ -31,7 +31,7 @@ import { CashSessionAuditModal } from './CashSessionAuditModal';
 
 export const CashSessionsHistoryView: React.FC = () => {
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
-  const { selectedBranchId, branches } = useLayoutContext();
+  const { selectedBranchId } = useLayoutContext();
   const publicTenant = useAuthStore((state) => state.publicTenant);
 
   const isAllBranches = !selectedBranchId;
@@ -50,11 +50,7 @@ export const CashSessionsHistoryView: React.FC = () => {
       setPrintingSessionId(sessionId);
       const details = await cashSessionsService.getCashSessionDetails(sessionId);
 
-      const branch = branches.find((b: any) => b.id === details.session?.branchId);
-      const sessionTicketData = buildClosingTicketData(details, {
-        name: branch?.name,
-        address: branch?.address,
-      });
+      const sessionTicketData = buildClosingTicketData(details);
 
       setSessionClosingDataToPrint(sessionTicketData);
       setIsClosingTicketModalOpen(true);

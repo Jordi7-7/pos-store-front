@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import type { CartItem } from '../types/pos.types';
-import { ProductType } from '@/modules/products/services/products.service';
+import { ProductType } from '@/modules/products/enums';
 
 export function usePOSCart() {
   const [cart, setCart] = useState<CartItem[]>([]);

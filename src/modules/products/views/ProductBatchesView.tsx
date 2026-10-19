@@ -1,7 +1,7 @@
 import React from 'react';
-import { ProductBatchesTab } from './ProductBatchesTab';
+import { ProductBatchesTab } from '../components/ProductBatchesTab';
 
-interface ProductBatchesViewProps {
+export interface ProductBatchesViewProps {
   selectedBranchId: string;
 }
 

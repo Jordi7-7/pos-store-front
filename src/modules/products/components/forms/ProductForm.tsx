@@ -24,7 +24,7 @@ import {
   FieldLabel,
 } from '@/components/ui/field';
 import type { ProductFormValues } from '../../schemas/product.schema';
-import type { Tag } from '../../services/products.service';
+import type { TagDTO as Tag } from '../../types';
 
 interface Category {
   id: string;

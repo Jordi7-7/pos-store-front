@@ -32,8 +32,7 @@ export interface ClosingTicketData {
 }
 
 export function buildClosingTicketData(
-  details: CashSessionDetails,
-  fallbackBranch?: { name?: string; address?: string }
+  details: CashSessionDetails
 ): ClosingTicketData {
   // 1. Agrupar productos vendidos
   const productMap = new Map<
@@ -105,13 +104,8 @@ export function buildClosingTicketData(
 
   const refundsTotal = Number(details.kpis?.totalRefunds || 0);
 
-  const branchName =
-    details.session?.branchName ||
-    fallbackBranch?.name ||
-    'Sucursal General';
-
-  const branchAddress =
-    fallbackBranch?.address || '';
+  const branchName = details.session?.branchName || 'Sucursal General';
+  const branchAddress = details.session?.branchAddress || '';
 
   return {
     id: details.session.id,

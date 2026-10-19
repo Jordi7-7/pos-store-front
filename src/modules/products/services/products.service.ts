@@ -1,287 +1,38 @@
 import { apiClient } from '@/lib/apiClient';
-
-export interface ProductImage {
-  id: string;
-  url: string;
-  description?: string;
-}
-
-export interface VariantAttribute {
-  name: string;
-  value: string;
-}
-
-export interface VariantStock {
-  branchId: string;
-  branchName?: string;
-  quantity: number;
-}
-
-export interface ProductVariant {
-  id?: string;
-  sku: string;
-  barcode: string;
-  purchasePrice: number;
-  salePrice: number;
-  wholesalePrice?: number | null;
-  imageIds?: string[];
-  images?: ProductImage[];
-  attributeValues?: any[];
-  attributes?: VariantAttribute[];
-  stocks?: VariantStock[];
-  tags?: Tag[];
-}
-
-export enum ProductType {
-  SIMPLE = 'SIMPLE',
-  VARIABLE = 'VARIABLE',
-}
-
-export interface Tag {
-  id: string;
-  name: string;
-}
-
-export interface Product {
-  id: string;
-  name: string;
-  description: string;
-  type?: ProductType;
-  baseSku?: string | null;
-  categoryId?: string | null;
-  categoryName?: string | null;
-  category?: { id: string; name: string } | null;
-  images?: ProductImage[];
-  imageIds?: string[];
-  variants: ProductVariant[];
-}
-
-export enum InventoryMovementType {
-  IN = 'IN',
-  OUT = 'OUT',
-}
-
-export interface InventoryMovement {
-  id: string;
-  quantity: number;
-  type: InventoryMovementType | string;
-  reason: string;
-  createdAt: string;
-  variant?: { sku: string; product?: { name: string } };
-  originBranch?: { name: string } | null;
-  destinationBranch?: { name: string } | null;
-}
-
-export interface PaginatedResult<T> {
-  data: T[];
-  meta: { total: number; page: number; limit: number; totalPages: number };
-}
-
-export interface AdjustStockInput {
-  branchId: string;
-  variantId: string;
-  quantity: number;
-  type: InventoryMovementType;
-  comment?: string;
-}
-
-export interface LotItem {
-  id: string;
-  createdAt: string;
-  variantId: string;
-  productName: string;
-  sku: string;
-  barcode: string;
-  initialQuantity: number;
-  remainingQuantity: number;
-  consumedQuantity: number;
-  unitCost: number;
-  totalCostValue: number;
-  initialCostValue?: number;
-}
-
-export interface InventoryLot {
-  id: string;
-  purchaseOrderId: string | null;
-  createdAt: string;
-  branchId: string;
-  branchName: string;
-  originType: 'PURCHASE' | 'INITIAL_STOCK' | 'REFUND' | 'ADJUSTMENT';
-  originLabel: string;
-  originReference: string;
-  totalInitialQuantity: number;
-  totalRemainingQuantity: number;
-  totalCostValue: number;
-  totalInitialCostValue?: number;
-  status: 'ACTIVE' | 'DEPLETED' | 'EXHAUSTED' | 'CANCELLED';
-  items: LotItem[];
-}
-
-export interface ProductBatch {
-  id: string;
-  createdAt: string;
-  branchId: string;
-  branchName: string;
-  variantId: string;
-  productName: string;
-  sku: string;
-  barcode: string;
-  initialQuantity: number;
-  remainingQuantity: number;
-  consumedQuantity: number;
-  unitCost: number;
-  totalCostValue: number;
-  originType: 'PURCHASE' | 'INITIAL_STOCK' | 'REFUND' | 'ADJUSTMENT';
-  originLabel: string;
-  originReference: string;
-  purchaseOrderId: string | null;
-  status: 'ACTIVE' | 'EXHAUSTED';
-}
-
-export interface VariantBatchItem {
-  id: string;
-  batchId: string;
-  batchCode: string;
-  createdAt: string;
-  branchId: string;
-  branchName: string;
-  originType: 'PURCHASE' | 'INITIAL_STOCK' | 'REFUND' | 'ADJUSTMENT' | string;
-  originLabel: string;
-  originReference: string;
-  sku: string;
-  productName: string;
-  initialQuantity: number;
-  remainingQuantity: number;
-  consumedQuantity: number;
-  unitCost: number;
-  totalCostValue: number;
-  status: 'ACTIVE' | 'DEPLETED';
-}
-
-export interface ProductHistorySaleItem {
-  id: string;
-  quantity: number;
-  price: number;
-  subtotal?: number;
-  total?: number;
-  variant?: {
-    id: string;
-    sku: string;
-    attributeValues?: { id?: string; value: string }[];
-    product?: { name: string };
-  };
-}
-
-export interface ProductHistorySale {
-  id: string;
-  invoiceNumber?: string | null;
-  createdAt: string;
-  total: number;
-  customer?: { name?: string } | null;
-  payments?: { paymentMethod?: string; amount?: number }[];
-  items?: ProductHistorySaleItem[];
-}
-
-export interface ProductHistoryPurchaseItem {
-  id: string;
-  quantity: number;
-  unitPrice: number;
-  total?: number;
-  variant?: {
-    id: string;
-    sku: string;
-    attributeValues?: { id?: string; value: string }[];
-    product?: { name: string };
-  };
-}
-
-export interface ProductHistoryPurchase {
-  id: string;
-  invoiceNumber?: string | null;
-  createdAt: string;
-  totalAmount: number;
-  supplier?: { name?: string } | null;
-  branch?: { name?: string } | null;
-  items?: ProductHistoryPurchaseItem[];
-}
-
-export interface CreateVariableProductVariantInput {
-  sku: string;
-  barcode?: string;
-  purchasePrice: number;
-  salePrice: number;
-  wholesalePrice?: number | null;
-  imageIds?: string[];
-  attributeValues: { attributeValueId: string }[];
-  stocks?: { branchId: string; quantity: number }[];
-}
-
-export interface CreateVariableProductInput {
-  name: string;
-  description: string;
-  baseSku?: string;
-  categoryId?: string;
-  imageIds?: string[];
-  variants: CreateVariableProductVariantInput[];
-}
-
-export interface UpdateProductInput {
-  name?: string;
-  description?: string;
-  baseSku?: string | null;
-  categoryId?: string | null;
-  imageIds?: string[];
-}
-
-export interface UpdateVariantInput {
-  sku?: string;
-  barcode?: string;
-  purchasePrice?: number;
-  salePrice?: number;
-  wholesalePrice?: number | null;
-  imageIds?: string[];
-}
-
-export interface UpdateSimpleProductInput {
-  name?: string;
-  description?: string;
-  categoryId?: string | null;
-  imageIds?: string[];
-  sku?: string;
-  barcode?: string;
-  purchasePrice?: number;
-  salePrice?: number;
-  wholesalePrice?: number | null;
-}
-
-export interface CreateSimpleProductInput {
-  name: string;
-  description: string;
-  sku: string;
-  barcode?: string;
-  purchasePrice: number;
-  salePrice: number;
-  wholesalePrice?: number | null;
-  categoryId?: string;
-  imageIds?: string[];
-  stocks?: { branchId: string; quantity: number }[];
-}
-
-export interface AttributeValue {
-  id: string;
-  attributeId: string;
-  value: string;
-}
-
-export interface Attribute {
-  id: string;
-  tenantId: string;
-  name: string;
-  values: AttributeValue[];
-}
+import { ProductType } from '../enums';
+import type {
+  ProductDTO,
+  ProductVariantDTO,
+  AttributeDTO,
+  AttributeValueDTO,
+  TagDTO,
+  CreateSimpleProductInput,
+  CreateVariableProductInput,
+  UpdateProductInput,
+  UpdateSimpleProductInput,
+  UpdateVariantInput,
+  ValidateImportItemInput,
+  ValidateImportResult,
+  BulkImportProductsInput,
+  BulkImportProductsResult,
+} from '../types/product.types';
+import type {
+  InventoryMovementDTO,
+  AdjustStockInput,
+  InventoryLotDTO,
+  VariantBatchItemDTO,
+  ProductHistorySaleDTO,
+  ProductHistoryPurchaseDTO,
+  PaginatedResult,
+} from '../types/inventory.types';
 
 export const productsService = {
-  getProducts: async (params?: { page?: number; limit?: number; search?: string; type?: ProductType }): Promise<{ data: Product[]; meta: { total: number; page: number; limit: number; totalPages: number } }> => {
+  getProducts: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    type?: ProductType;
+  }): Promise<{ data: ProductDTO[]; meta: { total: number; page: number; limit: number; totalPages: number } }> => {
     const query = new URLSearchParams();
     if (params?.page) query.append('page', String(params.page));
     if (params?.limit) query.append('limit', String(params.limit));
@@ -295,52 +46,52 @@ export const productsService = {
     return apiClient.delete(`/products/${id}`);
   },
 
-  createSimpleProduct: async (input: CreateSimpleProductInput): Promise<Product> => {
-    return apiClient.post<Product>('/products/simple', input);
+  createSimpleProduct: async (input: CreateSimpleProductInput): Promise<ProductDTO> => {
+    return apiClient.post<ProductDTO>('/products/simple', input);
   },
 
-  createVariableProduct: async (input: CreateVariableProductInput): Promise<Product> => {
-    return apiClient.post<Product>('/products/variable', input);
+  createVariableProduct: async (input: CreateVariableProductInput): Promise<ProductDTO> => {
+    return apiClient.post<ProductDTO>('/products/variable', input);
   },
 
-  getAttributes: async (): Promise<Attribute[]> => {
-    return apiClient.get<Attribute[]>('/products/attributes');
+  getAttributes: async (): Promise<AttributeDTO[]> => {
+    return apiClient.get<AttributeDTO[]>('/products/attributes');
   },
 
-  createAttribute: async (name: string): Promise<Attribute> => {
-    return apiClient.post<Attribute>('/products/attributes', { name });
+  createAttribute: async (name: string): Promise<AttributeDTO> => {
+    return apiClient.post<AttributeDTO>('/products/attributes', { name });
   },
 
-  createAttributeValue: async (attributeId: string, value: string): Promise<AttributeValue> => {
-    return apiClient.post<AttributeValue>('/products/attributes/values', { attributeId, value });
+  createAttributeValue: async (attributeId: string, value: string): Promise<AttributeValueDTO> => {
+    return apiClient.post<AttributeValueDTO>('/products/attributes/values', { attributeId, value });
   },
 
-  updateProduct: async (id: string, input: UpdateProductInput): Promise<Product> => {
-    return apiClient.put<Product>(`/products/${id}`, input);
+  updateProduct: async (id: string, input: UpdateProductInput): Promise<ProductDTO> => {
+    return apiClient.put<ProductDTO>(`/products/${id}`, input);
   },
 
-  updateSimpleProduct: async (id: string, input: UpdateSimpleProductInput): Promise<Product> => {
-    return apiClient.put<Product>(`/products/${id}/simple`, input);
+  updateSimpleProduct: async (id: string, input: UpdateSimpleProductInput): Promise<ProductDTO> => {
+    return apiClient.put<ProductDTO>(`/products/${id}/simple`, input);
   },
 
-  updateVariant: async (variantId: string, input: UpdateVariantInput): Promise<ProductVariant> => {
-    return apiClient.put<ProductVariant>(`/products/variants/${variantId}`, input);
+  updateVariant: async (variantId: string, input: UpdateVariantInput): Promise<ProductVariantDTO> => {
+    return apiClient.put<ProductVariantDTO>(`/products/variants/${variantId}`, input);
   },
 
-  createVariant: async (productId: string, input: ProductVariant): Promise<ProductVariant> => {
-    return apiClient.post<ProductVariant>(`/products/${productId}/variants`, input);
+  createVariant: async (productId: string, input: ProductVariantDTO): Promise<ProductVariantDTO> => {
+    return apiClient.post<ProductVariantDTO>(`/products/${productId}/variants`, input);
   },
 
   deleteVariant: async (variantId: string): Promise<{ success: boolean; message: string }> => {
     return apiClient.delete(`/products/variants/${variantId}`);
   },
 
-  getTags: async (): Promise<Tag[]> => {
-    return apiClient.get<Tag[]>('/products/tags');
+  getTags: async (): Promise<TagDTO[]> => {
+    return apiClient.get<TagDTO[]>('/products/tags');
   },
 
-  createTag: async (name: string): Promise<Tag> => {
-    return apiClient.post<Tag>('/products/tags', { name });
+  createTag: async (name: string): Promise<TagDTO> => {
+    return apiClient.post<TagDTO>('/products/tags', { name });
   },
 
   updateVariantTags: async (variantId: string, tagIds: string[]): Promise<void> => {
@@ -359,32 +110,32 @@ export const productsService = {
     return apiClient.get(`/products/pos/variants?branchId=${branchId}`);
   },
 
-  getProductById: async (id: string): Promise<Product> => {
-    return apiClient.get<Product>(`/products/${id}`);
+  getProductById: async (id: string): Promise<ProductDTO> => {
+    return apiClient.get<ProductDTO>(`/products/${id}`);
   },
 
-  getVariantSales: async (variantId: string, page = 1, limit = 10, branchId?: string): Promise<PaginatedResult<ProductHistorySale>> => {
+  getVariantSales: async (variantId: string, page = 1, limit = 10, branchId?: string): Promise<PaginatedResult<ProductHistorySaleDTO>> => {
     const branchQuery = branchId ? `&branchId=${encodeURIComponent(branchId)}` : '';
     return apiClient.get(`/sales/by-variant/${encodeURIComponent(variantId)}?page=${page}&limit=${limit}${branchQuery}`);
   },
 
-  getVariantPurchases: async (variantId: string, page = 1, limit = 10, branchId?: string): Promise<PaginatedResult<ProductHistoryPurchase>> => {
+  getVariantPurchases: async (variantId: string, page = 1, limit = 10, branchId?: string): Promise<PaginatedResult<ProductHistoryPurchaseDTO>> => {
     const branchQuery = branchId ? `&branchId=${encodeURIComponent(branchId)}` : '';
     return apiClient.get(`/purchases/by-variant/${encodeURIComponent(variantId)}?page=${page}&limit=${limit}${branchQuery}`);
   },
 
-  getVariantBatches: async (variantId: string, page = 1, limit = 10, branchId?: string): Promise<PaginatedResult<VariantBatchItem>> => {
+  getVariantBatches: async (variantId: string, page = 1, limit = 10, branchId?: string): Promise<PaginatedResult<VariantBatchItemDTO>> => {
     const branchQuery = branchId ? `&branchId=${encodeURIComponent(branchId)}` : '';
     return apiClient.get(`/batches/by-variant/${encodeURIComponent(variantId)}?page=${page}&limit=${limit}${branchQuery}`);
   },
 
-  getInventoryMovementsByVariant: async (variantId: string, page = 1, limit = 10, branchId?: string): Promise<PaginatedResult<InventoryMovement>> => {
+  getInventoryMovementsByVariant: async (variantId: string, page = 1, limit = 10, branchId?: string): Promise<PaginatedResult<InventoryMovementDTO>> => {
     const branchQuery = branchId ? `&branchId=${encodeURIComponent(branchId)}` : '';
     return apiClient.get(`/products/inventory-movements-by-variant?variantId=${encodeURIComponent(variantId)}&page=${page}&limit=${limit}${branchQuery}`);
   },
 
-  adjustStock: async (input: AdjustStockInput): Promise<InventoryMovement> => {
-    return apiClient.post<InventoryMovement>('/products/stock-adjustments', input);
+  adjustStock: async (input: AdjustStockInput): Promise<InventoryMovementDTO> => {
+    return apiClient.post<InventoryMovementDTO>('/products/stock-adjustments', input);
   },
 
   getBatches: async (params?: {
@@ -394,7 +145,7 @@ export const productsService = {
     search?: string;
     page?: number;
     limit?: number;
-  }): Promise<PaginatedResult<InventoryLot>> => {
+  }): Promise<PaginatedResult<InventoryLotDTO>> => {
     const query = new URLSearchParams();
     if (params?.branchId) query.append('branchId', params.branchId);
     if (params?.startDate) query.append('startDate', params.startDate);
@@ -403,7 +154,14 @@ export const productsService = {
     if (params?.page) query.append('page', String(params.page));
     if (params?.limit) query.append('limit', String(params.limit));
     const qs = query.toString();
-    return apiClient.get<PaginatedResult<InventoryLot>>(`/batches${qs ? `?${qs}` : ''}`);
+    return apiClient.get<PaginatedResult<InventoryLotDTO>>(`/batches${qs ? `?${qs}` : ''}`);
+  },
+
+  validateImport: async (items: ValidateImportItemInput[]): Promise<ValidateImportResult> => {
+    return apiClient.post<ValidateImportResult>('/products/validate-import', { items });
+  },
+
+  importProducts: async (input: BulkImportProductsInput): Promise<BulkImportProductsResult> => {
+    return apiClient.post<BulkImportProductsResult>('/products/import', input);
   },
 };
-

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
-import { useSaleByInvoice, useProcessRefund, useProcessSale } from './useSales';
+import { useSaleByInvoice } from './useSaleDetail';
+import { useProcessRefund, useProcessSale } from './useSalesMutations';
 import { productsService } from '@/modules/products/services/products.service';
 import type {
   ModalStep,

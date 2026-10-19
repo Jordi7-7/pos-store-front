@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { useProducts } from '../hooks/useProducts';
+import { useProductList } from '../hooks/useProductList';
 import { useCategories } from '../hooks/useCategories';
-import { ProductListTab } from './ProductListTab';
-import { ProductType } from '../services/products.service';
+import { ProductListTab } from '../components/ProductListTab';
+import { ProductType } from '../enums';
 
-interface ProductsListViewProps {
+export interface ProductsListViewProps {
   selectedBranchId: string;
   uploadedImages?: any[];
 }
@@ -18,7 +18,7 @@ export const ProductsListView: React.FC<ProductsListViewProps> = ({
   const [search, setSearch] = useState('');
   const [productType, setProductType] = useState<ProductType | undefined>(undefined);
 
-  const { products, meta, isLoading: isLoadingProducts } = useProducts({
+  const { products, meta, isLoading: isLoadingProducts } = useProductList({
     page,
     limit,
     search,

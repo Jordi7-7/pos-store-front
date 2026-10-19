@@ -1,7 +1,7 @@
 import React from 'react';
 import { Printer } from 'lucide-react';
 import { numeroALetras } from 'numero-a-letras-es';
-import { PaymentMethod } from '../../services/sales.service';
+import { PaymentMethod } from '../../types';
 import {
   Dialog,
   DialogContent,

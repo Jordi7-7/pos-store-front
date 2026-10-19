@@ -16,7 +16,7 @@ import { AlertTriangle, Loader2, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useCategories } from '../hooks/useCategories';
-import { useUpdateSimpleProduct, useDeleteProduct } from '../hooks/useProducts';
+import { useProductMutations } from '../hooks';
 import { useTags } from '../hooks/useTags';
 import { productFormSchema, type ProductFormValues } from '../schemas/product.schema';
 import { ProductForm } from './forms/ProductForm';
@@ -54,8 +54,12 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
   selectedBranchId,
 }) => {
   const { createCategory, isCreating: isCreatingCategory } = useCategories();
-  const { updateSimpleProduct, isUpdating } = useUpdateSimpleProduct();
-  const { deleteProduct, isDeleting } = useDeleteProduct();
+  const { 
+    updateSimpleProduct, 
+    isUpdatingSimple: isUpdating, 
+    deleteProduct, 
+    isDeletingProduct: isDeleting 
+  } = useProductMutations();
   const { tags: allTags, createTag, isCreating: isCreatingTag, updateVariantTags } = useTags();
 
   // ── Form instance ────────────────────────────────────────────────────────

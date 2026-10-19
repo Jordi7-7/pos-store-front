@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { useAdjustStock } from '../hooks/useProducts';
-import type { Product } from '../services/products.service';
+import { useStockAdjustment } from '../hooks/useStockAdjustment';
+import type { ProductDTO } from '../types';
 import { AlertCircle, ArrowDownToLine, ArrowUpToLine, Loader2 } from 'lucide-react';
-import { ProductType, InventoryMovementType } from '../services/products.service';
+import { ProductType, InventoryMovementType } from '../enums';
 
 interface StockAdjustmentFormProps {
-  product: Product;
+  product: ProductDTO;
   selectedBranchId: string;
   selectedVariantId?: string;
 }
@@ -16,7 +16,7 @@ export const StockAdjustmentForm: React.FC<StockAdjustmentFormProps> = ({
   selectedBranchId,
   selectedVariantId,
 }) => {
-  const { adjustStock, isAdjusting } = useAdjustStock();
+  const { adjustStock, isAdjusting } = useStockAdjustment();
   const isAllBranches = !selectedBranchId;
   const isSimple = product.type === ProductType.SIMPLE;
 

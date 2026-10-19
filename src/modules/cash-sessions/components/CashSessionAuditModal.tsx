@@ -16,7 +16,12 @@ import {
   Printer,
 } from 'lucide-react';
 import { useCashSessionDetailsQuery } from '../hooks/useCashSessions';
-import type { SessionSale } from '../types/cash-sessions.types';
+import type {
+  CashSessionSaleEntity,
+  CashSessionExpenseEntity,
+  CashSessionRefundEntity,
+} from '../entities';
+import { SaleStatus } from '@/modules/sales/enums';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,10 +36,8 @@ import {
   Dialog,
   DialogContent,
 } from '@/components/ui/dialog';
-import { useBranches } from '../../branches/hooks/useBranches';
 import { ThermalTicketModal } from '../../sales/components/pos/ThermalTicketModal';
 import { ThermalClosingTicketModal } from '../../sales/components/pos/ThermalClosingTicketModal';
-import { PaymentMethod } from '../../sales/services/sales.service';
 import { buildClosingTicketData } from '../utils/buildClosingTicketData';
 
 interface CashSessionAuditModalProps {
@@ -48,11 +51,9 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
   const publicTenant = useAuthStore((state) => state.publicTenant);
-  const { branches } = useBranches();
 
-  const { details, isLoading } = useCashSessionDetailsQuery(sessionId);
+  const { details, rawDetails, isLoading } = useCashSessionDetailsQuery(sessionId);
 
   // Tab state: sales | expenses | refunds
   const [activeTab, setActiveTab] = useState<'sales' | 'expenses' | 'refunds'>('sales');
@@ -66,59 +67,40 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
   const [isClosingTicketModalOpen, setIsClosingTicketModalOpen] = useState(false);
 
   const handlePrintSessionTicket = () => {
-    if (!details) return;
+    if (!rawDetails) return;
 
-    const branch = branches.find((b: any) => b.id === details.session?.branchId);
-    const sessionTicketData = buildClosingTicketData(details, {
-      name: branch?.name,
-      address: branch?.address,
-    });
+    const sessionTicketData = buildClosingTicketData(rawDetails);
 
     setSessionClosingDataToPrint(sessionTicketData);
     setIsClosingTicketModalOpen(true);
   };
 
-  const handlePrintSale = (sale: SessionSale) => {
-    const branchName =
-      details?.session?.branchName ||
-      branches.find((b: any) => b.id === details?.session?.branchId)?.name ||
-      'Sucursal General';
-
-    const branchAddress =
-      branches.find((b: any) => b.id === details?.session?.branchId)?.address || '';
-
-    const clientName = sale.customer?.name || (sale as any).customerName || 'Consumidor Final';
-    const clientIdentity = sale.customer?.identityNumber || '9999999999';
+  const handlePrintSale = (sale: CashSessionSaleEntity) => {
+    if (!details) return;
 
     setReprintSaleData({
       invoiceNumber: sale.invoiceNumber,
-      createdAt: sale.createdAt,
-      branchName,
-      branchAddress,
-      clientName,
-      clientIdentity,
-      items: (sale.items || []).map((item: any) => ({
+      createdAt: sale.createdAtFormatted,
+      branchName: details.session.branchName,
+      branchAddress: details.session.branchAddress,
+      clientName: sale.customerName,
+      clientIdentity: sale.customerIdentity,
+      items: sale.items.map((item) => ({
         variantId: item.variantId,
-        variantSku: item.variant?.sku || item.sku || item.variantSku || '',
-        productName: item.variant?.product?.name || item.productName || item.variantName || 'Producto',
-        combinationText:
-          item.variant?.attributeValues?.map((av: any) => av.value).join(' / ') ||
-          item.attributes ||
-          'Estándar',
-        quantity: Number(item.quantity),
-        price: Number(item.price),
-        discountAmount: Number(item.discountAmount || 0),
+        variantSku: item.sku,
+        productName: item.productName,
+        combinationText: item.combinationText,
+        quantity: item.quantity,
+        price: item.price,
+        discountAmount: item.discountAmount,
       })),
-      paymentMethod:
-        (sale.payments?.[0]?.paymentMethod ||
-          sale.paymentMethod ||
-          PaymentMethod.EFECTIVO) as any,
-      subtotal: Number(sale.subtotal || 0),
-      itemsDiscountAmount: Number(sale.itemsDiscountAmount || 0),
-      globalDiscountAmount: Number(sale.globalDiscountAmount || 0),
-      discountAmount: Number(sale.discountAmount || 0),
-      total: Number(sale.total || 0),
-      userName: sale.userName || sale.user?.name || 'Vendedor',
+      paymentMethod: sale.paymentMethod,
+      subtotal: sale.subtotal,
+      itemsDiscountAmount: sale.itemsDiscountAmount,
+      globalDiscountAmount: sale.globalDiscountAmount,
+      discountAmount: sale.discountAmount,
+      total: sale.total,
+      userName: sale.userName,
     });
     setIsReprintModalOpen(true);
   };
@@ -155,17 +137,17 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                         </h2>
                         <span
                           className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
-                            details.session.status === 'CLOSED'
+                            details.session.isClosed
                               ? 'bg-zinc-500/10 text-zinc-500 border border-zinc-500/20'
                               : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
                           }`}
                         >
-                          {details.session.status === 'CLOSED' ? (
+                          {details.session.isClosed ? (
                             <Lock className="w-3 h-3" />
                           ) : (
                             <Unlock className="w-3 h-3 animate-pulse" />
                           )}
-                          {details.session.status === 'CLOSED' ? 'Cerrada' : 'En Curso'}
+                          {details.session.isClosed ? 'Cerrada' : 'En Curso'}
                         </span>
                       </div>
                       <p className="text-xs text-neutral mt-0.5">
@@ -189,8 +171,7 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                     </Button>
                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-xl bg-bg-dark border border-border-card text-secondary">
                       <span className="w-2 h-2 rounded-full bg-primary" />
-                      {details.session.cashRegister?.name || 'Caja Registradora'} (#
-                      {details.session.cashRegister?.code || '1'})
+                      {details.session.cashRegisterName} (#{details.session.cashRegisterCode})
                     </span>
                     {details.session.branchName && (
                       <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-xl bg-bg-dark border border-border-card text-neutral">
@@ -209,7 +190,7 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                         Abierta por
                       </span>
                       <span className="font-semibold text-secondary truncate block mt-0.5">
-                        {details.session.openedBy || 'No registrado'}
+                        {details.session.openedByName}
                       </span>
                     </div>
                   </div>
@@ -221,7 +202,7 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                         Tiempo Abierta
                       </span>
                       <span className="font-semibold text-primary font-mono block mt-0.5">
-                        {details.session.durationFormatted || '0m'}
+                        {details.session.durationFormatted}
                       </span>
                     </div>
                   </div>
@@ -233,11 +214,7 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                         Hora Apertura
                       </span>
                       <span className="font-semibold text-secondary font-mono block mt-0.5">
-                        {new Date(details.session.openedAt).toLocaleTimeString('es-EC', {
-                          timeZone: timezone,
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                        {details.session.openedAtFormatted}
                       </span>
                     </div>
                   </div>
@@ -249,12 +226,8 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                         Hora Cierre
                       </span>
                       <span className="font-semibold text-secondary font-mono block mt-0.5">
-                        {details.session.closedAt ? (
-                          new Date(details.session.closedAt).toLocaleTimeString('es-EC', {
-                            timeZone: timezone,
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })
+                        {details.session.isClosed ? (
+                          details.session.closedAtFormatted
                         ) : (
                           <span className="text-emerald-600 font-sans font-bold">
                             Sesión activa
@@ -276,7 +249,7 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                   </div>
                   <div>
                     <span className="text-base sm:text-lg font-black font-mono text-secondary">
-                      ${Number(details.session.openingBalance || 0).toFixed(2)}
+                      {details.session.openingBalanceFormatted}
                     </span>
                     <span className="text-[10px] text-neutral block mt-0.5">Base en caja</span>
                   </div>
@@ -292,12 +265,12 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                   </div>
                   <div>
                     <span className="text-base sm:text-lg font-black font-mono text-emerald-600">
-                      ${Number(details.kpis.netSales || 0).toFixed(2)}
+                      {details.kpis.netSalesFormatted}
                     </span>
                     <div className="flex items-center gap-1.5 text-[10px] font-mono font-medium text-emerald-700/80 mt-0.5">
-                      <span>Ef: ${Number(details.kpis.cashSales || 0).toFixed(2)}</span>
+                      <span>Ef: {details.kpis.cashSalesFormatted}</span>
                       <span>•</span>
-                      <span>Tarj: ${Number(details.kpis.cardSales || 0).toFixed(2)}</span>
+                      <span>Tarj: {details.kpis.cardSalesFormatted}</span>
                     </div>
                   </div>
                 </div>
@@ -312,11 +285,10 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                   </div>
                   <div>
                     <span className="text-base sm:text-lg font-black font-mono text-rose-500">
-                      -${Number(details.kpis.totalExpenses || 0).toFixed(2)}
+                      {details.kpis.totalExpensesFormatted}
                     </span>
                     <span className="text-[10px] text-rose-500/80 block mt-0.5">
-                      {details.kpis.expensesCount}{' '}
-                      {details.kpis.expensesCount === 1 ? 'salida' : 'salidas'}
+                      {details.kpis.expensesLabel}
                     </span>
                   </div>
                 </div>
@@ -331,11 +303,10 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                   </div>
                   <div>
                     <span className="text-base sm:text-lg font-black font-mono text-amber-600">
-                      -${Number(details.kpis.totalRefunds || 0).toFixed(2)}
+                      {details.kpis.totalRefundsFormatted}
                     </span>
                     <span className="text-[10px] text-amber-600/80 block mt-0.5">
-                      {details.kpis.refundsCount}{' '}
-                      {details.kpis.refundsCount === 1 ? 'reembolso' : 'reembolsos'}
+                      {details.kpis.refundsLabel}
                     </span>
                   </div>
                 </div>
@@ -350,7 +321,7 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                   </div>
                   <div>
                     <span className="text-base sm:text-lg font-black font-mono text-primary">
-                      ${Number(details.session.expectedBalance || 0).toFixed(2)}
+                      {details.session.expectedBalanceFormatted}
                     </span>
                     <span className="text-[10px] text-primary/80 block mt-0.5">
                       Físico en gaveta
@@ -367,43 +338,28 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                     <DollarSign className="w-3.5 h-3.5 text-neutral" />
                   </div>
                   <div>
-                    {details.session.status === 'CLOSED' ? (
+                    {details.session.isClosed ? (
                       <>
                         <span className="text-base sm:text-lg font-black font-mono text-secondary">
-                          ${Number(details.session.closingBalance || 0).toFixed(2)}
+                          {details.session.closingBalanceFormatted}
                         </span>
-                        {(() => {
-                          const diff =
-                            details.session.difference !== null
-                              ? Number(details.session.difference)
-                              : 0;
-                          const isExact = Math.abs(diff) < 0.05;
-                          if (isExact) {
-                            return (
-                              <span className="text-[10px] font-bold text-emerald-600 block mt-0.5">
-                                Exacto (Sin diff)
-                              </span>
-                            );
-                          }
-                          if (diff > 0) {
-                            return (
-                              <span className="text-[10px] font-bold text-blue-500 block mt-0.5">
-                                Sobran +${diff.toFixed(2)}
-                              </span>
-                            );
-                          }
-                          return (
-                            <span className="text-[10px] font-bold text-rose-500 block mt-0.5">
-                              Faltan -${Math.abs(diff).toFixed(2)}
-                            </span>
-                          );
-                        })()}
+                        <span
+                          className={`text-[10px] font-bold block mt-0.5 ${
+                            details.session.differenceStatus === 'EXACT'
+                              ? 'text-emerald-600'
+                              : details.session.differenceStatus === 'SURPLUS'
+                              ? 'text-blue-500'
+                              : 'text-rose-500'
+                          }`}
+                        >
+                          {details.session.differenceStatusText}
+                        </span>
                       </>
                     ) : (
                       <>
                         <span className="text-sm font-bold text-neutral">Pendiente</span>
                         <span className="text-[10px] text-emerald-600 font-medium block mt-0.5">
-                          En progreso
+                          {details.session.differenceStatusText}
                         </span>
                       </>
                     )}
@@ -452,74 +408,66 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                   </button>
                 </div>
 
-                {/* Tablas de contenido */}
-                <div className="mt-4 min-h-[220px] max-h-[38vh] overflow-y-auto rounded-xl border border-border/60">
+                {/* Contenido de las pestañas */}
+                <div className="mt-4">
                   {activeTab === 'sales' &&
                     (details.sales.length === 0 ? (
                       <div className="text-center py-16 text-neutral text-xs italic">
-                        No se registraron ventas en esta sesión de caja.
+                        No se registraron ventas en esta sesión.
                       </div>
                     ) : (
                       <Table>
                         <TableHeader>
                           <TableRow className="uppercase text-[10px] font-bold bg-muted/20">
-                            <TableHead className="py-3 px-4">Folio Venta</TableHead>
+                            <TableHead className="py-3 px-4">Folio / Ticket</TableHead>
                             <TableHead className="py-3 px-4">Hora</TableHead>
-                            <TableHead className="py-3 px-4">Atendido por</TableHead>
+                            <TableHead className="py-3 px-4">Cajero</TableHead>
                             <TableHead className="py-3 px-4">Cliente</TableHead>
-                            <TableHead className="py-3 px-4 text-center">Piezas</TableHead>
+                            <TableHead className="py-3 px-4 text-center">Items</TableHead>
                             <TableHead className="py-3 px-4 text-center">Estado</TableHead>
-                            <TableHead className="py-3 px-4 text-right">Total Facturado</TableHead>
-                            <TableHead className="py-3 px-4 text-center w-16">Acción</TableHead>
+                            <TableHead className="py-3 px-4 text-right">Total Cobrado</TableHead>
+                            <TableHead className="py-3 px-4 text-center">Acciones</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {details.sales.map((sale: any) => (
+                          {details.sales.map((sale: CashSessionSaleEntity) => (
                             <TableRow
                               key={sale.id}
                               className="text-xs hover:bg-muted/10 transition-colors"
                             >
                               <TableCell className="py-3 px-4 font-mono font-bold text-primary">
-                                {sale.invoiceNumber || 'Sin Folio'}
+                                {sale.invoiceNumber}
                               </TableCell>
                               <TableCell className="py-3 px-4 text-neutral font-medium">
-                                {new Date(sale.createdAt).toLocaleTimeString('es-EC', {
-                                  timeZone: timezone,
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
+                                {sale.createdAtFormatted}
                               </TableCell>
                               <TableCell className="py-3 px-4 font-medium text-secondary">
                                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-bg-dark border border-border-card text-[11px]">
                                   <User className="w-3 h-3 text-neutral" />
-                                  {sale.userName || sale.user?.name || 'Cajero'}
+                                  {sale.userName}
                                 </span>
                               </TableCell>
                               <TableCell className="py-3 px-4 font-semibold text-secondary uppercase">
-                                {sale.customerName || sale.customer?.name || 'CONSUMIDOR FINAL'}
+                                {sale.customerName}
                               </TableCell>
                               <TableCell className="py-3 px-4 text-center font-mono font-medium">
-                                {sale.totalItems || 1}
+                                {sale.totalItems}
                               </TableCell>
                               <TableCell className="py-3 px-4 text-center">
                                 <span
                                   className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                    sale.status === 'COMPLETED'
+                                    sale.status === SaleStatus.COMPLETED
                                       ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
-                                      : sale.status === 'PARTIALLY_REFUNDED'
+                                      : sale.status === SaleStatus.PARTIALLY_REFUNDED
                                       ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
                                       : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
                                   }`}
                                 >
-                                  {sale.status === 'COMPLETED'
-                                    ? 'Completada'
-                                    : sale.status === 'PARTIALLY_REFUNDED'
-                                    ? 'Dev. Parcial'
-                                    : 'Reembolsada'}
+                                  {sale.statusLabel}
                                 </span>
                               </TableCell>
                               <TableCell className="py-3 px-4 text-right font-mono font-bold text-sm text-secondary">
-                                ${Number(sale.total || 0).toFixed(2)}
+                                {sale.totalFormatted}
                               </TableCell>
                               <TableCell className="py-3 px-4 text-center">
                                 <button
@@ -554,7 +502,7 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {details.expenses.map((exp: any) => (
+                          {details.expenses.map((exp: CashSessionExpenseEntity) => (
                             <TableRow
                               key={exp.id}
                               className="text-xs hover:bg-muted/10 transition-colors"
@@ -563,25 +511,21 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                                 {exp.description}
                               </TableCell>
                               <TableCell className="py-3 px-4 text-neutral font-medium">
-                                {new Date(exp.createdAt).toLocaleTimeString('es-EC', {
-                                  timeZone: timezone,
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
+                                {exp.createdAtFormatted}
                               </TableCell>
                               <TableCell className="py-3 px-4 font-medium text-secondary">
                                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-bg-dark border border-border-card text-[11px]">
                                   <User className="w-3 h-3 text-neutral" />
-                                  {exp.userName || 'Cajero'}
+                                  {exp.userName}
                                 </span>
                               </TableCell>
                               <TableCell className="py-3 px-4">
                                 <span className="text-[10px] font-bold uppercase tracking-wider text-neutral bg-bg-dark border border-border-card px-2.5 py-1 rounded-lg">
-                                  {exp.category || 'General'}
+                                  {exp.category}
                                 </span>
                               </TableCell>
                               <TableCell className="py-3 px-4 text-right font-mono font-bold text-sm text-rose-500">
-                                -${Number(exp.amount || 0).toFixed(2)}
+                                {exp.amountFormatted}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -608,32 +552,28 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {details.refunds.map((ref: any) => (
+                          {details.refunds.map((ref: CashSessionRefundEntity) => (
                             <TableRow
                               key={ref.id}
                               className="text-xs hover:bg-muted/10 transition-colors"
                             >
                               <TableCell className="py-3 px-4 font-medium text-secondary">
-                                {ref.reason || 'Sin motivo especificado'}
+                                {ref.reason}
                               </TableCell>
                               <TableCell className="py-3 px-4 text-neutral font-medium">
-                                {new Date(ref.createdAt).toLocaleTimeString('es-EC', {
-                                  timeZone: timezone,
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
+                                {ref.createdAtFormatted}
                               </TableCell>
                               <TableCell className="py-3 px-4 font-medium text-secondary">
                                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-bg-dark border border-border-card text-[11px]">
                                   <User className="w-3 h-3 text-neutral" />
-                                  {ref.userName || 'Cajero'}
+                                  {ref.userName}
                                 </span>
                               </TableCell>
                               <TableCell className="py-3 px-4 font-mono font-bold text-primary">
-                                {ref.sale?.invoiceNumber || 'Sin Folio'}
+                                {ref.invoiceNumber}
                               </TableCell>
                               <TableCell className="py-3 px-4 text-right font-mono font-bold text-sm text-amber-600">
-                                -${Number(ref.totalRefunded || 0).toFixed(2)}
+                                {ref.totalRefundedFormatted}
                               </TableCell>
                             </TableRow>
                           ))}

@@ -1,12 +1,8 @@
-export * from './services/category.service';
-export * from './hooks/useCategories';
+export * from './enums';
+export * from './types';
+export * from './entities';
+export * from './mappers';
 export * from './services/products.service';
-export * from './hooks/useProducts';
-export * from './components/ProductsListView';
-export * from './components/ProductBatchesView';
-export * from './components/ProductCreateView';
-export * from './components/ProductCreateVariableView';
-export * from './components/ProductCreateVariableTab';
-export * from './components/AttributeCatalogManager';
-
-
+export * from './hooks';
+export * from './views';
+export * from './components';

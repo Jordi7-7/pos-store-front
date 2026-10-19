@@ -23,7 +23,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import type { Attribute } from '..';
+import type { AttributeDTO as Attribute } from '../types';
 
 export const AttributeCatalogManager: React.FC = () => {
   const { 

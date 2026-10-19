@@ -1,10 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/apiClient';
 import { downloadProductsTemplate } from '@/lib/excelTemplates';
 import { BulkImportPreviewTable } from '@/components/BulkImportPreviewTable';
 import { useBranches } from '../../branches/hooks/useBranches';
 import type { Branch } from '../../branches/services/branches.service';
+import { useProductImport } from '../hooks';
+import type { BulkImportProductItem } from '../types';
 import {
   Dialog,
   DialogContent,
@@ -22,12 +22,11 @@ interface BulkImportModalProps {
 }
 
 export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClose, selectedBranchId: contextBranchId }) => {
-  const queryClient = useQueryClient();
   const { branches = [] } = useBranches();
   
   // States
   const [selectedBranchId, setSelectedBranchId] = useState(contextBranchId || '');
-  const [parsedData, setParsedData] = useState<any[]>([]);
+  const [parsedData, setParsedData] = useState<BulkImportProductItem[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isValidating, setIsValidating] = useState(false);
   const [fileName, setFileName] = useState('');
@@ -42,35 +41,29 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
     }
   }, [contextBranchId, isOpen]);
 
-  // Mutation for validation
-  const validateMutation = useMutation({
-    mutationFn: async (items: { sku: string; name: string }[]) => {
-      return apiClient.post<{ errors: Record<string, string> }>('/products/validate-import', { items });
-    },
-    onSuccess: (data) => {
+  // Clean Product Import hook
+  const {
+    validateImport,
+    importProducts,
+    isImporting,
+    resetValidation,
+  } = useProductImport({
+    onValidateSuccess: (data) => {
       setValidationErrors(data.errors);
       setIsValidating(false);
     },
-    onError: (err: any) => {
+    onValidateError: (err) => {
       setIsValidating(false);
       toast.error(err.message || 'Error al validar el archivo.');
-    }
-  });
-
-  // Mutation for final import
-  const importMutation = useMutation({
-    mutationFn: async (data: { branchId?: string; items: any[] }) => {
-      return apiClient.post('/products/import', data);
     },
-    onSuccess: (res: any) => {
+    onImportSuccess: (res) => {
       toast.success(`¡Importación completada! Se crearon ${res.importedCount} productos.`);
-      queryClient.invalidateQueries({ queryKey: ['products'] });
       handleReset();
       onClose();
     },
-    onError: (err: any) => {
+    onImportError: (err) => {
       toast.error(err.message || 'Error al importar los productos.');
-    }
+    },
   });
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,9 +138,9 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
 
         // Run validation against the backend
         const validationItems = normalized.map(it => ({ sku: it.sku, name: it.name }));
-        validateMutation.mutate(validationItems);
+        validateImport(validationItems);
 
-      } catch (error) {
+      } catch {
         toast.error('Error al procesar el archivo Excel. Asegúrate que tiene el formato correcto.');
         setIsValidating(false);
       }
@@ -159,6 +152,8 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
     setParsedData([]);
     setValidationErrors({});
     setFileName('');
+    setIsValidating(false);
+    resetValidation();
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -166,7 +161,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
 
   const handleConfirmImport = () => {
     if (parsedData.length === 0) return;
-    importMutation.mutate({
+    importProducts({
       branchId: selectedBranchId || undefined,
       items: parsedData,
     });
@@ -277,7 +272,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
               
               <button
                 onClick={handleReset}
-                disabled={importMutation.isPending}
+                disabled={isImporting}
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border hover:bg-muted px-2.5 py-1.2 rounded-lg transition-colors cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
@@ -321,17 +316,17 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
                 <div className="flex justify-end gap-3 pt-3 border-t border-border mt-3">
                   <button
                     onClick={onClose}
-                    disabled={importMutation.isPending}
+                    disabled={isImporting}
                     className="text-xs font-semibold text-secondary hover:bg-muted border border-border px-4 py-2 rounded-xl transition-colors cursor-pointer"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleConfirmImport}
-                    disabled={errorCount > 0 || importMutation.isPending || isValidating}
+                    disabled={errorCount > 0 || isImporting || isValidating}
                     className="flex items-center gap-1.5 text-xs font-bold text-white bg-primary hover:bg-primary/95 disabled:bg-muted disabled:text-muted-foreground px-4 py-2 rounded-xl transition-all shadow-lg cursor-pointer disabled:cursor-not-allowed"
                   >
-                    {importMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                     Confirmar e Importar
                     <ArrowRight className="w-4 h-4" />
                   </button>

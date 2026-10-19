@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsService } from '../services/products.service';
-import type { Tag } from '../services/products.service';
+import type { TagDTO } from '../types';
 
 export const useTags = () => {
   const queryClient = useQueryClient();
 
-  const { data: tags = [], isLoading } = useQuery<Tag[]>({
+  const { data: tags = [], isLoading } = useQuery<TagDTO[]>({
     queryKey: ['tags'],
     queryFn: () => productsService.getTags(),
   });

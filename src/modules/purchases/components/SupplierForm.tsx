@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSuppliers, useCreateSupplier } from '../hooks/usePurchases';
+import { useSuppliers, useCreateSupplier } from '../hooks';
 import { Truck, Plus, Mail, Phone, MapPin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 

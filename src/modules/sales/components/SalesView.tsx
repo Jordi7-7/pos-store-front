@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { Calendar as CalendarIcon, Loader2, Receipt, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
-import { usePaginatedSales } from '../hooks/useSales';
+import { usePaginatedSales } from '../hooks/useSalesList';
 import { SaleDetailModal } from './SaleDetailModal';
 import { ThermalTicketModal } from './pos/ThermalTicketModal';
-import { salesService, PaymentMethod, type PaginatedSaleSummary } from '../services/sales.service';
+import { salesService } from '../services/sales.service';
+import { PaymentMethod } from '../types';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import { ProductPagination } from '@/modules/products/components/ProductPagination';
@@ -141,7 +142,7 @@ export const SalesView: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {sales.map((sale: PaginatedSaleSummary) => (
+                  {sales.map((sale: any) => (
                     <tr
                       key={sale.id}
                       onClick={() => sale.invoiceNumber && setSelectedInvoice(sale.invoiceNumber)}

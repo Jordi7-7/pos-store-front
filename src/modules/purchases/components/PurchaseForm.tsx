@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useRegisterPurchase, useSuppliers } from '../hooks/usePurchases';
+import { useRegisterPurchase, useSuppliers } from '../hooks';
 import { productsService } from '../../products/services/products.service';
-import type { Supplier } from '../services/purchases.service';
+import type { Supplier } from '../types';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import { ClipboardList, Loader2, Plus, FileSpreadsheet, Building, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';

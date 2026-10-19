@@ -1,12 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { productsService, type Attribute } from '../services/products.service';
+import { productsService } from '../services/products.service';
+import type { AttributeDTO  } from '../types';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
 export const useAttributes = () => {
   const queryClient = useQueryClient();
   const { tenantId } = useAuthStore();
 
-  const attributesQuery = useQuery<Attribute[]>({
+  const attributesQuery = useQuery<AttributeDTO[]>({
     queryKey: ['product-attributes', tenantId],
     queryFn: () => productsService.getAttributes(),
   });

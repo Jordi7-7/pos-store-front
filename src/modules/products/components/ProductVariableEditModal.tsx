@@ -15,13 +15,7 @@ import { toast } from 'sonner';
 
 import { useCategories } from '../hooks/useCategories';
 import { useAttributes } from '../hooks/useAttributes';
-import { 
-  useProductDetail, 
-  useUpdateProduct, 
-  useUpdateVariant, 
-  useDeleteVariant, 
-  useCreateVariant 
-} from '../hooks/useProducts';
+import { useProductDetail, useProductMutations } from '../hooks';
 import { MediaGallerySelectorModal } from './forms/MediaGallerySelectorModal';
 import { ImageUploadModal } from './forms/ImageUploadModal';
 import {
@@ -38,7 +32,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import type { Attribute } from '..';
+import type { AttributeDTO as Attribute } from '../types';
 
 interface ProductVariableEditModalProps {
   productId: string | null;
@@ -69,10 +63,16 @@ export const ProductVariableEditModal: React.FC<ProductVariableEditModalProps> =
   selectedBranchId,
 }) => {
   const { product, isLoading: isLoadingProduct } = useProductDetail(productId || undefined, isOpen && Boolean(productId));
-  const { updateProduct, isUpdating: isUpdatingParent } = useUpdateProduct();
-  const { updateVariant, isUpdating: isUpdatingVariant } = useUpdateVariant();
-  const { createVariant, isCreating: isCreatingNewVariant } = useCreateVariant();
-  const { deleteVariant, isDeleting: isDeletingVariant } = useDeleteVariant();
+  const { 
+    updateProduct, 
+    isUpdatingProduct: isUpdatingParent, 
+    updateVariant, 
+    isUpdatingVariant, 
+    createVariant, 
+    isCreatingVariant: isCreatingNewVariant, 
+    deleteVariant, 
+    isDeletingVariant 
+  } = useProductMutations();
   const { createCategory, isCreating: isCreatingCategory } = useCategories();
   const { attributes } = useAttributes();
 

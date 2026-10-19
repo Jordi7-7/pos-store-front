@@ -12,8 +12,8 @@ import {
   Truck,
   Building
 } from 'lucide-react';
-import { useSuppliers, useCreateSupplier, useUpdateSupplier, useDeleteSupplier } from '../hooks/usePurchases';
-import type { Supplier } from '../services/purchases.service';
+import { useSuppliers, useCreateSupplier, useUpdateSupplier, useDeleteSupplier } from '../hooks';
+import type { SupplierEntity } from '../entities';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel } from '@/components/ui/field';
@@ -46,9 +46,9 @@ export const SuppliersView: React.FC = () => {
 
   // Modal states
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [editingSupplier, setEditingSupplier] = useState<SupplierEntity | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [deletingSupplier, setDeletingSupplier] = useState<Supplier | null>(null);
+  const [deletingSupplier, setDeletingSupplier] = useState<SupplierEntity | null>(null);
 
   // Form states
   const [name, setName] = useState('');
@@ -78,7 +78,7 @@ export const SuppliersView: React.FC = () => {
   };
 
   // Open edit form
-  const handleOpenEdit = (supplier: Supplier) => {
+  const handleOpenEdit = (supplier: SupplierEntity) => {
     setEditingSupplier(supplier);
     setName(supplier.name);
     setIdentityNumber(supplier.identityNumber);
@@ -130,7 +130,7 @@ export const SuppliersView: React.FC = () => {
   };
 
   // Open delete confirm
-  const handleOpenDelete = (supplier: Supplier) => {
+  const handleOpenDelete = (supplier: SupplierEntity) => {
     setDeletingSupplier(supplier);
     setIsDeleteOpen(true);
   };

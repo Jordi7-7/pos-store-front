@@ -3,13 +3,15 @@ import { useMyCashRegisters } from '@/modules/cash-registers/hooks/useCashRegist
 import {
   useOpenCashSession,
   useCloseCashSession,
+  useActiveCashSession,
+} from '../hooks/useCashSession';
+import {
   useRegisterExpense,
   useProcessSale,
-  useActiveCashSession,
-} from '../hooks/useSales';
+} from '../hooks/useSalesMutations';
 import { useCustomers } from '../hooks/useCustomers';
 import { useCashSessionDetailsQuery } from '../../cash-sessions/hooks/useCashSessions';
-import { PaymentMethod } from '../services/sales.service';
+import { PaymentMethod } from '../types';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { toast } from 'sonner';
 import { DateTime } from 'luxon';
@@ -89,7 +91,7 @@ export const POSView: React.FC<POSViewProps> = ({
 
   // Lazy-fetch session details only when Cierre or Historial modal is open
   const isSessionDetailsNeeded = isCierreModalOpen || isHistorialModalOpen;
-  const { details: sessionDetails } = useCashSessionDetailsQuery(activeSession?.id || null, {
+  const { rawDetails: rawSessionDetails } = useCashSessionDetailsQuery(activeSession?.id || null, {
     enabled: isSessionDetailsNeeded,
   });
 
@@ -274,10 +276,7 @@ export const POSView: React.FC<POSViewProps> = ({
 
       try {
         const closedDetails = await cashSessionsService.getCashSessionDetails(closingSessionId);
-        const dataToPrint = buildClosingTicketData(closedDetails, {
-          name: branch?.name,
-          address: branch?.address,
-        });
+        const dataToPrint = buildClosingTicketData(closedDetails);
         setClosingSessionToPrint(dataToPrint);
       } catch (detailsErr) {
         console.error('Error fetching closing session details for ticket:', detailsErr);
@@ -660,9 +659,9 @@ export const POSView: React.FC<POSViewProps> = ({
           onCloseSession={handleCloseSession}
           isClosing={isClosing}
           activeSession={activeSession}
-          activeSessionSales={sessionDetails?.sales || []}
-          activeSessionExpenses={sessionDetails?.expenses || []}
-          activeSessionRefunds={sessionDetails?.refunds || []}
+          activeSessionSales={rawSessionDetails?.sales || []}
+          activeSessionExpenses={rawSessionDetails?.expenses || []}
+          activeSessionRefunds={rawSessionDetails?.refunds || []}
         />
       )}
 

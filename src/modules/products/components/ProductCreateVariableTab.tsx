@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 
 import { useCategories } from '../hooks/useCategories';
 import { useAttributes } from '../hooks/useAttributes';
-import { useCreateVariableProduct } from '../hooks/useProducts';
+import { useProductMutations } from '../hooks';
 import { MediaGallerySelectorModal } from './forms/MediaGallerySelectorModal';
 import { ImageUploadModal } from './forms/ImageUploadModal';
 import { 
@@ -18,7 +18,7 @@ import {
   type VariantRowData,
   type VariableProductHeaderValues
 } from './variable-wizard';
-import type { Attribute, AttributeValue } from '..';
+import type { AttributeDTO as Attribute, AttributeValueDTO as AttributeValue } from '../types';
 
 // ── Header Validation Schema ────────────────────────────────────────────────
 const variableProductHeaderSchema = z.object({
@@ -73,7 +73,7 @@ export const ProductCreateVariableTab: React.FC<ProductCreateVariableTabProps> =
     createAttributeValue, 
     isCreatingValue 
   } = useAttributes();
-  const { createVariableProduct, isCreating: isSubmitting } = useCreateVariableProduct();
+  const { createVariableProduct, isCreatingVariable: isSubmitting } = useProductMutations();
 
   // ── Step 1 Form: General info ────────────────────────────────────────────
   const {

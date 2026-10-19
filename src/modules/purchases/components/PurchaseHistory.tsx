@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { usePurchases, useCancelPurchase, useSuppliers } from '../hooks/usePurchases';
+import { usePurchases, useCancelPurchase, useSuppliers } from '../hooks';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import {
   ClipboardList,
@@ -12,7 +12,8 @@ import {
   AlertTriangle,
   RotateCcw,
 } from 'lucide-react';
-import type { Purchase, PurchaseItem, Supplier } from '../services/purchases.service';
+import type { Supplier } from '../types';
+import type { PurchaseEntity } from '../entities';
 import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { ProductPagination } from '@/modules/products/components/ProductPagination';
@@ -221,7 +222,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
         </div>
       ) : (
         <div className="space-y-4">
-          {purchases.map((pur: Purchase) => {
+          {purchases.map((pur: PurchaseEntity) => {
             const isCancellingThis = isCancelling && cancellingId === pur.id;
             const isConfirming = confirmingId === pur.id;
             const isCancelled = pur.status === 'CANCELLED';
@@ -241,14 +242,14 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                     <span className="text-xs font-mono font-bold text-primary">
                       {pur.invoiceNumber || 'S/Ref'}
                     </span>
-                    {isAll && pur.branch?.name && (
+                    {isAll && pur.branchName && (
                       <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">
-                        {pur.branch.name}
+                        {pur.branchName}
                       </span>
                     )}
                     <span className="text-[10px] text-neutral flex items-center gap-1">
                       <CalendarIcon className="w-3.5 h-3.5" />
-                      {new Date(pur.createdAt).toLocaleString(undefined, { timeZone: timezone })}
+                      {pur.formattedDate || new Date(pur.createdAt).toLocaleString(undefined, { timeZone: timezone })}
                     </span>
                   </div>
 
@@ -267,7 +268,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                     )}
 
                     <span className="text-xs font-bold text-primary font-mono">
-                      Total: ${Number(pur.totalAmount || 0).toFixed(2)}
+                      Total: {pur.formattedTotalAmount || `$${Number(pur.totalAmount || 0).toFixed(2)}`}
                     </span>
 
                     {/* Cancel button or disabled indicator */}
@@ -334,14 +335,14 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                     <User className="w-4 h-4 text-neutral" />
                     <div>
                       <span className="text-[10px] text-neutral block font-bold uppercase tracking-wider">Proveedor</span>
-                      <span className="font-semibold">{pur.supplier?.name || 'Proveedor General'}</span>
+                      <span className="font-semibold">{pur.supplierName}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-neutral" />
                     <div>
                       <span className="text-[10px] text-neutral block font-bold uppercase tracking-wider">Sucursal Destino</span>
-                      <span className="font-semibold">{pur.branch?.name || 'Matriz'}</span>
+                      <span className="font-semibold">{pur.branchName}</span>
                     </div>
                   </div>
                 </div>
@@ -350,19 +351,19 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                 <div className="border-t border-border-card/40 pt-2.5">
                   <span className="text-[9.5px] font-bold text-neutral uppercase tracking-wider block mb-1.5">Desglose de Artículos</span>
                   <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                    {(pur.items || []).map((item: PurchaseItem) => (
+                    {(pur.items || []).map((item) => (
                       <div
                         key={item.id}
                         className="flex justify-between items-center text-[11px] bg-bg-card border border-border-card/60 p-2 rounded-xl"
                       >
                         <div>
-                          <span className="font-bold">{item.variant?.product?.name || 'Producto'}</span>
-                          <span className="text-[9.5px] text-neutral font-mono block">SKU: {item.variant?.sku}</span>
+                          <span className="font-bold">{item.productName}</span>
+                          <span className="text-[9.5px] text-neutral font-mono block">SKU: {item.sku}</span>
                         </div>
                         <div className="text-right">
                           <span className="font-bold block">x{item.quantity}</span>
                           <span className="text-[9.5px] text-neutral font-mono block">
-                            Costo U: ${Number(item.purchasePrice || item.unitCost || 0).toFixed(2)}
+                            Costo U: {item.formattedUnitCost || `$${Number(item.purchasePrice || item.unitCost || 0).toFixed(2)}`}
                           </span>
                         </div>
                       </div>

@@ -30,7 +30,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { productsService, type InventoryLot } from '../services/products.service';
+import { useBatches } from '../hooks';
+import { BatchStatus } from '../enums';
 import { ProductPagination } from './ProductPagination';
 
 interface ProductBatchesTabProps {
@@ -38,15 +39,12 @@ interface ProductBatchesTabProps {
 }
 
 export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBranchId }) => {
-  const [lots, setLots] = useState<InventoryLot[]>([]);
-  const [loading, setLoading] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [meta, setMeta] = useState({ total: 0, page: 1, limit: 10, totalPages: 1 });
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   const startDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined;
   const endDate = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined;
@@ -60,66 +58,38 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Unified fetch directly at lot level with date range and search
+  // Clean data-fetching hook with React Query & internal entity mapper
+  const { lots, meta, isLoading: loading } = useBatches({
+    branchId: selectedBranchId || undefined,
+    startDate,
+    endDate,
+    search: debouncedSearch.trim() || undefined,
+    page,
+    limit,
+  });
+
+  // Reset collapsed groups when page or filters change so lots are expanded by default
   useEffect(() => {
-    let isCancelled = false;
-
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const res = await productsService.getBatches({
-          branchId: selectedBranchId || undefined,
-          startDate,
-          endDate,
-          search: debouncedSearch.trim() || undefined,
-          page,
-          limit,
-        });
-        if (!isCancelled) {
-          setLots(res.data);
-          setMeta(res.meta);
-          // By default expand lots on current page
-          const initialExpanded: Record<string, boolean> = {};
-          res.data.forEach((l) => {
-            initialExpanded[l.id] = true;
-          });
-          setExpandedGroups(initialExpanded);
-        }
-      } catch (error) {
-        if (!isCancelled) {
-          console.error('Error fetching inventory lots:', error);
-        }
-      } finally {
-        if (!isCancelled) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadData();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [selectedBranchId, startDate, endDate, debouncedSearch, page, limit]);
+    setCollapsedGroups({});
+  }, [page, debouncedSearch, selectedBranchId, startDate, endDate]);
 
   const toggleGroup = (key: string) => {
-    setExpandedGroups((prev) => ({
+    setCollapsedGroups((prev) => ({
       ...prev,
       [key]: !prev[key],
     }));
   };
 
   const expandAll = () => {
+    setCollapsedGroups({});
+  };
+
+  const collapseAll = () => {
     const next: Record<string, boolean> = {};
     lots.forEach((l) => {
       next[l.id] = true;
     });
-    setExpandedGroups(next);
-  };
-
-  const collapseAll = () => {
-    setExpandedGroups({});
+    setCollapsedGroups(next);
   };
 
   const getOriginBadge = (originType: string, originLabel: string) => {
@@ -162,24 +132,23 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: BatchStatus) => {
     switch (status) {
-      case 'CANCELLED':
+      case BatchStatus.CANCELLED:
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
             Anulado
           </span>
         );
-      case 'DEPLETED':
-      case 'EXHAUSTED':
+      case BatchStatus.DEPLETED:
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-neutral/10 text-neutral border border-neutral/20">
             <span className="w-1.5 h-1.5 rounded-full bg-neutral/60" />
             Agotado
           </span>
         );
-      case 'ACTIVE':
+      case BatchStatus.ACTIVE:
       default:
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
@@ -290,17 +259,8 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
         ) : (
           <div className="space-y-3">
             {lots.map((lot) => {
-              const isExpanded = !!expandedGroups[lot.id];
-              const totalItems = lot.items?.length || 0;
-              const hasStock = lot.totalRemainingQuantity > 0;
-              const percentLeftRaw = lot.totalInitialQuantity > 0
-                ? (lot.totalRemainingQuantity / lot.totalInitialQuantity) * 100
-                : 0;
-              // Si queda algo pero se consumió una parte, nunca redondear hacia arriba al 100%
-              const percentDisplay = (lot.totalRemainingQuantity < lot.totalInitialQuantity && percentLeftRaw > 99)
-                ? percentLeftRaw.toFixed(1)
-                : Math.round(percentLeftRaw);
-              const initialCost = lot.totalInitialCostValue ?? (lot.items || []).reduce((acc, it) => acc + (it.initialQuantity * it.unitCost), 0);
+              const isExpanded = !collapsedGroups[lot.id];
+              const totalItems = lot.items.length;
 
               return (
                 <div 
@@ -330,7 +290,7 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-bold text-secondary text-sm flex items-center gap-1.5 font-mono">
                             <Layers className="w-4 h-4 text-primary" />
-                            {lot.originReference || (lot.purchaseOrderId ? `Lote Compra #${lot.purchaseOrderId.slice(0, 8)}` : 'Lote Inventario Directo')}
+                            {lot.displayTitle}
                           </span>
                           {getOriginBadge(lot.originType, lot.originLabel)}
                           {getStatusBadge(lot.status)}
@@ -343,7 +303,7 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
                         <div className="flex flex-wrap items-center gap-3 text-xs text-neutral">
                           <span className="flex items-center gap-1">
                             <CalendarIcon className="w-3 h-3 text-neutral/70" />
-                            {new Date(lot.createdAt).toLocaleDateString()}
+                            {lot.dateFormatted}
                           </span>
                           <span>•</span>
                           <span className="font-medium text-secondary">
@@ -360,18 +320,18 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
                           Stock Total Lote
                         </span>
                         <div className="font-mono text-xs font-semibold text-secondary">
-                          <span className={lot.status === 'CANCELLED' ? 'text-rose-500 font-bold' : hasStock ? 'text-emerald-500 font-bold' : 'text-neutral'}>
+                          <span className={lot.status === BatchStatus.CANCELLED ? 'text-rose-500 font-bold' : lot.hasStock ? 'text-emerald-500 font-bold' : 'text-neutral'}>
                             {lot.totalRemainingQuantity}
                           </span>
                           <span className="text-neutral/70 text-[11px]"> / {lot.totalInitialQuantity}</span>
                         </div>
-                        {lot.totalInitialQuantity > 0 && lot.status !== 'CANCELLED' && (
+                        {lot.totalInitialQuantity > 0 && lot.status !== BatchStatus.CANCELLED && (
                           <div className="w-20 md:ml-auto mt-1 h-1.5 rounded-full bg-muted/60 overflow-hidden">
                             <div 
                               className={`h-full rounded-full ${
-                                percentLeftRaw > 50 ? 'bg-emerald-500' : percentLeftRaw > 20 ? 'bg-amber-500' : 'bg-rose-500'
+                                lot.percentRemaining > 50 ? 'bg-emerald-500' : lot.percentRemaining > 20 ? 'bg-amber-500' : 'bg-rose-500'
                               }`}
-                              style={{ width: `${Math.min(100, Math.max(0, percentLeftRaw))}%` }}
+                              style={{ width: `${Math.min(100, Math.max(0, lot.percentRemaining))}%` }}
                             />
                           </div>
                         )}
@@ -383,19 +343,19 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
                           Valor Lote
                         </span>
                         <div className="font-mono font-bold text-xs text-primary">
-                          ${lot.totalCostValue.toFixed(2)}
+                          {lot.totalCostFormatted}
                           <span className="text-[10.5px] font-normal text-neutral/80 block">
-                            Inicial: ${initialCost.toFixed(2)}
+                            Inicial: {lot.totalInitialCostFormatted}
                           </span>
                         </div>
                         <span className={`text-[10px] font-semibold ${
-                          lot.status === 'CANCELLED' 
+                          lot.status === BatchStatus.CANCELLED 
                             ? 'text-rose-500' 
-                            : hasStock 
+                            : lot.hasStock 
                               ? 'text-emerald-500' 
                               : 'text-neutral/60'
                         }`}>
-                          {lot.status === 'CANCELLED' ? 'Anulado' : hasStock ? `${percentDisplay}% disponible` : 'Agotado'}
+                          {lot.status === BatchStatus.CANCELLED ? 'Anulado' : lot.hasStock ? `${lot.percentDisplay}% disponible` : 'Agotado'}
                         </span>
                       </div>
                     </div>
@@ -422,67 +382,60 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {lot.items.map((item) => {
-                              const itemAvailable = item.remainingQuantity > 0;
-                              const itemPercent = item.initialQuantity > 0
-                                ? Math.round((item.remainingQuantity / item.initialQuantity) * 100)
-                                : 0;
+                            {lot.items.map((item) => (
+                              <TableRow
+                                key={item.id}
+                                className={`text-secondary hover:bg-muted/10 transition-colors ${
+                                  !item.isAvailable ? 'opacity-55' : ''
+                                }`}
+                              >
+                                {/* Product Name & SKU */}
+                                <TableCell className="py-2.5 pr-2">
+                                  <div className="font-semibold text-secondary text-xs">{item.productName}</div>
+                                  <div className="font-mono text-[10px] text-primary">{item.sku || '-'}</div>
+                                </TableCell>
 
-                              return (
-                                <TableRow
-                                  key={item.id}
-                                  className={`text-secondary hover:bg-muted/10 transition-colors ${
-                                    !itemAvailable ? 'opacity-55' : ''
-                                  }`}
-                                >
-                                  {/* Product Name & SKU */}
-                                  <TableCell className="py-2.5 pr-2">
-                                    <div className="font-semibold text-secondary text-xs">{item.productName}</div>
-                                    <div className="font-mono text-[10px] text-primary">{item.sku || '-'}</div>
-                                  </TableCell>
+                                {/* Initial Qty */}
+                                <TableCell className="py-2.5 px-2 text-right font-mono font-medium text-xs">
+                                  {item.initialQuantity}
+                                </TableCell>
 
-                                  {/* Initial Qty */}
-                                  <TableCell className="py-2.5 px-2 text-right font-mono font-medium text-xs">
-                                    {item.initialQuantity}
-                                  </TableCell>
+                                {/* Consumed Qty */}
+                                <TableCell className="py-2.5 px-2 text-right font-mono text-neutral text-xs">
+                                  {item.consumedQuantity}
+                                </TableCell>
 
-                                  {/* Consumed Qty */}
-                                  <TableCell className="py-2.5 px-2 text-right font-mono text-neutral text-xs">
-                                    {item.consumedQuantity}
-                                  </TableCell>
+                                {/* Remaining Qty with Bar */}
+                                <TableCell className="py-2.5 px-2 text-right">
+                                  <span className={`font-mono font-bold text-xs ${item.isAvailable ? 'text-emerald-500' : 'text-neutral'}`}>
+                                    {item.remainingQuantity}
+                                  </span>
+                                  {item.initialQuantity > 0 && (
+                                    <div className="w-16 ml-auto mt-1 h-1 rounded-full bg-muted/60 overflow-hidden">
+                                      <div 
+                                        className={`h-full rounded-full ${
+                                          item.percentRemaining > 50 ? 'bg-emerald-500' : item.percentRemaining > 20 ? 'bg-amber-500' : 'bg-rose-500'
+                                        }`}
+                                        style={{ width: `${Math.min(100, Math.max(0, item.percentRemaining))}%` }}
+                                      />
+                                    </div>
+                                  )}
+                                </TableCell>
 
-                                  {/* Remaining Qty with Bar */}
-                                  <TableCell className="py-2.5 px-2 text-right">
-                                    <span className={`font-mono font-bold text-xs ${itemAvailable ? 'text-emerald-500' : 'text-neutral'}`}>
-                                      {item.remainingQuantity}
-                                    </span>
-                                    {item.initialQuantity > 0 && (
-                                      <div className="w-16 ml-auto mt-1 h-1 rounded-full bg-muted/60 overflow-hidden">
-                                        <div 
-                                          className={`h-full rounded-full ${
-                                            itemPercent > 50 ? 'bg-emerald-500' : itemPercent > 20 ? 'bg-amber-500' : 'bg-rose-500'
-                                          }`}
-                                          style={{ width: `${Math.min(100, Math.max(0, itemPercent))}%` }}
-                                        />
-                                      </div>
-                                    )}
-                                  </TableCell>
+                                {/* Unit Cost */}
+                                <TableCell className="py-2.5 px-2 text-right font-mono text-neutral font-medium text-xs">
+                                  {item.unitCostFormatted}
+                                </TableCell>
 
-                                  {/* Unit Cost */}
-                                  <TableCell className="py-2.5 px-2 text-right font-mono text-neutral font-medium text-xs">
-                                    ${item.unitCost.toFixed(2)}
-                                  </TableCell>
-
-                                  {/* Total Value */}
-                                  <TableCell className="py-2.5 pl-2 text-right font-mono font-bold text-xs text-primary">
-                                    ${item.totalCostValue.toFixed(2)}
-                                    <span className="text-[10px] font-normal text-neutral/80 block">
-                                      Ini: ${(item.initialCostValue ?? (item.initialQuantity * item.unitCost)).toFixed(2)}
-                                    </span>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
+                                {/* Total Value */}
+                                <TableCell className="py-2.5 pl-2 text-right font-mono font-bold text-xs text-primary">
+                                  {item.totalCostFormatted}
+                                  <span className="text-[10px] font-normal text-neutral/80 block">
+                                    Ini: {item.initialCostFormatted}
+                                  </span>
+                                </TableCell>
+                              </TableRow>
+                            ))}
                           </TableBody>
                         </Table>
                       </div>

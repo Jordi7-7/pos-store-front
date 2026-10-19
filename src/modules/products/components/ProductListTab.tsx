@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Package, Edit, Search, Barcode, CheckSquare, Square, Layers, ChevronDown, ChevronRight } from 'lucide-react';
-import { ProductType, type Product } from '../services/products.service';
+import { ProductType } from '../enums';
+import type { ProductEntity } from '../entities/product.entity';
 import { ProductEditDrawer } from './ProductEditDrawer';
 import { ProductDetailModal } from './ProductDetailModal';
 import { ProductVariableEditModal } from './ProductVariableEditModal';
@@ -21,7 +22,7 @@ import {
 } from '@/components/ui/table';
 
 interface ProductListTabProps {
-  products: Product[];
+  products: ProductEntity[];
   isLoading: boolean;
   categories: any[];
   uploadedImages?: any[];
@@ -66,10 +67,10 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
   const [selectedVariableProductId, setSelectedVariableProductId] = useState<string | null>(null);
   const [isVariableEditModalOpen, setIsVariableEditModalOpen] = useState(false);
   const [searchInput, setSearchInput] = useState(search);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductEntity | null>(null);
 
-  // Estado para selección masiva de etiquetas: Guardar Map<productId, Product> para persistir entre búsquedas y páginas
-  const [selectedProductsMap, setSelectedProductsMap] = useState<Map<string, Product>>(new Map());
+  // Estado para selección masiva de etiquetas: Guardar Map<productId, ProductEntity> para persistir entre búsquedas y páginas
+  const [selectedProductsMap, setSelectedProductsMap] = useState<Map<string, ProductEntity>>(new Map());
   const [barcodeModalOpen, setBarcodeModalOpen] = useState(false);
   const [barcodeQueue, setBarcodeQueue] = useState<BarcodeLabelItem[]>([]);
   const [expandedProductIds, setExpandedProductIds] = useState<Set<string>>(new Set());
@@ -128,7 +129,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
   };
 
   // Toggle selección de un producto: Guarda el objeto completo
-  const toggleSelectProduct = (product: Product, event: React.MouseEvent) => {
+  const toggleSelectProduct = (product: ProductEntity, event: React.MouseEvent) => {
     event.stopPropagation();
     setSelectedProductsMap((prev) => {
       const next = new Map(prev);
@@ -186,7 +187,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
   };
 
   // Imprimir un solo producto desde el botón de la fila
-  const handlePrintSingleProduct = (product: Product, event: React.MouseEvent) => {
+  const handlePrintSingleProduct = (product: ProductEntity, event: React.MouseEvent) => {
     event.stopPropagation();
     const variants = product.variants && product.variants.length > 0 ? product.variants : [];
     const itemsToPrint: BarcodeLabelItem[] = [];
@@ -381,81 +382,17 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
               <TableBody>
                 {products.map((product) => {
                   const isVariable = product.type === ProductType.VARIABLE;
-                  const defaultVariant = product.variants?.[0];
+                  const defaultVariant = product.variants[0];
                   const sku = product.baseSku || defaultVariant?.sku || 'N/A';
-                  const barcode = defaultVariant?.barcode ?? 'N/A';
+                  const barcode = defaultVariant?.barcode || 'N/A';
 
-                  // Price calculation (stacked compact ranges if variable product)
-                  const renderPriceDisplay = (
-                    getVal: (v: any) => number | null | undefined,
-                    isSale = false
-                  ): React.ReactNode => {
-                    if (!isVariable) {
-                      const single = defaultVariant ? getVal(defaultVariant) : null;
-                      if (single === null || single === undefined || isNaN(Number(single)) || Number(single) <= 0) {
-                        return <span className="text-muted-foreground/50 text-[11px]">—</span>;
-                      }
-                      return (
-                        <span className={`font-mono text-xs ${isSale ? 'font-semibold text-foreground' : 'text-foreground/80'}`}>
-                          ${Number(single).toFixed(2)}
-                        </span>
-                      );
-                    }
-
-                    if (!product.variants || product.variants.length === 0) {
-                      return <span className="text-muted-foreground/50 text-[11px]">—</span>;
-                    }
-
-                    const values = product.variants
-                      .map(getVal)
-                      .filter((val): val is number => val !== null && val !== undefined && !isNaN(val) && Number(val) > 0);
-
-                    if (values.length === 0) {
-                      return <span className="text-muted-foreground/50 text-[11px]">—</span>;
-                    }
-
-                    const min = Math.min(...values);
-                    const max = Math.max(...values);
-
-                    if (min === max) {
-                      return (
-                        <span className={`font-mono text-xs ${isSale ? 'font-semibold text-foreground' : 'text-foreground/80'}`}>
-                          ${min.toFixed(2)}
-                        </span>
-                      );
-                    }
-
-                    return (
-                      <div className="flex flex-col items-end leading-tight select-none">
-                        <span className={`font-mono text-[11px] ${isSale ? 'font-bold text-primary' : 'font-medium text-foreground'}`}>
-                          ${min.toFixed(2)}
-                        </span>
-                        <span className="font-mono text-[10px] text-muted-foreground/75">
-                          - ${max.toFixed(2)}
-                        </span>
-                      </div>
-                    );
-                  };
-
-                  const purchasePriceDisplay = renderPriceDisplay((v) => Number(v.purchasePrice));
-                  const salePriceDisplay = renderPriceDisplay((v) => Number(v.salePrice), true);
-                  const wholesalePriceDisplay = renderPriceDisplay((v) =>
-                    v.wholesalePrice !== null && v.wholesalePrice !== undefined && Number(v.wholesalePrice) > 0
-                      ? Number(v.wholesalePrice)
-                      : null
-                  );
-
-                  // Calculate stock: if variable, sum stock across all variants
-                  const currentStock = isVariable
-                    ? (product.variants?.reduce((total: number, v: any) => {
-                        const variantStock = isAll
-                          ? (v.stocks?.reduce((acc: number, s: any) => acc + Number(s.quantity || 0), 0) ?? 0)
-                          : (v.stocks?.find((s: any) => s.branchId === selectedBranchId)?.quantity ?? 0);
-                        return total + variantStock;
-                      }, 0) ?? 0)
-                    : isAll
-                    ? (defaultVariant?.stocks?.reduce((acc: number, s: any) => acc + Number(s.quantity || 0), 0) ?? 0)
-                    : (defaultVariant?.stocks?.find(s => s.branchId === selectedBranchId)?.quantity ?? 0);
+                  // Si se filtra por sucursal específica calculamos stock local, de lo contrario usamos totalStock ya calculado
+                  const currentStock = isAll
+                    ? product.totalStock
+                    : (product.variants?.reduce((total, v) => {
+                        const branchQty = v.stocks?.find((s) => s.branchId === selectedBranchId)?.quantity ?? 0;
+                        return total + branchQty;
+                      }, 0) ?? 0);
 
                   const isSelected = selectedProductsMap.has(product.id);
 
@@ -501,19 +438,11 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                             <span className="w-5" />
                           )}
                           <div className="w-9 h-9 rounded-lg bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0">
-                            {(() => {
-                              const directUrl = product.images?.[0]?.url;
-                              if (directUrl) {
-                                return <img src={directUrl} className="w-full h-full object-cover" alt={product.name} />;
-                              }
-                              if (product.imageIds && product.imageIds.length > 0 && uploadedImages) {
-                                const imgObj = uploadedImages.find(img => img.id === product.imageIds![0]);
-                                if (imgObj?.url) {
-                                  return <img src={imgObj.url} className="w-full h-full object-cover" alt={product.name} />;
-                                }
-                              }
-                              return <Package className="w-4 h-4 text-muted-foreground" />;
-                            })()}
+                            {product.primaryImageUrl ? (
+                              <img src={product.primaryImageUrl} className="w-full h-full object-cover" alt={product.name} />
+                            ) : (
+                              <Package className="w-4 h-4 text-muted-foreground" />
+                            )}
                           </div>
                         </div>
                       </TableCell>
@@ -530,7 +459,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                               onClick={(e) => toggleExpandProduct(product.id, e)}
                               className="text-[9px] px-1.5 py-0 h-4 font-semibold bg-primary/10 text-primary border-primary/30 cursor-pointer hover:bg-primary/20"
                             >
-                              {product.variants?.length || 0} vars
+                              {product.totalVariants} vars
                             </Badge>
                           ) : (
                             <Badge
@@ -567,17 +496,17 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
 
                       {/* Purchase Price */}
                       <TableCell className="py-2.5 text-right font-mono text-xs">
-                        {purchasePriceDisplay}
+                        {isVariable ? product.purchasePriceRangeFormatted : (defaultVariant?.purchasePriceFormatted || '—')}
                       </TableCell>
 
                       {/* Sale Price */}
                       <TableCell className="py-2.5 text-right font-mono text-xs font-semibold text-foreground">
-                        {salePriceDisplay}
+                        {isVariable ? product.priceRangeFormatted : (defaultVariant?.salePriceFormatted || '—')}
                       </TableCell>
 
                       {/* Wholesale Price */}
                       <TableCell className="py-2.5 text-right font-mono text-xs font-semibold text-foreground">
-                        {wholesalePriceDisplay}
+                        {isVariable ? product.wholesalePriceRangeFormatted : (defaultVariant?.wholesalePriceFormatted || '—')}
                       </TableCell>
 
                       {/* Stock */}
@@ -648,28 +577,13 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                           </TableCell>
                           <TableCell className="py-2">
                             <div className="flex flex-wrap gap-1">
-                              {v.attributes && v.attributes.length > 0 ? (
-                                v.attributes.map((attr: any, aIdx: number) => (
-                                  <Badge
-                                    key={aIdx}
-                                    variant="outline"
-                                    className="text-[9px] px-1 py-0 h-4 font-normal bg-card text-foreground border-border/70 shadow-2xs"
-                                  >
-                                    {attr.name ? `${attr.name}: ` : ''}
-                                    <strong className="text-primary ml-0.5">{attr.value}</strong>
-                                  </Badge>
-                                ))
-                              ) : v.attributeValues && v.attributeValues.length > 0 ? (
-                                v.attributeValues.map((av: any) => (
-                                  <Badge
-                                    key={av.id || av.value}
-                                    variant="outline"
-                                    className="text-[9px] px-1 py-0 h-4 font-normal bg-card text-foreground border-border/70 shadow-2xs"
-                                  >
-                                    {av.attribute?.name ? `${av.attribute.name}: ` : ''}
-                                    <strong className="text-primary ml-0.5">{av.value}</strong>
-                                  </Badge>
-                                ))
+                              {v.attributesLabel ? (
+                                <Badge
+                                  variant="outline"
+                                  className="text-[9px] px-1.5 py-0 h-4 font-normal bg-card text-foreground border-border/70 shadow-2xs"
+                                >
+                                  {v.attributesLabel}
+                                </Badge>
                               ) : (
                                 <span className="text-[11px] text-muted-foreground">Variante #{idx + 1}</span>
                               )}
@@ -679,17 +593,13 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                             {v.barcode || '—'}
                           </TableCell>
                           <TableCell className="py-2 text-right font-mono text-xs text-muted-foreground">
-                            ${Number(v.purchasePrice || 0).toFixed(2)}
+                            {v.purchasePriceFormatted}
                           </TableCell>
                           <TableCell className="py-2 text-right font-mono text-xs font-semibold text-foreground">
-                            ${Number(v.salePrice || 0).toFixed(2)}
+                            {v.salePriceFormatted}
                           </TableCell>
                           <TableCell className="py-2 text-right font-mono text-xs">
-                            {v.wholesalePrice !== null && v.wholesalePrice !== undefined && Number(v.wholesalePrice) > 0 ? (
-                              `$${Number(v.wholesalePrice).toFixed(2)}`
-                            ) : (
-                              <span className="text-muted-foreground/40 text-[11px]">—</span>
-                            )}
+                            {v.wholesalePriceFormatted}
                           </TableCell>
                           <TableCell className="py-2 text-center">
                             <Badge
