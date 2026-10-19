@@ -7,6 +7,9 @@ import type {
   Purchase,
   PaginatedPurchasesResponse,
   GetPurchasesParams,
+  ValidateImportPurchasesItemInput,
+  ValidateImportPurchasesResult,
+  BulkImportPurchasesInput,
 } from '../types/purchases.types';
 
 
@@ -44,5 +47,17 @@ export const purchasesService = {
 
   cancelPurchase: async (id: string): Promise<void> => {
     return apiClient.patch<void>(`/purchases/${id}/cancel`, {});
+  },
+
+  validateImport: async (
+    items: ValidateImportPurchasesItemInput[]
+  ): Promise<ValidateImportPurchasesResult> => {
+    return apiClient.post<ValidateImportPurchasesResult>('/purchases/validate-import', { items });
+  },
+
+  importPurchases: async (
+    input: BulkImportPurchasesInput
+  ): Promise<Purchase> => {
+    return apiClient.post<Purchase>('/purchases/import', input);
   },
 };

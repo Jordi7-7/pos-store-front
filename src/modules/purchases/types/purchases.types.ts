@@ -86,3 +86,27 @@ export interface GetPurchasesParams {
   page?: number;
   limit?: number;
 }
+
+export interface BulkPurchaseItemInput {
+  sku: string;
+  quantity: number;
+  cost?: number;
+}
+
+export interface ValidateImportPurchasesItemInput {
+  sku: string;
+  quantity: number;
+}
+
+export interface ValidateImportPurchasesResult {
+  errors: Record<string, string>;
+  names: Record<string, string>;
+}
+
+export interface BulkImportPurchasesInput {
+  branchId: string;
+  items: BulkPurchaseItemInput[];
+  invoiceNumber?: string;
+  supplierId?: string;
+}
+

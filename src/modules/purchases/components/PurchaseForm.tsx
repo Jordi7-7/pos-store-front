@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRegisterPurchase, useSuppliers } from '../hooks';
-import { productsService } from '../../products/services/products.service';
+import { useVariantSearch } from '@/modules/products/hooks';
 import type { Supplier } from '../types';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import { ClipboardList, Loader2, Plus, FileSpreadsheet, Building, AlertCircle } from 'lucide-react';
@@ -44,6 +44,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
   const { selectedBranchId, selectedBranchName } = useLayoutContext();
   const { suppliers } = useSuppliers();
   const { registerPurchase, isRegistering } = useRegisterPurchase();
+  const { findVariantBySku } = useVariantSearch();
 
   // Local Purchase Order general inputs
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
@@ -100,7 +101,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
     if (!trimmed) return;
 
     try {
-      const variant = await productsService.getVariantBySku(trimmed);
+      const variant = await findVariantBySku(trimmed);
       if (variant && variant.id) {
         const nextIndex = index + 1;
 
@@ -141,7 +142,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
       } else {
         throw new Error('Producto no encontrado');
       }
-    } catch (err: any) {
+    } catch {
       toast.error(`Error: El SKU "${trimmed}" no se encuentra en el catálogo.`);
       // Focus back and select text on the same SKU input
       setTimeout(() => {

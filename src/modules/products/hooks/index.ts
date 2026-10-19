@@ -8,3 +8,5 @@ export * from './useProductImport';
 export * from './useCategories';
 export * from './useAttributes';
 export * from './useTags';
+export * from './useVariantSearch';
+

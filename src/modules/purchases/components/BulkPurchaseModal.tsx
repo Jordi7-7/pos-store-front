@@ -1,10 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/apiClient';
 import { downloadPurchasesTemplate } from '@/lib/excelTemplates';
 import { BulkImportPreviewTable } from '@/components/BulkImportPreviewTable';
-import { useSuppliers } from '../hooks';
-import type { Supplier } from '../types';
+import { useSuppliers, usePurchaseImport } from '../hooks';
+import type { Supplier, BulkPurchaseItemInput } from '../types';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import {
   Dialog,
@@ -24,23 +22,26 @@ import { toast } from 'sonner';
 import { FileDown, Upload, FileSpreadsheet, Loader2, RefreshCw, AlertTriangle, ArrowRight, CheckCircle2, Building, AlertCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
+const MAX_BULK_PURCHASE_ROWS = 3000;
+
 interface BulkPurchaseModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
 export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, onClose }) => {
-  const queryClient = useQueryClient();
   const { selectedBranchId, selectedBranchName } = useLayoutContext();
   const { suppliers = [] } = useSuppliers();
 
   // States
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
-  const [parsedData, setParsedData] = useState<any[]>([]);
+  const [parsedData, setParsedData] = useState<BulkPurchaseItemInput[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [productNames, setProductNames] = useState<Record<string, string>>({});
   const [isValidating, setIsValidating] = useState(false);
+  const [isValidated, setIsValidated] = useState(false);
+  const [globalError, setGlobalError] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -60,44 +61,21 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
     }
   }, [suppliers, selectedSupplierId]);
 
-  // Mutation to validate bulk purchases list
-  const validateMutation = useMutation({
-    mutationFn: async (items: { sku: string; quantity: number }[]) => {
-      return apiClient.post<{ errors: Record<string, string>; names: Record<string, string> }>('/purchases/validate-import', { items });
-    },
-    onSuccess: (data, variables) => {
-      // Merge backend SKU errors with local quantity <= 0 validation
-      const mergedErrors = { ...data.errors };
-      for (const item of variables) {
-        if (item.quantity <= 0) {
-          mergedErrors[item.sku] = 'La cantidad a ingresar debe ser mayor a 0.';
-        }
-      }
-      setValidationErrors(mergedErrors);
-      setProductNames(data.names);
-      setIsValidating(false);
-    },
-    onError: (err: any) => {
-      setIsValidating(false);
-      toast.error(err.message || 'Error al validar el archivo de ingresos.');
-    }
-  });
-
-  // Mutation to confirm and run bulk stock entry
-  const importMutation = useMutation({
-    mutationFn: async (data: { branchId: string; items: any[]; invoiceNumber?: string; supplierId?: string }) => {
-      return apiClient.post('/purchases/import', data);
-    },
-    onSuccess: () => {
+  // Hook for bulk purchases import
+  const {
+    validateImport,
+    importPurchases,
+    isImporting,
+    resetValidation,
+  } = usePurchaseImport({
+    onImportSuccess: () => {
       toast.success('¡Ingreso masivo registrado con éxito en Kardex y stock actualizado!');
-      queryClient.invalidateQueries({ queryKey: ['purchases'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
       handleReset();
       onClose();
     },
-    onError: (err: any) => {
+    onImportError: (err) => {
       toast.error(err.message || 'Error al procesar la carga masiva.');
-    }
+    },
   });
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,12 +139,46 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
 
         setParsedData(normalized);
 
-        // Validate items against backend
-        validateMutation.mutate(normalized);
+        // Pre-check row limit client-side
+        if (normalized.length > MAX_BULK_PURCHASE_ROWS) {
+          const limitMsg = `El archivo contiene ${normalized.length} filas. El límite máximo permitido por importación es de ${MAX_BULK_PURCHASE_ROWS.toLocaleString()} registros.`;
+          setGlobalError(limitMsg);
+          setIsValidated(false);
+          setIsValidating(false);
+          toast.error(limitMsg);
+          return;
+        }
 
-      } catch (error) {
+        setGlobalError(null);
+        setIsValidated(false);
+
+        // Validate items against backend
+        validateImport(normalized, {
+          onSuccess: (data) => {
+            const mergedErrors = { ...data.errors };
+            for (const item of normalized) {
+              if (item.quantity <= 0) {
+                mergedErrors[item.sku] = 'La cantidad a ingresar debe ser mayor a 0.';
+              }
+            }
+            setValidationErrors(mergedErrors);
+            setProductNames(data.names);
+            setIsValidated(true);
+            setIsValidating(false);
+          },
+          onError: (err) => {
+            setIsValidating(false);
+            setIsValidated(false);
+            const msg = err.message || 'Error al validar el archivo de ingresos.';
+            setGlobalError(msg);
+            toast.error(msg);
+          },
+        });
+
+      } catch {
         toast.error('Error al parsear el archivo Excel. Revisa las columnas SKU y Cantidad.');
         setIsValidating(false);
+        setIsValidated(false);
       }
     };
     reader.readAsBinaryString(file);
@@ -178,6 +190,10 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
     setProductNames({});
     setFileName('');
     setInvoiceNumber('');
+    setGlobalError(null);
+    setIsValidated(false);
+    setIsValidating(false);
+    resetValidation();
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -185,7 +201,7 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
 
   const handleConfirmImport = () => {
     if (parsedData.length === 0 || !selectedBranchId) return;
-    importMutation.mutate({
+    importPurchases({
       branchId: selectedBranchId,
       supplierId: selectedSupplierId || undefined,
       items: parsedData,
@@ -347,7 +363,7 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
 
               <button
                 onClick={handleReset}
-                disabled={importMutation.isPending}
+                disabled={isImporting}
                 className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground border border-border hover:bg-muted px-2.5 py-1.2 rounded-lg transition-colors cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
@@ -362,7 +378,15 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
               </div>
             ) : (
               <>
-                {errorCount > 0 ? (
+                {globalError ? (
+                  <div className="flex gap-2.5 bg-rose-500/10 border border-rose-500/25 rounded-xl p-3 text-xs text-rose-300">
+                    <AlertTriangle className="w-4.5 h-4.5 text-rose-400 shrink-0" />
+                    <div>
+                      <p className="font-semibold">Límite excedido o error de validación</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{globalError}</p>
+                    </div>
+                  </div>
+                ) : errorCount > 0 ? (
                   <div className="flex gap-2.5 bg-rose-500/10 border border-rose-500/25 rounded-xl p-3 text-xs text-rose-300">
                     <AlertTriangle className="w-4.5 h-4.5 text-rose-400 shrink-0" />
                     <div>
@@ -370,7 +394,7 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
                       <p className="text-[10px] text-muted-foreground mt-0.5">Las filas marcadas en rojo no existen en el sistema. Agrégalos al catálogo antes de ingresar mercadería.</p>
                     </div>
                   </div>
-                ) : (
+                ) : isValidated ? (
                   <div className="flex gap-2.5 bg-emerald-500/10 border border-emerald-500/25 rounded-xl p-3 text-xs text-emerald-300">
                     <CheckCircle2 className="w-4.5 h-4.5 text-emerald-500 shrink-0" />
                     <div>
@@ -378,7 +402,7 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
                       <p className="text-[10px] text-muted-foreground mt-0.5">Todos los SKUs existen y están listos para ingresar al inventario de la sucursal.</p>
                     </div>
                   </div>
-                )}
+                ) : null}
 
                 {/* Preview Table */}
                 <BulkImportPreviewTable
@@ -392,17 +416,17 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
                 <div className="flex justify-end gap-3 pt-3 border-t border-border mt-3">
                   <button
                     onClick={onClose}
-                    disabled={importMutation.isPending}
+                    disabled={isImporting}
                     className="text-xs font-semibold text-secondary hover:bg-muted border border-border px-4 py-2 rounded-xl transition-colors cursor-pointer"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleConfirmImport}
-                    disabled={errorCount > 0 || importMutation.isPending || isValidating}
+                    disabled={!isValidated || errorCount > 0 || !!globalError || isImporting || isValidating}
                     className="flex items-center gap-1.5 text-xs font-bold text-white bg-primary hover:bg-primary/95 disabled:bg-muted disabled:text-muted-foreground px-4 py-2 rounded-xl transition-all shadow-lg cursor-pointer disabled:cursor-not-allowed"
                   >
-                    {importMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                     Confirmar e Ingresar
                     <ArrowRight className="w-4 h-4" />
                   </button>

@@ -21,6 +21,8 @@ interface BulkImportModalProps {
   selectedBranchId?: string;
 }
 
+const MAX_IMPORT_PRODUCTS_ROWS = 3000;
+
 export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClose, selectedBranchId: contextBranchId }) => {
   const { branches = [] } = useBranches();
   
@@ -29,6 +31,8 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
   const [parsedData, setParsedData] = useState<BulkImportProductItem[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isValidating, setIsValidating] = useState(false);
+  const [isValidated, setIsValidated] = useState(false);
+  const [globalError, setGlobalError] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,11 +54,15 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
   } = useProductImport({
     onValidateSuccess: (data) => {
       setValidationErrors(data.errors);
+      setIsValidated(true);
       setIsValidating(false);
     },
     onValidateError: (err) => {
+      setIsValidated(false);
       setIsValidating(false);
-      toast.error(err.message || 'Error al validar el archivo.');
+      const msg = err.message || 'Error al validar el archivo.';
+      setGlobalError(msg);
+      toast.error(msg);
     },
     onImportSuccess: (res) => {
       toast.success(`¡Importación completada! Se crearon ${res.importedCount} productos.`);
@@ -136,6 +144,19 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
 
         setParsedData(normalized);
 
+        // Pre-check row limit client-side
+        if (normalized.length > MAX_IMPORT_PRODUCTS_ROWS) {
+          const limitMsg = `El archivo contiene ${normalized.length} filas. El límite máximo permitido por importación es de ${MAX_IMPORT_PRODUCTS_ROWS.toLocaleString()} registros.`;
+          setGlobalError(limitMsg);
+          setIsValidated(false);
+          setIsValidating(false);
+          toast.error(limitMsg);
+          return;
+        }
+
+        setGlobalError(null);
+        setIsValidated(false);
+
         // Run validation against the backend
         const validationItems = normalized.map(it => ({ sku: it.sku, name: it.name }));
         validateImport(validationItems);
@@ -143,6 +164,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
       } catch {
         toast.error('Error al procesar el archivo Excel. Asegúrate que tiene el formato correcto.');
         setIsValidating(false);
+        setIsValidated(false);
       }
     };
     reader.readAsBinaryString(file);
@@ -152,6 +174,8 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
     setParsedData([]);
     setValidationErrors({});
     setFileName('');
+    setGlobalError(null);
+    setIsValidated(false);
     setIsValidating(false);
     resetValidation();
     if (fileInputRef.current) {
@@ -287,7 +311,15 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
               </div>
             ) : (
               <>
-                {errorCount > 0 ? (
+                {globalError ? (
+                  <div className="flex gap-2.5 bg-rose-500/10 border border-rose-500/25 rounded-xl p-3 text-xs text-rose-300">
+                    <AlertTriangle className="w-4.5 h-4.5 text-rose-400 shrink-0" />
+                    <div>
+                      <p className="font-semibold">Límite excedido o error de validación</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{globalError}</p>
+                    </div>
+                  </div>
+                ) : errorCount > 0 ? (
                   <div className="flex gap-2.5 bg-rose-500/10 border border-rose-500/25 rounded-xl p-3 text-xs text-rose-300">
                     <AlertTriangle className="w-4.5 h-4.5 text-rose-400 shrink-0" />
                     <div>
@@ -295,7 +327,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
                       <p className="text-[10px] text-muted-foreground mt-0.5">Corrige el archivo de Excel y súbelo de nuevo para poder continuar con la importación masiva.</p>
                     </div>
                   </div>
-                ) : (
+                ) : isValidated ? (
                   <div className="flex gap-2.5 bg-emerald-500/10 border border-emerald-500/25 rounded-xl p-3 text-xs text-emerald-300">
                     <CheckCircle2 className="w-4.5 h-4.5 text-emerald-500 shrink-0" />
                     <div>
@@ -303,7 +335,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
                       <p className="text-[10px] text-muted-foreground mt-0.5">Todos los SKUs son nuevos y la información tiene la estructura correcta para ser cargada.</p>
                     </div>
                   </div>
-                )}
+                ) : null}
 
                 {/* Preview Table */}
                 <BulkImportPreviewTable 
@@ -323,7 +355,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
                   </button>
                   <button
                     onClick={handleConfirmImport}
-                    disabled={errorCount > 0 || isImporting || isValidating}
+                    disabled={!isValidated || errorCount > 0 || !!globalError || isImporting || isValidating}
                     className="flex items-center gap-1.5 text-xs font-bold text-white bg-primary hover:bg-primary/95 disabled:bg-muted disabled:text-muted-foreground px-4 py-2 rounded-xl transition-all shadow-lg cursor-pointer disabled:cursor-not-allowed"
                   >
                     {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
