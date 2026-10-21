@@ -4,9 +4,9 @@ import { format } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { usePaginatedSales } from '../hooks/useSalesList';
 import { SaleDetailModal } from './SaleDetailModal';
-import { ThermalTicketModal } from './pos/ThermalTicketModal';
-import { salesService } from '../services/sales.service';
-import { PaymentMethod } from '../types';
+import { ThermalTicketModal, type TicketSaleData } from './pos/ThermalTicketModal';
+import { useSaleByInvoice } from '../hooks/useSaleDetail';
+import { toTicketSaleData } from '../mappers/sale.mapper';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import { ProductPagination } from '@/modules/products/components/ProductPagination';
@@ -25,10 +25,11 @@ export const SalesView: React.FC = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [selectedInvoice, setSelectedInvoice] = useState<string>();
-  const [ticketSaleData, setTicketSaleData] = useState<any>(null);
+  const [ticketSaleData, setTicketSaleData] = useState<TicketSaleData | null>(null);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [printingInvoice, setPrintingInvoice] = useState<string | null>(null);
 
+  const { fetchSale } = useSaleByInvoice();
   const publicTenant = useAuthStore((state) => state.publicTenant);
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
   const startDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined;
@@ -51,29 +52,9 @@ export const SalesView: React.FC = () => {
     e.stopPropagation();
     try {
       setPrintingInvoice(invoiceNumber);
-      const detail = await salesService.getSaleByInvoice(invoiceNumber);
+      const detail = await fetchSale(invoiceNumber);
       if (detail) {
-        setTicketSaleData({
-          invoiceNumber: detail.invoiceNumber,
-          createdAt: detail.createdAt,
-          branchName: detail.branch?.name || 'Sucursal General',
-          branchAddress: detail.branch?.address || '',
-          clientName: detail.customer?.name || 'Consumidor Final',
-          clientIdentity: '9999999999',
-          items: detail.items.map((item) => ({
-            variantId: item.variantId,
-            variantSku: item.sku || '',
-            productName: item.productName,
-            combinationText: item.attributes || 'Estándar',
-            quantity: Number(item.quantity),
-            price: Number(item.price),
-            discountAmount: Number(item.discountAmount || 0),
-          })),
-          paymentMethod: (detail.payments?.[0]?.paymentMethod || PaymentMethod.EFECTIVO) as any,
-          discountAmount: Number(detail.discountAmount || 0),
-          total: Number(detail.total || 0),
-          userName: detail.user?.name || 'Vendedor',
-        });
+        setTicketSaleData(toTicketSaleData(detail));
         setIsTicketModalOpen(true);
       }
     } catch (err) {
@@ -209,7 +190,6 @@ export const SalesView: React.FC = () => {
           }}
           saleData={ticketSaleData}
           tenantRuc={publicTenant?.ruc || ''}
-          tenantName={publicTenant?.name || ''}
           currencyCode={publicTenant?.currencyCode || ''}
         />
       )}

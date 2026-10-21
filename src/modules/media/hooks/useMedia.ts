@@ -2,14 +2,26 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { mediaService } from '../services/media.service';
 import type { RegisteredImage, PaginatedImages } from '../services/media.service';
 
-interface UseMediaUploadOptions {
+export interface UseMediaUploadOptions {
   enabled?: boolean;
   page?: number;
   limit?: number;
   search?: string;
 }
 
-export const useMediaUpload = (options?: UseMediaUploadOptions) => {
+export interface UseMediaUploadReturn {
+  uploadImage: (params: { file: File; description?: string }) => Promise<RegisteredImage>;
+  isUploading: boolean;
+  uploadImageByUrl: (params: { url: string; description?: string }) => Promise<RegisteredImage>;
+  isUploadingByUrl: boolean;
+  deleteImage: (id: string) => Promise<void>;
+  isDeleting: boolean;
+  isLoading: boolean;
+  uploadedImages: RegisteredImage[];
+  meta: PaginatedImages['meta'];
+}
+
+export const useMediaUpload = (options?: UseMediaUploadOptions): UseMediaUploadReturn => {
   const queryClient = useQueryClient();
   const page = options?.page;
   const limit = options?.limit;
@@ -22,8 +34,8 @@ export const useMediaUpload = (options?: UseMediaUploadOptions) => {
     enabled: options?.enabled ?? true,
   });
 
-  const uploadedImages = response?.data || [];
-  const meta = response?.meta || { total: 0, page: 1, limit: limit || 20, totalPages: 1 };
+  const uploadedImages: RegisteredImage[] = response?.data ?? [];
+  const meta: PaginatedImages['meta'] = response?.meta ?? { total: 0, page: 1, limit: limit || 20, totalPages: 1 };
 
   // Mutation to upload a new image
   const uploadMutation = useMutation({

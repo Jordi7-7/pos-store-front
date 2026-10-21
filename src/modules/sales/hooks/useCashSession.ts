@@ -25,6 +25,9 @@ export const useOpenCashSession = () => {
     mutationFn: (input: OpenCashSessionInput) => salesService.openCashSession(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active-cash-session'] });
+      queryClient.invalidateQueries({ queryKey: ['my-cash-registers'] });
+      queryClient.invalidateQueries({ queryKey: ['cash-registers'] });
+      queryClient.invalidateQueries({ queryKey: ['cash-sessions'] });
     },
   });
 
@@ -39,8 +42,14 @@ export const useCloseCashSession = () => {
   const closeCashMutation = useMutation({
     mutationFn: ({ id, closingBalance }: { id: string; closingBalance: number }) =>
       salesService.closeCashSession(id, closingBalance),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['active-cash-session'] });
+      queryClient.invalidateQueries({ queryKey: ['my-cash-registers'] });
+      queryClient.invalidateQueries({ queryKey: ['cash-registers'] });
+      queryClient.invalidateQueries({ queryKey: ['cash-sessions'] });
+      if (variables?.id) {
+        queryClient.removeQueries({ queryKey: ['cash-session-details', variables.id] });
+      }
     },
   });
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search, CornerDownLeft, X, Package, Maximize2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { productsService } from '@/modules/products/services/products.service';
+import { useVariantSearch } from '@/modules/products/hooks';
 import { ProductType } from '@/modules/products/enums';
 import { PosVariableProductModal } from './PosVariableProductModal';
 
@@ -22,6 +22,7 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearchModal, setShowSearchModal] = useState<boolean>(false);
   const [isSearching, setIsSearching] = useState<boolean>(false);
+  const { findPosVariantBySku } = useVariantSearch();
 
   // Variable product modal state
   const [variableProductData, setVariableProductData] = useState<any | null>(null);
@@ -33,7 +34,7 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
 
     try {
       setIsSearching(true);
-      const res = await productsService.getPosVariantBySku(code, branchId);
+      const res = await findPosVariantBySku(code, branchId);
 
       // Case 1: Returned a variable product wrapper object by baseSku
       if (res && !Array.isArray(res) && (res as any).variants) {

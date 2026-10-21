@@ -1,13 +1,14 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { cashSessionsService } from '../services/cash-sessions.service';
 import type { CashSessionHeader, CashSessionDetails } from '../types/cash-sessions.types';
-import type { CashSessionDetailsEntity } from '../entities';
-import { toCashSessionDetailsEntity } from '../mappers';
+import type { CashSessionDetailsEntity, CashSessionHeaderEntity } from '../entities';
+import { toCashSessionDetailsEntity, toCashSessionHeaderEntities } from '../mappers';
 
 export const useCashSessionsList = (branchId?: string) => {
-  const { data: sessions = [], isLoading, refetch } = useQuery<CashSessionHeader[]>({
+  const { data: sessions = [], isLoading, refetch } = useQuery<CashSessionHeader[], Error, CashSessionHeaderEntity[]>({
     queryKey: ['cash-sessions', branchId],
     queryFn: () => cashSessionsService.getCashSessions(branchId),
+    select: (data) => toCashSessionHeaderEntities(data),
   });
 
   return {
@@ -38,5 +39,17 @@ export const useCashSessionDetailsQuery = (sessionId: string | null, options?: {
     rawDetails: queryResult?.raw ?? null,
     isLoading,
   };
+};
+
+export const useFetchCashSessionDetails = () => {
+  const queryClient = useQueryClient();
+
+  const fetchDetails = async (sessionId: string): Promise<CashSessionDetails> => {
+    const data = await cashSessionsService.getCashSessionDetails(sessionId);
+    queryClient.setQueryData(['cash-session-details', sessionId], data);
+    return data;
+  };
+
+  return { fetchDetails };
 };
 

@@ -21,12 +21,18 @@ export interface CashSessionHeaderEntity {
   openedAtFormatted: string;
   closedAt: string | null;
   closedAtFormatted: string;
+  dateFormatted: string;
+  openTimeFormatted: string;
+  closeTimeFormatted: string;
+  timeRangeFormatted: string;
   durationFormatted: string;
   openedByName: string;
   branchName: string;
   branchAddress: string;
   cashRegisterName: string;
   cashRegisterCode: string;
+  totalSales: number;
+  totalSalesFormatted: string;
 }
 
 export interface SessionKPIsEntity {

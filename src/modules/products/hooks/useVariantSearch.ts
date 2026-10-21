@@ -5,7 +5,13 @@ export const useVariantSearch = () => {
     return productsService.getVariantBySku(sku);
   };
 
+  const findPosVariantBySku = async (sku: string, branchId: string) => {
+    return productsService.getPosVariantBySku(sku, branchId);
+  };
+
   return {
     findVariantBySku,
+    findPosVariantBySku,
   };
 };
+

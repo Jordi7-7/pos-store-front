@@ -4,3 +4,8 @@ export enum SaleStatus {
   PARTIALLY_REFUNDED = 'PARTIALLY_REFUNDED',
   CANCELLED = 'CANCELLED',
 }
+
+export enum PaymentMethod {
+  EFECTIVO = 'EFECTIVO',
+  TARJETA = 'TARJETA',
+}

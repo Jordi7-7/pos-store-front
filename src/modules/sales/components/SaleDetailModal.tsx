@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,8 @@ import { Loader2, Receipt, RotateCcw, Printer } from 'lucide-react';
 import { useSaleByInvoice } from '../hooks/useSaleDetail';
 import { ThermalTicketModal } from './pos/ThermalTicketModal';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
-import { PaymentMethod } from '../types';
+import { toTicketSaleData } from '../mappers/sale.mapper';
+import type { SaleDetailItemEntity, SaleRefundItemEntity } from '../entities/sale.entity';
 
 interface SaleDetailModalProps {
   invoiceNumber?: string;
@@ -21,30 +22,7 @@ export const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ invoiceNumber,
   const publicTenant = useAuthStore((state) => state.publicTenant);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
 
-  const saleDataForTicket = sale ? {
-    invoiceNumber: sale.invoiceNumber,
-    createdAt: sale.dateFormatted,
-    branchName: sale.branchName,
-    branchAddress: sale.branchAddress || '',
-    clientName: sale.customerName,
-    clientIdentity: '9999999999',
-    items: sale.items.map((item) => ({
-      variantId: item.variantId,
-      variantSku: item.sku || '',
-      productName: item.productName,
-      combinationText: item.attributes || 'Estándar',
-      quantity: Number(item.quantity),
-      price: Number(item.price),
-      discountAmount: Number(item.discountAmount || 0),
-    })),
-    paymentMethod: (sale.payments?.[0]?.paymentMethod || PaymentMethod.EFECTIVO) as any,
-    subtotal: Number(sale.subtotal || 0),
-    itemsDiscountAmount: Number(sale.itemsDiscountAmount || 0),
-    globalDiscountAmount: Number(sale.globalDiscountAmount || 0),
-    discountAmount: Number(sale.discountAmount || 0),
-    total: Number(sale.total || 0),
-    userName: sale.userName,
-  } : null;
+  const saleDataForTicket = useMemo(() => (sale ? toTicketSaleData(sale) : null), [sale]);
 
   return (
     <>
@@ -87,7 +65,7 @@ export const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ invoiceNumber,
                     <table className="w-full text-left text-xs">
                       <thead className="bg-muted/50"><tr><th className="p-3">Producto</th><th className="p-3">SKU</th><th className="p-3 text-right">Cantidad</th><th className="p-3 text-right">Precio venta</th><th className="p-3 text-right">Descuento</th><th className="p-3 text-right">Total</th></tr></thead>
                       <tbody>
-                        {sale.items.map((item) => {
+                        {sale.items.map((item: SaleDetailItemEntity) => {
                           const isFullyRefunded = item.refundedQty >= item.quantity;
                           const isPartiallyRefunded = item.refundedQty > 0 && !isFullyRefunded;
                           return <tr key={item.saleItemId} className={`border-t border-border/60 ${isFullyRefunded ? 'bg-rose-500/5' : isPartiallyRefunded ? 'bg-amber-500/5' : ''}`}>
@@ -109,7 +87,7 @@ export const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ invoiceNumber,
                   <section className="rounded-xl border border-border p-4"><h3 className="mb-3 text-xs font-bold uppercase tracking-wider">Resumen</h3><div className="space-y-2 text-xs"><div className="flex justify-between"><span>Subtotal</span><strong>{sale.subtotalFormatted}</strong></div><div className="flex justify-between text-emerald-600"><span>Descuento</span><strong>-{sale.discountAmountFormatted}</strong></div><div className="flex justify-between border-t border-border pt-2 text-sm"><span>Total</span><strong>{sale.totalFormatted}</strong></div></div></section>
                 </div>
 
-                {sale.refunds.length > 0 && <section className="space-y-3"><h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-600"><RotateCcw className="h-4 w-4" />Historial de devoluciones</h3>{sale.refunds.map((refund) => <div key={refund.id} className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4"><div className="flex justify-between text-xs"><strong>{refund.dateFormatted}</strong><strong>{refund.totalRefundedFormatted}</strong></div><p className="mt-1 text-xs text-muted-foreground">{refund.reason}</p><div className="mt-3 space-y-1">{refund.items.map((item) => <div key={item.id} className="flex justify-between text-[11px]"><span>{item.productName} · {item.sku} x{item.quantity}</span><span className="font-mono">{item.priceRefundedFormatted}</span></div>)}</div></div>)}</section>}
+                {sale.refunds.length > 0 && <section className="space-y-3"><h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-600"><RotateCcw className="h-4 w-4" />Historial de devoluciones</h3>{sale.refunds.map((refund) => <div key={refund.id} className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4"><div className="flex justify-between text-xs"><strong>{refund.dateFormatted}</strong><strong>{refund.totalRefundedFormatted}</strong></div><p className="mt-1 text-xs text-muted-foreground">{refund.reason}</p><div className="mt-3 space-y-1">{refund.items.map((item: SaleRefundItemEntity) => <div key={item.id} className="flex justify-between text-[11px]"><span>{item.productName} · {item.sku} x{item.quantity}</span><span className="font-mono">{item.priceRefundedFormatted}</span></div>)}</div></div>)}</section>}
               </div>
             )}
           </div>
@@ -122,7 +100,6 @@ export const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ invoiceNumber,
           onClose={() => setIsTicketModalOpen(false)}
           saleData={saleDataForTicket}
           tenantRuc={publicTenant?.ruc || ''}
-          tenantName={publicTenant?.name || ''}
           currencyCode={publicTenant?.currencyCode || ''}
         />
       )}

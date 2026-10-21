@@ -11,7 +11,8 @@ import {
 } from '../hooks/useSalesMutations';
 import { useCustomers } from '../hooks/useCustomers';
 import { useCashSessionDetailsQuery } from '../../cash-sessions/hooks/useCashSessions';
-import { PaymentMethod } from '../types';
+import { PaymentMethod } from '../enums';
+import { CashSessionStatus } from '@/modules/cash-sessions/enums';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { toast } from 'sonner';
 import { DateTime } from 'luxon';
@@ -33,10 +34,11 @@ import { AperturaModal } from './pos/AperturaModal';
 import { EgresoModal } from './pos/EgresoModal';
 import { CierreModal } from './pos/CierreModal';
 import { CashSessionAuditModal } from '../../cash-sessions/components/CashSessionAuditModal';
-import { cashSessionsService } from '../../cash-sessions/services/cash-sessions.service';
+import { useFetchCashSessionDetails } from '@/modules/cash-sessions/hooks';
 import { buildClosingTicketData } from '../../cash-sessions/utils/buildClosingTicketData';
 import { ExchangeReturnModal } from './pos/ExchangeReturnModal';
 import { usePOSHotkeys } from '../hooks/usePOSHotkeys';
+import { formatSaleDateTime } from '../mappers/sale.mapper';
 
 interface POSViewProps {
   activeSession?: any;
@@ -49,9 +51,10 @@ export const POSView: React.FC<POSViewProps> = ({
 }) => {
   const {
     selectedBranchId,
-    branches,
+    selectedBranch,
+    selectedBranchName,
     setSelectedBranchId,
-    selectedBranchName: currentBranchName,
+    branches,
   } = useLayoutContext();
   const { customers } = useCustomers();
   const { role, selectedCashRegisterId, setSelectedCashRegisterId } = useAuthStore();
@@ -102,6 +105,7 @@ export const POSView: React.FC<POSViewProps> = ({
   const { closeSession, isClosing } = useCloseCashSession();
   const { registerExpense: apiRegisterExpense, isRegistering } = useRegisterExpense();
   const { processSale, isProcessing } = useProcessSale();
+  const { fetchDetails: fetchCashSessionDetails } = useFetchCashSessionDetails();
 
   // Session Balance & Expense Form fields
   const [openingBalance, setOpeningBalance] = useState('1000.00');
@@ -267,7 +271,6 @@ export const POSView: React.FC<POSViewProps> = ({
     }
     try {
       const closingSessionId = activeSession.id;
-      const branch = branches.find((b: any) => b.id === selectedBranchId);
 
       await closeSession({
         id: closingSessionId,
@@ -275,7 +278,7 @@ export const POSView: React.FC<POSViewProps> = ({
       });
 
       try {
-        const closedDetails = await cashSessionsService.getCashSessionDetails(closingSessionId);
+        const closedDetails = await fetchCashSessionDetails(closingSessionId);
         const dataToPrint = buildClosingTicketData(closedDetails);
         setClosingSessionToPrint(dataToPrint);
       } catch (detailsErr) {
@@ -295,9 +298,9 @@ export const POSView: React.FC<POSViewProps> = ({
           refundsList: [],
           salesList: [],
           userName: currentUser?.name || 'Vendedor',
-          branchName: branch?.name || 'Principal',
-          branchAddress: branch?.address || '',
-          status: 'CLOSED' as const,
+          branchName: selectedBranch?.name || selectedBranchName,
+          branchAddress: selectedBranch?.address || '',
+          status: CashSessionStatus.CLOSED,
         });
       }
 
@@ -388,8 +391,6 @@ export const POSView: React.FC<POSViewProps> = ({
       return;
     }
 
-    const branchName = branches.find((b: any) => b.id === branch)?.name || 'Sucursal General';
-
     let remainingBudget = cartTotal;
     const normalizedPayments: { paymentMethod: PaymentMethod; amount: number; referenceNumber?: string }[] = [];
 
@@ -448,9 +449,9 @@ export const POSView: React.FC<POSViewProps> = ({
 
       const saleDataForTicket = {
         invoiceNumber: res.invoiceNumber,
-        createdAt: res.createdAt || new Date().toISOString(),
-        branchName,
-        branchAddress: branches.find((b: any) => b.id === branch)?.address || '',
+        createdAt: formatSaleDateTime(res.createdAt || new Date()),
+        branchName: selectedBranch?.name || selectedBranchName,
+        branchAddress: selectedBranch?.address || '',
         clientName,
         clientIdentity,
         items: cart.map(i => ({
@@ -539,7 +540,7 @@ export const POSView: React.FC<POSViewProps> = ({
     <div className="flex h-full min-h-0 flex-col gap-6 lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
       {/* Header Bar */}
       <POSHeader
-        branchName={currentBranchName}
+        branchName={selectedBranchName}
         currentTime={currentTime}
         shiftDuration={shiftDuration}
         activeSession={activeSession}
@@ -618,7 +619,6 @@ export const POSView: React.FC<POSViewProps> = ({
         }}
         saleData={lastCompletedSale}
         tenantRuc={publicTenant?.ruc || ''}
-        tenantName={publicTenant?.name || ''}
         currencyCode={publicTenant?.currencyCode || ''}
       />
 

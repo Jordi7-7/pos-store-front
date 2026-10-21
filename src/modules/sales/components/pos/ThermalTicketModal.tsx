@@ -1,34 +1,44 @@
 import React from 'react';
 import { Printer } from 'lucide-react';
 import { numeroALetras } from 'numero-a-letras-es';
-import { PaymentMethod } from '../../types';
+import { PaymentMethod } from '../../enums';
 import {
   Dialog,
   DialogContent,
 } from '@/components/ui/dialog';
-import { useAuthStore } from '../../../auth/hooks/useAuthStore';
 
-interface ThermalTicketModalProps {
+export interface TicketSaleItem {
+  variantId?: string;
+  variantSku?: string;
+  productName: string;
+  combinationText?: string;
+  quantity: number;
+  price: number;
+  discountAmount?: number;
+}
+
+export interface TicketSaleData {
+  invoiceNumber: string;
+  createdAt: string;
+  branchName: string;
+  branchAddress?: string;
+  clientName: string;
+  clientIdentity?: string;
+  items: TicketSaleItem[];
+  paymentMethod: PaymentMethod;
+  subtotal?: number;
+  itemsDiscountAmount?: number;
+  globalDiscountAmount?: number;
+  discountAmount?: number;
+  total: number;
+  userName?: string;
+}
+
+export interface ThermalTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
-  saleData: {
-    invoiceNumber: string;
-    createdAt: string;
-    branchName: string;
-    branchAddress?: string;
-    clientName: string;
-    clientIdentity: string;
-    items: any[];
-    paymentMethod: PaymentMethod;
-    subtotal?: number;
-    itemsDiscountAmount?: number;
-    globalDiscountAmount?: number;
-    discountAmount?: number;
-    total: number;
-    userName?: string;
-  } | null;
+  saleData: TicketSaleData | null;
   tenantRuc?: string;
-  tenantName?: string;
   currencyCode?: string;
 }
 
@@ -37,11 +47,12 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
   onClose,
   saleData,
   tenantRuc,
-  tenantName,
   currencyCode
 }) => {
-  const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
   if (!saleData) return null;
+
+  const ticketTitle = saleData.branchName.toUpperCase();
+  const displayAddress =saleData.branchAddress
 
   let moneda = 'PESOS';
   let sufijo = 'M.N.';
@@ -165,9 +176,9 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
         </head>
         <body>
           <div class="text-center" style="margin-bottom: 6px;">
-            <div class="font-bold" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">${tenantName || 'leAO'}</div>
+            <div class="font-bold" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">${ticketTitle}</div>
             ${tenantRuc ? `<div style="font-weight: 700; font-size: 10px;">RFC: ${tenantRuc}</div>` : ''}
-            ${saleData.branchAddress ? `<div style="text-transform: uppercase; font-size: 9.5px; font-weight: 600; margin-top: 1px;">${saleData.branchAddress}</div>` : '<div style="font-size: 9.5px;">AV. 20 DE NOVIEMBRE</div>'}
+            ${displayAddress ? `<div style="text-transform: uppercase; font-size: 9.5px; font-weight: 600; margin-top: 1px;">${displayAddress}</div>` : ''}
             <div style="font-size: 9.5px; font-weight: 600;">TLF: 967 6316359</div>
           </div>
 
@@ -184,7 +195,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
             </div>
             <div class="flex justify-between">
               <span>FECHA:</span>
-              <span>${new Date(saleData.createdAt).toLocaleString(undefined, { timeZone: timezone })}</span>
+              <span>${saleData.createdAt}</span>
             </div>
             <div class="flex justify-between">
               <span>CLIENTE:</span>
@@ -275,9 +286,9 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
         {/* On screen modal representation (Aesthetic White Ticket representation) */}
         <div className="space-y-4 font-mono text-xs text-gray-800">
           <div className="text-center space-y-1 pb-2 border-b border-gray-200">
-            <h4 className="text-sm font-bold uppercase text-black">{tenantName || 'leAO'}</h4>
+            <h4 className="text-sm font-bold uppercase text-black">{ticketTitle}</h4>
             {tenantRuc && <p className="text-[10px] text-gray-500">RFC: {tenantRuc}</p>}
-            <p className="text-[10px] text-gray-500 uppercase truncate">{saleData.branchAddress || 'AV. 20 DE NOVIEMBRE'}</p>
+            {displayAddress && <p className="text-[10px] text-gray-500 uppercase truncate">{displayAddress}</p>}
             <p className="text-[10px] text-gray-500">TLF: 967 6316359</p>
           </div>
 
@@ -292,7 +303,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
             </div>
             <div className="flex justify-between">
               <span>FECHA:</span>
-              <span className="text-black">{new Date(saleData.createdAt).toLocaleString(undefined, { timeZone: timezone })}</span>
+              <span className="text-black">{saleData.createdAt}</span>
             </div>
             <div className="flex justify-between">
               <span>CLIENTE:</span>

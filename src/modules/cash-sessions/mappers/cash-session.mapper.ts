@@ -1,4 +1,4 @@
-import type { CashSessionDetails } from '../types/cash-sessions.types';
+import type { CashSessionDetails, CashSessionHeader, DetailedSessionHeader } from '../types/cash-sessions.types';
 import type {
   CashSessionDetailsEntity,
   CashSessionHeaderEntity,
@@ -16,6 +16,21 @@ const formatMoney = (value: number | null | undefined): string => {
   return `$${Number(value || 0).toFixed(2)}`;
 };
 
+const formatDate = (dateString?: string | null): string => {
+  if (!dateString) return '';
+  const tz = useAuthStore.getState().timezone || 'America/Guayaquil';
+  try {
+    return new Date(dateString).toLocaleDateString('es-EC', {
+      timeZone: tz,
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  } catch {
+    return '';
+  }
+};
+
 const formatTime = (dateString?: string | null): string => {
   if (!dateString) return '';
   const tz = useAuthStore.getState().timezone || 'America/Guayaquil';
@@ -30,22 +45,22 @@ const formatTime = (dateString?: string | null): string => {
   }
 };
 
-export const toCashSessionDetailsEntity = (
-  dto: CashSessionDetails
-): CashSessionDetailsEntity => {
-  const isClosed = dto.session.status === CashSessionStatus.CLOSED;
-  const diff = dto.session.difference !== null && dto.session.difference !== undefined
-    ? Number(dto.session.difference)
+export const toCashSessionHeaderEntity = (
+  dto: CashSessionHeader | DetailedSessionHeader
+): CashSessionHeaderEntity => {
+  const isClosed = dto.status === CashSessionStatus.CLOSED;
+  const diff = dto.difference !== null && dto.difference !== undefined
+    ? Number(dto.difference)
     : null;
 
   let differenceStatus: CashSessionDifferenceStatus = CashSessionDifferenceStatus.PENDING;
-  let differenceStatusText = 'En progreso';
+  let differenceStatusText = 'En turno';
 
   if (isClosed) {
     if (diff !== null) {
       if (Math.abs(diff) < 0.05) {
         differenceStatus = CashSessionDifferenceStatus.EXACT;
-        differenceStatusText = 'Exacto (Sin diff)';
+        differenceStatusText = 'Exacto ($0.00)';
       } else if (diff > 0) {
         differenceStatus = CashSessionDifferenceStatus.SURPLUS;
         differenceStatusText = `Sobran +${formatMoney(diff)}`;
@@ -55,37 +70,63 @@ export const toCashSessionDetailsEntity = (
       }
     } else {
       differenceStatus = CashSessionDifferenceStatus.EXACT;
-      differenceStatusText = 'Exacto (Sin diff)';
+      differenceStatusText = 'Exacto ($0.00)';
     }
   }
 
-  const sessionEntity: CashSessionHeaderEntity = {
-    id: dto.session.id,
-    branchId: dto.session.branchId,
-    userId: dto.session.userId,
-    openingBalance: Number(dto.session.openingBalance || 0),
-    openingBalanceFormatted: formatMoney(dto.session.openingBalance),
-    closingBalance: dto.session.closingBalance !== null ? Number(dto.session.closingBalance) : null,
-    closingBalanceFormatted: formatMoney(dto.session.closingBalance),
-    expectedBalance: dto.session.expectedBalance !== null ? Number(dto.session.expectedBalance) : null,
-    expectedBalanceFormatted: formatMoney(dto.session.expectedBalance),
+  const dateFormatted = formatDate(dto.openedAt);
+  const openTimeFormatted = formatTime(dto.openedAt);
+  const closeTimeFormatted = dto.closedAt ? formatTime(dto.closedAt) : 'En curso';
+  const timeRangeFormatted = dto.closedAt
+    ? `${openTimeFormatted} — ${closeTimeFormatted}`
+    : `Desde ${openTimeFormatted} (En curso)`;
+
+  const detailed = dto as DetailedSessionHeader;
+  const totalSales = Number(dto.totalSales || 0);
+
+  return {
+    id: dto.id,
+    branchId: dto.branchId,
+    userId: dto.userId,
+    openingBalance: Number(dto.openingBalance || 0),
+    openingBalanceFormatted: formatMoney(dto.openingBalance),
+    closingBalance: dto.closingBalance !== null ? Number(dto.closingBalance) : null,
+    closingBalanceFormatted: formatMoney(dto.closingBalance),
+    expectedBalance: dto.expectedBalance !== null ? Number(dto.expectedBalance) : null,
+    expectedBalanceFormatted: formatMoney(dto.expectedBalance),
     difference: diff,
     differenceFormatted: diff !== null ? formatMoney(Math.abs(diff)) : '$0.00',
     differenceStatus,
     differenceStatusText,
-    status: dto.session.status === CashSessionStatus.CLOSED ? CashSessionStatus.CLOSED : CashSessionStatus.OPEN,
+    status: dto.status === CashSessionStatus.CLOSED ? CashSessionStatus.CLOSED : CashSessionStatus.OPEN,
     isClosed,
-    openedAt: dto.session.openedAt,
-    openedAtFormatted: formatTime(dto.session.openedAt),
-    closedAt: dto.session.closedAt,
-    closedAtFormatted: dto.session.closedAt ? formatTime(dto.session.closedAt) : 'Sesión activa',
-    durationFormatted: dto.session.durationFormatted || '0m',
-    openedByName: dto.session.openedBy || dto.session.user?.name || 'No registrado',
-    branchName: dto.session.branchName || dto.session.branch?.name || 'Sucursal General',
-    branchAddress: dto.session.branchAddress || '',
-    cashRegisterName: dto.session.cashRegister?.name || 'Caja Registradora',
-    cashRegisterCode: dto.session.cashRegister?.code ? String(dto.session.cashRegister.code) : '1',
+    openedAt: dto.openedAt,
+    openedAtFormatted: formatTime(dto.openedAt),
+    closedAt: dto.closedAt,
+    closedAtFormatted: dto.closedAt ? formatTime(dto.closedAt) : 'Sesión activa',
+    dateFormatted,
+    openTimeFormatted,
+    closeTimeFormatted,
+    timeRangeFormatted,
+    durationFormatted: detailed.durationFormatted || '0m',
+    openedByName: detailed.openedBy || dto.user?.name || 'No registrado',
+    branchName: detailed.branchName || dto.branch?.name || 'Sucursal General',
+    branchAddress: detailed.branchAddress || '',
+    cashRegisterName: dto.cashRegister?.name || 'Caja Registradora',
+    cashRegisterCode: dto.cashRegister?.code ? String(dto.cashRegister.code) : '1',
+    totalSales,
+    totalSalesFormatted: formatMoney(totalSales),
   };
+};
+
+export const toCashSessionHeaderEntities = (
+  dtos: CashSessionHeader[]
+): CashSessionHeaderEntity[] => (dtos || []).map(toCashSessionHeaderEntity);
+
+export const toCashSessionDetailsEntity = (
+  dto: CashSessionDetails
+): CashSessionDetailsEntity => {
+  const sessionEntity = toCashSessionHeaderEntity(dto.session);
 
   const kpisEntity: SessionKPIsEntity = {
     grossSales: Number(dto.kpis.grossSales || 0),

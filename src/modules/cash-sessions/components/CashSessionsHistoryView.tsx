@@ -9,11 +9,11 @@ import {
   RotateCcw,
   Printer,
 } from 'lucide-react';
-import { useCashSessionsList } from '../hooks/useCashSessions';
-import type { CashSessionHeader } from '../types/cash-sessions.types';
+import { useCashSessionsList, useFetchCashSessionDetails } from '../hooks/useCashSessions';
+import type { CashSessionHeaderEntity } from '../entities';
+import { CashSessionStatus, CashSessionDifferenceStatus } from '../enums';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { useLayoutContext } from '@/providers/LayoutContext';
-import { cashSessionsService } from '../services/cash-sessions.service';
 import { ThermalClosingTicketModal } from '../../sales/components/pos/ThermalClosingTicketModal';
 import { buildClosingTicketData } from '../utils/buildClosingTicketData';
 import { toast } from 'sonner';
@@ -30,12 +30,12 @@ import {
 import { CashSessionAuditModal } from './CashSessionAuditModal';
 
 export const CashSessionsHistoryView: React.FC = () => {
-  const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
   const { selectedBranchId } = useLayoutContext();
   const publicTenant = useAuthStore((state) => state.publicTenant);
 
   const isAllBranches = !selectedBranchId;
   const { sessions, isLoading: listLoading, refetch } = useCashSessionsList(selectedBranchId || undefined);
+  const { fetchDetails } = useFetchCashSessionDetails();
 
   // Selected session for detail modal
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
@@ -48,7 +48,7 @@ export const CashSessionsHistoryView: React.FC = () => {
   const handlePrintSessionById = async (sessionId: string) => {
     try {
       setPrintingSessionId(sessionId);
-      const details = await cashSessionsService.getCashSessionDetails(sessionId);
+      const details = await fetchDetails(sessionId);
 
       const sessionTicketData = buildClosingTicketData(details);
 
@@ -65,55 +65,16 @@ export const CashSessionsHistoryView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Filtered sessions
-  const filteredSessions = useMemo<CashSessionHeader[]>(() => {
-    return sessions.filter((s: CashSessionHeader) => {
-      const regName = s.cashRegister?.name || '';
-      const regCode = String(s.cashRegister?.code || '');
+  const filteredSessions = useMemo<CashSessionHeaderEntity[]>(() => {
+    return sessions.filter((s: CashSessionHeaderEntity) => {
+      const regName = s.cashRegisterName || '';
+      const regCode = s.cashRegisterCode || '';
       return (
         regName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         regCode.includes(searchTerm)
       );
     });
   }, [sessions, searchTerm]);
-
-  // Formatter helpers
-  const formatSessionTime = (openedStr: string, closedStr: string | null) => {
-    const opened = new Date(openedStr);
-    const dateFormatted = opened.toLocaleDateString('es-EC', {
-      timeZone: timezone,
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
-    const openTime = opened.toLocaleTimeString('es-EC', {
-      timeZone: timezone,
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-
-    if (!closedStr) {
-      return (
-        <div>
-          <span className="font-semibold text-secondary block">{dateFormatted}</span>
-          <span className="text-[11px] text-emerald-600 font-medium">Desde {openTime} (En curso)</span>
-        </div>
-      );
-    }
-
-    const closed = new Date(closedStr);
-    const closeTime = closed.toLocaleTimeString('es-EC', {
-      timeZone: timezone,
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-
-    return (
-      <div>
-        <span className="font-semibold text-secondary block">{dateFormatted}</span>
-        <span className="text-[11px] text-neutral font-medium">{openTime} — {closeTime}</span>
-      </div>
-    );
-  };
 
   return (
     <div className="space-y-6">
@@ -191,76 +152,78 @@ export const CashSessionsHistoryView: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredSessions.map((s: CashSessionHeader) => {
-                  const hasDiff = s.difference !== null && s.difference !== undefined;
-                  const diffVal = hasDiff ? Number(s.difference) : 0;
-                  const isExact = hasDiff && Math.abs(diffVal) < 0.05;
+                {filteredSessions.map((s: CashSessionHeaderEntity) => (
+                  <TableRow key={s.id} className="border-b border-border/60 last:border-0 hover:bg-muted/30 transition-colors">
+                    {/* Avatar / Number badge */}
+                    <TableCell className="py-2.5 pl-4 pr-1">
+                      <div className="w-8 h-8 rounded-lg bg-muted border border-border flex items-center justify-center text-primary font-mono font-bold text-xs shrink-0">
+                        #{s.cashRegisterCode}
+                      </div>
+                    </TableCell>
 
-                  return (
-                    <TableRow key={s.id} className="border-b border-border/60 last:border-0 hover:bg-muted/30 transition-colors">
-                      {/* Avatar / Number badge */}
-                      <TableCell className="py-2.5 pl-4 pr-1">
-                        <div className="w-8 h-8 rounded-lg bg-muted border border-border flex items-center justify-center text-primary font-mono font-bold text-xs shrink-0">
-                          #{s.cashRegister?.code || '1'}
-                        </div>
-                      </TableCell>
+                    {/* Caja Registradora */}
+                    <TableCell className="py-2.5">
+                      <div className="font-semibold text-xs text-foreground leading-tight">
+                        {s.cashRegisterName}
+                      </div>
+                    </TableCell>
 
-                      {/* Caja Registradora */}
+                    {/* Sucursal (Modo Consolidado) */}
+                    {isAllBranches && (
                       <TableCell className="py-2.5">
-                        <div className="font-semibold text-xs text-foreground leading-tight">
-                          {s.cashRegister?.name || 'Caja Registradora'}
-                        </div>
-                      </TableCell>
-
-                      {/* Sucursal (Modo Consolidado) */}
-                      {isAllBranches && (
-                        <TableCell className="py-2.5">
-                          <span className="text-[10px] font-semibold bg-muted text-foreground/80 px-2 py-0.5 rounded-md border border-border whitespace-nowrap">
-                            {s.branch?.name || 'Sucursal'}
-                          </span>
-                        </TableCell>
-                      )}
-
-                      {/* Horario de Sesión */}
-                      <TableCell className="py-2.5 text-xs whitespace-nowrap text-foreground/90">
-                        {formatSessionTime(s.openedAt, s.closedAt)}
-                      </TableCell>
-
-                      {/* Ventas Totales */}
-                      <TableCell className="py-2.5 text-right font-mono font-semibold text-xs text-foreground">
-                        ${Number(s.totalSales || 0).toFixed(2)}
-                      </TableCell>
-
-                      {/* Diferencia / Arqueo */}
-                      <TableCell className="py-2.5 text-center font-mono text-xs">
-                        {s.status === 'OPEN' ? (
-                          <span className="text-muted-foreground/60 text-xs italic">En turno</span>
-                        ) : isExact ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-                            Exacto ($0.00)
-                          </span>
-                        ) : diffVal > 0 ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-500 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">
-                            +${diffVal.toFixed(2)}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
-                            -${Math.abs(diffVal).toFixed(2)}
-                          </span>
-                        )}
-                      </TableCell>
-
-                      {/* Estado */}
-                      <TableCell className="py-2.5 text-center">
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
-                          s.status === 'CLOSED' 
-                            ? 'bg-muted text-muted-foreground border border-border' 
-                            : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                        }`}>
-                          {s.status === 'CLOSED' ? <Lock className="w-2.5 h-2.5" /> : <Unlock className="w-2.5 h-2.5 animate-pulse" />}
-                          {s.status === 'CLOSED' ? 'Cerrada' : 'Abierta'}
+                        <span className="text-[10px] font-semibold bg-muted text-foreground/80 px-2 py-0.5 rounded-md border border-border whitespace-nowrap">
+                          {s.branchName}
                         </span>
                       </TableCell>
+                    )}
+
+                    {/* Horario de Sesión */}
+                    <TableCell className="py-2.5 text-xs whitespace-nowrap text-foreground/90">
+                      <div>
+                        <span className="font-semibold text-secondary block">{s.dateFormatted}</span>
+                        {s.isClosed ? (
+                          <span className="text-[11px] text-neutral font-medium">{s.openTimeFormatted} — {s.closeTimeFormatted}</span>
+                        ) : (
+                          <span className="text-[11px] text-emerald-600 font-medium">Desde {s.openTimeFormatted} (En curso)</span>
+                        )}
+                      </div>
+                    </TableCell>
+
+                    {/* Ventas Totales */}
+                    <TableCell className="py-2.5 text-right font-mono font-semibold text-xs text-foreground">
+                      {s.totalSalesFormatted}
+                    </TableCell>
+
+                    {/* Diferencia / Arqueo */}
+                    <TableCell className="py-2.5 text-center font-mono text-xs">
+                      {s.status === CashSessionStatus.OPEN ? (
+                        <span className="text-muted-foreground/60 text-xs italic">En turno</span>
+                      ) : s.differenceStatus === CashSessionDifferenceStatus.EXACT ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                          {s.differenceStatusText}
+                        </span>
+                      ) : s.differenceStatus === CashSessionDifferenceStatus.SURPLUS ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-500 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">
+                          +{s.differenceFormatted}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
+                          -{s.differenceFormatted}
+                        </span>
+                      )}
+                    </TableCell>
+
+                    {/* Estado */}
+                    <TableCell className="py-2.5 text-center">
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                        s.isClosed 
+                          ? 'bg-muted text-muted-foreground border border-border' 
+                          : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                      }`}>
+                        {s.isClosed ? <Lock className="w-2.5 h-2.5" /> : <Unlock className="w-2.5 h-2.5 animate-pulse" />}
+                        {s.isClosed ? 'Cerrada' : 'Abierta'}
+                      </span>
+                    </TableCell>
 
                       {/* Acción */}
                       <TableCell className="py-2.5 pr-4 text-right">
@@ -291,8 +254,7 @@ export const CashSessionsHistoryView: React.FC = () => {
                         </div>
                       </TableCell>
                     </TableRow>
-                  );
-                })}
+                  ))}
               </TableBody>
             </Table>
           </div>

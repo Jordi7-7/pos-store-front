@@ -1,8 +1,9 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useSaleByInvoice } from './useSaleDetail';
 import { useProcessRefund, useProcessSale } from './useSalesMutations';
 import { productsService } from '@/modules/products/services/products.service';
+import { PaymentMethod } from '../enums';
 import type {
   ModalStep,
   SaleItemRow,
@@ -90,8 +91,10 @@ export function useExchangeReturn({
     }));
   }, []);
 
-  const selectedReturnItems: SaleItemRow[] =
-    foundSale?.items?.filter((item: SaleItemRow) => (returnQtyMap[item.variantId] ?? 0) > 0) ?? [];
+  const selectedReturnItems: SaleItemRow[] = useMemo(
+    () => foundSale?.items?.filter((item: SaleItemRow) => (returnQtyMap[item.variantId] ?? 0) > 0) ?? [],
+    [foundSale, returnQtyMap],
+  );
 
   const allItemsFullyRefunded =
     foundSale?.isFullyRefunded === true ||
@@ -275,7 +278,7 @@ export function useExchangeReturn({
         }),
         payments: [
           {
-            paymentMethod: 'EFECTIVO',
+            paymentMethod: PaymentMethod.EFECTIVO,
             amount: totalNewItems,
           },
         ],

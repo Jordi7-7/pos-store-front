@@ -1,9 +1,4 @@
-export const PaymentMethod = {
-  EFECTIVO: 'EFECTIVO',
-  TARJETA: 'TARJETA',
-} as const;
-
-export type PaymentMethod = (typeof PaymentMethod)[keyof typeof PaymentMethod];
+import { PaymentMethod } from '../enums';
 
 export interface SaleItemDTO {
   variantId: string;

@@ -5,6 +5,7 @@ import {
   DialogContent,
 } from '@/components/ui/dialog';
 import { useAuthStore } from '../../../auth/hooks/useAuthStore';
+import { CashSessionStatus } from '@/modules/cash-sessions/enums';
 
 interface ThermalClosingTicketModalProps {
   isOpen: boolean;
@@ -37,7 +38,7 @@ interface ThermalClosingTicketModalProps {
     userName?: string;
     branchName?: string;
     branchAddress?: string;
-    status?: 'OPEN' | 'CLOSED';
+    status?: CashSessionStatus;
   } | null;
   tenantRuc?: string;
   tenantName?: string;
@@ -53,7 +54,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
   const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
   if (!sessionData) return null;
 
-  const isSessionClosed = sessionData.status ? sessionData.status === 'CLOSED' : !!sessionData.closedAt;
+  const isSessionClosed = sessionData.status ? sessionData.status === CashSessionStatus.CLOSED : !!sessionData.closedAt;
   const difference = sessionData.closingBalance - sessionData.expectedBalance;
 
   const handlePrint = () => {

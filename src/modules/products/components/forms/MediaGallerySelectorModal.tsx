@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Search, X, Check, Loader2, ImageIcon } from 'lucide-react';
-import { mediaService, type RegisteredImage } from '@/modules/media/services/media.service';
+import { useMediaUpload } from '@/modules/media/hooks/useMedia';
+import type { RegisteredImage } from '@/modules/media/services/media.service';
 import { ProductPagination } from '@/modules/products/components/ProductPagination';
 
 interface MediaGallerySelectorModalProps {
@@ -25,10 +26,6 @@ export const MediaGallerySelectorModal: React.FC<MediaGallerySelectorModalProps>
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const [images, setImages] = useState<RegisteredImage[]>([]);
-  const [meta, setMeta] = useState({ total: 0, page: 1, limit: 24, totalPages: 1 });
-  const [isLoading, setIsLoading] = useState(false);
-
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -38,35 +35,13 @@ export const MediaGallerySelectorModal: React.FC<MediaGallerySelectorModalProps>
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Fetch images from backend when modal is open, page, limit or search changes
-  useEffect(() => {
-    if (!open) return;
-    let isCancelled = false;
-
-    const fetchGallery = async () => {
-      setIsLoading(true);
-      try {
-        const res = await mediaService.getImages({
-          page,
-          limit,
-          search: debouncedSearch.trim() || undefined,
-        });
-        if (!isCancelled) {
-          setImages(res.data);
-          setMeta(res.meta);
-        }
-      } catch (err) {
-        console.error('Error fetching gallery images:', err);
-      } finally {
-        if (!isCancelled) setIsLoading(false);
-      }
-    };
-
-    fetchGallery();
-    return () => {
-      isCancelled = true;
-    };
-  }, [open, page, limit, debouncedSearch]);
+  // Fetch images via clean media hook
+  const { uploadedImages: images, meta, isLoading } = useMediaUpload({
+    enabled: open,
+    page,
+    limit,
+    search: debouncedSearch.trim() || undefined,
+  });
 
   const selectedIds = new Set(selectedImages.map((img) => img.id));
 
@@ -136,7 +111,7 @@ export const MediaGallerySelectorModal: React.FC<MediaGallerySelectorModalProps>
             </div>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-              {images.map((img) => {
+              {images.map((img: RegisteredImage) => {
                 const isSelected = selectedIds.has(img.id);
                 return (
                   <button

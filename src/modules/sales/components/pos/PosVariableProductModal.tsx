@@ -41,22 +41,30 @@ export interface PosVariableProductModalProps {
   onAddToCart: (product: any, variant: any, maxStock: number) => void;
 }
 
+export type PosVariableProductData = NonNullable<PosVariableProductModalProps['productData']>;
+export type PosVariableVariant = PosVariableProductData['variants'][number];
+export type PosAttributeValue = PosVariableVariant['attributeValues'][number];
+
+const EMPTY_VARIANTS: PosVariableVariant[] = [];
+
 export const PosVariableProductModal: React.FC<PosVariableProductModalProps> = ({
   isOpen,
   onClose,
   productData,
   onAddToCart,
 }) => {
-  if (!isOpen || !productData) return null;
-
-  const { productName, baseSku, imageUrl: productImageUrl, attributes = [], variants = [] } = productData;
+  const productName = productData?.productName || '';
+  const baseSku = productData?.baseSku || '';
+  const productImageUrl = productData?.imageUrl;
+  const attributes = productData?.attributes || [];
+  const variants = productData?.variants ?? EMPTY_VARIANTS;
 
   // Initialize selected values with the first variant's attributes
   const initialSelections = useMemo(() => {
     const defaults: Record<string, string> = {};
     const firstVar = variants[0];
     if (firstVar && firstVar.attributeValues) {
-      firstVar.attributeValues.forEach((av) => {
+      firstVar.attributeValues.forEach((av: PosAttributeValue) => {
         if (av.attributeId && av.valueId) {
           defaults[av.attributeId] = av.valueId;
         }
@@ -73,11 +81,11 @@ export const PosVariableProductModal: React.FC<PosVariableProductModalProps> = (
 
   // Find exact matching variant based on current selections
   const activeVariant = useMemo(() => {
-    return variants.find((variant) => {
+    return variants.find((variant: PosVariableVariant) => {
       if (!variant.attributeValues || variant.attributeValues.length === 0) return false;
       return Object.entries(selectedAttributeValues).every(([attrId, valId]) => {
         return variant.attributeValues.some(
-          (av) => av.attributeId === attrId && av.valueId === valId
+          (av: PosAttributeValue) => av.attributeId === attrId && av.valueId === valId
         );
       });
     }) || variants[0];
@@ -95,7 +103,7 @@ export const PosVariableProductModal: React.FC<PosVariableProductModalProps> = (
   };
 
   const handleConfirmAddToCart = () => {
-    if (!activeVariant) {
+    if (!productData || !activeVariant) {
       toast.warning('No se ha encontrado una variante válida con la combinación seleccionada.');
       return;
     }
@@ -125,6 +133,8 @@ export const PosVariableProductModal: React.FC<PosVariableProductModalProps> = (
     onAddToCart(fakeProduct, fakeVariant, currentStock);
     onClose();
   };
+
+  if (!isOpen || !productData) return null;
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">

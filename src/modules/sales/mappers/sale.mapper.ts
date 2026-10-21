@@ -1,20 +1,35 @@
 import type { PaginatedSaleSummaryDTO, SaleDetailDTO, SaleDetailItemDTO } from '../types/sales.types';
 import type { SaleSummaryEntity, SaleDetailEntity, SaleDetailItemEntity } from '../entities/sale.entity';
-import { SaleStatus } from '../enums';
+import { SaleStatus, PaymentMethod } from '../enums';
+import type { TicketSaleData } from '../components/pos/ThermalTicketModal';
+import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
-export const toSaleSummaryEntity = (dto: PaginatedSaleSummaryDTO): SaleSummaryEntity => {
-  const total = Number(dto.total || 0);
-  const discountAmount = Number(dto.discountAmount || 0);
-  const dateObj = new Date(dto.createdAt);
-  const dateFormatted = !isNaN(dateObj.getTime())
-    ? dateObj.toLocaleDateString('es-EC', {
+export const formatSaleDateTime = (dateVal?: string | Date | null): string => {
+  if (!dateVal) return '-';
+  const tz = useAuthStore.getState().timezone || 'America/Guayaquil';
+  const d = dateVal instanceof Date ? dateVal : new Date(dateVal);
+  if (!isNaN(d.getTime())) {
+    try {
+      return d.toLocaleString('es-EC', {
+        timeZone: tz,
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
-      })
-    : '-';
+      });
+    } catch {
+      return d.toLocaleString();
+    }
+  }
+  return String(dateVal);
+};
+
+export const toSaleSummaryEntity = (dto: PaginatedSaleSummaryDTO): SaleSummaryEntity => {
+  const total = Number(dto.total || 0);
+  const discountAmount = Number(dto.discountAmount || 0);
+  const dateObj = new Date(dto.createdAt);
+  const dateFormatted = formatSaleDateTime(dto.createdAt);
 
   const status = Object.values(SaleStatus).includes(dto.status as SaleStatus)
     ? (dto.status as SaleStatus)
@@ -65,15 +80,7 @@ export const toSaleDetailEntity = (dto: SaleDetailDTO): SaleDetailEntity => {
   const subtotal = Number(dto.subtotal || 0);
   const discountAmount = Number(dto.discountAmount || 0);
   const dateObj = new Date(dto.createdAt);
-  const dateFormatted = !isNaN(dateObj.getTime())
-    ? dateObj.toLocaleDateString('es-EC', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : '-';
+  const dateFormatted = formatSaleDateTime(dto.createdAt);
 
   const items = (dto.items || []).map(toSaleDetailItemEntity);
   const totalPieces = items.reduce((acc, it) => acc + it.quantity, 0);
@@ -94,7 +101,7 @@ export const toSaleDetailEntity = (dto: SaleDetailDTO): SaleDetailEntity => {
     return {
       id: r.id,
       createdAt: rDateObj,
-      dateFormatted: !isNaN(rDateObj.getTime()) ? rDateObj.toLocaleString() : '-',
+      dateFormatted: formatSaleDateTime(r.createdAt),
       reason: r.reason || 'Sin motivo',
       totalRefunded: rTotal,
       totalRefundedFormatted: `$${rTotal.toFixed(2)}`,
@@ -129,7 +136,7 @@ export const toSaleDetailEntity = (dto: SaleDetailDTO): SaleDetailEntity => {
     status: Object.values(SaleStatus).includes(dto.status as SaleStatus)
       ? (dto.status as SaleStatus)
       : SaleStatus.COMPLETED,
-    branchName: dto.branch?.name || 'Sucursal',
+    branchName: dto.branch?.name || 'Sucursal Principal',
     branchAddress: dto.branch?.address || '',
     customerName: dto.customer?.name?.trim() || 'Consumidor Final',
     userName: dto.user?.name || 'Cajero',
@@ -137,5 +144,32 @@ export const toSaleDetailEntity = (dto: SaleDetailDTO): SaleDetailEntity => {
     payments,
     refunds,
     totalPieces,
+  };
+};
+
+export const toTicketSaleData = (sale: SaleDetailEntity): TicketSaleData => {
+  return {
+    invoiceNumber: sale.invoiceNumber,
+    createdAt: sale.dateFormatted || formatSaleDateTime(sale.createdAt),
+    branchName: sale.branchName || 'Sucursal Principal',
+    branchAddress: sale.branchAddress || '',
+    clientName: sale.customerName,
+    clientIdentity: sale.customerIdentity || '9999999999',
+    items: sale.items.map((item) => ({
+      variantId: item.variantId,
+      variantSku: item.sku || '',
+      productName: item.productName,
+      combinationText: item.attributes || 'Estándar',
+      quantity: item.quantity,
+      price: item.price,
+      discountAmount: item.discountAmount,
+    })),
+    paymentMethod: sale.payments?.[0]?.paymentMethod || PaymentMethod.EFECTIVO,
+    subtotal: sale.subtotal,
+    itemsDiscountAmount: sale.itemsDiscountAmount,
+    globalDiscountAmount: sale.globalDiscountAmount,
+    discountAmount: sale.discountAmount,
+    total: sale.total,
+    userName: sale.userName,
   };
 };

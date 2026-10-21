@@ -607,7 +607,6 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
           }}
           saleData={reprintSaleData}
           tenantRuc={publicTenant?.ruc || ''}
-          tenantName={publicTenant?.name || ''}
           currencyCode={publicTenant?.currencyCode || 'USD'}
         />
       )}

@@ -1,4 +1,6 @@
 import type { CashSessionDetails } from '../types/cash-sessions.types';
+import { CashSessionStatus } from '../enums';
+import { PaymentMethod } from '@/modules/sales/enums';
 
 export interface ClosingTicketData {
   id: string;
@@ -28,7 +30,7 @@ export interface ClosingTicketData {
   userName?: string;
   branchName?: string;
   branchAddress?: string;
-  status?: 'OPEN' | 'CLOSED';
+  status?: CashSessionStatus;
 }
 
 export function buildClosingTicketData(
@@ -85,8 +87,8 @@ export function buildClosingTicketData(
 
   // 2. Desglose de pagos
   const paymentsBreakdown: { [method: string]: number } = {
-    EFECTIVO: Number(details.kpis?.cashSales || 0),
-    TARJETA: Number(details.kpis?.cardSales || 0),
+    [PaymentMethod.EFECTIVO]: Number(details.kpis?.cashSales || 0),
+    [PaymentMethod.TARJETA]: Number(details.kpis?.cardSales || 0),
   };
 
   // 3. Subtotales y Descuentos
@@ -144,6 +146,9 @@ export function buildClosingTicketData(
     userName: details.session.openedBy || 'Usuario',
     branchName,
     branchAddress,
-    status: details.session.status as 'OPEN' | 'CLOSED',
+    status:
+      details.session.status === CashSessionStatus.CLOSED || !!details.session.closedAt
+        ? CashSessionStatus.CLOSED
+        : CashSessionStatus.OPEN,
   };
 }

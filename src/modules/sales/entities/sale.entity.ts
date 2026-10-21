@@ -1,4 +1,4 @@
-import { SaleStatus } from '../enums';
+import { SaleStatus, PaymentMethod } from '../enums';
 
 export interface SaleSummaryEntity {
   id: string;
@@ -33,7 +33,7 @@ export interface SaleDetailItemEntity {
 
 export interface SalePaymentEntity {
   id?: string;
-  paymentMethod: string;
+  paymentMethod: PaymentMethod;
   amount: number;
   amountFormatted: string;
 }
@@ -75,6 +75,7 @@ export interface SaleDetailEntity {
   branchName: string;
   branchAddress?: string;
   customerName: string;
+  customerIdentity?: string;
   userName: string;
   items: SaleDetailItemEntity[];
   payments: SalePaymentEntity[];

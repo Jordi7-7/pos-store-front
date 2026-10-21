@@ -1,3 +1,6 @@
+import { CashSessionStatus } from '../enums';
+import { SaleStatus, PaymentMethod } from '@/modules/sales/enums';
+
 export interface ProductAttributeValue {
   id?: string;
   value: string;
@@ -38,7 +41,7 @@ export interface SessionSaleItem {
 export interface SessionSalePayment {
   id: string;
   saleId?: string;
-  paymentMethod: 'EFECTIVO' | 'TARJETA';
+  paymentMethod: PaymentMethod;
   amount: number;
   referenceNumber?: string | null;
 }
@@ -54,8 +57,8 @@ export interface SessionSale {
   globalDiscountAmount?: number;
   discountType?: string | null;
   discountRate?: number | null;
-  paymentMethod: 'EFECTIVO' | 'TARJETA';
-  status: 'COMPLETED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
+  paymentMethod: PaymentMethod;
+  status: SaleStatus;
   createdAt: string;
   updatedAt?: string;
   customer?: {
@@ -131,7 +134,7 @@ export interface CashSessionHeader {
   closingBalance: number | null;
   expectedBalance: number | null;
   difference: number | null;
-  status: 'OPEN' | 'CLOSED';
+  status: CashSessionStatus ;
   openedAt: string;
   closedAt: string | null;
   cashRegister?: {
