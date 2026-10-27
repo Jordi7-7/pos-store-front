@@ -11,7 +11,7 @@ import { Combobox, ComboboxInput, ComboboxContent, ComboboxList, ComboboxItem, C
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select';
-import type { Customer } from '../../hooks/useCustomers';
+import type { CustomerEntity } from '@/modules/customers';
 import type { CartItem } from '../../types/pos.types';
 
 interface AddedPayment {
@@ -20,7 +20,7 @@ interface AddedPayment {
 }
 
 interface POSPaymentPanelProps {
-  customers: Customer[];
+  customers: CustomerEntity[];
   selectedCustomerId: string;
   onSelectCustomer: (id: string) => void;
   cart: CartItem[];
@@ -116,7 +116,7 @@ export const POSPaymentPanel: React.FC<POSPaymentPanelProps> = ({
             </span>
             <Combobox
               items={customers}
-              value={customers.find((c: Customer) => c.id === selectedCustomerId) || null}
+              value={customers.find((c: CustomerEntity) => c.id === selectedCustomerId) || null}
               onValueChange={(val: any) => onSelectCustomer(val?.id || '')}
             >
               <ComboboxTrigger
@@ -127,7 +127,7 @@ export const POSPaymentPanel: React.FC<POSPaymentPanelProps> = ({
                   >
                     {(() => {
                       const activeCust = customers.find(
-                        (c: Customer) => c.id === selectedCustomerId,
+                        (c: CustomerEntity) => c.id === selectedCustomerId,
                       );
                       return activeCust ? (
                         <div className="flex items-center gap-1.5 truncate">

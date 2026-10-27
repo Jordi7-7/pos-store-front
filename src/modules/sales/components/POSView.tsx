@@ -9,7 +9,7 @@ import {
   useRegisterExpense,
   useProcessSale,
 } from '../hooks/useSalesMutations';
-import { useCustomers } from '../hooks/useCustomers';
+import { useCustomerList } from '@/modules/customers';
 import { useCashSessionDetailsQuery } from '../../cash-sessions/hooks/useCashSessions';
 import { PaymentMethod } from '../enums';
 import { CashSessionStatus } from '@/modules/cash-sessions/enums';
@@ -56,7 +56,7 @@ export const POSView: React.FC<POSViewProps> = ({
     setSelectedBranchId,
     branches,
   } = useLayoutContext();
-  const { customers } = useCustomers();
+  const { customers } = useCustomerList();
   const { role, selectedCashRegisterId, setSelectedCashRegisterId } = useAuthStore();
   const { myCashRegisters: availableRegistersForUser } = useMyCashRegisters(selectedBranchId || undefined);
 

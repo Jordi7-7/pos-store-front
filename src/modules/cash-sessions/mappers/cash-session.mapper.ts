@@ -1,4 +1,4 @@
-import type { CashSessionDetails, CashSessionHeader, DetailedSessionHeader } from '../types/cash-sessions.types';
+import type { CashSessionDetails, CashSessionHeader } from '../types/cash-sessions.types';
 import type {
   CashSessionDetailsEntity,
   CashSessionHeaderEntity,
@@ -45,8 +45,20 @@ const formatTime = (dateString?: string | null): string => {
   }
 };
 
+const calculateDuration = (openedAt?: string | null, closedAt?: string | null): string => {
+  if (!openedAt) return '0m';
+  const start = new Date(openedAt).getTime();
+  const end = closedAt ? new Date(closedAt).getTime() : Date.now();
+  if (isNaN(start) || isNaN(end) || end < start) return '0m';
+  const diffMinutes = Math.floor((end - start) / (1000 * 60));
+  const hours = Math.floor(diffMinutes / 60);
+  const minutes = diffMinutes % 60;
+  if (hours === 0) return `${minutes}m`;
+  return `${hours}h ${minutes}m`;
+};
+
 export const toCashSessionHeaderEntity = (
-  dto: CashSessionHeader | DetailedSessionHeader
+  dto: CashSessionHeader
 ): CashSessionHeaderEntity => {
   const isClosed = dto.status === CashSessionStatus.CLOSED;
   const diff = dto.difference !== null && dto.difference !== undefined
@@ -81,7 +93,6 @@ export const toCashSessionHeaderEntity = (
     ? `${openTimeFormatted} — ${closeTimeFormatted}`
     : `Desde ${openTimeFormatted} (En curso)`;
 
-  const detailed = dto as DetailedSessionHeader;
   const totalSales = Number(dto.totalSales || 0);
 
   return {
@@ -108,10 +119,10 @@ export const toCashSessionHeaderEntity = (
     openTimeFormatted,
     closeTimeFormatted,
     timeRangeFormatted,
-    durationFormatted: detailed.durationFormatted || '0m',
-    openedByName: detailed.openedBy || dto.user?.name || 'No registrado',
-    branchName: detailed.branchName || dto.branch?.name || 'Sucursal General',
-    branchAddress: detailed.branchAddress || '',
+    durationFormatted: calculateDuration(dto.openedAt, dto.closedAt),
+    openedByName: dto.user?.name || 'No registrado',
+    branchName: dto.branch?.name || 'Sucursal General',
+    branchAddress: dto.branch?.address || '',
     cashRegisterName: dto.cashRegister?.name || 'Caja Registradora',
     cashRegisterCode: dto.cashRegister?.code ? String(dto.cashRegister.code) : '1',
     totalSales,

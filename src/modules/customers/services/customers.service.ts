@@ -1,17 +1,25 @@
 import { apiClient } from '@/lib/apiClient';
-import type { Customer } from '../types/customers.types';
+import type { CustomerDTO, CreateCustomerDTO, UpdateCustomerDTO } from '../types/customer.types';
+import type { CustomerEntity } from '../entities/customer.entity';
+import { toCustomerEntity, toCustomerEntities } from '../mappers/customer.mapper';
 
 export const customersService = {
-  getCustomers: async (): Promise<Customer[]> => {
-    return apiClient.get<Customer[]>('/customers');
+  getCustomers: async (): Promise<CustomerEntity[]> => {
+    const raw = await apiClient.get<CustomerDTO[]>('/customers');
+    return toCustomerEntities(raw);
   },
-  createCustomer: async (dto: Omit<Customer, 'id'>): Promise<Customer> => {
-    return apiClient.post<Customer>('/customers', dto);
+
+  createCustomer: async (dto: CreateCustomerDTO): Promise<CustomerEntity> => {
+    const raw = await apiClient.post<CustomerDTO>('/customers', dto);
+    return toCustomerEntity(raw);
   },
-  updateCustomer: async (id: string, dto: Partial<Omit<Customer, 'id'>>): Promise<Customer> => {
-    return apiClient.put<Customer>(`/customers/${id}`, dto);
+
+  updateCustomer: async (id: string, dto: UpdateCustomerDTO): Promise<CustomerEntity> => {
+    const raw = await apiClient.put<CustomerDTO>(`/customers/${id}`, dto);
+    return toCustomerEntity(raw);
   },
+
   deleteCustomer: async (id: string): Promise<{ message: string }> => {
     return apiClient.delete<{ message: string }>(`/customers/${id}`);
-  }
+  },
 };
