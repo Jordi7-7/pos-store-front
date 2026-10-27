@@ -42,10 +42,10 @@ export function buildClosingTicketData(
     { sku: string; name: string; quantity: number; subtotal: number; discount: number; total: number }
   >();
 
-  (details.sales || []).forEach((sale: any) => {
-    (sale.items || []).forEach((item: any) => {
-      const sku = item.variant?.sku || item.sku || 'N/A';
-      const name = item.variant?.product?.name || item.productName || 'Producto';
+  (details.sales || []).forEach((sale) => {
+    (sale.items || []).forEach((item) => {
+      const sku = item.variant?.sku || 'N/A';
+      const name = item.variant?.product?.name || 'Producto';
       const qty = Number(item.quantity || 0);
       const lineGross =
         item.subtotal !== undefined && Number(item.subtotal) > 0
@@ -92,22 +92,22 @@ export function buildClosingTicketData(
   };
 
   // 3. Subtotales y Descuentos
-  const salesSubtotal = (details.sales || []).reduce((sum: number, s: any) => {
+  const salesSubtotal = (details.sales || []).reduce((sum, s) => {
     const itemGross = (s.items || []).reduce(
-      (isum: number, it: any) => isum + Number(it.price || 0) * Number(it.quantity || 0),
+      (isum, it) => isum + Number(it.price || 0) * Number(it.quantity || 0),
       0
     );
     return sum + (s.subtotal !== undefined && s.subtotal > 0 ? Number(s.subtotal) : itemGross);
   }, 0);
 
-  const discountsTotal = (details.sales || []).reduce((sum: number, s: any) => {
+  const discountsTotal = (details.sales || []).reduce((sum, s) => {
     return sum + Number(s.discountAmount || 0);
   }, 0);
 
   const refundsTotal = Number(details.kpis?.totalRefunds || 0);
 
-  const branchName = details.session?.branchName || 'Sucursal General';
-  const branchAddress = details.session?.branchAddress || '';
+  const branchName = details.session.branch?.name || 'Sucursal General';
+  const branchAddress = details.session.branch?.address || '';
 
   return {
     id: details.session.id,
@@ -116,34 +116,34 @@ export function buildClosingTicketData(
     openingBalance: Number(details.session.openingBalance || 0),
     closingBalance: Number(details.session.closingBalance ?? details.session.expectedBalance ?? 0),
     expectedBalance: Number(details.session.expectedBalance || 0),
-    salesTotal: Number(details.kpis?.netSales ?? details.session.totalSales ?? 0),
+    salesTotal: Number(details.kpis?.netSales || 0),
     salesSubtotal: salesSubtotal > 0 ? salesSubtotal : undefined,
     discountsTotal: discountsTotal > 0 ? discountsTotal : undefined,
     expensesTotal: Number(details.kpis?.totalExpenses || 0),
     refundsTotal: refundsTotal > 0 ? refundsTotal : undefined,
-    expensesList: (details.expenses || []).map((e: any) => ({
+    expensesList: (details.expenses || []).map((e) => ({
       description: e.description,
       amount: Number(e.amount),
       createdAt: e.createdAt,
     })),
     productsList,
     paymentsBreakdown,
-    refundsList: (details.refunds || []).map((r: any) => ({
+    refundsList: (details.refunds || []).map((r) => ({
       id: r.id,
       reason: r.reason,
-      items: (r.items || []).map((it: any) => ({
+      items: (r.items || []).map((it) => ({
         name: it.variant?.product?.name || 'Producto',
         sku: it.variant?.sku || 'N/A',
         quantity: Number(it.quantity || 0),
       })),
     })),
-    salesList: (details.sales || []).map((s: any) => ({
+    salesList: (details.sales || []).map((s) => ({
       invoiceNumber: s.invoiceNumber,
       createdAt: s.createdAt,
       total: Number(s.total),
-      paymentMethods: (s.payments || []).map((p: any) => p.paymentMethod || 'EFECTIVO'),
+      paymentMethods: (s.payments || []).map((p) => p.paymentMethod || 'EFECTIVO'),
     })),
-    userName: details.session.openedBy || 'Usuario',
+    userName: details.session.user?.name || 'Usuario',
     branchName,
     branchAddress,
     status:

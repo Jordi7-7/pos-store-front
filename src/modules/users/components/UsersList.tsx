@@ -24,36 +24,18 @@ export const UsersList: React.FC<UsersListProps> = ({
   onEditUser,
   onToggleActive,
 }) => {
-  const getRoleBadge = (role?: string, roleName?: string) => {
-    if (roleName) {
+  const getRoleBadge = (user: UserItem) => {
+    if (user.isOwner) {
       return {
-        label: roleName,
-        className: 'bg-primary/10 text-primary border-primary/25',
+        label: 'Propietario',
+        className: 'bg-purple-500/10 text-purple-500 border-purple-500/25',
       };
     }
-    switch (role) {
-      case 'OWNER':
-        return {
-          label: 'Propietario',
-          className: 'bg-purple-500/10 text-purple-500 border-purple-500/25',
-        };
-      case 'ADMIN':
-        return {
-          label: 'Administrador',
-          className: 'bg-sky-500/10 text-sky-500 border-sky-500/25',
-        };
-      case 'MANAGER':
-        return {
-          label: 'Encargado',
-          className: 'bg-amber-500/10 text-amber-500 border-amber-500/25',
-        };
-      case 'CASHIER':
-      default:
-        return {
-          label: 'Cajero POS',
-          className: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/25',
-        };
-    }
+
+    return {
+      label: user.role?.name || 'Usuario',
+      className: 'bg-primary/10 text-primary border-primary/25',
+    };
   };
 
   if (users.length === 0) {
@@ -84,7 +66,7 @@ export const UsersList: React.FC<UsersListProps> = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {users.map((user) => {
-        const roleInfo = getRoleBadge(user.role, user.roleName);
+        const roleInfo = getRoleBadge(user);
         const isActive = user.isActive ?? true;
         const isSelf = currentAuthUserId === user.id;
 
@@ -116,7 +98,9 @@ export const UsersList: React.FC<UsersListProps> = ({
                         <span>{user.username}</span>
                       </div>
                     )}
-                    <p className="text-[10px] text-neutral truncate mt-0.5">{user.email}</p>
+                    {user.email && (
+                      <p className="text-[10px] text-neutral truncate mt-0.5">{user.email}</p>
+                    )}
                   </div>
                 </div>
 

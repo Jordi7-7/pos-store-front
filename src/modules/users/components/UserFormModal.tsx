@@ -25,6 +25,7 @@ import {
   AtSign,
   Building,
   Key,
+  AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -60,7 +61,6 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
   const [roleId, setRoleId] = useState('');
   const [pin, setPin] = useState('');
   const [isActive, setIsActive] = useState(true);
-  const [isGlobalBranch, setIsGlobalBranch] = useState(true);
   const [branchIds, setBranchIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -69,13 +69,12 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
     if (userToEdit) {
       setName(userToEdit.name);
       setUsername(userToEdit.username || '');
-      setEmail(userToEdit.email);
+      setEmail(userToEdit.email || '');
       setPassword('');
-      setRoleId(userToEdit.roleId || '');
+      setRoleId(userToEdit.role?.id || '');
       setPin('');
-      setIsActive(userToEdit.isActive ?? true);
-      const userBranchList = userToEdit.branchIds || [];
-      setIsGlobalBranch(userBranchList.length === 0);
+      const userBranchList = (userToEdit.branches || []).map((b) => b.id);
+      setIsActive(userBranchList.length === 0 ? false : (userToEdit.isActive ?? true));
       setBranchIds(userBranchList);
     } else {
       setName('');
@@ -85,17 +84,17 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       const defaultRole = roles.find((r) => r.name.toLowerCase().includes('cajero')) || roles[0];
       setRoleId(defaultRole ? defaultRole.id : '');
       setPin('');
-      setIsActive(true);
-      setIsGlobalBranch(true);
-      setBranchIds([]);
+      const defaultBranchIds = branches.map((b) => b.id);
+      setIsActive(defaultBranchIds.length > 0);
+      setBranchIds(defaultBranchIds);
     }
-  }, [userToEdit, isOpen, roles]);
+  }, [userToEdit, isOpen, roles, branches]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim() || !email.trim()) {
-      toast.error('Completa los campos obligatorios.');
+    if (!name.trim() || !username.trim()) {
+      toast.error('Completa los campos obligatorios (Nombre y Usuario).');
       return;
     }
 
@@ -109,26 +108,27 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       return;
     }
 
-    const resolvedBranchIds = isGlobalBranch ? branches.map((b) => b.id) : branchIds;
+    const resolvedBranchIds = branchIds;
+    const resolvedIsActive = resolvedBranchIds.length === 0 ? false : isActive;
 
     try {
       if (isEditing && userToEdit) {
         await onSubmitUpdate(userToEdit.id, {
           name: name.trim(),
-          username: username.trim() || undefined,
-          email: email.trim(),
+          username: username.trim(),
+          email: email.trim() || undefined,
           password: password.trim() ? password : undefined,
           roleId: roleId || undefined,
           pin: pin.trim() ? pin.trim() : undefined,
-          isActive,
+          isActive: resolvedIsActive,
           branchIds: resolvedBranchIds,
         });
         toast.success('Usuario actualizado con éxito.');
       } else {
         await onSubmitCreate({
           name: name.trim(),
-          username: username.trim() || undefined,
-          email: email.trim(),
+          username: username.trim(),
+          email: email.trim() || undefined,
           password,
           roleId,
           pin: pin.trim() || undefined,
@@ -185,11 +185,12 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field>
               <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
-                <AtSign className="w-3.5 h-3.5 text-primary" /> Nombre de Usuario
+                <AtSign className="w-3.5 h-3.5 text-primary" /> Nombre de Usuario *
               </FieldLabel>
               <Input
+                required
                 value={username}
-                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ''))}
                 placeholder="ej. cajero1"
                 className="text-xs h-9 font-mono"
               />
@@ -215,14 +216,13 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
 
           <Field>
             <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
-              <Mail className="w-3.5 h-3.5 text-primary" /> Correo Electrónico *
+              <Mail className="w-3.5 h-3.5 text-primary" /> Correo Electrónico (Opcional)
             </FieldLabel>
             <Input
               type="email"
-              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="usuario@minegocio.com"
+              placeholder="usuario@minegocio.com (opcional)"
               className="text-xs h-9"
             />
           </Field>
@@ -278,67 +278,79 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
 
           {/* ASIGNACIÓN DE SUCURSALES */}
           <div className="p-3.5 bg-bg-dark/70 rounded-2xl border border-border-card space-y-3">
-            <div>
-              <span className="text-xs font-bold text-secondary flex items-center gap-1.5">
-                <Building className="w-3.5 h-3.5 text-primary" /> Asignación de Sucursales
-              </span>
-              <span className="text-[11px] text-neutral block mt-0.5">
-                Define si este usuario opera en todas las tiendas o en sucursales puntuales.
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-xs font-medium text-secondary cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isGlobalBranch}
-                  onChange={(e) => {
-                    setIsGlobalBranch(e.target.checked);
-                    if (e.target.checked) {
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-secondary flex items-center gap-1.5">
+                  <Building className="w-3.5 h-3.5 text-primary" /> Sucursales con Acceso
+                </span>
+                <span className="text-[11px] text-neutral block mt-0.5">
+                  {branchIds.length === branches.length && branches.length > 0
+                    ? 'Todas las sucursales asignadas'
+                    : branchIds.length === 0
+                    ? 'Sin sucursales asignadas'
+                    : `${branchIds.length} de ${branches.length} asignadas`}
+                </span>
+              </div>
+              {branches.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (branchIds.length === branches.length) {
                       setBranchIds([]);
+                      setIsActive(false);
+                    } else {
+                      setBranchIds(branches.map((b) => b.id));
+                      setIsActive(true);
                     }
                   }}
-                  className="w-4 h-4 accent-primary rounded cursor-pointer"
-                />
-                <span>Acceso Global (Todas las sucursales)</span>
-              </label>
-
-              {!isGlobalBranch && (
-                <div className="pl-6 space-y-1.5 pt-1">
-                  <span className="text-[10px] uppercase font-bold text-neutral tracking-wider block">
-                    Selecciona las sucursales permitidas:
-                  </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                    {branches.map((b) => {
-                      const isChecked = branchIds.includes(b.id);
-                      return (
-                        <label
-                          key={b.id}
-                          className={`flex items-center gap-2 p-2 rounded-xl border text-xs cursor-pointer transition-all ${
-                            isChecked
-                              ? 'bg-primary/10 border-primary/40 text-secondary'
-                              : 'bg-bg-dark border-border-card text-neutral hover:border-neutral/40'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setBranchIds([...branchIds, b.id]);
-                              } else {
-                                setBranchIds(branchIds.filter((id) => id !== b.id));
-                              }
-                            }}
-                            className="w-3.5 h-3.5 accent-primary rounded cursor-pointer"
-                          />
-                          <span className="truncate">{b.name}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
+                  className="text-[11px] font-semibold text-primary hover:underline transition-all"
+                >
+                  {branchIds.length === branches.length ? 'Deseleccionar todas' : 'Seleccionar todas'}
+                </button>
               )}
+            </div>
+
+            {/* Warning when no branches are selected */}
+            {branchIds.length === 0 && (
+              <div className="flex items-center gap-2 p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-500 text-xs">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>Al no tener sucursales asignadas, el usuario quedará inactivo automáticamente.</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              {branches.map((b) => {
+                const isChecked = branchIds.includes(b.id);
+                return (
+                  <label
+                    key={b.id}
+                    className={`flex items-center gap-2 p-2 rounded-xl border text-xs cursor-pointer transition-all ${
+                      isChecked
+                        ? 'bg-primary/10 border-primary/40 text-secondary'
+                        : 'bg-bg-dark border-border-card text-neutral hover:border-neutral/40'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => {
+                        let next: string[];
+                        if (e.target.checked) {
+                          next = [...branchIds, b.id];
+                        } else {
+                          next = branchIds.filter((id) => id !== b.id);
+                        }
+                        setBranchIds(next);
+                        if (next.length === 0) {
+                          setIsActive(false);
+                        }
+                      }}
+                      className="w-3.5 h-3.5 accent-primary rounded cursor-pointer"
+                    />
+                    <span className="truncate">{b.name}</span>
+                  </label>
+                );
+              })}
             </div>
           </div>
 
@@ -348,19 +360,25 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               <div>
                 <span className="text-xs font-bold text-secondary block">Estado de la Cuenta</span>
                 <span className="text-[10px] text-neutral">
-                  {isSelf
+                  {branchIds.length === 0
+                    ? 'Inactivo: requiere al menos una sucursal asignada para activarse.'
+                    : isSelf
                     ? 'No puedes desactivar tu propia cuenta en sesión'
                     : isActive
                     ? 'El usuario puede iniciar sesión en la tienda'
                     : 'Acceso bloqueado'}
                 </span>
               </div>
-              <label className={`relative inline-flex items-center ${isSelf ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
+              <label className={`relative inline-flex items-center ${isSelf || branchIds.length === 0 ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
                 <input
                   type="checkbox"
-                  disabled={isSelf}
-                  checked={isActive}
-                  onChange={(e) => setIsActive(e.target.checked)}
+                  disabled={isSelf || branchIds.length === 0}
+                  checked={branchIds.length === 0 ? false : isActive}
+                  onChange={(e) => {
+                    if (branchIds.length > 0) {
+                      setIsActive(e.target.checked);
+                    }
+                  }}
                   className="sr-only peer"
                 />
                 <div className="w-9 h-5 bg-neutral/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>

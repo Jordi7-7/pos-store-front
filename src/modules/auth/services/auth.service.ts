@@ -30,12 +30,13 @@ export interface AuthResponse {
 
 export interface ProfileResponse {
   id: string;
-  email: string;
   name: string;
-  role: 'OWNER' | 'ADMIN' | 'CASHIER' | 'MANAGER' | string;
-  roleId?: string | null;
-  roleName?: string;
+  username: string;
+  email?: string | null;
+  isOwner: boolean;
+  role: { id: string; name: string } | null;
   permissions?: string[];
+  branches?: Array<{ id: string; name: string; address?: string | null }>;
   branchIds?: string[];
   cashRegisters?: Array<{
     id: string;

@@ -1,33 +1,40 @@
 import { apiClient } from '@/lib/apiClient';
 
+export interface UserRoleInfo {
+  id: string;
+  name: string;
+}
+
+export interface UserBranchInfo {
+  id: string;
+  name: string;
+  address?: string | null;
+}
+
 export interface UserItem {
   id: string;
   name: string;
-  username?: string;
-  email: string;
-  roleId: string;
-  roleName: string;
-  role?: string;
+  username: string;
+  email?: string | null;
+  isOwner: boolean;
+  role: UserRoleInfo | null;
   customPermissions?: string[] | null;
   hasPin: boolean;
   isActive: boolean;
-  branchIds?: string[];
-  cashRegisterIds?: string[];
+  branches: UserBranchInfo[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface CreateUserInput {
   name: string;
-  username?: string;
-  email: string;
+  username: string;
+  email?: string;
   password: string;
   roleId: string;
-  role?: string;
   customPermissions?: string[];
   pin?: string;
   branchIds?: string[];
-  cashRegisterIds?: string[];
 }
 
 export interface UpdateUserInput {
@@ -36,12 +43,10 @@ export interface UpdateUserInput {
   email?: string;
   password?: string;
   roleId?: string;
-  role?: string;
   customPermissions?: string[];
   pin?: string;
   isActive?: boolean;
   branchIds?: string[];
-  cashRegisterIds?: string[];
 }
 
 export const usersService = {

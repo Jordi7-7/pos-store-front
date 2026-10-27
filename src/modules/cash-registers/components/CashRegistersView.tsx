@@ -165,11 +165,12 @@ export const CashRegistersView: React.FC = () => {
   const filteredUsers = useMemo(() => {
     return users.filter((u: UserItem) => {
       const q = assignUserSearch.toLowerCase();
+      const roleStr = u.isOwner ? 'Propietario' : u.role?.name;
       return (
         u.name.toLowerCase().includes(q) ||
         (u.username && u.username.toLowerCase().includes(q)) ||
-        u.email.toLowerCase().includes(q) ||
-        u.roleName.toLowerCase().includes(q)
+        (u.email ? u.email.toLowerCase().includes(q) : false) ||
+        (roleStr ? roleStr.toLowerCase().includes(q) : false)
       );
     });
   }, [users, assignUserSearch]);
@@ -579,7 +580,7 @@ export const CashRegistersView: React.FC = () => {
                             {user.name}
                           </span>
                           <span className="text-[10px] text-neutral block truncate">
-                            {user.roleName} • {user.email}
+                            {(user.isOwner ? 'Propietario' : (user.role?.name || 'Usuario'))}{user.email ? ` • ${user.email}` : (user.username ? ` • @${user.username}` : '')}
                           </span>
                         </div>
                       </div>

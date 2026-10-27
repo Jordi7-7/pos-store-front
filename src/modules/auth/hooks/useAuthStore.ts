@@ -16,7 +16,8 @@ export interface AssignedCashRegister {
 interface User {
   id: string;
   name: string;
-  email: string;
+  username: string;
+  email?: string | null;
   timezone?: string;
   branchIds?: string[];
   cashRegisters?: AssignedCashRegister[];
@@ -296,41 +297,48 @@ export const useAuthStore = create<AuthState>()(
           if (!token) return false;
           try {
             const profile = await authService.getProfile();
+            const branches = profile.branches || [];
+            const branchIds = branches.map((b) => b.id);
+            const isOwner = Boolean(profile.isOwner);
+            const roleName = isOwner ? 'Propietario' : (profile.role?.name || 'Usuario');
+            const roleCode = isOwner ? 'OWNER' : (profile.role?.name || 'USER');
+
             set({
-              tenantId: profile.tenant?.id || state.tenantId,
-              timezone: profile.tenant.timezone || 'America/Guayaquil',
-              role: profile.role,
-              roleId: profile.roleId || null,
-              roleName: profile.roleName || profile.role,
-              permissions: profile.permissions || [],
-              branchIds: profile.branchIds || [],
-              cashRegisters: profile.cashRegisters || [],
-              selectedBranchId: (profile.branchIds && profile.branchIds.length === 1) ? profile.branchIds[0] : (state.selectedBranchId || null),
-              selectedCashRegisterId: (profile.cashRegisters && profile.cashRegisters.length === 1) ? profile.cashRegisters[0].id : (state.selectedCashRegisterId || null),
-              publicTenant: profile.tenant
-                ? {
-                    id: profile.tenant.id,
-                    name: profile.tenant.name,
-                    ruc: profile.tenant.ruc,
-                    slug: profile.tenant.slug,
-                    logoUrl: profile.tenant.logoUrl,
-                    country: profile.tenant.country || 'EC',
-                    currencyCode: profile.tenant.currencyCode || 'USD',
-                    currencySymbol: profile.tenant.currencySymbol || '$',
-                    timezone: profile.tenant.timezone || 'America/Guayaquil',
-                  }
-                : state.publicTenant,
-              tenantSlug: profile.tenant?.slug || state.tenantSlug,
-              user: {
-                id: profile.id,
-                name: profile.name,
-                email: profile.email,
-                timezone: profile.tenant.timezone,
-                branchIds: profile.branchIds || [],
+                tenantId: profile.tenant?.id || state.tenantId,
+                timezone: profile.tenant.timezone || 'America/Guayaquil',
+                role: roleCode,
+                roleId: profile.role?.id || null,
+                roleName,
+                permissions: profile.permissions || [],
+                branchIds,
                 cashRegisters: profile.cashRegisters || [],
-              },
-              isAuthenticated: true,
-            });
+                selectedBranchId: branchIds.length === 1 ? branchIds[0] : (state.selectedBranchId || null),
+                selectedCashRegisterId: (profile.cashRegisters && profile.cashRegisters.length === 1) ? profile.cashRegisters[0].id : (state.selectedCashRegisterId || null),
+                publicTenant: profile.tenant
+                  ? {
+                      id: profile.tenant.id,
+                      name: profile.tenant.name,
+                      ruc: profile.tenant.ruc,
+                      slug: profile.tenant.slug,
+                      logoUrl: profile.tenant.logoUrl,
+                      country: profile.tenant.country || 'EC',
+                      currencyCode: profile.tenant.currencyCode || 'USD',
+                      currencySymbol: profile.tenant.currencySymbol || '$',
+                      timezone: profile.tenant.timezone || 'America/Guayaquil',
+                    }
+                  : state.publicTenant,
+                tenantSlug: profile.tenant?.slug || state.tenantSlug,
+                user: {
+                  id: profile.id,
+                  name: profile.name,
+                  username: profile.username,
+                  email: profile.email || null,
+                  timezone: profile.tenant.timezone,
+                  branchIds,
+                  cashRegisters: profile.cashRegisters || [],
+                },
+                isAuthenticated: true,
+              });
             return true;
           } catch (error) {
             console.error('Error fetching user profile (token inválido o expirado):', error);

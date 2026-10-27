@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, CornerDownLeft, X, Package, Maximize2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Search, CornerDownLeft, X, Package, Maximize2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useVariantSearch } from '@/modules/products/hooks';
 import { ProductType } from '@/modules/products/enums';
@@ -22,17 +22,25 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearchModal, setShowSearchModal] = useState<boolean>(false);
   const [isSearching, setIsSearching] = useState<boolean>(false);
+  const isSearchingRef = useRef<boolean>(false);
   const { findPosVariantBySku } = useVariantSearch();
 
   // Variable product modal state
   const [variableProductData, setVariableProductData] = useState<any | null>(null);
   const [showVariableModal, setShowVariableModal] = useState<boolean>(false);
 
+  const focusInput = () => {
+    requestAnimationFrame(() => {
+      searchInputRef.current?.focus();
+    });
+  };
+
   const executeSearch = async () => {
     const code = searchTerm.trim();
-    if (!code) return;
+    if (!code || isSearchingRef.current) return;
 
     try {
+      isSearchingRef.current = true;
       setIsSearching(true);
       const res = await findPosVariantBySku(code, branchId);
 
@@ -83,7 +91,9 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
     } catch {
       toast.error(`No se encontró ningún producto con el código: "${code}"`);
     } finally {
+      isSearchingRef.current = false;
       setIsSearching(false);
+      focusInput();
     }
   };
 
@@ -107,7 +117,6 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={handleSearchKeyPress}
-            disabled={isSearching}
             className="w-full bg-bg-dark border border-border-card rounded-xl py-2 pl-10 pr-4 text-xs text-secondary focus:outline-none focus:border-primary transition-all placeholder-neutral"
             autoFocus
           />
@@ -120,7 +129,7 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
           title="Buscar código / Confirmar (Enter)"
           className="flex items-center gap-1 px-3 py-2 bg-primary hover:bg-primary/90 active:scale-95 text-white font-bold text-xs rounded-xl shadow-sm transition-all disabled:opacity-40 disabled:pointer-events-none cursor-pointer shrink-0"
         >
-          <CornerDownLeft className="w-4 h-4" />
+          {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <CornerDownLeft className="w-4 h-4" />}
         </button>
       </div>
 
@@ -143,6 +152,7 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
                 onClick={() => {
                   setShowSearchModal(false);
                   setSearchResults([]);
+                  focusInput();
                 }}
                 className="p-1.5 hover:bg-bg-dark rounded-xl text-neutral hover:text-secondary transition-colors cursor-pointer"
               >

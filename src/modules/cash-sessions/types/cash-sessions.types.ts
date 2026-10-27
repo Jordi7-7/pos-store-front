@@ -143,8 +143,8 @@ export interface CashSessionHeader {
     code: number;
   } | null;
   totalSales?: number;
-  branch?: { name: string };
-  user?: { name: string };
+  branch?: { id?: string; name: string; address?: string | null };
+  user?: { id?: string; name: string };
 }
 
 export interface SessionKPIs {
@@ -159,20 +159,13 @@ export interface SessionKPIs {
   refundsCount: number;
 }
 
-export interface DetailedSessionHeader extends CashSessionHeader {
-  durationFormatted?: string;
-  openedBy?: string;
-  branchName?: string;
-  branchAddress?: string;
-}
-
 export interface DetailedSessionSale extends SessionSale {
   customerName?: string;
   totalItems?: number;
 }
 
 export interface CashSessionDetails {
-  session: DetailedSessionHeader;
+  session: CashSessionHeader;
   kpis: SessionKPIs;
   sales: DetailedSessionSale[];
   expenses: SessionExpense[];

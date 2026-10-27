@@ -53,10 +53,11 @@ export const UsersView: React.FC = () => {
     return users.filter((u: UserItem) => {
       const matchesSearch =
         u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (u.username && u.username.toLowerCase().includes(searchTerm.toLowerCase()));
+        (u.email ? u.email.toLowerCase().includes(searchTerm.toLowerCase()) : false) ||
+        (u.username ? u.username.toLowerCase().includes(searchTerm.toLowerCase()) : false);
 
-      const matchesRole = roleFilter === 'ALL' || u.role === roleFilter || u.roleName === roleFilter;
+      const userRoleName = u.isOwner ? 'Propietario' : (u.role?.name || '');
+      const matchesRole = roleFilter === 'ALL' || userRoleName === roleFilter;
 
       return matchesSearch && matchesRole;
     });
