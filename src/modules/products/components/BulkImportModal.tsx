@@ -118,21 +118,26 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
 
         const rawJson: any[] = XLSX.utils.sheet_to_json(ws);
 
-        // Normalize columns (handle casing or accent variants if any)
+        // Map rows using strictly the official template headers
         const normalized = rawJson.map((row) => {
-          const rawWholesale = row['Precio Mayoreo'] ?? row.precio_mayoreo ?? row['Precio Mayor'] ?? row.precio_mayor ?? row.Mayoreo ?? row.mayoreo;
+          const rawWholesale = row['Precio Mayoreo'];
           const wholesalePrice = rawWholesale !== undefined && rawWholesale !== null && rawWholesale !== '' && !isNaN(Number(rawWholesale))
             ? Number(rawWholesale)
             : undefined;
 
+          const rawQty = row['Existencias'];
+          const quantity = rawQty !== undefined && rawQty !== null && rawQty !== '' && !isNaN(Number(rawQty))
+            ? Number(rawQty)
+            : 0;
+
           return {
-            sku: String(row.SKU || row.sku || '').trim(),
-            name: String(row.Nombre || row.nombre || '').trim(),
-            barcode: String(row.Codigo || row.codigo || row.Barra || row.barra || '').trim(),
-            purchasePrice: Number(row['Precio Compra'] || row.precio_compra || 0),
-            salePrice: Number(row['Precio Venta'] || row.precio_venta || 0),
+            sku: String(row['SKU'] ?? '').trim(),
+            name: String(row['Nombre'] ?? '').trim(),
+            barcode: String(row['Codigo'] ?? '').trim(),
+            purchasePrice: Number(row['Precio Compra'] ?? 0),
+            salePrice: Number(row['Precio Venta'] ?? 0),
             wholesalePrice,
-            quantity: Number(row.Existencias || row.existencias || row.cantidad || 0),
+            quantity,
           };
         }).filter((item) => item.sku && item.name);
 
@@ -212,7 +217,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
                 <span>Descarga la Plantilla Oficial</span>
               </h5>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Utiliza nuestra plantilla de Excel estructurada para asegurar la correcta carga de tus productos. Las columnas disponibles son: <strong className="text-secondary">SKU, Nombre, Codigo, Precio Compra, Precio Venta, Precio Mayoreo, Existencias</strong>.
+                Utiliza nuestra plantilla de Excel estructurada para asegurar la correcta carga de tus productos. Las columnas disponibles son: <strong className="text-secondary">SKU, Nombre, Codigo, Precio Compra, Precio Venta, Precio Mayoreo, Existencias</strong> (admite existencias positivas, en cero o saldos negativos).
               </p>
               <button
                 type="button"

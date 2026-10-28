@@ -91,7 +91,15 @@ export const BulkImportPreviewTable: React.FC<BulkImportPreviewTableProps> = ({
                         <span className="text-muted-foreground/50 text-[11px]">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 text-right font-mono font-bold">{item.quantity || 0}</td>
+                    <td className="px-4 py-2.5 text-right font-mono font-bold">
+                      {Number(item.quantity || 0) < 0 ? (
+                        <span className="inline-block text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
+                          {Number(item.quantity)}
+                        </span>
+                      ) : (
+                        <span>{item.quantity ?? 0}</span>
+                      )}
+                    </td>
                   </>
                 ) : (
                   <>
