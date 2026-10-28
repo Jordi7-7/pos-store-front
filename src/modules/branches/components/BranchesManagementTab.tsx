@@ -14,7 +14,8 @@ import { APP_PERMISSIONS } from '@/constants/permissions';
 export const BranchesManagementTab: React.FC = () => {
   const { branches, isLoading, createBranch, isCreating, updateBranch, isUpdating } = useBranches();
   const { can } = useAuthStore();
-  const canManage = can(APP_PERMISSIONS.BRANCHES_MANAGE);
+  const canCreate = can(APP_PERMISSIONS.BRANCHES_CREATE);
+  const canEdit = can(APP_PERMISSIONS.BRANCHES_EDIT);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
@@ -75,7 +76,7 @@ export const BranchesManagementTab: React.FC = () => {
           </CardDescription>
         </div>
 
-        {canManage && (
+        {canCreate && (
           <Button
             type="button"
             onClick={handleOpenCreate}
@@ -134,7 +135,7 @@ export const BranchesManagementTab: React.FC = () => {
                   </div>
                 </div>
 
-                {canManage && (
+                {canEdit && (
                   <div className="pt-2 border-t border-border-card/60 flex items-center justify-end">
                     <button
                       type="button"

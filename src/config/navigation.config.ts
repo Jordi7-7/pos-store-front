@@ -122,7 +122,7 @@ export const navigationConfig: NavItem[] = [
         label: 'Proveedores',
         path: '/compras/proveedores',
         icon: Building2,
-        permission: APP_PERMISSIONS.VIEW_PURCHASES,
+        permission: APP_PERMISSIONS.VIEW_SUPPLIERS,
       },
     ],
   },

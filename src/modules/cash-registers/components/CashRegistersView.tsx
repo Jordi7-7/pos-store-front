@@ -34,7 +34,9 @@ import type { CashRegisterItem } from '../services/cash-registers.service';
 
 export const CashRegistersView: React.FC = () => {
   const { can } = usePermissions();
-  const canManage = can(APP_PERMISSIONS.CASH_REGISTERS_MANAGE);
+  const canCreate = can(APP_PERMISSIONS.CASH_REGISTERS_CREATE);
+  const canEdit = can(APP_PERMISSIONS.CASH_REGISTERS_EDIT);
+  const canAssign = can(APP_PERMISSIONS.CASH_REGISTERS_ASSIGN_USERS);
 
   const { selectedBranchId, branches } = useLayoutContext();
   const { users } = useUsers();
@@ -192,7 +194,7 @@ export const CashRegistersView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          {canManage && (
+          {canCreate && (
             <Button
               onClick={handleOpenCreate}
               className="bg-primary hover:bg-primary-hover text-white text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow transition-all cursor-pointer"
@@ -241,7 +243,7 @@ export const CashRegistersView: React.FC = () => {
                 ? 'No hay cajas que coincidan con los filtros aplicados.'
                 : 'Aún no has creado cajas registradoras para tus sucursales. Haz clic en "Nueva Caja" para habilitar tu primer punto de cobro.'}
             </p>
-            {canManage && (
+            {canCreate && (
               <Button
                 onClick={handleOpenCreate}
                 variant="outline"
@@ -339,29 +341,33 @@ export const CashRegistersView: React.FC = () => {
                   </div>
 
                   {/* Actions footer */}
-                  {canManage && (
+                  {(canAssign || canEdit) && (
                     <div className="border-t border-border-card/60 pt-3 mt-4 flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenAssign(reg)}
-                        className="flex-1 text-[11px] h-8 cursor-pointer flex items-center justify-center gap-1 hover:text-primary hover:border-primary/40"
-                      >
-                        <UserCheck className="w-3.5 h-3.5" />
-                        <span>Asignar Cajeros</span>
-                      </Button>
+                      {canAssign && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenAssign(reg)}
+                          className="flex-1 text-[11px] h-8 cursor-pointer flex items-center justify-center gap-1 hover:text-primary hover:border-primary/40"
+                        >
+                          <UserCheck className="w-3.5 h-3.5" />
+                          <span>Asignar Cajeros</span>
+                        </Button>
+                      )}
 
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenEdit(reg)}
-                        className="h-8 w-8 p-0 cursor-pointer text-neutral hover:text-secondary hover:border-border-card"
-                        title="Editar Caja"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </Button>
+                      {canEdit && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenEdit(reg)}
+                          className="h-8 w-8 p-0 cursor-pointer text-neutral hover:text-secondary hover:border-border-card"
+                          title="Editar Caja"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>
