@@ -63,11 +63,14 @@ export interface OnboardPayload {
   country: string;
   currencyCode: string;
   currencySymbol: string;
+  timezone: string;
   adminName: string;
-  email: string;
+  username: string;
+  email?: string;
   password: string;
   branchName: string;
   branchAddress: string;
+  slug?: string;
 }
 
 export const authService = {

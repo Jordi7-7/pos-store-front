@@ -226,11 +226,14 @@ export const useAuthStore = create<AuthState>()(
             country: data.country,
             currencyCode: data.currency,
             currencySymbol: '$',
+            timezone: data.timezone || 'America/Guayaquil',
             adminName: data.adminName,
-            email: data.adminEmail,
+            username: data.adminUsername || (data.adminEmail ? data.adminEmail.split('@')[0] : 'admin'),
+            email: data.adminEmail || undefined,
             password: data.adminPassword,
             branchName: data.branchName,
             branchAddress: data.branchAddress,
+            slug: data.slug,
           };
 
           const response = await authService.onboard(payload);
