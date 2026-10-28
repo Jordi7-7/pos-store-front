@@ -112,8 +112,12 @@ export const authService = {
   /**
    * Cierra sesión en el backend revocando la sesión en Redis
    */
-  logout: async (): Promise<{ message: string }> => {
-    return apiClient.post<{ message: string }>('/auth/logout', {});
+  logout: async (token?: string | null): Promise<{ message: string }> => {
+    return apiClient.post<{ message: string }>(
+      '/auth/logout',
+      {},
+      token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
+    );
   },
 };
 

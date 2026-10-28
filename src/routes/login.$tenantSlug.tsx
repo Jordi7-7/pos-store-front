@@ -1,33 +1,30 @@
-import { createFileRoute, useNavigate, useParams } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { useAuthStore, LoginScreen, SystemRole } from '@/modules/auth';
-import { useEffect } from 'react';
 
 export const Route = createFileRoute('/login/$tenantSlug')({
-  component: TenantLoginPage,
-});
+  beforeLoad: async ({ params }) => {
+    const targetSlug = params.tenantSlug.toLowerCase().trim();
+    const { publicTenant, isAuthenticated, user, role, logout, fetchPublicTenant } = useAuthStore.getState();
+    const cachedSlug = publicTenant?.slug?.toLowerCase().trim();
 
-function TenantLoginPage() {
-  const { tenantSlug } = useParams({ from: '/login/$tenantSlug' });
-  const { isAuthenticated, user, role, fetchPublicTenant, publicTenant } = useAuthStore();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (tenantSlug) {
-      if (!publicTenant || publicTenant.slug !== tenantSlug.toLowerCase().trim()) {
-        fetchPublicTenant(tenantSlug);
+    // 1. Si la tienda en caché no coincide con la de la URL (o no hay caché):
+    if (cachedSlug !== targetSlug) {
+      if (isAuthenticated) {
+        logout(); // Cierra sesión si venía de otra tienda
       }
+      await fetchPublicTenant(targetSlug); // Petición única (se guarda en caché)
+      return;
     }
-  }, [tenantSlug, publicTenant, fetchPublicTenant]);
 
-  useEffect(() => {
+    // 2. Si la tienda de la URL es la MISMA que ya está en caché y ya tiene sesión:
     if (isAuthenticated && user) {
       const isOwner = role === SystemRole.OWNER;
-      navigate({
+      throw redirect({
         to: isOwner ? '/dashboard' : '/pos',
-        replace: true,
       });
     }
-  }, [isAuthenticated, user, role, navigate]);
+  },
+  component: () => <LoginScreen />,
+});
 
-  return <LoginScreen />;
-}
+

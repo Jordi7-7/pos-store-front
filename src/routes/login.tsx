@@ -1,24 +1,10 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useAuthStore, LoginScreen, SystemRole } from '@/modules/auth';
-import { useEffect } from 'react';
+import { createFileRoute, Outlet } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/login')({
-  component: LoginPage,
+  component: LoginLayout,
 });
 
-function LoginPage() {
-  const { isAuthenticated, user, role } = useAuthStore();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      const isOwner = role === SystemRole.OWNER;
-      navigate({
-        to: isOwner ? '/dashboard' : '/pos',
-        replace: true,
-      });
-    }
-  }, [isAuthenticated, user, role, navigate]);
-
-  return <LoginScreen />;
+function LoginLayout() {
+  return <Outlet />;
 }
+

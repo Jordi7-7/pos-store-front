@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { SystemRole } from '../types';
 import { Store, Lock, User, ArrowRight, Loader2, KeyRound, AlertCircle, Building2 } from 'lucide-react';
-import { getTenantSlugFromPath, setTenantUrlPath } from '@/lib/tenantUrl';
 import { toast } from 'sonner';
 
 const PIN_LENGTH = 6;
 
 export const LoginScreen: React.FC = () => {
+  const navigate = useNavigate();
   const {
     publicTenant,
     tenantSlug,
@@ -16,7 +18,24 @@ export const LoginScreen: React.FC = () => {
     clearTenant,
     login,
     pinLogin,
+    isAuthenticated,
+    user,
   } = useAuthStore();
+
+  const redirectToApp = useCallback(() => {
+    const currentRole = useAuthStore.getState().role;
+    const isOwner = currentRole === SystemRole.OWNER;
+    navigate({
+      to: isOwner ? '/dashboard' : '/pos',
+      replace: true,
+    });
+  }, [navigate]);
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      redirectToApp();
+    }
+  }, [isAuthenticated, user, redirectToApp]);
 
   const [activeMode, setActiveMode] = useState<'pin' | 'credentials'>('pin');
 
@@ -37,18 +56,6 @@ export const LoginScreen: React.FC = () => {
   const [searchSlugInput, setSearchSlugInput] = useState('');
   const [isSearchingTenant, setIsSearchingTenant] = useState(false);
 
-  // 1. Initial tenant resolution from URL pathname
-  useEffect(() => {
-    const slugFromUrl = getTenantSlugFromPath();
-    if (slugFromUrl) {
-      if (!publicTenant || publicTenant.slug !== slugFromUrl) {
-        fetchPublicTenant(slugFromUrl);
-      }
-    } else if (tenantSlug && !publicTenant) {
-      fetchPublicTenant(tenantSlug);
-    }
-  }, [publicTenant, tenantSlug, fetchPublicTenant]);
-
   // Handle PIN Submit
   const handlePinSubmit = useCallback(
     async (submittedPin: string) => {
@@ -63,6 +70,7 @@ export const LoginScreen: React.FC = () => {
 
         if (res === 'SUCCESS') {
           toast.success('¡Sesión iniciada con éxito!');
+          redirectToApp();
           return;
         }
 
@@ -137,6 +145,7 @@ export const LoginScreen: React.FC = () => {
         setCredentialsError('Credenciales incorrectas o usuario no asignado a esta tienda.');
       } else {
         toast.success('¡Bienvenido al sistema!');
+        redirectToApp();
       }
     } catch (err) {
       setCredentialsError('Ocurrió un error en el inicio de sesión.');
@@ -157,8 +166,8 @@ export const LoginScreen: React.FC = () => {
     const ok = await fetchPublicTenant(cleanSlug);
     setIsSearchingTenant(false);
     if (ok) {
-      setTenantUrlPath(cleanSlug);
       setSearchSlugInput('');
+      navigate({ to: '/login/$tenantSlug', params: { tenantSlug: cleanSlug } });
     } else {
       toast.error(`No se encontró la tienda "${cleanSlug}".`);
     }
@@ -167,9 +176,7 @@ export const LoginScreen: React.FC = () => {
   const handleClearTenant = () => {
     clearTenant();
     setSearchSlugInput('');
-    if (typeof window !== 'undefined') {
-      window.history.pushState(null, '', '/login');
-    }
+    navigate({ to: '/login', replace: true });
   };
 
   const numpadKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '⌫'];

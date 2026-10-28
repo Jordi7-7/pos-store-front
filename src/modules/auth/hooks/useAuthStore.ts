@@ -125,6 +125,13 @@ export const useAuthStore = create<AuthState>()(
       fetchPublicTenant: async (slug: string) => {
         if (!slug || !slug.trim()) return false;
         const cleanSlug = slug.toLowerCase().trim();
+        const state = get();
+
+        // Si ya tenemos en caché exactamente este tenant, no volvemos a consultar
+        if (state.publicTenant?.slug?.toLowerCase() === cleanSlug) {
+          return true;
+        }
+
         set({ isLoadingTenant: true, tenantError: null });
         try {
           const data = await authService.getPublicTenantBySlug(cleanSlug);
@@ -141,6 +148,7 @@ export const useAuthStore = create<AuthState>()(
           console.error('Error fetching public tenant info:', err);
           set({
             publicTenant: null,
+            tenantSlug: cleanSlug,
             isLoadingTenant: false,
             tenantError: err.message || 'Error al conectar con la tienda',
           });
@@ -262,6 +270,11 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         const { accessToken } = get();
 
+        // Notificar al backend con el token activo para que revoque la sesión
+        if (accessToken) {
+          authService.logout(accessToken).catch(() => {});
+        }
+
         // Limpiar estado de autenticación inmediatamente
         set({
           accessToken: null,
@@ -281,11 +294,6 @@ export const useAuthStore = create<AuthState>()(
           queryClient.clear();
         } catch {
           // No-op si no está inicializado
-        }
-
-        // Solo notificar al backend si efectivamente había un token antes de limpiar
-        if (accessToken) {
-          authService.logout().catch(() => {});
         }
       },
 
