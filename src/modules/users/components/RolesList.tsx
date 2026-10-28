@@ -75,23 +75,21 @@ export const RolesList: React.FC<RolesListProps> = ({
                   <span>Configurar Permisos</span>
                 </Button>
 
-                {r.name !== 'Propietario' && !r.permissions.includes('*') && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={isDeletingRole || (r.userCount || 0) > 0}
-                    title={
-                      (r.userCount || 0) > 0
-                        ? `No se puede eliminar: tiene ${r.userCount} usuario(s) asignado(s)`
-                        : 'Eliminar Rol'
-                    }
-                    onClick={() => onDeleteRole(r)}
-                    className="h-8 w-8 p-0 text-rose-400 hover:text-rose-500 hover:bg-rose-500/10 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={isDeletingRole || (r.userCount || 0) > 0}
+                  title={
+                    (r.userCount || 0) > 0
+                      ? `No se puede eliminar: tiene ${r.userCount} usuario(s) asignado(s)`
+                      : 'Eliminar Rol'
+                  }
+                  onClick={() => onDeleteRole(r)}
+                  className="h-8 w-8 p-0 text-rose-400 hover:text-rose-500 hover:bg-rose-500/10 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
               </div>
             )}
           </div>

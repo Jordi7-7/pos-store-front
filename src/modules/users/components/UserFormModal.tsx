@@ -71,7 +71,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       setUsername(userToEdit.username || '');
       setEmail(userToEdit.email || '');
       setPassword('');
-      setRoleId(userToEdit.role?.id || '');
+      setRoleId(userToEdit.isOwner ? '' : (userToEdit.role?.id || ''));
       setPin('');
       const userBranchList = (userToEdit.branches || []).map((b) => b.id);
       setIsActive(userBranchList.length === 0 ? false : (userToEdit.isActive ?? true));
@@ -103,7 +103,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       return;
     }
 
-    if (!roleId) {
+    if (!userToEdit?.isOwner && !roleId) {
       toast.error('Selecciona un rol para el usuario.');
       return;
     }
@@ -118,7 +118,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           username: username.trim(),
           email: email.trim() || undefined,
           password: password.trim() ? password : undefined,
-          roleId: roleId || undefined,
+          roleId: userToEdit.isOwner ? undefined : (roleId || undefined),
           pin: pin.trim() ? pin.trim() : undefined,
           isActive: resolvedIsActive,
           branchIds: resolvedBranchIds,
@@ -200,17 +200,28 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
               <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
                 <Shield className="w-3.5 h-3.5 text-primary" /> Rol {isEditing ? '' : 'Operativo'}
               </FieldLabel>
-              <select
-                value={roleId}
-                onChange={(e) => setRoleId(e.target.value)}
-                className="w-full bg-bg-dark border border-border-card rounded-xl h-9 px-3 text-xs text-secondary focus:outline-none focus:border-primary cursor-pointer font-medium"
-              >
-                {roles.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name} {r.isSystem ? '(Sistema)' : ''}
-                  </option>
-                ))}
-              </select>
+              {userToEdit?.isOwner ? (
+                <div className="w-full bg-primary/10 border border-primary/20 rounded-xl h-9 px-3 flex items-center justify-between text-xs font-bold text-primary">
+                  <span className="flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5" /> Propietario (Acceso Total)
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-medium">
+                    Acceso total permanente
+                  </span>
+                </div>
+              ) : (
+                <select
+                  value={roleId}
+                  onChange={(e) => setRoleId(e.target.value)}
+                  className="w-full bg-bg-dark border border-border-card rounded-xl h-9 px-3 text-xs text-secondary focus:outline-none focus:border-primary cursor-pointer font-medium"
+                >
+                  {roles.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name} {r.isSystem ? '(Sistema)' : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
             </Field>
           </div>
 

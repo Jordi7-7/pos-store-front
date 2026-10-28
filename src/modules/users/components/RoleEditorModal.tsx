@@ -31,7 +31,6 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
   const { deleteRole, isDeleting } = useDeleteRole();
 
   const isEditing = !!roleToEdit;
-  const isOwner = roleToEdit?.name === 'Propietario' || (roleToEdit?.permissions || []).includes('*');
   const userCount = roleToEdit?.userCount || 0;
 
   const [name, setName] = useState('');
@@ -58,17 +57,12 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
   }, [roleToEdit, isOpen]);
 
   const togglePermission = (code: string) => {
-    if (roleToEdit?.name === 'Propietario') {
-      toast.info('El rol Propietario tiene acceso absoluto permanente.');
-      return;
-    }
     setSelectedPermissions((prev) =>
       prev.includes(code) ? prev.filter((p) => p !== code) : [...prev, code],
     );
   };
 
   const handleSelectAllModule = (moduleId: string) => {
-    if (roleToEdit?.name === 'Propietario') return;
     const modulePerms = permissions.filter((p) => p.module === moduleId).map((p) => p.code);
     const allSelected = modulePerms.every((code) => selectedPermissions.includes(code));
 
@@ -327,13 +321,17 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
 
           <div className="flex items-center justify-between pt-3 border-t border-border">
             <div>
-              {isEditing && !isOwner && (
+              {isEditing && (
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   disabled={isDeleting || isSaving || userCount > 0}
-                  title={userCount > 0 ? `No se puede eliminar: tiene ${userCount} usuario(s) asignado(s)` : 'Eliminar este Rol'}
+                  title={
+                    userCount > 0
+                      ? `No se puede eliminar: tiene ${userCount} usuario(s) asignado(s)`
+                      : 'Eliminar este Rol'
+                  }
                   onClick={() => setShowDeleteConfirm(true)}
                   className="text-xs h-8 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 >
