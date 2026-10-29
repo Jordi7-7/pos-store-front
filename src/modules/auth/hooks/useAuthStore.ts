@@ -58,6 +58,10 @@ interface AuthState {
   selectedCashRegisterId: string | null;
   setSelectedCashRegisterId: (registerId: string | null) => void;
   fetchProfile: () => Promise<boolean>;
+  isSessionExpiredModalOpen: boolean;
+  openSessionExpiredModal: () => void;
+  closeSessionExpiredModal: () => void;
+  refreshSession: () => Promise<boolean>;
 }
 
 let inFlightProfilePromise: Promise<boolean> | null = null;
@@ -81,12 +85,45 @@ export const useAuthStore = create<AuthState>()(
       branchIds: [],
       cashRegisters: [],
       isAuthenticated: false,
+      isSessionExpiredModalOpen: false,
       _hasHydrated: false,
       setHasHydrated: (state) => set({ _hasHydrated: state }),
 
+      openSessionExpiredModal: () => {
+        if (get().isAuthenticated) {
+          set({ isSessionExpiredModalOpen: true });
+        }
+      },
+      closeSessionExpiredModal: () => set({ isSessionExpiredModalOpen: false }),
+
+      refreshSession: async () => {
+        const { refreshToken } = get();
+        if (!refreshToken) {
+          return false;
+        }
+        try {
+          const response = await authService.refresh(refreshToken);
+          if (response && response.accessToken) {
+            set({
+              accessToken: response.accessToken,
+              refreshToken: response.refreshToken || refreshToken,
+              isSessionExpiredModalOpen: false,
+              isAuthenticated: true,
+            });
+            // Refrescar perfil para asegurar sincronización
+            get().fetchProfile().catch(() => {});
+            return true;
+          }
+          return false;
+        } catch (err) {
+          console.error('Error al renovar sesión con refresh token:', err);
+          return false;
+        }
+      },
+
       selectedBranchId: null,
       selectedCashRegisterId: null,
-      setSelectedCashRegisterId: (registerId) => set({ selectedCashRegisterId: registerId }),
+      setSelectedCashRegisterId: (registerId: string | null) => set({ selectedCashRegisterId: registerId }),
 
       can: (permission: string) => {
         const state = get();
@@ -270,7 +307,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         const { accessToken } = get();
 
-        // Notificar al backend con el token activo para que revoque la sesión
+        // Notificar al backend con el token para que revoque la sesión en Redis
         if (accessToken) {
           authService.logout(accessToken).catch(() => {});
         }
@@ -287,6 +324,7 @@ export const useAuthStore = create<AuthState>()(
           selectedBranchId: null,
           selectedCashRegisterId: null,
           isAuthenticated: false,
+          isSessionExpiredModalOpen: false,
         });
 
         // Limpiar completamente la caché de React Query (dashboard, métricas, ventas, etc.)

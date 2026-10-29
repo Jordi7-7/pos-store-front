@@ -19,6 +19,7 @@ import { Route as LayoutMultimediaRouteImport } from './routes/_layout/multimedi
 import { Route as LayoutPosRouteImport } from './routes/_layout/pos'
 import { Route as LayoutUsuariosRouteImport } from './routes/_layout/usuarios'
 import { Route as LayoutVentasRouteImport } from './routes/_layout/ventas'
+import { Route as LoginIndexRouteImport } from './routes/login.index'
 import { Route as LoginTenantSlugRouteImport } from './routes/login.$tenantSlug'
 import { Route as LayoutCajasHistorialRouteImport } from './routes/_layout/cajas/historial'
 import { Route as LayoutCajasRegistradorasRouteImport } from './routes/_layout/cajas/registradoras'
@@ -82,6 +83,11 @@ const LayoutVentasRoute = LayoutVentasRouteImport.update({
   id: '/ventas',
   path: '/ventas',
   getParentRoute: () => LayoutRoute,
+} as any)
+const LoginIndexRoute = LoginIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LoginRoute,
 } as any)
 const LoginTenantSlugRoute = LoginTenantSlugRouteImport.update({
   id: '/$tenantSlug',
@@ -172,6 +178,7 @@ export interface FileRoutesByFullPath {
   '/usuarios': typeof LayoutUsuariosRoute
   '/ventas': typeof LayoutVentasRoute
   '/login/$tenantSlug': typeof LoginTenantSlugRoute
+  '/login/': typeof LoginIndexRoute
   '/cajas/historial': typeof LayoutCajasHistorialRoute
   '/cajas/registradoras': typeof LayoutCajasRegistradorasRoute
   '/compras/historial': typeof LayoutComprasHistorialRoute
@@ -188,7 +195,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/login': typeof LoginRouteWithChildren
   '/clientes': typeof LayoutClientesRoute
   '/configuracion': typeof LayoutConfiguracionRoute
   '/dashboard': typeof LayoutDashboardRoute
@@ -197,6 +203,7 @@ export interface FileRoutesByTo {
   '/usuarios': typeof LayoutUsuariosRoute
   '/ventas': typeof LayoutVentasRoute
   '/login/$tenantSlug': typeof LoginTenantSlugRoute
+  '/login': typeof LoginIndexRoute
   '/cajas/historial': typeof LayoutCajasHistorialRoute
   '/cajas/registradoras': typeof LayoutCajasRegistradorasRoute
   '/compras/historial': typeof LayoutComprasHistorialRoute
@@ -224,6 +231,7 @@ export interface FileRoutesById {
   '/_layout/usuarios': typeof LayoutUsuariosRoute
   '/_layout/ventas': typeof LayoutVentasRoute
   '/login/$tenantSlug': typeof LoginTenantSlugRoute
+  '/login/': typeof LoginIndexRoute
   '/_layout/cajas/historial': typeof LayoutCajasHistorialRoute
   '/_layout/cajas/registradoras': typeof LayoutCajasRegistradorasRoute
   '/_layout/compras/historial': typeof LayoutComprasHistorialRoute
@@ -251,6 +259,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/ventas'
     | '/login/$tenantSlug'
+    | '/login/'
     | '/cajas/historial'
     | '/cajas/registradoras'
     | '/compras/historial'
@@ -267,7 +276,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/login'
     | '/clientes'
     | '/configuracion'
     | '/dashboard'
@@ -276,6 +284,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/ventas'
     | '/login/$tenantSlug'
+    | '/login'
     | '/cajas/historial'
     | '/cajas/registradoras'
     | '/compras/historial'
@@ -302,6 +311,7 @@ export interface FileRouteTypes {
     | '/_layout/usuarios'
     | '/_layout/ventas'
     | '/login/$tenantSlug'
+    | '/login/'
     | '/_layout/cajas/historial'
     | '/_layout/cajas/registradoras'
     | '/_layout/compras/historial'
@@ -394,6 +404,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/ventas'
       preLoaderRoute: typeof LayoutVentasRouteImport
       parentRoute: typeof LayoutRoute
+    }
+    '/login/': {
+      id: '/login/'
+      path: '/'
+      fullPath: '/login/'
+      preLoaderRoute: typeof LoginIndexRouteImport
+      parentRoute: typeof LoginRoute
     }
     '/login/$tenantSlug': {
       id: '/login/$tenantSlug'
@@ -548,10 +565,12 @@ const LayoutRouteWithChildren =
 
 interface LoginRouteChildren {
   LoginTenantSlugRoute: typeof LoginTenantSlugRoute
+  LoginIndexRoute: typeof LoginIndexRoute
 }
 
 const LoginRouteChildren: LoginRouteChildren = {
   LoginTenantSlugRoute: LoginTenantSlugRoute,
+  LoginIndexRoute: LoginIndexRoute,
 }
 
 const LoginRouteWithChildren = LoginRoute._addFileChildren(LoginRouteChildren)

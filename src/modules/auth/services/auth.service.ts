@@ -119,5 +119,12 @@ export const authService = {
       token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
     );
   },
+
+  /**
+   * Renueva el accessToken usando el refreshToken almacenado
+   */
+  refresh: async (refreshToken: string): Promise<AuthResponse> => {
+    return apiClient.post<AuthResponse>('/auth/refresh', { refreshToken });
+  },
 };
 

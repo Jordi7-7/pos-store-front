@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { createFileRoute, Outlet, redirect, useNavigate, useRouterState } from '@tanstack/react-router';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useAuthStore, SessionExpiredModal, useIdleTimer } from '@/modules/auth';
 import { LayoutContextProvider, useLayoutContext } from '@/providers/LayoutContext';
 import type { Branch } from '@/modules/branches';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -21,14 +21,22 @@ export const Route = createFileRoute('/_layout')({
 });
 
 function AppLayout() {
-  const { isAuthenticated, accessToken } = useAuthStore();
+  const { isAuthenticated, accessToken, tenantSlug, publicTenant } = useAuthStore();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!isAuthenticated || !accessToken) {
-      navigate({ to: '/login', replace: true });
+      const slug = tenantSlug || publicTenant?.slug;
+      if (slug) {
+        navigate({ to: '/login/$tenantSlug', params: { tenantSlug: slug }, replace: true });
+      } else {
+        navigate({ to: '/login', replace: true });
+      }
     }
-  }, [isAuthenticated, accessToken, navigate]);
+  }, [isAuthenticated, accessToken, tenantSlug, publicTenant?.slug, navigate]);
+
+  // Monitoreo de inactividad real del usuario y renovación silenciosa proactiva
+  useIdleTimer();
 
   if (!isAuthenticated || !accessToken) {
     return null;
@@ -37,6 +45,7 @@ function AppLayout() {
   return (
     <LayoutContextProvider>
       <DashboardShell />
+      <SessionExpiredModal />
     </LayoutContextProvider>
   );
 }

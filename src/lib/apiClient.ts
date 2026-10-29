@@ -1,6 +1,18 @@
+import { toast } from 'sonner';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+let activeRefreshPromise: Promise<boolean> | null = null;
+
+async function executeRefresh(): Promise<boolean> {
+  if (!activeRefreshPromise) {
+    activeRefreshPromise = useAuthStore.getState().refreshSession().finally(() => {
+      activeRefreshPromise = null;
+    });
+  }
+  return activeRefreshPromise;
+}
 
 export const apiClient = {
   request: async <T>(path: string, options: RequestInit = {}): Promise<T> => {
@@ -12,7 +24,7 @@ export const apiClient = {
       ...(options.headers as Record<string, string>),
     };
 
-    if (accessToken) {
+    if (accessToken && !headers['Authorization']) {
       headers['Authorization'] = `Bearer ${accessToken}`;
     }
 
@@ -22,19 +34,43 @@ export const apiClient = {
     });
 
     if (!response.ok) {
-      if (
-        response.status === 401 &&
-        !path.includes('/auth/login') &&
-        !path.includes('/auth/pin-login') &&
-        !path.includes('/auth/logout') &&
-        !path.includes('/tenants/public')
-      ) {
-        // Token expirado o inválido: Cerrar sesión y redirigir
-        useAuthStore.getState().logout();
-        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
+      const isAuthEndpoint =
+        path.includes('/auth/login') ||
+        path.includes('/auth/pin-login') ||
+        path.includes('/auth/logout') ||
+        path.includes('/tenants/public') ||
+        path.includes('/auth/refresh');
+
+      // Si responde 401 y no es un endpoint de login/logout/refresh, intentar auto-renovación y reintento
+      if (response.status === 401 && !isAuthEndpoint) {
+        const refreshed = await executeRefresh();
+        if (refreshed) {
+          const latestToken = useAuthStore.getState().accessToken;
+          const retryHeaders: Record<string, string> = {
+            ...headers,
+            ...(latestToken ? { Authorization: `Bearer ${latestToken}` } : {}),
+          };
+
+          const retryResponse = await fetch(`${API_URL}${path}`, {
+            ...options,
+            headers: retryHeaders,
+          });
+
+          if (retryResponse.ok) {
+            if (retryResponse.status === 204) {
+              return {} as T;
+            }
+            const retryText = await retryResponse.text();
+            return retryText ? JSON.parse(retryText) : ({} as T);
+          }
+        } else {
+          // Si el refresh token también venció o fue revocado en backend/Redis, cerrar sesión y avisar
+          const state = useAuthStore.getState();
+          state.logout();
+          toast.error('Tu sesión ha expirado por completo. Por favor inicia sesión nuevamente.');
         }
       }
+
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || `Request failed with status ${response.status}`);
     }
