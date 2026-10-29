@@ -13,6 +13,12 @@ interface LowStockCardProps {
 }
 
 export const LowStockCard: React.FC<LowStockCardProps> = ({ products }) => {
+  const displayProducts = React.useMemo(() => {
+    return (products || []).slice(0, 50);
+  }, [products]);
+
+  const totalCount = products?.length || 0;
+
   return (
     <div className="bg-bg-card border border-border-card rounded-2xl p-4 shadow-sm flex flex-col h-full">
       <div className="flex items-center justify-between mb-3 shrink-0">
@@ -25,15 +31,15 @@ export const LowStockCard: React.FC<LowStockCardProps> = ({ products }) => {
             <p className="text-[10px] text-neutral">Stock menor o igual a 5</p>
           </div>
         </div>
-        {products && products.length > 0 && (
+        {totalCount > 0 && (
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
-            {products.length} {products.length === 1 ? 'prod' : 'prods'}
+            {totalCount >= 50 ? 'Top 50 críticos' : `${totalCount} ${totalCount === 1 ? 'prod' : 'prods'}`}
           </span>
         )}
       </div>
 
       <div className="flex-1 overflow-y-auto pr-1 min-h-0">
-        {products && products.length > 0 ? (
+        {displayProducts.length > 0 ? (
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 bg-bg-card z-10">
               <tr className="border-b border-border-card/60 text-[9px] uppercase font-bold text-neutral">
@@ -43,7 +49,7 @@ export const LowStockCard: React.FC<LowStockCardProps> = ({ products }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border-card/30 text-xs">
-              {products.map((item, index) => {
+              {displayProducts.map((item, index) => {
                 const isCritical = item.stock <= 2;
                 return (
                   <tr key={item.variantId || index} className="hover:bg-bg-dark/30 transition-colors">
