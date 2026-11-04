@@ -1,5 +1,7 @@
 import { numeroALetras } from 'numero-a-letras-es';
 import type { TicketSaleData } from '../components/pos/ThermalTicketModal';
+import { CashSessionStatus } from '@/modules/cash-sessions/enums';
+import { PaymentMethod } from '../enums';
 
 export type PaperWidth = '58mm' | '80mm';
 
@@ -377,25 +379,30 @@ export function buildClosingReceiptBytes(
     builder.openCashDrawer();
   }
 
-  // 1. Cabecera Comercial
+  // 1. Cabecera Comercial (Sucursal en lugar de tenant)
   builder.align('center');
-  if (options.tenantName) {
-    builder.bold(true).textSize(1, 1).line(options.tenantName.toUpperCase()).bold(false);
-  }
-  if (options.tenantRuc) {
-    builder.line(`RFC/RUC: ${options.tenantRuc.toUpperCase()}`);
-  }
-
-  // Determinar si es Corte Z (Cierre definitivo) o Corte X (Arqueo Parcial)
-  const isClosed = sessionData.status === 'CLOSED' || !!sessionData.closedAt;
+  const branchHeader = (sessionData.branchName || 'SUCURSAL').toUpperCase();
   builder
     .bold(true)
     .textSize(1, 2)
-    .line(isClosed ? 'CORTE Z (CIERRE)' : 'CORTE X (ARQUEO)')
+    .line(branchHeader)
     .textSize(1, 1)
     .bold(false);
 
-  builder.line(sessionData.branchName?.toUpperCase() || 'SUCURSAL');
+  if (options.tenantRuc) {
+    builder.line(`RFC/RUC: ${options.tenantRuc.toUpperCase()}`);
+  }
+  if (sessionData.branchAddress) {
+    builder.line(sessionData.branchAddress.toUpperCase());
+  }
+
+  // Determinar si es Corte Z (Cierre definitivo) o Corte X (Arqueo Parcial)
+  const isClosed = sessionData.status === CashSessionStatus.CLOSED || !!sessionData.closedAt;
+  builder
+    .bold(true)
+    .line(isClosed ? 'CORTE Z (CIERRE)' : 'CORTE X (ARQUEO)')
+    .bold(false);
+
   if (sessionData.cashRegisterName) {
     builder.line(`CAJA: ${sessionData.cashRegisterName.toUpperCase()}`);
   }
@@ -413,7 +420,7 @@ export function buildClosingReceiptBytes(
 
   // 3. Arqueo de Efectivo Fisico (Cajon)
   const openingCash = Number(sessionData.openingBalance || 0);
-  const cashSales = Number(sessionData.cashSales ?? sessionData.paymentsBreakdown?.['EFECTIVO'] ?? 0);
+  const cashSales = Number(sessionData.cashSales ?? sessionData.paymentsBreakdown?.[PaymentMethod.EFECTIVO] ?? 0);
   const expenses = Number(sessionData.expensesTotal || 0);
   const refunds = Number(sessionData.refundsTotal || 0);
   const expectedCash = Number(sessionData.expectedBalance ?? (openingCash + cashSales - expenses - refunds));
@@ -458,7 +465,7 @@ export function buildClosingReceiptBytes(
   const salesCount = Number(sessionData.salesCount || sessionData.salesList?.length || 0);
   const totalPieces = Number(sessionData.totalPieces || 0);
   const totalSales = Number(sessionData.salesTotal || 0);
-  const cardSales = Number(sessionData.cardSales ?? sessionData.paymentsBreakdown?.['TARJETA'] ?? 0);
+  const cardSales = Number(sessionData.cardSales ?? sessionData.paymentsBreakdown?.[PaymentMethod.TARJETA] ?? 0);
   const avgTicket = salesCount > 0 ? totalSales / salesCount : 0;
 
   builder
@@ -475,7 +482,7 @@ export function buildClosingReceiptBytes(
   if (sessionData.paymentsBreakdown) {
     Object.entries(sessionData.paymentsBreakdown).forEach(([method, amount]) => {
       const mUpper = method.toUpperCase();
-      if (mUpper !== 'EFECTIVO' && mUpper !== 'TARJETA' && Number(amount) > 0) {
+      if (mUpper !== PaymentMethod.EFECTIVO && mUpper !== PaymentMethod.TARJETA && Number(amount) > 0) {
         builder.row(`Ventas ${mUpper.slice(0, 10)}:`, `$${Number(amount).toFixed(2)}`);
       }
     });
