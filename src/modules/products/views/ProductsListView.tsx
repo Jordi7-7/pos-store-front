@@ -17,12 +17,15 @@ export const ProductsListView: React.FC<ProductsListViewProps> = ({
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [productType, setProductType] = useState<ProductType | undefined>(undefined);
+  const [inStockOnly, setInStockOnly] = useState<boolean>(false);
 
   const { products, meta, isLoading: isLoadingProducts } = useProductList({
     page,
     limit,
     search,
     type: productType,
+    branchId: selectedBranchId || undefined,
+    inStockOnly,
   });
   const { categories } = useCategories();
 
@@ -49,6 +52,11 @@ export const ProductsListView: React.FC<ProductsListViewProps> = ({
         productType={productType}
         onProductTypeChange={(type) => {
           setProductType(type);
+          setPage(1);
+        }}
+        inStockOnly={inStockOnly}
+        onInStockOnlyChange={(val) => {
+          setInStockOnly(val);
           setPage(1);
         }}
       />

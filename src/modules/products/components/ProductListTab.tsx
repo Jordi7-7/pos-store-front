@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Package, Edit, Search, Barcode, CheckSquare, Square, Layers, ChevronDown, ChevronRight } from 'lucide-react';
+import { Package, Edit, Search, Barcode, CheckSquare, Square, Layers, ChevronDown, ChevronRight, PackageCheck, AlertTriangle } from 'lucide-react';
 import { ProductType } from '../enums';
 import type { ProductEntity } from '../entities/product.entity';
 import { ProductEditDrawer } from './ProductEditDrawer';
@@ -39,6 +39,8 @@ interface ProductListTabProps {
   onSearchChange: (search: string) => void;
   productType?: ProductType;
   onProductTypeChange?: (type?: ProductType) => void;
+  inStockOnly?: boolean;
+  onInStockOnlyChange?: (inStockOnly: boolean) => void;
 }
 
 import { usePermissions } from '@/hooks/usePermissions';
@@ -57,6 +59,8 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
   onSearchChange,
   productType,
   onProductTypeChange,
+  inStockOnly,
+  onInStockOnlyChange,
 }) => {
   const { can } = usePermissions();
   const canEdit = can(APP_PERMISSIONS.PRODUCTS_EDIT);
@@ -295,6 +299,23 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
               </div>
             )}
 
+            {/* Filtro ocultar sin existencias */}
+            {onInStockOnlyChange && (
+              <button
+                type="button"
+                onClick={() => onInStockOnlyChange(!inStockOnly)}
+                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border font-semibold transition-all cursor-pointer h-9 shrink-0 ${
+                  inStockOnly
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 shadow-2xs font-bold'
+                    : 'bg-muted/60 text-muted-foreground border-border/80 hover:text-foreground hover:bg-muted'
+                }`}
+                title={inStockOnly ? 'Filtro activo: Ocultando productos sin existencias' : 'Hacer clic para mostrar solo productos con stock'}
+              >
+                <PackageCheck className={`w-3.5 h-3.5 ${inStockOnly ? 'text-emerald-500' : 'text-muted-foreground'}`} />
+                <span>Solo con stock</span>
+              </button>
+            )}
+
             <form onSubmit={handleSearchSubmit} className="flex gap-2 flex-1 md:w-80">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
@@ -393,6 +414,19 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                         const branchQty = v.stocks?.find((s) => s.branchId === selectedBranchId)?.quantity ?? 0;
                         return total + branchQty;
                       }, 0) ?? 0);
+
+                  // Desglose de existencias por variantes para detectar saldos mixtos (ej. unas con stock y otras en negativo)
+                  const variantStocks = isVariable
+                    ? (product.variants?.map((v: any) => {
+                        return isAll
+                          ? (v.stocks?.reduce((acc: number, s: any) => acc + Number(s.quantity || 0), 0) ?? 0)
+                          : (v.stocks?.find((s: any) => s.branchId === selectedBranchId)?.quantity ?? 0);
+                      }) ?? [])
+                    : [];
+
+                  const positiveStock = variantStocks.filter((q: number) => q > 0).reduce((a: number, b: number) => a + b, 0);
+                  const negativeStock = variantStocks.filter((q: number) => q < 0).reduce((a: number, b: number) => a + b, 0);
+                  const hasMixedStock = isVariable && positiveStock > 0 && negativeStock < 0;
 
                   const isSelected = selectedProductsMap.has(product.id);
 
@@ -511,12 +545,36 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
 
                       {/* Stock */}
                       <TableCell className="py-2.5 text-center">
-                        <Badge
-                          variant={currentStock > 0 ? 'secondary' : 'destructive'}
-                          className="font-bold font-mono text-[10px]"
-                        >
-                          {currentStock} pzs
-                        </Badge>
+                        {hasMixedStock ? (
+                          <div 
+                            className="flex flex-col items-center gap-0.5" 
+                            title={`Saldo neto: ${currentStock} pzs (${positiveStock} disponibles en algunas variantes, ${Math.abs(negativeStock)} en negativo)`}
+                          >
+                            <Badge
+                              variant="outline"
+                              className="font-bold font-mono text-[10px] border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 gap-1 cursor-pointer hover:bg-amber-500/20 transition-colors"
+                              onClick={(e) => toggleExpandProduct(product.id, e)}
+                            >
+                              <AlertTriangle className="w-2.5 h-2.5 text-amber-500 shrink-0" />
+                              <span>{currentStock} pzs</span>
+                            </Badge>
+                            <span 
+                              className="text-[9px] font-mono text-amber-600 dark:text-amber-400 font-semibold cursor-pointer hover:underline"
+                              onClick={(e) => toggleExpandProduct(product.id, e)}
+                            >
+                              +{positiveStock} / {negativeStock}
+                            </span>
+                          </div>
+                        ) : (
+                          <Badge
+                            variant={currentStock > 0 ? 'secondary' : currentStock < 0 ? 'destructive' : 'outline'}
+                            className={`font-bold font-mono text-[10px] ${
+                              currentStock === 0 ? 'text-muted-foreground border-border bg-muted/40' : ''
+                            }`}
+                          >
+                            {currentStock} pzs
+                          </Badge>
+                        )}
                       </TableCell>
 
                       {/* Actions */}
@@ -603,8 +661,10 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
                           </TableCell>
                           <TableCell className="py-2 text-center">
                             <Badge
-                              variant={vStock > 0 ? 'secondary' : 'destructive'}
-                              className="font-mono text-[9px] px-1.5 py-0 h-4"
+                              variant={vStock > 0 ? 'secondary' : vStock < 0 ? 'destructive' : 'outline'}
+                              className={`font-mono text-[9px] px-1.5 py-0 h-4 ${
+                                vStock === 0 ? 'text-muted-foreground border-border bg-muted/40' : ''
+                              }`}
                             >
                               {vStock} pzs
                             </Badge>

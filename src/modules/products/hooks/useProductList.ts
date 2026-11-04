@@ -4,11 +4,18 @@ import { toProductEntities } from '../mappers/product.mapper';
 import type { ProductType } from '../enums';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
-export const useProductList = (params?: { page?: number; limit?: number; search?: string; type?: ProductType }) => {
+export const useProductList = (params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  type?: ProductType;
+  branchId?: string;
+  inStockOnly?: boolean;
+}) => {
   const { tenantId, isAuthenticated } = useAuthStore();
 
   const productsQuery = useQuery({
-    queryKey: ['products', tenantId, params?.page, params?.limit, params?.search, params?.type],
+    queryKey: ['products', tenantId, params?.page, params?.limit, params?.search, params?.type, params?.branchId, params?.inStockOnly],
     queryFn: () => productsService.getProducts(params),
     enabled: isAuthenticated && !!tenantId,
     select: (response) => ({

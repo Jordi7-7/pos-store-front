@@ -32,12 +32,16 @@ export const productsService = {
     limit?: number;
     search?: string;
     type?: ProductType;
+    branchId?: string;
+    inStockOnly?: boolean;
   }): Promise<{ data: ProductDTO[]; meta: { total: number; page: number; limit: number; totalPages: number } }> => {
     const query = new URLSearchParams();
     if (params?.page) query.append('page', String(params.page));
     if (params?.limit) query.append('limit', String(params.limit));
     if (params?.search) query.append('search', params.search);
     if (params?.type) query.append('type', params.type);
+    if (params?.branchId) query.append('branchId', params.branchId);
+    if (params?.inStockOnly) query.append('inStockOnly', 'true');
     const queryString = query.toString();
     return apiClient.get(`/products${queryString ? `?${queryString}` : ''}`);
   },
