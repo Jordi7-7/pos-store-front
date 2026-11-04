@@ -14,6 +14,11 @@ export interface ClosingTicketData {
   discountsTotal?: number;
   expensesTotal: number;
   refundsTotal?: number;
+  cashSales?: number;
+  cardSales?: number;
+  salesCount?: number;
+  totalPieces?: number;
+  cashRegisterName?: string;
   expensesList: { description: string; amount: number; createdAt: string }[];
   productsList: {
     sku: string;
@@ -105,6 +110,11 @@ export function buildClosingTicketData(
   }, 0);
 
   const refundsTotal = Number(details.kpis?.totalRefunds || 0);
+  const cashSales = Number(details.kpis?.cashSales || 0);
+  const cardSales = Number(details.kpis?.cardSales || 0);
+  const salesCount = Number(details.kpis?.salesCount || details.sales?.length || 0);
+  const totalPieces = productsList.reduce((acc, p) => acc + Number(p.quantity || 0), 0);
+  const cashRegisterName = details.session.cashRegister?.name || '';
 
   const branchName = details.session.branch?.name || 'Sucursal General';
   const branchAddress = details.session.branch?.address || '';
@@ -121,6 +131,11 @@ export function buildClosingTicketData(
     discountsTotal: discountsTotal > 0 ? discountsTotal : undefined,
     expensesTotal: Number(details.kpis?.totalExpenses || 0),
     refundsTotal: refundsTotal > 0 ? refundsTotal : undefined,
+    cashSales,
+    cardSales,
+    salesCount,
+    totalPieces,
+    cashRegisterName,
     expensesList: (details.expenses || []).map((e) => ({
       description: e.description,
       amount: Number(e.amount),

@@ -1,11 +1,24 @@
-import React from 'react';
-import { Printer } from 'lucide-react';
-import { numeroALetras } from 'numero-a-letras-es';
-import { PaymentMethod } from '../../enums';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Printer, Download, RefreshCw, Zap } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { thermalPrinterService } from '../../services/thermal-printer.service';
+import { buildSaleReceiptBytes } from '../../services/escpos-builder';
+import { parseEscPosBytes } from '../../services/escpos-parser';
+import {
+  renderEscPosToDataUrl,
+  downloadEscPosImage,
+  printImageViaIframe,
+} from '../../services/escpos-image';
+import { PaymentMethod } from '../../enums';
 
 export interface TicketSaleItem {
   variantId?: string;
@@ -47,354 +60,253 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
   onClose,
   saleData,
   tenantRuc,
-  currencyCode
+  currencyCode,
 }) => {
+  const { publicTenant } = useAuthStore();
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [viewMode, setViewMode] = useState<'paper' | 'image'>('paper');
+  const [isUsbConfigured, setIsUsbConfigured] = useState<boolean | null>(null);
+  const [isConnectingUsb, setIsConnectingUsb] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      thermalPrinterService.isConfigured().then(setIsUsbConfigured);
+    }
+  }, [isOpen]);
+
+  const handleConnectUsb = async () => {
+    try {
+      setIsConnectingUsb(true);
+      const connected = await thermalPrinterService.requestPort();
+      if (connected) {
+        setIsUsbConfigured(true);
+        toast.success('¡Impresora térmica USB vinculada con éxito!');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Error al vincular impresora USB.');
+    } finally {
+      setIsConnectingUsb(false);
+    }
+  };
+
+  const config = useMemo(() => thermalPrinterService.getConfig(), [isOpen]);
+  const effectiveCurrency = currencyCode || publicTenant?.currencyCode || 'MXN';
+  const effectiveRuc = tenantRuc || publicTenant?.ruc || '';
+
+  // 1. Única Fuente de la Verdad: Generación de bytes ESC/POS
+  const receiptBytes = useMemo(() => {
+    if (!saleData) return new Uint8Array();
+    return buildSaleReceiptBytes(saleData, {
+      paperWidth: config.paperWidth,
+      openDrawer: config.openDrawer,
+      cutPaper: config.cutPaper,
+      tenantRuc: effectiveRuc,
+      currencyCode: effectiveCurrency,
+    });
+  }, [saleData, config, effectiveRuc, effectiveCurrency]);
+
+  // 2. Decodificación de líneas exactas
+  const parseResult = useMemo(() => {
+    return parseEscPosBytes(receiptBytes, config.paperWidth);
+  }, [receiptBytes, config.paperWidth]);
+
+  // 3. Renderizado de imagen PNG de alta resolución
+  const pngDataUrl = useMemo(() => {
+    if (!saleData || receiptBytes.length === 0) return '';
+    try {
+      return renderEscPosToDataUrl(parseResult);
+    } catch {
+      return '';
+    }
+  }, [parseResult, saleData, receiptBytes.length]);
+
   if (!saleData) return null;
 
-  const ticketTitle = saleData.branchName.toUpperCase();
-  const displayAddress =saleData.branchAddress
+  // Imprimir: USB directo o fallback de navegador con imagen
+  const handlePrint = async () => {
+    try {
+      setIsPrinting(true);
+      const isConfigured = await thermalPrinterService.isConfigured();
 
-  let moneda = 'PESOS';
-  let sufijo = 'M.N.';
-
-  if (currencyCode === 'USD') {
-    moneda = 'DÓLARES';
-    sufijo = 'C.T.V.'; // Centavos en formato bancario / estándar
-  } else if (currencyCode === 'MXN') {
-    moneda = 'PESOS';
-    sufijo = 'M.N.';
-  } else if (currencyCode) {
-    moneda = currencyCode.toUpperCase();
-    sufijo = '';
-  }
-
-  const totalPieces = saleData.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
-
-  // Compute subtotal (gross total before discounts)
-  const computedGrossSubtotal = saleData.items.reduce((sum, item) => {
-    return sum + (Number(item.price || 0) * Number(item.quantity || 0));
-  }, 0);
-  const rawSubtotal = saleData.subtotal !== undefined && saleData.subtotal > 0
-    ? Number(saleData.subtotal)
-    : computedGrossSubtotal;
-
-  // Compute item discounts
-  const computedItemDiscounts = saleData.items.reduce((sum, item) => {
-    const disc = Number(item.discountAmount || 0);
-    return sum + disc;
-  }, 0);
-  const itemsDiscount = saleData.itemsDiscountAmount !== undefined
-    ? Number(saleData.itemsDiscountAmount)
-    : computedItemDiscounts;
-
-  // Global discount
-  const globalDiscount = saleData.globalDiscountAmount !== undefined
-    ? Number(saleData.globalDiscountAmount)
-    : Math.max(0, Number(saleData.discountAmount || 0) - itemsDiscount);
-
-  const lettersText = `Son: ${numeroALetras(saleData.total, {
-    moneda,
-    sufijo,
-    mayusculas: true,
-  })}`;
-
-  const handlePrint = () => {
-    // 1. Create temporary iframe
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow?.document;
-    if (!doc) return;
-
-    const itemsHtml = saleData.items.map((item: any) => {
-      const itemDisc = Number(item.discountAmount || 0);
-      const qty = Number(item.quantity || 1);
-      const unitPrice = Number(item.price || 0);
-      const lineSubtotal = unitPrice * qty;
-      const lineTotal = Math.max(0, lineSubtotal - itemDisc);
-      const hasDiscount = itemDisc > 0;
-
-      return `
-        <div style="margin-bottom: 6px;">
-          <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 10.5px;">
-            <span style="max-width: 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.variantSku || 'SKU'}</span>
-            <span style="max-width: 60%; text-align: right; text-transform: uppercase;">${item.productName}</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; color: #000; font-weight: 600; font-size: 10px; margin-top: 1.5px;">
-            <span style="padding-left: 8px;">x${qty}</span>
-            <span>$${unitPrice.toFixed(2)}</span>
-            ${hasDiscount ? `<span style="font-size: 9px; font-weight: 700; color: #000;">(Desc -$${itemDisc.toFixed(2)})</span>` : ''}
-            <span style="font-weight: 800; font-size: 10.5px;">$${lineTotal.toFixed(2)}</span>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    doc.open();
-    doc.write(`
-      <html>
-        <head>
-          <title>Imprimir Ticket</title>
-          <style>
-            @page {
-              margin: 0;
-              size: 80mm auto;
-            }
-            * {
-              box-sizing: border-box;
-            }
-            body {
-              margin: 0 auto;
-              padding: 2mm 3mm;
-              width: 70mm;
-              max-width: 70mm;
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-              font-size: 11px;
-              font-weight: 600;
-              line-height: 1.35;
-              color: #000;
-              background-color: #fff;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-              word-break: break-word;
-              overflow: hidden;
-            }
-            .text-center { text-align: center; }
-            .font-bold { font-weight: 800; }
-            .uppercase { text-transform: uppercase; }
-            .flex { display: flex; }
-            .justify-between { justify-content: space-between; }
-            .border-dashed {
-              border-bottom: 1.5px dashed #000;
-              margin: 4px 0;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="text-center" style="margin-bottom: 6px;">
-            <div class="font-bold" style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">${ticketTitle}</div>
-            ${tenantRuc ? `<div style="font-weight: 700; font-size: 10px;">RFC: ${tenantRuc}</div>` : ''}
-            ${displayAddress ? `<div style="text-transform: uppercase; font-size: 9.5px; font-weight: 600; margin-top: 1px;">${displayAddress}</div>` : ''}
-            <div style="font-size: 9.5px; font-weight: 600;">TLF: 967 6316359</div>
-          </div>
-
-          <div class="border-dashed"></div>
-
-          <div style="font-size: 10px; line-height: 1.3; font-weight: 600;">
-            <div class="flex justify-between">
-              <span>FOLIO:</span>
-              <span class="font-bold">${saleData.invoiceNumber}</span>
-            </div>
-            <div class="flex justify-between">
-              <span>VENDEDOR:</span>
-              <span class="uppercase">${saleData.userName || '01000001'}</span>
-            </div>
-            <div class="flex justify-between">
-              <span>FECHA:</span>
-              <span>${saleData.createdAt}</span>
-            </div>
-            <div class="flex justify-between">
-              <span>CLIENTE:</span>
-              <span class="uppercase font-bold">${saleData.clientName}</span>
-            </div>
-          </div>
-
-          <div class="border-dashed"></div>
-
-          <div>
-            ${itemsHtml}
-          </div>
-
-          <div class="border-dashed"></div>
-
-          <div style="font-size: 10px; line-height: 1.35; font-weight: 600;">
-            <div class="flex justify-between">
-              <span>Piezas:</span>
-              <span class="font-bold">${totalPieces}</span>
-            </div>
-            <div class="flex justify-between" style="margin-top: 2px;">
-              <span>SUBTOTAL:</span>
-              <span class="font-bold">$${rawSubtotal.toFixed(2)}</span>
-            </div>
-            ${itemsDiscount > 0 ? `
-              <div class="flex justify-between" style="color: #000;">
-                <span>DESC. ÍTEMS:</span>
-                <span class="font-bold">-$${itemsDiscount.toFixed(2)}</span>
-              </div>
-            ` : ''}
-            ${globalDiscount > 0 ? `
-              <div class="flex justify-between" style="color: #000;">
-                <span>DESC. GLOBAL:</span>
-                <span class="font-bold">-$${globalDiscount.toFixed(2)}</span>
-              </div>
-            ` : ''}
-            <div class="flex justify-between font-bold" style="border-top: 1.5px dashed #000; padding-top: 4px; font-size: 12px; margin-top: 3px;">
-              <span>TOTAL:</span>
-              <span style="font-size: 13.5px;">$${Number(saleData.total || 0).toFixed(2)}</span>
-            </div>
-            <div style="font-size: 9px; font-weight: 700; text-align: center; margin-top: 5px;">
-              ${lettersText}
-            </div>
-          </div>
-
-          <div class="border-dashed"></div>
-
-          <div class="text-center font-bold" style="font-size: 9.5px; line-height: 1.35; margin-top: 4px;">
-            <div>SALIDA LA MERCANCIA</div>
-            <div>NO HAY CAMBIOS</div>
-            <div>NI DEVOLUCIONES</div>
-            <div style="margin-top: 4px; font-size: 10px;">¡GRACIAS POR SU COMPRA!</div>
-          </div>
-        </body>
-      </html>
-    `);
-    doc.close();
-
-    // Print after content mounts
-    setTimeout(() => {
-      const win = iframe.contentWindow;
-      if (win) {
-        win.onafterprint = () => {
-          onClose();
-          setTimeout(() => {
-            if (document.body.contains(iframe)) {
-              document.body.removeChild(iframe);
-            }
-          }, 100);
-        };
-        win.focus();
-        win.print();
-      }
-      // Fallback: cerrar modal tras invocar el diálogo de impresión
-      setTimeout(() => {
+      if (isConfigured) {
+        await thermalPrinterService.printSaleTicket(saleData, {
+          tenantRuc: effectiveRuc,
+          currencyCode: effectiveCurrency,
+        });
+        toast.success('¡Ticket impreso directamente por USB!');
         onClose();
-        if (document.body.contains(iframe)) {
-          document.body.removeChild(iframe);
-        }
-      }, 1500);
-    }, 200);
+        return;
+      }
+
+      // Fallback: Diálogo de impresión del navegador imprimiendo la imagen limpia
+      printImageViaIframe(pngDataUrl, `Ticket-${saleData.invoiceNumber}`);
+      onClose();
+    } catch (err: any) {
+      console.error('Error al imprimir ticket:', err);
+      printImageViaIframe(pngDataUrl, `Ticket-${saleData.invoiceNumber}`);
+      onClose();
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleDownloadPng = () => {
+    downloadEscPosImage(parseResult, `ticket-${saleData.invoiceNumber}`);
+    toast.success('Imagen PNG descargada para WhatsApp');
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent showCloseButton={false} className="sm:max-w-sm max-h-[95vh] overflow-y-auto bg-white text-black p-6 border border-gray-200 rounded-2xl shadow-2xl">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md max-h-[95vh] flex flex-col bg-bg-card border border-border-card p-6 overflow-hidden">
+        <DialogHeader className="shrink-0 pb-3 border-b border-border-card">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-sm font-bold text-secondary flex items-center gap-2">
+              <Printer className="w-4 h-4 text-primary" />
+              <span>Ticket de Venta</span>
+              <span className="text-xs font-mono text-neutral font-normal">
+                {saleData.invoiceNumber}
+              </span>
+            </DialogTitle>
 
-        {/* On screen modal representation (Aesthetic White Ticket representation) */}
-        <div className="space-y-4 font-mono text-xs text-gray-800">
-          <div className="text-center space-y-1 pb-2 border-b border-gray-200">
-            <h4 className="text-sm font-bold uppercase text-black">{ticketTitle}</h4>
-            {tenantRuc && <p className="text-[10px] text-gray-500">RFC: {tenantRuc}</p>}
-            {displayAddress && <p className="text-[10px] text-gray-500 uppercase truncate">{displayAddress}</p>}
-            <p className="text-[10px] text-gray-500">TLF: 967 6316359</p>
+            {/* Alternar vista Papel / Imagen */}
+            <div className="inline-flex rounded-lg bg-bg-dark p-0.5 border border-border-card text-xs">
+              <button
+                type="button"
+                onClick={() => setViewMode('paper')}
+                className={`px-2 py-0.5 rounded-md font-medium transition-all ${
+                  viewMode === 'paper' ? 'bg-card text-primary' : 'text-neutral hover:text-secondary'
+                }`}
+              >
+                Papel
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('image')}
+                className={`px-2 py-0.5 rounded-md font-medium transition-all ${
+                  viewMode === 'image' ? 'bg-card text-primary' : 'text-neutral hover:text-secondary'
+                }`}
+              >
+                Imagen PNG
+              </button>
+            </div>
           </div>
+          <DialogDescription className="text-xs text-neutral">
+            Formato: <strong>{config.paperWidth}</strong> ({config.paperWidth === '80mm' ? '42 columnas' : '32 columnas'})
+          </DialogDescription>
+        </DialogHeader>
 
-          <div className="space-y-1 text-[11px] text-gray-700">
-            <div className="flex justify-between">
-              <span>FOLIO:</span>
-              <span className="text-black font-bold">{saleData.invoiceNumber}</span>
+        {/* Alerta contextual si la impresora no está vinculada en este navegador */}
+        {isUsbConfigured === false && (
+          <div className="flex items-center justify-between p-2.5 px-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-500 shrink-0 my-1">
+            <div className="flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 shrink-0" />
+              <span>Impresora USB no vinculada en este equipo</span>
             </div>
-            <div className="flex justify-between">
-              <span>VENDEDOR:</span>
-              <span className="uppercase text-black">{saleData.userName || '01000001'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>FECHA:</span>
-              <span className="text-black">{saleData.createdAt}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>CLIENTE:</span>
-              <span className="uppercase text-black truncate max-w-[170px]">{saleData.clientName}</span>
-            </div>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleConnectUsb}
+              disabled={isConnectingUsb}
+              className="text-[11px] h-7 px-2.5 font-bold bg-amber-500 hover:bg-amber-600 text-white cursor-pointer"
+            >
+              {isConnectingUsb ? 'Conectando...' : 'Vincular USB'}
+            </Button>
           </div>
+        )}
 
-          <div className="border-t border-dashed border-gray-200 pt-3 space-y-2">
-            {saleData.items.map((item: any, idx: number) => {
-              const itemDisc = Number(item.discountAmount || 0);
-              const qty = Number(item.quantity || 1);
-              const unitPrice = Number(item.price || 0);
-              const lineSubtotal = unitPrice * qty;
-              const lineTotal = Math.max(0, lineSubtotal - itemDisc);
-              const hasDiscount = itemDisc > 0;
+        {/* Contenedor del Ticket (Generado exclusivamente desde los Bytes ESC/POS) */}
+        <div className="flex-1 overflow-y-auto py-3 flex justify-center items-start bg-bg-dark/40 rounded-xl my-2 p-3">
+          {viewMode === 'paper' ? (
+            <div
+              className="bg-white text-black shadow-xl border border-neutral-300 rounded-sm font-mono text-[11px] leading-[17px] p-5 select-text h-fit shrink-0 my-1 w-fit"
+              style={{ fontFamily: '"Courier New", Courier, monospace' }}
+            >
+              <div className="space-y-0.5">
+                {parseResult.lines.map((line, idx) => {
+                  if (line.isDrawer) return null; // Pulso de cajón invisible en papel cliente
 
-              return (
-                <div key={item.variantId || idx} className="space-y-0.5 text-[11px]">
-                  <div className="flex justify-between font-semibold text-black">
-                    <span>{item.variantSku || 'SKU'}</span>
-                    <span className="uppercase truncate max-w-[140px]">{item.productName}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-gray-500">
-                    <span className="pl-4">x{qty}</span>
-                    <span>${unitPrice.toFixed(2)}</span>
-                    {hasDiscount && (
-                      <span className="text-[10px] text-black font-bold">
-                        (-${itemDisc.toFixed(2)})
-                      </span>
-                    )}
-                    <span className="text-black font-bold">${lineTotal.toFixed(2)}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                  if (line.isCut) {
+                    return (
+                      <div
+                        key={idx}
+                        className="my-3 border-t border-dashed border-neutral-400 text-center text-[9px] text-neutral-400 uppercase tracking-widest pt-1"
+                      >
+                        ✂ Corte de Papel
+                      </div>
+                    );
+                  }
 
-          <div className="border-t border-dashed border-gray-200 pt-3 space-y-1 text-[11px] text-gray-700">
-            <div className="flex justify-between">
-              <span>Piezas</span>
-              <span className="text-black">{totalPieces}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>SUBTOTAL</span>
-              <span className="text-black font-bold">${rawSubtotal.toFixed(2)}</span>
-            </div>
-            {itemsDiscount > 0 && (
-              <div className="flex justify-between text-black">
-                <span>DESC. ÍTEMS:</span>
-                <span className="font-bold">-${itemsDiscount.toFixed(2)}</span>
+                  const alignClass =
+                    line.align === 'center'
+                      ? 'text-center'
+                      : line.align === 'right'
+                      ? 'text-right'
+                      : 'text-left';
+
+                  const boldClass = line.bold ? 'font-bold' : 'font-normal';
+                  const sizeClass = line.doubleHeight ? 'text-sm font-bold' : '';
+
+                  return (
+                    <div
+                      key={idx}
+                      className={`whitespace-pre ${alignClass} ${boldClass} ${sizeClass}`}
+                      style={{ minHeight: line.text.trim() === '' ? '12px' : 'auto' }}
+                    >
+                      {line.align === 'center' ? line.text.trim() : line.text}
+                    </div>
+                  );
+                })}
               </div>
-            )}
-            {globalDiscount > 0 && (
-              <div className="flex justify-between text-black">
-                <span>DESC. GLOBAL:</span>
-                <span className="font-bold">-${globalDiscount.toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between font-bold text-black text-xs pt-1.5 border-t border-dashed border-gray-200">
-              <span>TOTAL</span>
-              <span className="text-black font-extrabold text-sm">${Number(saleData.total || 0).toFixed(2)}</span>
             </div>
-            <p className="text-[9px] text-gray-500 italic text-center mt-2 leading-relaxed">
-              {lettersText}
-            </p>
-          </div>
-
-          <div className="text-center text-[10px] text-gray-600 pt-3 border-t border-gray-200 space-y-0.5">
-            <p className="font-bold text-black">SALIDA LA MERCANCIA</p>
-            <p className="font-bold text-black">NO HAY CAMBIOS</p>
-            <p className="font-bold text-black">NI DEVOLUCIONES</p>
-          </div>
+          ) : (
+            <div className="flex flex-col items-center py-1">
+              {pngDataUrl && (
+                <img
+                  src={pngDataUrl}
+                  alt={`Ticket ${saleData.invoiceNumber}`}
+                  className={`shadow-2xl rounded border border-neutral-300 bg-white ${
+                    config.paperWidth === '80mm' ? 'max-w-[340px]' : 'max-w-[275px]'
+                  }`}
+                />
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Action buttons */}
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={handlePrint}
-            className="flex-1 bg-black hover:bg-neutral-800 text-white text-xs font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Imprimir Ticket</span>
-          </button>
-          <button
+        {/* Acciones principales */}
+        <div className="shrink-0 pt-3 border-t border-border-card space-y-2">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              onClick={handlePrint}
+              disabled={isPrinting}
+              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 h-9 text-xs font-bold gap-1.5"
+            >
+              {isPrinting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
+              <span>Imprimir Ticket</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleDownloadPng}
+              className="flex-1 border-border-card hover:border-primary/50 text-secondary hover:text-white h-9 text-xs font-semibold gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5 text-primary" />
+              <span>Guardar Imagen PNG</span>
+            </Button>
+          </div>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
             onClick={onClose}
-            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold py-2.5 rounded-xl transition-all cursor-pointer border border-gray-200"
+            className="w-full h-8 text-xs text-neutral hover:text-secondary"
           >
             Cerrar
-          </button>
+          </Button>
         </div>
-
       </DialogContent>
     </Dialog>
   );

@@ -14,6 +14,8 @@ import {
   Receipt,
   DollarSign,
   Printer,
+  Info,
+  HelpCircle,
 } from 'lucide-react';
 import { useCashSessionDetailsQuery } from '../hooks/useCashSessions';
 import type {
@@ -24,6 +26,11 @@ import type {
 import { SaleStatus } from '@/modules/sales/enums';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/components/ui/tooltip';
 import {
   Table,
   TableBody,
@@ -65,6 +72,9 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
   // Session Closing Ticket print state
   const [sessionClosingDataToPrint, setSessionClosingDataToPrint] = useState<any | null>(null);
   const [isClosingTicketModalOpen, setIsClosingTicketModalOpen] = useState(false);
+
+  // Guide state: show/hide calculations breakdown
+  const [showFormulasGuide, setShowFormulasGuide] = useState(false);
 
   const handlePrintSessionTicket = () => {
     if (!rawDetails) return;
@@ -160,6 +170,22 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                   <div className="flex items-center gap-2 flex-wrap">
                     <Button
                       type="button"
+                      onClick={() => setShowFormulasGuide((prev) => !prev)}
+                      variant="outline"
+                      size="sm"
+                      className={`h-8 px-3 rounded-xl border text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5 transition-all ${
+                        showFormulasGuide
+                          ? 'border-primary/40 bg-primary/20 text-primary'
+                          : 'border-border-card bg-bg-dark text-secondary hover:border-primary/40'
+                      }`}
+                      title="Explicación detallada de cómo se calcula cada valor de esta sesión"
+                    >
+                      <HelpCircle className="w-3.5 h-3.5 text-primary" />
+                      <span>{showFormulasGuide ? 'Ocultar Fórmulas' : '¿Cómo se calculan?'}</span>
+                    </Button>
+
+                    <Button
+                      type="button"
                       onClick={handlePrintSessionTicket}
                       variant="outline"
                       size="sm"
@@ -239,12 +265,99 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                 </div>
               </div>
 
+              {/* Guía interactiva desplegable de fórmulas y cuadre */}
+              {showFormulasGuide && (
+                <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 text-xs space-y-3 animate-in fade-in-50 duration-200 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 font-bold text-primary">
+                      <Info className="w-4 h-4 shrink-0" />
+                      <span>Guía Contable: ¿Cómo se calculan los valores en esta sesión?</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowFormulasGuide(false)}
+                      className="text-[11px] text-neutral hover:text-primary cursor-pointer font-semibold"
+                    >
+                      Cerrar guía
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                    {/* Fórmula 1: Efectivo Físico en Gaveta */}
+                    <div className="p-3.5 rounded-xl bg-card border border-border-card space-y-2">
+                      <div className="flex items-center justify-between font-bold text-secondary text-[11px]">
+                        <span className="flex items-center gap-1.5">
+                          <Coins className="w-3.5 h-3.5 text-primary" />
+                          1. Arqueo de Efectivo en Gaveta (Físico)
+                        </span>
+                        <span className="font-mono text-primary font-black">
+                          {details.session.expectedBalanceFormatted}
+                        </span>
+                      </div>
+                      <div className="text-[11px] font-mono bg-bg-dark/70 p-2.5 rounded-lg border border-border-card text-neutral leading-relaxed">
+                        <div className="text-secondary font-bold mb-1">Cálculo matemático:</div>
+                        <div>(+) Fondo Inicial: <span className="text-secondary font-bold">{details.session.openingBalanceFormatted}</span></div>
+                        <div>(+) Cobros Efectivo: <span className="text-emerald-600 font-bold">{details.kpis.cashSalesFormatted}</span></div>
+                        <div>(-) Gastos en Caja: <span className="text-rose-500 font-bold">{details.kpis.totalExpensesFormatted}</span></div>
+                        <div>(-) Devoluciones Efec: <span className="text-amber-600 font-bold">{details.kpis.totalRefundsFormatted}</span></div>
+                        <div className="border-t border-border-card/60 pt-1 mt-1 font-bold text-primary flex justify-between">
+                          <span>(=) Efectivo Esperado:</span>
+                          <span>{details.session.expectedBalanceFormatted}</span>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-neutral leading-tight">
+                        * Solo cuenta el flujo que entra y sale de la gaveta física. Las ventas con tarjeta no se suman al cajón porque se depositan directamente en la cuenta bancaria.
+                      </p>
+                    </div>
+
+                    {/* Fórmula 2: Ventas Netas Comerciales */}
+                    <div className="p-3.5 rounded-xl bg-card border border-border-card space-y-2">
+                      <div className="flex items-center justify-between font-bold text-secondary text-[11px]">
+                        <span className="flex items-center gap-1.5">
+                          <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
+                          2. Ventas Netas del Negocio (Comercial)
+                        </span>
+                        <span className="font-mono text-emerald-600 font-black">
+                          {details.kpis.netSalesFormatted}
+                        </span>
+                      </div>
+                      <div className="text-[11px] font-mono bg-bg-dark/70 p-2.5 rounded-lg border border-border-card text-neutral leading-relaxed">
+                        <div className="text-secondary font-bold mb-1">Cálculo comercial:</div>
+                        <div>(+) Ventas Efectivo: <span className="text-emerald-600 font-bold">{details.kpis.cashSalesFormatted}</span></div>
+                        <div>(+) Ventas Tarjeta: <span className="text-secondary font-bold">{details.kpis.cardSalesFormatted}</span></div>
+                        <div>(-) Devoluciones Totales: <span className="text-amber-600 font-bold">{details.kpis.totalRefundsFormatted}</span></div>
+                        <div className="border-t border-border-card/60 pt-1 mt-1 font-bold text-emerald-600 flex justify-between">
+                          <span>(=) Total Ventas Netas:</span>
+                          <span>{details.kpis.netSalesFormatted}</span>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-neutral leading-tight">
+                        * Facturación neta comercial que generó la tienda en este turno sumando todos los métodos de pago (Efectivo + Tarjeta) menos devoluciones.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Grid principal de KPIs de sesión */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                 {/* 1. Fondo de Apertura */}
                 <div className="p-3.5 bg-bg-dark border border-border-card rounded-2xl flex flex-col justify-between">
                   <div className="flex items-center justify-between text-neutral mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Apertura</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Apertura</span>
+                      <Tooltip>
+                        <TooltipTrigger className="text-neutral/60 hover:text-primary transition-colors cursor-help inline-flex items-center">
+                          <Info className="w-3 h-3" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[220px] p-2.5 text-xs bg-popover text-popover-foreground border border-border shadow-lg">
+                          <p className="font-bold text-foreground mb-0.5">Fondo Inicial de Caja</p>
+                          <p className="text-muted-foreground text-[11px] leading-tight">
+                            Efectivo base asignado al cajón al abrir el turno para poder dar cambio a los clientes.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Coins className="w-3.5 h-3.5 text-neutral" />
                   </div>
                   <div>
@@ -258,9 +371,25 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                 {/* 2. Ventas Netas */}
                 <div className="p-3.5 bg-emerald-500/5 border border-emerald-500/15 rounded-2xl flex flex-col justify-between">
                   <div className="flex items-center justify-between text-emerald-600 mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider">
-                      Ventas Netas
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider">
+                        Ventas Netas
+                      </span>
+                      <Tooltip>
+                        <TooltipTrigger className="text-emerald-600/60 hover:text-emerald-600 transition-colors cursor-help inline-flex items-center">
+                          <Info className="w-3 h-3" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[230px] p-2.5 text-xs bg-popover text-popover-foreground border border-border shadow-lg">
+                          <p className="font-bold text-foreground mb-0.5">Ventas Netas del Turno</p>
+                          <p className="text-muted-foreground text-[11px] leading-tight mb-1">
+                            Facturación comercial neta total en todos los medios de pago:
+                          </p>
+                          <p className="font-mono text-[10px] bg-muted/60 p-1 rounded font-bold text-emerald-600">
+                            (Efectivo + Tarjeta) - Devoluciones
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <ShoppingBag className="w-3.5 h-3.5" />
                   </div>
                   <div>
@@ -278,9 +407,22 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                 {/* 3. Gastos / Salidas */}
                 <div className="p-3.5 bg-rose-500/5 border border-rose-500/15 rounded-2xl flex flex-col justify-between">
                   <div className="flex items-center justify-between text-rose-500 mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider">
-                      Gastos / Retiros
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider">
+                        Gastos / Retiros
+                      </span>
+                      <Tooltip>
+                        <TooltipTrigger className="text-rose-500/60 hover:text-rose-500 transition-colors cursor-help inline-flex items-center">
+                          <Info className="w-3 h-3" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[220px] p-2.5 text-xs bg-popover text-popover-foreground border border-border shadow-lg">
+                          <p className="font-bold text-foreground mb-0.5">Salidas de Efectivo</p>
+                          <p className="text-muted-foreground text-[11px] leading-tight">
+                            Total de dinero físico retirado del cajón durante el turno para compras menores, pagos o retiros autorizados.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <TrendingDown className="w-3.5 h-3.5" />
                   </div>
                   <div>
@@ -296,9 +438,22 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                 {/* 4. Devoluciones */}
                 <div className="p-3.5 bg-amber-500/5 border border-amber-500/15 rounded-2xl flex flex-col justify-between">
                   <div className="flex items-center justify-between text-amber-600 mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider">
-                      Devoluciones
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider">
+                        Devoluciones
+                      </span>
+                      <Tooltip>
+                        <TooltipTrigger className="text-amber-600/60 hover:text-amber-600 transition-colors cursor-help inline-flex items-center">
+                          <Info className="w-3 h-3" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[230px] p-2.5 text-xs bg-popover text-popover-foreground border border-border shadow-lg">
+                          <p className="font-bold text-foreground mb-0.5">Reembolsos de Efectivo</p>
+                          <p className="text-muted-foreground text-[11px] leading-tight">
+                            Efectivo devuelto a clientes en este turno por cancelaciones o prendas retornadas. Se resta del cajón.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <RotateCcw className="w-3.5 h-3.5" />
                   </div>
                   <div>
@@ -314,9 +469,25 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                 {/* 5. Esperado en Caja */}
                 <div className="p-3.5 bg-primary/5 border border-primary/20 rounded-2xl flex flex-col justify-between">
                   <div className="flex items-center justify-between text-primary mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider">
-                      Efectivo Esperado
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider">
+                        Efectivo Esperado
+                      </span>
+                      <Tooltip>
+                        <TooltipTrigger className="text-primary/60 hover:text-primary transition-colors cursor-help inline-flex items-center">
+                          <Info className="w-3 h-3" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[250px] p-2.5 text-xs bg-popover text-popover-foreground border border-border shadow-lg">
+                          <p className="font-bold text-foreground mb-0.5">Fórmula de Efectivo en Gaveta</p>
+                          <p className="font-mono text-[10px] bg-muted/60 p-1 rounded font-bold text-primary mb-1">
+                            Apertura + Cobros Efec - Gastos - Devoluciones
+                          </p>
+                          <p className="text-muted-foreground text-[11px] leading-tight">
+                            Cantidad física exacta en billetes y monedas que debe haber en la gaveta al momento del cierre.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Receipt className="w-3.5 h-3.5" />
                   </div>
                   <div>
@@ -332,9 +503,25 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
                 {/* 6. Arqueo y Diferencia */}
                 <div className="p-3.5 bg-bg-dark border border-border-card rounded-2xl flex flex-col justify-between">
                   <div className="flex items-center justify-between text-neutral mb-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider">
-                      Arqueo Cierre
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider">
+                        Arqueo Cierre
+                      </span>
+                      <Tooltip>
+                        <TooltipTrigger className="text-neutral/60 hover:text-primary transition-colors cursor-help inline-flex items-center">
+                          <Info className="w-3 h-3" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[240px] p-2.5 text-xs bg-popover text-popover-foreground border border-border shadow-lg">
+                          <p className="font-bold text-foreground mb-0.5">Efectivo Contado y Cuadre</p>
+                          <p className="text-muted-foreground text-[11px] leading-tight mb-1">
+                            Dinero real contado físicamente por el cajero al momento del cierre.
+                          </p>
+                          <p className="font-mono text-[10px] bg-muted/60 p-1 rounded font-bold text-secondary">
+                            Diferencia = Contado - Esperado
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <DollarSign className="w-3.5 h-3.5 text-neutral" />
                   </div>
                   <div>

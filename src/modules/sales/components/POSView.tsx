@@ -30,6 +30,8 @@ import { POSPaymentPanel } from './pos/POSPaymentPanel';
 // Modals
 import { ThermalTicketModal } from './pos/ThermalTicketModal';
 import { ThermalClosingTicketModal } from './pos/ThermalClosingTicketModal';
+import { PrinterConfigModal } from './pos/PrinterConfigModal';
+import { thermalPrinterService } from '../services/thermal-printer.service';
 import { AperturaModal } from './pos/AperturaModal';
 import { EgresoModal } from './pos/EgresoModal';
 import { CierreModal } from './pos/CierreModal';
@@ -57,7 +59,7 @@ export const POSView: React.FC<POSViewProps> = ({
     branches,
   } = useLayoutContext();
   const { customers } = useCustomerList();
-  const { role, selectedCashRegisterId, setSelectedCashRegisterId } = useAuthStore();
+  const { selectedCashRegisterId, setSelectedCashRegisterId } = useAuthStore();
   const { myCashRegisters: availableRegistersForUser } = useMyCashRegisters(selectedBranchId || undefined);
 
   const [selectedRegisterId, setSelectedRegisterId] = useState<string>(selectedCashRegisterId || '');
@@ -158,6 +160,9 @@ export const POSView: React.FC<POSViewProps> = ({
   const [closingSessionToPrint, setClosingSessionToPrint] = useState<any | null>(null);
   const [isClosingTicketOpen, setIsClosingTicketOpen] = useState(false);
   const [selectedImageForZoom, setSelectedImageForZoom] = useState<string | null>(null);
+
+  // USB Thermal Printer States
+  const [isPrinterConfigOpen, setIsPrinterConfigOpen] = useState(false);
 
   const currentUser = useAuthStore((state) => state.user);
   const publicTenant = useAuthStore((state) => state.publicTenant);
@@ -277,13 +282,15 @@ export const POSView: React.FC<POSViewProps> = ({
         closingBalance: parsedClosing,
       });
 
+      let closingDataToUse: any = null;
       try {
         const closedDetails = await fetchCashSessionDetails(closingSessionId);
         const dataToPrint = buildClosingTicketData(closedDetails);
         setClosingSessionToPrint(dataToPrint);
+        closingDataToUse = dataToPrint;
       } catch (detailsErr) {
         console.error('Error fetching closing session details for ticket:', detailsErr);
-        setClosingSessionToPrint({
+        const fallbackData = {
           id: closingSessionId,
           openedAt: activeSession.openedAt,
           closedAt: new Date().toISOString(),
@@ -301,14 +308,28 @@ export const POSView: React.FC<POSViewProps> = ({
           branchName: selectedBranch?.name || selectedBranchName,
           branchAddress: selectedBranch?.address || '',
           status: CashSessionStatus.CLOSED,
-        });
+        };
+        setClosingSessionToPrint(fallbackData);
+        closingDataToUse = fallbackData;
       }
 
       setActiveSession(null);
       setIsCierreModalOpen(false);
-      setIsClosingTicketOpen(true);
 
-      toast.success('¡Sesión de caja cerrada con éxito!');
+      const isPrinterConfigured = await thermalPrinterService.isConfigured();
+      if (isPrinterConfigured) {
+        try {
+          await thermalPrinterService.printClosingTicket(closingDataToUse);
+          toast.success('¡Sesión de caja cerrada y corte impreso en ticket!');
+        } catch (printErr: any) {
+          console.error('Error al imprimir corte directo:', printErr);
+          setClosingSessionToPrint(closingDataToUse);
+          setIsClosingTicketOpen(true);
+        }
+      } else {
+        setClosingSessionToPrint(closingDataToUse);
+        setIsClosingTicketOpen(true);
+      }
     } catch (err: any) {
       toast.error(err.message || 'Error al cerrar la caja.');
     }
@@ -477,8 +498,23 @@ export const POSView: React.FC<POSViewProps> = ({
       setAddedPayments([]);
       setSelectedCustomerId('');
 
-      setIsTicketModalOpen(true);
-      toast.success('¡Venta procesada con éxito y cargada en Kardex!');
+      // Impresión de ticket: directo por USB si está configurada, o vista previa directa
+      const isPrinterConfigured = await thermalPrinterService.isConfigured();
+      if (isPrinterConfigured) {
+        try {
+          await thermalPrinterService.printSaleTicket(saleDataForTicket, {
+            tenantRuc: publicTenant?.ruc,
+            currencyCode: publicTenant?.currencyCode,
+          });
+          toast.success('¡Venta procesada y ticket impreso con éxito!');
+        } catch (printErr: any) {
+          console.error('Error al imprimir directamente:', printErr);
+          toast.error('Error al imprimir por USB. Abriendo vista previa.');
+          setIsTicketModalOpen(true);
+        }
+      } else {
+        setIsTicketModalOpen(true);
+      }
     } catch (err: any) {
       toast.error(err.message || 'Error al procesar la venta.');
       throw err;
@@ -540,18 +576,16 @@ export const POSView: React.FC<POSViewProps> = ({
     <div className="flex h-full min-h-0 flex-col gap-6 lg:h-[calc(100vh-7rem)] lg:overflow-hidden">
       {/* Header Bar */}
       <POSHeader
-        branchName={selectedBranchName}
         currentTime={currentTime}
         shiftDuration={shiftDuration}
         activeSession={activeSession}
-        currentUser={currentUser}
         availableRegistersForUser={availableRegistersForUser}
-        userRole={role || undefined}
         onOpenApertura={() => setIsAperturaModalOpen(true)}
         onOpenEgreso={() => setIsEgresoModalOpen(true)}
         onOpenHistorial={() => setIsHistorialModalOpen(true)}
         onOpenCambios={() => setIsExchangeReturnModalOpen(true)}
         onOpenCierre={() => setIsCierreModalOpen(true)}
+        onOpenPrinterConfig={() => setIsPrinterConfigOpen(true)}
       />
 
       <div className="grid min-h-0 grid-cols-1 lg:flex-1 lg:grid-cols-5 gap-6 relative items-stretch">
@@ -659,6 +693,7 @@ export const POSView: React.FC<POSViewProps> = ({
           onCloseSession={handleCloseSession}
           isClosing={isClosing}
           activeSession={activeSession}
+          sessionDetails={rawSessionDetails}
           activeSessionSales={rawSessionDetails?.sales || []}
           activeSessionExpenses={rawSessionDetails?.expenses || []}
           activeSessionRefunds={rawSessionDetails?.refunds || []}
@@ -705,6 +740,12 @@ export const POSView: React.FC<POSViewProps> = ({
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Printer Configuration Modal */}
+      <PrinterConfigModal
+        isOpen={isPrinterConfigOpen}
+        onClose={() => setIsPrinterConfigOpen(false)}
+      />
     </div>
   );
 };

@@ -12,6 +12,7 @@ export const useBranches = () => {
     queryKey: ['branches', tenantId],
     queryFn: () => branchesService.getBranches(),
     enabled: isAuthenticated && !!tenantId,
+    staleTime: 1000 * 60 * 10, // 10 minutos de caché
   });
 
   const createBranchMutation = useMutation({

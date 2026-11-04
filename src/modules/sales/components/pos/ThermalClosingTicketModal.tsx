@@ -1,13 +1,26 @@
-import React from 'react';
-import { Printer } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Printer, Download, RefreshCw, Zap } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
-import { useAuthStore } from '../../../auth/hooks/useAuthStore';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { CashSessionStatus } from '@/modules/cash-sessions/enums';
+import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { thermalPrinterService } from '../../services/thermal-printer.service';
+import { buildClosingReceiptBytes } from '../../services/escpos-builder';
+import { parseEscPosBytes } from '../../services/escpos-parser';
+import {
+  renderEscPosToDataUrl,
+  downloadEscPosImage,
+  printImageViaIframe,
+} from '../../services/escpos-image';
 
-interface ThermalClosingTicketModalProps {
+export interface ThermalClosingTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
   sessionData: {
@@ -22,6 +35,11 @@ interface ThermalClosingTicketModalProps {
     discountsTotal?: number;
     expensesTotal: number;
     refundsTotal?: number;
+    cashSales?: number;
+    cardSales?: number;
+    salesCount?: number;
+    totalPieces?: number;
+    cashRegisterName?: string;
     expensesList: { description: string; amount: number; createdAt: string }[];
     productsList: {
       sku: string;
@@ -51,586 +69,254 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
   tenantRuc,
   tenantName,
 }) => {
-  const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
+  const { publicTenant } = useAuthStore();
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [viewMode, setViewMode] = useState<'paper' | 'image'>('paper');
+  const [isUsbConfigured, setIsUsbConfigured] = useState<boolean | null>(null);
+  const [isConnectingUsb, setIsConnectingUsb] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      thermalPrinterService.isConfigured().then(setIsUsbConfigured);
+    }
+  }, [isOpen]);
+
+  const handleConnectUsb = async () => {
+    try {
+      setIsConnectingUsb(true);
+      const connected = await thermalPrinterService.requestPort();
+      if (connected) {
+        setIsUsbConfigured(true);
+        toast.success('¡Impresora térmica USB vinculada con éxito!');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Error al vincular impresora USB.');
+    } finally {
+      setIsConnectingUsb(false);
+    }
+  };
+
+  const config = useMemo(() => thermalPrinterService.getConfig(), [isOpen]);
+
+  // 1. Única Fuente de la Verdad: Generación de bytes ESC/POS de Cierre
+  const receiptBytes = useMemo(() => {
+    if (!sessionData) return new Uint8Array();
+    return buildClosingReceiptBytes(sessionData, {
+      paperWidth: config.paperWidth,
+      openDrawer: config.openDrawer,
+      cutPaper: config.cutPaper,
+      tenantName: tenantName || publicTenant?.name,
+      tenantRuc: tenantRuc || publicTenant?.ruc,
+      currencyCode: publicTenant?.currencyCode,
+    });
+  }, [sessionData, config, tenantName, tenantRuc, publicTenant]);
+
+  // 2. Decodificación de líneas exactas
+  const parseResult = useMemo(() => {
+    return parseEscPosBytes(receiptBytes, config.paperWidth);
+  }, [receiptBytes, config.paperWidth]);
+
+  // 3. Renderizado de imagen PNG de alta resolución
+  const pngDataUrl = useMemo(() => {
+    if (!sessionData || receiptBytes.length === 0) return '';
+    try {
+      return renderEscPosToDataUrl(parseResult);
+    } catch {
+      return '';
+    }
+  }, [parseResult, sessionData, receiptBytes.length]);
+
   if (!sessionData) return null;
 
-  const isSessionClosed = sessionData.status ? sessionData.status === CashSessionStatus.CLOSED : !!sessionData.closedAt;
-  const difference = sessionData.closingBalance - sessionData.expectedBalance;
+  const isSessionClosed = sessionData.status
+    ? sessionData.status === CashSessionStatus.CLOSED
+    : !!sessionData.closedAt;
 
-  const handlePrint = () => {
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
+  // Imprimir: USB directo o fallback de navegador con imagen limpia
+  const handlePrint = async () => {
+    try {
+      setIsPrinting(true);
+      const isConfigured = await thermalPrinterService.isConfigured();
 
-    const doc = iframe.contentWindow?.document;
-    if (!doc) return;
-
-    // Build Products Sold HTML
-    const productsHtml = sessionData.productsList.length > 0
-      ? sessionData.productsList.map((prod) => {
-        const hasDisc = (prod.discount || 0) > 0;
-        return `
-        <div style="margin-bottom: 4px;">
-          <div style="display: flex; justify-content: space-between; font-weight: bold;">
-            <span>${prod.sku}</span>
-            <span style="max-width: 65%; text-align: right; text-transform: uppercase;">${prod.name}</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; color: #000; align-items: center;">
-            <span style="padding-left: 10px;">Cant: x${prod.quantity}</span>
-            ${hasDisc ? `<span style="font-size: 8.5px; font-weight: bold; color: #000;">(Desc -$${Number(prod.discount).toFixed(2)})</span>` : ''}
-            <span style="font-weight: bold;">$${prod.total.toFixed(2)}</span>
-          </div>
-        </div>
-      `;
-      }).join('')
-      : '<div style="font-style: italic;">Sin ventas registradas</div>';
-
-    // Build Detailed Sales Chronology HTML
-    const salesListHtml = sessionData.salesList.length > 0
-      ? sessionData.salesList.map((s) => {
-          const timeStr = new Date(s.createdAt).toLocaleTimeString(undefined, {
-            timeZone: timezone,
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-          });
-          const methods = s.paymentMethods.join('/') || 'EFE';
-          return `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
-              <span>[${timeStr}] ${s.invoiceNumber} (${methods})</span>
-              <span class="font-bold">$${s.total.toFixed(2)}</span>
-            </div>
-          `;
-        }).join('')
-      : '<div style="font-style: italic;">Sin transacciones de venta</div>';
-
-    // Build Payments HTML
-    const paymentsHtml = Object.entries(sessionData.paymentsBreakdown).map(([method, amount]) => `
-      <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-        <span style="text-transform: uppercase;">${method}:</span>
-        <span>$${amount.toFixed(2)}</span>
-      </div>
-    `).join('');
-
-    // Build Expenses HTML
-    const expensesHtml = sessionData.expensesList.length > 0 
-      ? sessionData.expensesList.map((exp) => {
-          const timeStr = new Date(exp.createdAt).toLocaleTimeString(undefined, {
-            timeZone: timezone,
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-          });
-          return `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 2.5px;">
-              <span style="max-width: 70%; text-transform: uppercase;">[${timeStr}] ${exp.description}</span>
-              <span>$${Number(exp.amount).toFixed(2)}</span>
-            </div>
-          `;
-        }).join('')
-      : '<div style="font-style: italic;">Sin gastos registrados</div>';
-
-    // Build Refunds HTML
-    const refundsHtml = sessionData.refundsList.length > 0
-      ? sessionData.refundsList.map((ref) => {
-        const itemsList = ref.items.map(i => `${i.name} (x${i.quantity})`).join(', ');
-        return `
-          <div style="margin-bottom: 4px;">
-            <div style="display: flex; justify-content: space-between; font-weight: bold;">
-              <span>REF-${ref.id.substring(0, 5).toUpperCase()}</span>
-              <span style="max-width: 60%; text-transform: uppercase; font-size: 8px;">Motivo: ${ref.reason || 'S/M'}</span>
-            </div>
-            <div style="font-size: 8px; color: #333; padding-left: 5px;">
-              ${itemsList}
-            </div>
-          </div>
-        `;
-      }).join('')
-      : '<div style="font-style: italic;">Sin devoluciones registradas</div>';
-
-    doc.open();
-    doc.write(`
-      <html>
-        <head>
-          <title>Arqueo y Cierre de Caja</title>
-          <style>
-            @page {
-              margin: 0;
-              size: 80mm auto;
-            }
-            * {
-              box-sizing: border-box;
-            }
-            body {
-              margin: 0 auto;
-              padding: 2mm 3mm;
-              width: 70mm;
-              max-width: 70mm;
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-              font-size: 10.5px;
-              font-weight: 600;
-              line-height: 1.35;
-              color: #000;
-              background-color: #fff;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-              word-break: break-word;
-              overflow: hidden;
-            }
-            .text-center { text-align: center; }
-            .font-bold { font-weight: 800; }
-            .uppercase { text-transform: uppercase; }
-            .flex { display: flex; }
-            .justify-between { justify-content: space-between; }
-            .border-dashed {
-              border-bottom: 1.5px dashed #000;
-              margin: 5px 0;
-            }
-            .title {
-              font-size: 13px;
-              font-weight: 800;
-              text-transform: uppercase;
-              text-align: center;
-              margin-bottom: 2px;
-              letter-spacing: 0.5px;
-            }
-            .section-title {
-              font-weight: 800;
-              text-transform: uppercase;
-              margin: 8px 0 4px 0;
-              font-size: 10px;
-              border-bottom: 1px solid #000;
-              padding-bottom: 1px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="text-center" style="margin-bottom: 8px;">
-            <div class="title">${tenantName || 'NEGOCIO'}</div>
-            ${tenantRuc ? `<div>RFC: ${tenantRuc}</div>` : ''}
-            ${sessionData.branchAddress ? `<div style="text-transform: uppercase; font-size: 8px; margin-top: 2px;">${sessionData.branchAddress}</div>` : ''}
-            <div class="font-bold" style="font-size: 11px; margin-top: 5px;">
-              ${isSessionClosed ? 'TICKET DE CIERRE DE CAJA' : 'CORTE PARCIAL / ARQUEO PREVIO'}
-            </div>
-            ${!isSessionClosed ? `
-              <div style="border: 1.5px dashed #000; padding: 4px; margin-top: 5px; font-size: 8.5px; font-weight: bold; text-transform: uppercase; background-color: #f0f0f0;">
-                *** AVISO: SESIÓN EN CURSO ***<br/>
-                LA CAJA AÚN NO HA SIDO CERRADA.<br/>
-                ESTE TICKET ES UN ARQUEO PARCIAL/PROVISIONAL.
-              </div>
-            ` : ''}
-          </div>
-
-          <div class="border-dashed"></div>
-
-          <div style="font-size: 8.5px; line-height: 1.25;">
-            <div class="flex justify-between">
-              <span>SESIÓN ID:</span>
-              <span class="font-bold">${sessionData.id}</span>
-            </div>
-            <div class="flex justify-between">
-              <span>ESTADO DE CAJA:</span>
-              <span class="font-bold uppercase">${isSessionClosed ? 'CERRADA' : 'ABIERTA / EN CURSO'}</span>
-            </div>
-            <div class="flex justify-between">
-              <span>CAJERO:</span>
-              <span class="uppercase font-bold">${sessionData.userName || 'Usuario'}</span>
-            </div>
-            <div class="flex justify-between">
-              <span>SUCURSAL:</span>
-              <span class="uppercase">${sessionData.branchName || 'Principal'}</span>
-            </div>
-            <div class="flex justify-between">
-              <span>APERTURA:</span>
-              <span>${new Date(sessionData.openedAt).toLocaleString(undefined, { timeZone: timezone })}</span>
-            </div>
-            <div class="flex justify-between">
-              <span>${isSessionClosed ? 'CIERRE:' : 'HORA CORTE:'}</span>
-              <span>${sessionData.closedAt ? new Date(sessionData.closedAt).toLocaleString(undefined, { timeZone: timezone }) : new Date().toLocaleString(undefined, { timeZone: timezone })}</span>
-            </div>
-          </div>
-
-          <div class="border-dashed"></div>
-
-          {/* Finanzas */}
-          <div style="font-size: 9px;">
-            <div class="flex justify-between">
-              <span>(+) SALDO INICIAL:</span>
-              <span>$${Number(sessionData.openingBalance).toFixed(2)}</span>
-            </div>
-            ${sessionData.salesSubtotal !== undefined && sessionData.salesSubtotal > 0 ? `
-              <div class="flex justify-between">
-                <span>VENTAS SUBTOTAL:</span>
-                <span>$${Number(sessionData.salesSubtotal).toFixed(2)}</span>
-              </div>
-            ` : ''}
-            ${sessionData.discountsTotal !== undefined && sessionData.discountsTotal > 0 ? `
-              <div class="flex justify-between" style="color: #000;">
-                <span>(-) DESCUENTOS:</span>
-                <span>-$${Number(sessionData.discountsTotal).toFixed(2)}</span>
-              </div>
-            ` : ''}
-            <div class="flex justify-between">
-              <span>VENTAS TOTALES (FACTURADO):</span>
-              <span>$${Number(sessionData.salesTotal).toFixed(2)}</span>
-            </div>
-            <div class="flex justify-between font-bold" style="color: #000;">
-              <span>(+) ENTRADA EFECTIVO VENTAS:</span>
-              <span>+$${Number(sessionData.paymentsBreakdown?.['EFECTIVO'] ?? sessionData.paymentsBreakdown?.['efectivo'] ?? 0).toFixed(2)}</span>
-            </div>
-            ${(sessionData.paymentsBreakdown?.['TARJETA'] ?? sessionData.paymentsBreakdown?.['tarjeta'] ?? 0) > 0 ? `
-              <div class="flex justify-between" style="color: #000; font-size: 8px;">
-                <span>(i) Venta Tarjeta/Digital (No en caja):</span>
-                <span>$${Number(sessionData.paymentsBreakdown?.['TARJETA'] ?? sessionData.paymentsBreakdown?.['tarjeta'] ?? 0).toFixed(2)}</span>
-              </div>
-            ` : ''}
-            <div class="flex justify-between">
-              <span>(-) GASTOS:</span>
-              <span>-$${Number(sessionData.expensesTotal).toFixed(2)}</span>
-            </div>
-            ${sessionData.refundsTotal !== undefined && sessionData.refundsTotal > 0 ? `
-              <div class="flex justify-between">
-                <span>(-) DEVOLUCIONES:</span>
-                <span>-$${Number(sessionData.refundsTotal).toFixed(2)}</span>
-              </div>
-            ` : ''}
-            
-            <div class="border-dashed"></div>
-            
-            <div class="flex justify-between font-bold">
-              <span>(=) SALDO TEÓRICO EN CAJA:</span>
-              <span>$${Number(sessionData.expectedBalance).toFixed(2)}</span>
-            </div>
-            ${isSessionClosed ? `
-              <div class="flex justify-between font-bold">
-                <span>(=) SALDO DECLARADO:</span>
-                <span>$${Number(sessionData.closingBalance).toFixed(2)}</span>
-              </div>
-
-              <div class="border-dashed"></div>
-
-              <div class="flex justify-between font-bold" style="font-size: 10px;">
-                <span>DIFERENCIA:</span>
-                <span style="color: #000;">
-                  ${difference === 0 ? '' : difference > 0 ? '+' : ''}$${difference.toFixed(2)}
-                </span>
-              </div>
-              <div class="text-center font-bold" style="font-size: 8px; margin-top: 2px;">
-                ${difference === 0 ? 'CAJA CUADRADA' : difference < 0 ? 'FALTANTE EN CAJA' : 'SOBRANTE EN CAJA'}
-              </div>
-            ` : `
-              <div class="text-center font-bold" style="font-size: 8px; margin-top: 4px; color: #555;">
-                [ARQUEO PARCIAL - PENDIENTE DE CONTEO FÍSICO AL CIERRE]
-              </div>
-            `}
-          </div>
-
-          <div class="border-dashed"></div>
-
-          {/* Desglose Métodos Pago */}
-          <div class="section-title">Ingresos por Método</div>
-          <div style="font-size: 8.5px;">
-            ${paymentsHtml || '<div style="font-style: italic;">Sin ingresos por métodos</div>'}
-          </div>
-
-          <div class="border-dashed"></div>
-
-          {/* Cronologia Ventas */}
-          <div class="section-title">Historial de Ventas</div>
-          <div style="font-size: 8px; line-height: 1.35;">
-            ${salesListHtml}
-          </div>
-
-          <div class="border-dashed"></div>
-
-          {/* Ventas detalle */}
-          <div class="section-title">Detalle de Productos Vendidos</div>
-          <div style="font-size: 8.5px;">
-            ${productsHtml}
-          </div>
-
-          <div class="border-dashed"></div>
-
-
-          {/* Gastos */}
-          <div class="section-title">Desglose de Gastos</div>
-          <div style="font-size: 8.5px;">
-            ${expensesHtml}
-          </div>
-
-          <div class="border-dashed"></div>
-
-          {/* Devoluciones */}
-          <div class="section-title">Desglose de Devoluciones</div>
-          <div style="font-size: 8.5px;">
-            ${refundsHtml}
-          </div>
-
-          <div class="border-dashed"></div>
-
-          <div class="text-center font-bold" style="font-size: 8px; margin-top: 15px; border-top: 1px solid #000; padding-top: 12px;">
-            FIRMA DEL CAJERO
-          </div>
-        </body>
-      </html>
-    `);
-    doc.close();
-
-    setTimeout(() => {
-      const win = iframe.contentWindow;
-      if (win) {
-        win.onafterprint = () => {
-          onClose();
-          setTimeout(() => {
-            if (document.body.contains(iframe)) {
-              document.body.removeChild(iframe);
-            }
-          }, 100);
-        };
-        win.focus();
-        win.print();
-      }
-      // Fallback: cerrar modal tras invocar el diálogo de impresión
-      setTimeout(() => {
+      if (isConfigured) {
+        await thermalPrinterService.printClosingTicket(sessionData);
+        toast.success('¡Corte de caja impreso directamente por USB!');
         onClose();
-        if (document.body.contains(iframe)) {
-          document.body.removeChild(iframe);
-        }
-      }, 1500);
-    }, 200);
+        return;
+      }
+
+      // Fallback: Diálogo del navegador con imagen limpia
+      printImageViaIframe(pngDataUrl, `Corte-Caja-${sessionData.id.slice(0, 8)}`);
+      onClose();
+    } catch (err: any) {
+      console.error('Error al imprimir corte de caja:', err);
+      printImageViaIframe(pngDataUrl, `Corte-Caja-${sessionData.id.slice(0, 8)}`);
+      onClose();
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleDownloadPng = () => {
+    downloadEscPosImage(parseResult, `corte-caja-${sessionData.id.slice(0, 8)}`);
+    toast.success('Imagen PNG del corte descargada para WhatsApp');
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent showCloseButton={false} className="sm:max-w-md max-h-[90vh] overflow-y-auto bg-white text-black p-6 border border-gray-200 rounded-2xl shadow-2xl">
-        <div className="space-y-4 font-mono text-[11px] text-gray-800">
-          <div className="text-center space-y-1 pb-2 border-b border-gray-200">
-            <h4 className="text-sm font-bold uppercase text-black">{tenantName || 'NEGOCIO'}</h4>
-            {tenantRuc && <p className="text-[10px] text-gray-500">RFC: {tenantRuc}</p>}
-            <p className="text-[11px] font-bold uppercase tracking-wider mt-1 text-black">
-              {isSessionClosed ? 'Ticket de Cierre de Caja' : 'Corte Parcial / Arqueo Previo'}
-            </p>
-            {!isSessionClosed && (
-              <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-700 text-[10px] font-semibold text-center uppercase">
-                ⚠️ Aviso: Sesión en Curso (Caja Abierta)
-                <span className="block text-[9px] font-normal text-amber-600 normal-case mt-0.5">
-                  Este ticket es un corte informativo parcial. La caja continúa activa y no se ha cerrado.
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-1 text-gray-700">
-            <div className="flex justify-between">
-              <span>SESIÓN:</span>
-              <span className="text-black font-bold truncate max-w-[160px]">{sessionData.id}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>ESTADO DE CAJA:</span>
-              <span className={`font-bold uppercase ${isSessionClosed ? 'text-gray-700' : 'text-emerald-600'}`}>
-                {isSessionClosed ? 'Cerrada' : 'Abierta / En Curso'}
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md max-h-[95vh] flex flex-col bg-bg-card border border-border-card p-6 overflow-hidden">
+        <DialogHeader className="shrink-0 pb-3 border-b border-border-card">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-sm font-bold text-secondary flex items-center gap-2">
+              <Printer className="w-4 h-4 text-primary" />
+              <span>{isSessionClosed ? 'Ticket de Cierre de Caja' : 'Corte Parcial / Arqueo'}</span>
+              <span className="text-xs font-mono text-neutral font-normal">
+                #{sessionData.id.slice(0, 8)}
               </span>
-            </div>
-            <div className="flex justify-between">
-              <span>CAJERO:</span>
-              <span className="uppercase text-black font-semibold">{sessionData.userName || 'Usuario'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>APERTURA:</span>
-              <span className="text-black">{new Date(sessionData.openedAt).toLocaleString(undefined, { timeZone: timezone })}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>{isSessionClosed ? 'CIERRE:' : 'HORA CORTE:'}</span>
-              <span className="text-black">{sessionData.closedAt ? new Date(sessionData.closedAt).toLocaleString(undefined, { timeZone: timezone }) : new Date().toLocaleString(undefined, { timeZone: timezone })}</span>
+            </DialogTitle>
+
+            {/* Alternar vista Papel / Imagen */}
+            <div className="inline-flex rounded-lg bg-bg-dark p-0.5 border border-border-card text-xs">
+              <button
+                type="button"
+                onClick={() => setViewMode('paper')}
+                className={`px-2 py-0.5 rounded-md font-medium transition-all ${
+                  viewMode === 'paper' ? 'bg-card text-primary' : 'text-neutral hover:text-secondary'
+                }`}
+              >
+                Papel
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('image')}
+                className={`px-2 py-0.5 rounded-md font-medium transition-all ${
+                  viewMode === 'image' ? 'bg-card text-primary' : 'text-neutral hover:text-secondary'
+                }`}
+              >
+                Imagen PNG
+              </button>
             </div>
           </div>
+          <DialogDescription className="text-xs text-neutral">
+            Formato: <strong>{config.paperWidth}</strong> ({config.paperWidth === '80mm' ? '42 columnas' : '32 columnas'})
+          </DialogDescription>
+        </DialogHeader>
 
-          {/* Finanzas */}
-          <div className="border-t border-dashed border-gray-200 pt-3 space-y-1 text-gray-700">
-            <div className="flex justify-between">
-              <span>(+) Saldo Inicial:</span>
-              <span className="text-black font-semibold">${Number(sessionData.openingBalance).toFixed(2)}</span>
+        {/* Alerta contextual si la impresora no está vinculada en este navegador */}
+        {isUsbConfigured === false && (
+          <div className="flex items-center justify-between p-2.5 px-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-500 shrink-0 my-1">
+            <div className="flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 shrink-0" />
+              <span>Impresora USB no vinculada en este equipo</span>
             </div>
-            {sessionData.salesSubtotal !== undefined && sessionData.salesSubtotal > 0 && (
-              <div className="flex justify-between">
-                <span>Ventas Subtotal:</span>
-                <span className="text-black font-semibold">${Number(sessionData.salesSubtotal).toFixed(2)}</span>
-              </div>
-            )}
-            {sessionData.discountsTotal !== undefined && sessionData.discountsTotal > 0 && (
-              <div className="flex justify-between text-black font-semibold">
-                <span>(-) Descuentos:</span>
-                <span>-${Number(sessionData.discountsTotal).toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span>Ventas Totales (Facturado):</span>
-              <span className="font-semibold text-black">${Number(sessionData.salesTotal).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between font-bold text-black">
-              <span>(+) Entrada Efectivo Ventas:</span>
-              <span>+${Number(sessionData.paymentsBreakdown?.['EFECTIVO'] ?? sessionData.paymentsBreakdown?.['efectivo'] ?? 0).toFixed(2)}</span>
-            </div>
-            {(sessionData.paymentsBreakdown?.['TARJETA'] ?? sessionData.paymentsBreakdown?.['tarjeta'] ?? 0) > 0 && (
-              <div className="flex justify-between text-[10px] text-gray-500 italic">
-                <span>(i) Venta Tarjeta/Digital (No en caja):</span>
-                <span>${Number(sessionData.paymentsBreakdown?.['TARJETA'] ?? sessionData.paymentsBreakdown?.['tarjeta'] ?? 0).toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <span>(-) Gastos:</span>
-              <span className="text-black font-semibold">-${Number(sessionData.expensesTotal).toFixed(2)}</span>
-            </div>
-            {sessionData.refundsTotal !== undefined && sessionData.refundsTotal > 0 && (
-              <div className="flex justify-between text-black font-semibold">
-                <span>(-) Devoluciones:</span>
-                <span>-${Number(sessionData.refundsTotal).toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-black font-bold border-t border-dashed border-gray-200 pt-1.5 mt-1.5">
-              <span>(=) Saldo Teórico en Caja:</span>
-              <span>${Number(sessionData.expectedBalance).toFixed(2)}</span>
-            </div>
-
-            {isSessionClosed ? (
-              <>
-                <div className="flex justify-between text-black font-bold">
-                  <span>(=) Caja Declarado:</span>
-                  <span>${Number(sessionData.closingBalance).toFixed(2)}</span>
-                </div>
-
-                <div className="flex justify-between font-bold text-xs pt-1.5 border-t border-dashed border-gray-200">
-                  <span>Diferencia:</span>
-                  <span className="text-black">
-                    {difference === 0 ? '' : difference > 0 ? '+' : ''}${difference.toFixed(2)}
-                  </span>
-                </div>
-                <p className="text-[9px] text-gray-500 font-bold text-center mt-1 uppercase">
-                  {difference === 0 ? 'Caja Cuadrada' : difference < 0 ? 'Faltante en Caja' : 'Sobrante en Caja'}
-                </p>
-              </>
-            ) : (
-              <p className="text-[9.5px] text-neutral font-semibold text-center mt-2 italic">
-                * Conteo físico y diferencia pendientes hasta el cierre definitivo.
-              </p>
-            )}
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleConnectUsb}
+              disabled={isConnectingUsb}
+              className="text-[11px] h-7 px-2.5 font-bold bg-amber-500 hover:bg-amber-600 text-white cursor-pointer"
+            >
+              {isConnectingUsb ? 'Conectando...' : 'Vincular USB'}
+            </Button>
           </div>
+        )}
 
-          {/* Desglose Métodos de Pago */}
-          <div className="border-t border-dashed border-gray-200 pt-3">
-            <span className="text-[10px] text-gray-500 font-bold block mb-1.5 uppercase">Ingresos por Método:</span>
-            <div className="space-y-1 text-[10.5px]">
-              {Object.entries(sessionData.paymentsBreakdown || {}).map(([method, amount], i) => (
-                <div key={i} className="flex justify-between">
-                  <span className="uppercase text-gray-700">{method}:</span>
-                  <span className="text-black font-semibold">${Number(amount).toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* Contenedor del Ticket de Cierre (Generado exclusivamente desde los Bytes ESC/POS) */}
+        <div className="flex-1 overflow-y-auto py-3 flex justify-center items-start bg-bg-dark/40 rounded-xl my-2 p-3">
+          {viewMode === 'paper' ? (
+            <div
+              className="bg-white text-black shadow-xl border border-neutral-300 rounded-sm font-mono text-[11px] leading-[17px] p-5 select-text h-fit shrink-0 my-1 w-fit"
+              style={{ fontFamily: '"Courier New", Courier, monospace' }}
+            >
+              <div className="space-y-0.5">
+                {parseResult.lines.map((line, idx) => {
+                  if (line.isDrawer) return null;
 
-          {/* Cronología de Ventas */}
-          <div className="border-t border-dashed border-gray-200 pt-3">
-            <span className="text-[10px] text-gray-500 font-bold block mb-1.5 uppercase">Cronología de Ventas:</span>
-            <div className="space-y-1 text-[10.5px]">
-              {sessionData.salesList.map((s, i) => {
-                const timeStr = new Date(s.createdAt).toLocaleTimeString(undefined, {
-                  timeZone: timezone,
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: false
-                });
-                return (
-                  <div key={i} className="flex justify-between">
-                    <span>[${timeStr}] {s.invoiceNumber} ({s.paymentMethods.join('/')})</span>
-                    <span className="text-black font-semibold">${s.total.toFixed(2)}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                  if (line.isCut) {
+                    return (
+                      <div
+                        key={idx}
+                        className="my-3 border-t border-dashed border-neutral-400 text-center text-[9px] text-neutral-400 uppercase tracking-widest pt-1"
+                      >
+                        ✂ Corte de Papel
+                      </div>
+                    );
+                  }
 
-          {/* Detalle Productos */}
-          <div className="border-t border-dashed border-gray-200 pt-3">
-            <span className="text-[10px] text-gray-500 font-bold block mb-1.5 uppercase">Productos Vendidos:</span>
-            <div className="space-y-2">
-              {sessionData.productsList.map((prod, i) => (
-                <div key={i} className="text-[10.5px]">
-                  <div className="flex justify-between text-black font-semibold">
-                    <span>{prod.sku}</span>
-                    <span className="truncate max-w-[170px] uppercase">{prod.name}</span>
-                  </div>
-                  <div className="flex justify-between text-gray-500 pl-3 items-center">
-                    <span>Cant: x{prod.quantity}</span>
-                    {prod.discount && prod.discount > 0 ? (
-                      <span className="text-[9.5px] font-bold text-red-600">
-                        (Desc -${Number(prod.discount).toFixed(2)})
-                      </span>
-                    ) : null}
-                    <span className="text-black font-semibold">${prod.total.toFixed(2)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+                  const alignClass =
+                    line.align === 'center'
+                      ? 'text-center'
+                      : line.align === 'right'
+                      ? 'text-right'
+                      : 'text-left';
 
+                  const boldClass = line.bold ? 'font-bold' : 'font-normal';
+                  const sizeClass = line.doubleHeight ? 'text-sm font-bold' : '';
 
-          {/* Gastos */}
-          {sessionData.expensesList.length > 0 && (
-            <div className="border-t border-dashed border-gray-200 pt-3">
-              <span className="text-[10px] text-gray-500 font-bold block mb-1 uppercase">Gastos:</span>
-              <div className="space-y-1 text-gray-700">
-                {sessionData.expensesList.map((exp, i) => (
-                  <div key={i} className="flex justify-between gap-2">
-                    <span className="truncate max-w-[150px] uppercase">- {exp.description}</span>
-                    <span>${Number(exp.amount).toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Devoluciones */}
-          {sessionData.refundsList.length > 0 && (
-            <div className="border-t border-dashed border-gray-200 pt-3">
-              <span className="text-[10px] text-gray-500 font-bold block mb-1 uppercase">Devoluciones:</span>
-              <div className="space-y-2">
-                {sessionData.refundsList.map((ref, i) => (
-                  <div key={i} className="space-y-0.5">
-                    <div className="flex justify-between text-black font-semibold">
-                      <span>REF-{ref.id.substring(0, 5).toUpperCase()}</span>
-                      <span className="truncate max-w-[150px] uppercase text-[9.5px] text-gray-500">{ref.reason || 'S/M'}</span>
+                  return (
+                    <div
+                      key={idx}
+                      className={`whitespace-pre ${alignClass} ${boldClass} ${sizeClass}`}
+                      style={{ minHeight: line.text.trim() === '' ? '12px' : 'auto' }}
+                    >
+                      {line.align === 'center' ? line.text.trim() : line.text}
                     </div>
-                    <div className="pl-3 text-gray-600 text-[10px]">
-                      {ref.items.map(item => `${item.name} (x${item.quantity})`).join(', ')}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center py-1">
+              {pngDataUrl && (
+                <img
+                  src={pngDataUrl}
+                  alt={`Cierre de caja ${sessionData.id}`}
+                  className={`shadow-2xl rounded border border-neutral-300 bg-white ${
+                    config.paperWidth === '80mm' ? 'max-w-[340px]' : 'max-w-[275px]'
+                  }`}
+                />
+              )}
             </div>
           )}
         </div>
 
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={handlePrint}
-            className="flex-1 bg-black hover:bg-neutral-800 text-white text-xs font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Imprimir Ticket</span>
-          </button>
-          <button
+        {/* Acciones principales */}
+        <div className="shrink-0 pt-3 border-t border-border-card space-y-2">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              onClick={handlePrint}
+              disabled={isPrinting}
+              className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 h-9 text-xs font-bold gap-1.5"
+            >
+              {isPrinting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
+              <span>Imprimir Corte</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleDownloadPng}
+              className="flex-1 border-border-card hover:border-primary/50 text-secondary hover:text-white h-9 text-xs font-semibold gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5 text-primary" />
+              <span>Guardar Imagen PNG</span>
+            </Button>
+          </div>
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
             onClick={onClose}
-            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold py-2.5 rounded-xl transition-all cursor-pointer border border-gray-200"
+            className="w-full h-8 text-xs text-neutral hover:text-secondary"
           >
             Cerrar
-          </button>
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
 };
+
 export default ThermalClosingTicketModal;
