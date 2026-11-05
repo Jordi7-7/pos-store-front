@@ -3,6 +3,7 @@ import { customersService } from '../services/customers.service';
 import { CUSTOMERS_QUERY_KEY } from './useCustomerList';
 import type { CreateCustomerDTO, UpdateCustomerDTO } from '../types/customer.types';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/shared/presentation/error-messages';
 
 export const useCustomerMutations = () => {
   const queryClient = useQueryClient();
@@ -13,9 +14,9 @@ export const useCustomerMutations = () => {
       queryClient.invalidateQueries({ queryKey: CUSTOMERS_QUERY_KEY });
       toast.success('Cliente registrado exitosamente');
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       console.error('Error al registrar cliente:', err);
-      toast.error(err.response?.data?.message || 'Error al registrar cliente');
+      toast.error(getErrorMessage(err, 'Error al registrar cliente'));
     },
   });
 
@@ -26,9 +27,9 @@ export const useCustomerMutations = () => {
       queryClient.invalidateQueries({ queryKey: CUSTOMERS_QUERY_KEY });
       toast.success('Cliente actualizado exitosamente');
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       console.error('Error al actualizar cliente:', err);
-      toast.error(err.response?.data?.message || 'Error al actualizar cliente');
+      toast.error(getErrorMessage(err, 'Error al actualizar cliente'));
     },
   });
 
@@ -38,9 +39,9 @@ export const useCustomerMutations = () => {
       queryClient.invalidateQueries({ queryKey: CUSTOMERS_QUERY_KEY });
       toast.success('Cliente eliminado exitosamente');
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       console.error('Error al eliminar cliente:', err);
-      toast.error(err.response?.data?.message || 'Error al eliminar cliente');
+      toast.error(getErrorMessage(err, 'Error al eliminar cliente'));
     },
   });
 

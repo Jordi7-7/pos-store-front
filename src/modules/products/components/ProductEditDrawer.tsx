@@ -30,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { getErrorMessage } from '@/shared/presentation/error-messages';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -187,13 +188,9 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
       }
       toast.success('¡Producto actualizado con éxito!');
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        'Error al guardar los cambios en el servidor.';
-      toast.error(message);
+      toast.error(getErrorMessage(err, 'Error al guardar los cambios en el servidor.'));
     }
   };
 
@@ -207,13 +204,9 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
       toast.success('¡Producto eliminado con éxito!');
       setShowDeleteConfirm(false);
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        'Error al intentar eliminar el producto.';
-      toast.error(message);
+      toast.error(getErrorMessage(err, 'Error al intentar eliminar el producto.'));
     }
   };
 
