@@ -9,6 +9,7 @@ vi.mock('../services/auth.service', () => ({
 }));
 
 const { useAuthStore, selectIsAuthenticated } = await import('./useAuthStore');
+const { useWorkspaceStore } = await import('@/shared/presentation/stores/workspace.store');
 
 const profile: ProfileResponse = {
   id: 'u1',
@@ -55,7 +56,8 @@ const tenant: SessionTenant = {
 
 beforeEach(() => {
   getProfile.mockReset();
-  useAuthStore.setState({ accessToken: 'tok', refreshToken: 'ref', user, tenant, selectedBranchId: null, selectedCashRegisterId: null });
+  useAuthStore.setState({ accessToken: 'tok', refreshToken: 'ref', user, tenant });
+  useWorkspaceStore.getState().reset();
 });
 
 describe('autenticación derivada', () => {
@@ -75,8 +77,9 @@ describe('useAuthStore.fetchProfile', () => {
     expect(state.tenant?.timezone).toBe('America/Mexico_City');
     expect(state.tenant?.currencyCode).toBe('MXN');
     expect(state.user?.branches).toEqual([{ id: 'b1', name: 'Leiza', address: null }]);
-    expect(state.selectedBranchId).toBe('b1');
-    expect(state.selectedCashRegisterId).toBe('c1');
+    const workspace = useWorkspaceStore.getState();
+    expect(workspace.selectedBranchId).toBe('b1');
+    expect(workspace.selectedCashRegisterId).toBe('c1');
   });
 
   it('si la tienda no trae un dato obligatorio NO se inventa: falla y no toca la sesión', async () => {
@@ -120,5 +123,48 @@ describe('permisos', () => {
   it('el propietario puede todo', () => {
     useAuthStore.setState({ user: { ...user, isOwner: true, permissions: [] } });
     expect(useAuthStore.getState().can('cualquier:cosa')).toBe(true);
+  });
+});
+
+describe('sucursal y caja seleccionadas viven fuera de la sesión', () => {
+  it('una selección que el perfil ya no permite se descarta al cargarlo', async () => {
+    useWorkspaceStore.setState({ selectedBranchId: 'otra-sucursal', selectedCashRegisterId: 'otra-caja' });
+    getProfile.mockResolvedValueOnce({
+      ...profile,
+      branches: [
+        { id: 'b1', name: 'Leiza' },
+        { id: 'b2', name: 'Copa' },
+      ],
+      cashRegisters: [
+        { id: 'c1', name: 'Caja 1', code: 1, branchId: 'b1' },
+        { id: 'c2', name: 'Caja 2', code: 2, branchId: 'b1' },
+      ],
+    });
+    await useAuthStore.getState().fetchProfile();
+    expect(useWorkspaceStore.getState()).toMatchObject({ selectedBranchId: null, selectedCashRegisterId: null });
+  });
+
+  it('una selección válida se conserva', async () => {
+    useWorkspaceStore.setState({ selectedBranchId: 'b2', selectedCashRegisterId: 'c3' });
+    getProfile.mockResolvedValueOnce({
+      ...profile,
+      branches: [
+        { id: 'b1', name: 'Leiza' },
+        { id: 'b2', name: 'Copa' },
+      ],
+      cashRegisters: [
+        { id: 'c1', name: 'Caja 1', code: 1, branchId: 'b1' },
+        { id: 'c3', name: 'Caja de la casa', code: 1, branchId: 'b2' },
+        { id: 'c4', name: 'Caja 4', code: 2, branchId: 'b2' },
+      ],
+    });
+    await useAuthStore.getState().fetchProfile();
+    expect(useWorkspaceStore.getState()).toMatchObject({ selectedBranchId: 'b2', selectedCashRegisterId: 'c3' });
+  });
+
+  it('al cerrar sesión se borra la selección (el siguiente usuario no hereda la caja)', () => {
+    useWorkspaceStore.setState({ selectedBranchId: 'b1', selectedCashRegisterId: 'c1' });
+    useAuthStore.getState().logout();
+    expect(useWorkspaceStore.getState()).toMatchObject({ selectedBranchId: null, selectedCashRegisterId: null });
   });
 });

@@ -4,17 +4,16 @@ import { authService } from '../services/auth.service';
 import { queryClient } from '@/providers/QueryProvider';
 import { isApiError } from '@/shared/infrastructure/http/api-error';
 import { getErrorMessage } from '@/shared/presentation/error-messages';
+import { useWorkspaceStore } from '@/shared/presentation/stores/workspace.store';
 import {
   hasAnyPermission,
   hasPermission,
-  type SessionCashRegister,
   type SessionTenant,
 } from '../domain/session';
 import { toSessionTenant, toSessionUser } from '../mappers/session.mapper';
 import { AUTH_STORAGE_VERSION, migratePersistedAuth, type PersistedAuth } from './auth-persistence';
 
 export type PublicTenant = SessionTenant;
-export type AssignedCashRegister = SessionCashRegister;
 
 interface AuthState extends PersistedAuth {
   // Estado transitorio (no se guarda)
@@ -37,10 +36,6 @@ interface AuthState extends PersistedAuth {
   fetchProfile: () => Promise<boolean>;
   refreshSession: () => Promise<boolean>;
 
-  // Selección de trabajo
-  setSelectedBranchId: (branchId: string | null) => void;
-  setSelectedCashRegisterId: (registerId: string | null) => void;
-
   openSessionExpiredModal: () => void;
   closeSessionExpiredModal: () => void;
 }
@@ -58,8 +53,6 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       user: null,
       tenant: null,
-      selectedBranchId: null,
-      selectedCashRegisterId: null,
       isLoadingTenant: false,
       tenantError: null,
       isSessionExpiredModalOpen: false,
@@ -68,9 +61,6 @@ export const useAuthStore = create<AuthState>()(
         if (selectIsAuthenticated(get())) set({ isSessionExpiredModalOpen: true });
       },
       closeSessionExpiredModal: () => set({ isSessionExpiredModalOpen: false }),
-
-      setSelectedBranchId: (branchId) => set({ selectedBranchId: branchId }),
-      setSelectedCashRegisterId: (registerId) => set({ selectedCashRegisterId: registerId }),
 
       can: (permission) => {
         const { accessToken, user } = get();
@@ -159,10 +149,9 @@ export const useAuthStore = create<AuthState>()(
           accessToken: null,
           refreshToken: null,
           user: null,
-          selectedBranchId: null,
-          selectedCashRegisterId: null,
           isSessionExpiredModalOpen: false,
         });
+        useWorkspaceStore.getState().reset();
 
         // Vaciar la caché de datos (dashboard, ventas, métricas…) del usuario anterior.
         try {
@@ -181,14 +170,8 @@ export const useAuthStore = create<AuthState>()(
             const profile = await authService.getProfile();
             const user = toSessionUser(profile);
             const tenant = toSessionTenant(profile.tenant);
-            const only = <T>(items: T[]): T | null => (items.length === 1 ? (items[0] ?? null) : null);
-
-            set((state) => ({
-              user,
-              tenant,
-              selectedBranchId: only(user.branches)?.id ?? state.selectedBranchId,
-              selectedCashRegisterId: only(user.cashRegisters)?.id ?? state.selectedCashRegisterId,
-            }));
+            set({ user, tenant });
+            useWorkspaceStore.getState().reconcile(user);
             return true;
           } catch (error) {
             console.error('Error al obtener el perfil:', error);
@@ -235,8 +218,6 @@ export const useAuthStore = create<AuthState>()(
         refreshToken: state.refreshToken,
         user: state.user,
         tenant: state.tenant,
-        selectedBranchId: state.selectedBranchId,
-        selectedCashRegisterId: state.selectedCashRegisterId,
       }),
     },
   ),

@@ -11,19 +11,19 @@ interface PersistedEnvelope {
   state: Record<string, unknown>;
 }
 
-test('tras el login solo se guarda tokens, usuario, tienda y selección (sin duplicados)', async ({ page }) => {
+test('tras el login la sesión guarda solo tokens, usuario y tienda; la selección va en su propio store', async ({ page }) => {
   await login(page);
   const raw = await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY);
   const saved = JSON.parse(raw ?? '{}') as PersistedEnvelope;
   expect(saved.version).toBe(1);
-  expect(Object.keys(saved.state).sort()).toEqual([
-    'accessToken',
-    'refreshToken',
-    'selectedBranchId',
-    'selectedCashRegisterId',
-    'tenant',
-    'user',
-  ]);
+  expect(Object.keys(saved.state).sort()).toEqual(['accessToken', 'refreshToken', 'tenant', 'user']);
+  // La selección se guarda aparte y solo cuando el usuario elige una sucursal en la cabecera.
+  const branchSelect = page.locator('header select').first();
+  await expect(branchSelect).toBeVisible();
+  await branchSelect.selectOption({ index: 1 });
+  const workspace = JSON.parse((await page.evaluate(() => localStorage.getItem('aura-pos-workspace'))) ?? '{}') as PersistedEnvelope;
+  expect(workspace.version).toBe(1);
+  expect(Object.keys(workspace.state).sort()).toEqual(['selectedBranchId', 'selectedCashRegisterId']);
   await page.reload();
   await expect(page).not.toHaveURL(/\/login/);
 });

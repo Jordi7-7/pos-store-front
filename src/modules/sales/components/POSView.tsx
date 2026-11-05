@@ -14,6 +14,7 @@ import { useCashSessionDetailsQuery } from '../../cash-sessions/hooks/useCashSes
 import { PaymentMethod } from '../enums';
 import { CashSessionStatus } from '@/modules/cash-sessions/enums';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
+import { useWorkspaceStore } from '@/shared/presentation/stores/workspace.store';
 import { useTenant, useTimezone } from '../../auth/hooks/useSession';
 import { toast } from 'sonner';
 import { DateTime } from 'luxon';
@@ -60,7 +61,7 @@ export const POSView: React.FC<POSViewProps> = ({
     branches,
   } = useLayoutContext();
   const { customers } = useCustomerList();
-  const { selectedCashRegisterId, setSelectedCashRegisterId } = useAuthStore();
+  const { selectedCashRegisterId, setSelectedCashRegisterId } = useWorkspaceStore();
   const { myCashRegisters: availableRegistersForUser } = useMyCashRegisters(selectedBranchId || undefined);
 
   const [selectedRegisterId, setSelectedRegisterId] = useState<string>(selectedCashRegisterId || '');

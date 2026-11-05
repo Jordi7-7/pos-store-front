@@ -44,8 +44,6 @@ describe('migratePersistedAuth', () => {
       permissions: ['view:pos'],
       branches: [{ id: 'b1', name: '' }],
     });
-    expect(next.selectedBranchId).toBe('b1');
-    expect(next.selectedCashRegisterId).toBe('c1');
   });
 
   it('el propietario se reconoce por el rol OWNER y no lleva rol de usuario', () => {
@@ -56,7 +54,7 @@ describe('migratePersistedAuth', () => {
 
   it('no guarda campos duplicados ni derivados', () => {
     const keys = Object.keys(migratePersistedAuth(legacy, 0)).sort();
-    expect(keys).toEqual(['accessToken', 'refreshToken', 'selectedBranchId', 'selectedCashRegisterId', 'tenant', 'user']);
+    expect(keys).toEqual(['accessToken', 'refreshToken', 'tenant', 'user']);
   });
 
   it('si la tienda guardada está incompleta, descarta la sesión (no inventa datos)', () => {
@@ -79,7 +77,7 @@ describe('migratePersistedAuth', () => {
   });
 
   it('la versión actual se acepta tal cual', () => {
-    const current = { accessToken: 'a', refreshToken: 'r', user: null, tenant: null, selectedBranchId: null, selectedCashRegisterId: null };
+    const current = { accessToken: 'a', refreshToken: 'r', user: null, tenant: null };
     expect(migratePersistedAuth(current, AUTH_STORAGE_VERSION)).toEqual(current);
   });
 });

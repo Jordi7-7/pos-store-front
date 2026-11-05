@@ -3,14 +3,12 @@ import type { SessionTenant, SessionUser } from '../domain/session';
 /** Versión del formato guardado en `localStorage` (`aura-pos-auth`). Súbela con cada cambio de forma. */
 export const AUTH_STORAGE_VERSION = 1;
 
-/** Lo único que se guarda: tokens, usuario, tienda y selección de trabajo. */
+/** Lo único que se guarda de la sesión: tokens, usuario y tienda (la selección de sucursal/caja es otro store). */
 export interface PersistedAuth {
   accessToken: string | null;
   refreshToken: string | null;
   user: SessionUser | null;
   tenant: SessionTenant | null;
-  selectedBranchId: string | null;
-  selectedCashRegisterId: string | null;
 }
 
 const EMPTY: PersistedAuth = {
@@ -18,8 +16,6 @@ const EMPTY: PersistedAuth = {
   refreshToken: null,
   user: null,
   tenant: null,
-  selectedBranchId: null,
-  selectedCashRegisterId: null,
 };
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
@@ -43,8 +39,6 @@ export function migratePersistedAuth(persisted: unknown, version: number): Persi
   const base: PersistedAuth = {
     ...EMPTY,
     tenant,
-    selectedBranchId: str(persisted.selectedBranchId),
-    selectedCashRegisterId: str(persisted.selectedCashRegisterId),
   };
 
   const userId = legacyUser ? str(legacyUser.id) : null;

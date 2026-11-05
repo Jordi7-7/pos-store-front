@@ -1,5 +1,6 @@
 import React, { createContext, useContext } from 'react';
-import { useAuthStore, useIsOwner, useUser } from '@/modules/auth';
+import { useIsOwner, useUser } from '@/modules/auth';
+import { useWorkspaceStore } from '@/shared/presentation/stores/workspace.store';
 import { useBranches, type Branch } from '@/modules/branches';
 
 interface LayoutContextType {
@@ -14,7 +15,7 @@ interface LayoutContextType {
 const LayoutContext = createContext<LayoutContextType | null>(null);
 
 export const LayoutContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { selectedBranchId, setSelectedBranchId } = useAuthStore();
+  const { selectedBranchId, setSelectedBranchId } = useWorkspaceStore();
   const user = useUser();
 
   const { branches } = useBranches();
