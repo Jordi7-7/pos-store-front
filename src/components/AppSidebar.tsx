@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/modules/auth/hooks/useAuthStore"
+import { useRoleName, useTenant, useUser } from "@/modules/auth/hooks/useSession"
 import { LogOut, ShieldCheck, ChevronDown } from "lucide-react"
 import {
   Sidebar,
@@ -21,7 +22,10 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
 
 export function AppSidebar() {
-  const { user, role, roleName, logout, publicTenant, can } = useAuthStore()
+  const { logout, can } = useAuthStore()
+  const user = useUser()
+  const publicTenant = useTenant()
+  const roleName = useRoleName()
   const navigate = useNavigate()
   const { state: sidebarState } = useSidebar()
   const isIconCollapsed = sidebarState === 'collapsed'
@@ -181,7 +185,7 @@ export function AppSidebar() {
             <span className="text-xs font-semibold text-zinc-100 block truncate">{user?.name || 'Imi y Cristian'}</span>
             <span className="text-[10px] text-zinc-400 font-medium truncate flex items-center gap-1 uppercase tracking-wider">
               <ShieldCheck className="w-3 h-3 text-zinc-400 inline shrink-0" />
-              {roleName || role || 'Propietario'}
+              {roleName}
             </span>
           </div>
         </div>

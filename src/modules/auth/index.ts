@@ -3,5 +3,6 @@ export * from './components/LoginScreen';
 export * from './components/SessionExpiredModal';
 export * from './services/auth.service';
 export * from './hooks/useIdleTimer';
-export * from './types';
 
+export * from './hooks/useSession';
+export * from './domain/session';

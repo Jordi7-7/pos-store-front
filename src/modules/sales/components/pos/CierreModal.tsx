@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useAuthStore } from '../../../auth/hooks/useAuthStore';
+import { useTimezone } from '../../../auth/hooks/useSession';
 import type {
   CashSessionHeader,
   CashSessionDetails,
@@ -62,7 +62,7 @@ export const CierreModal: React.FC<CierreModalProps> = ({
   activeSessionRefunds,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('sales');
-  const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
+  const timezone = useTimezone();
 
   // 1. Cálculos de Productos Vendidos (agrupados por SKU)
   const productsSummary = useMemo(() => {

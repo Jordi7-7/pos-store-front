@@ -31,7 +31,7 @@ import {
   EscPosBuilder,
   type PaperWidth,
 } from '../../services/escpos-builder';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useTenant } from '@/modules/auth/hooks/useSession';
 import type { TicketSaleData } from './ThermalTicketModal';
 
 interface EscPosSimulatorModalProps {
@@ -112,7 +112,7 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
   currencyCode,
   defaultPaperWidth = '58mm',
 }) => {
-  const { publicTenant } = useAuthStore();
+  const publicTenant = useTenant();
   const effectiveCurrency = currencyCode || publicTenant?.currencyCode || 'MXN';
   const effectiveRuc = tenantRuc || publicTenant?.ruc || '';
 

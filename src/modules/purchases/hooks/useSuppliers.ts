@@ -3,7 +3,7 @@ import { purchasesService } from '../services/purchases.service';
 import type { CreateSupplierInput, UpdateSupplierInput, Supplier } from '../types/purchases.types';
 import { toSupplierEntities } from '../mappers';
 import type { SupplierEntity } from '../entities';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
 
 export const useSuppliers = (options?: { enabled?: boolean }): {
   suppliers: SupplierEntity[];
@@ -11,7 +11,8 @@ export const useSuppliers = (options?: { enabled?: boolean }): {
   isError: boolean;
   refetch: () => void;
 } => {
-  const { tenantId, isAuthenticated } = useAuthStore();
+  const tenantId = useTenantId();
+  const isAuthenticated = useIsAuthenticated();
 
   const suppliersQuery = useQuery<Supplier[], Error, SupplierEntity[]>({
     queryKey: ['suppliers', tenantId],
@@ -30,7 +31,7 @@ export const useSuppliers = (options?: { enabled?: boolean }): {
 
 export const useCreateSupplier = () => {
   const queryClient = useQueryClient();
-  const { tenantId } = useAuthStore();
+  const tenantId = useTenantId();
 
   const createSupplierMutation = useMutation({
     mutationFn: (input: CreateSupplierInput) => purchasesService.createSupplier(input),
@@ -47,7 +48,7 @@ export const useCreateSupplier = () => {
 
 export const useUpdateSupplier = () => {
   const queryClient = useQueryClient();
-  const { tenantId } = useAuthStore();
+  const tenantId = useTenantId();
 
   const updateSupplierMutation = useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateSupplierInput }) =>
@@ -65,7 +66,7 @@ export const useUpdateSupplier = () => {
 
 export const useDeleteSupplier = () => {
   const queryClient = useQueryClient();
-  const { tenantId } = useAuthStore();
+  const tenantId = useTenantId();
 
   const deleteSupplierMutation = useMutation({
     mutationFn: (id: string) => purchasesService.deleteSupplier(id),

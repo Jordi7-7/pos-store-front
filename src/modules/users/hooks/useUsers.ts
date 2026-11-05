@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersService } from '../services/users.service';
 import type { CreateUserInput, UpdateUserInput, UserItem } from '../services/users.service';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
 
 export const useUsers = () => {
-  const { tenantId, isAuthenticated } = useAuthStore();
+  const tenantId = useTenantId();
+  const isAuthenticated = useIsAuthenticated();
 
   const usersQuery = useQuery<UserItem[]>({
     queryKey: ['users', tenantId],
@@ -21,7 +22,7 @@ export const useUsers = () => {
 
 export const useCreateUser = () => {
   const queryClient = useQueryClient();
-  const { tenantId } = useAuthStore();
+  const tenantId = useTenantId();
 
   const createUserMutation = useMutation({
     mutationFn: (input: CreateUserInput) => usersService.createUser(input),
@@ -38,7 +39,7 @@ export const useCreateUser = () => {
 
 export const useUpdateUser = () => {
   const queryClient = useQueryClient();
-  const { tenantId } = useAuthStore();
+  const tenantId = useTenantId();
 
   const updateUserMutation = useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateUserInput }) =>
@@ -56,7 +57,7 @@ export const useUpdateUser = () => {
 
 export const useGeneratePin = () => {
   const queryClient = useQueryClient();
-  const { tenantId } = useAuthStore();
+  const tenantId = useTenantId();
 
   const generatePinMutation = useMutation({
     mutationFn: (userId: string) => usersService.generatePin(userId),

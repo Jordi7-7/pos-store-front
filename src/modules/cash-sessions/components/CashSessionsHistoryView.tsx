@@ -12,7 +12,7 @@ import {
 import { useCashSessionsList, useFetchCashSessionDetails } from '../hooks/useCashSessions';
 import type { CashSessionHeaderEntity } from '../entities';
 import { CashSessionStatus, CashSessionDifferenceStatus } from '../enums';
-import { useAuthStore } from '../../auth/hooks/useAuthStore';
+import { useTenant } from '../../auth/hooks/useSession';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import { ThermalClosingTicketModal } from '../../sales/components/pos/ThermalClosingTicketModal';
 import { buildClosingTicketData } from '../utils/buildClosingTicketData';
@@ -31,7 +31,7 @@ import { CashSessionAuditModal } from './CashSessionAuditModal';
 
 export const CashSessionsHistoryView: React.FC = () => {
   const { selectedBranchId } = useLayoutContext();
-  const publicTenant = useAuthStore((state) => state.publicTenant);
+  const publicTenant = useTenant();
 
   const isAllBranches = !selectedBranchId;
   const { sessions, isLoading: listLoading, refetch } = useCashSessionsList(selectedBranchId || undefined);

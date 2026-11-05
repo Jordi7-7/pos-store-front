@@ -1,18 +1,18 @@
-import { useAuthStore, SystemRole } from '../modules/auth';
+import { hasAnyPermission, hasPermission, useIsAuthenticated, useIsOwner, useRoleName, useUser } from '../modules/auth';
 import type { AppPermission } from '../constants/permissions';
 
 export function usePermissions() {
-  const { can, canAny, role, roleName, permissions, isAuthenticated } = useAuthStore();
-
-  const isOwner = role === SystemRole.OWNER;
+  const user = useUser();
+  const isAuthenticated = useIsAuthenticated();
+  const isOwner = useIsOwner();
+  const roleName = useRoleName();
 
   return {
-    can: (permission: AppPermission | string) => can(permission),
-    canAny: (perms: (AppPermission | string)[]) => canAny(perms),
+    can: (permission: AppPermission | string) => isAuthenticated && hasPermission(user, permission),
+    canAny: (perms: (AppPermission | string)[]) => isAuthenticated && hasAnyPermission(user, perms),
     isOwner,
-    role,
     roleName,
-    permissions,
+    permissions: user?.permissions ?? [],
     isAuthenticated,
   };
 }

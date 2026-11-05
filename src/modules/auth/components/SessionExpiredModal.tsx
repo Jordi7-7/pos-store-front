@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useTenant } from '../hooks/useSession';
 import {
   Dialog,
   DialogContent,
@@ -20,9 +21,8 @@ export const SessionExpiredModal: React.FC = () => {
     isSessionExpiredModalOpen,
     refreshSession,
     logout,
-    tenantSlug,
-    publicTenant,
   } = useAuthStore();
+  const tenantSlug = useTenant()?.slug;
 
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
   const [isExtending, setIsExtending] = useState(false);
@@ -30,14 +30,14 @@ export const SessionExpiredModal: React.FC = () => {
 
   const handleLogout = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    const slug = tenantSlug || publicTenant?.slug;
+    const slug = tenantSlug;
     logout();
     if (slug) {
       navigate({ to: '/login/$tenantSlug', params: { tenantSlug: slug }, replace: true });
     } else {
       navigate({ to: '/login', replace: true });
     }
-  }, [tenantSlug, publicTenant?.slug, logout, navigate]);
+  }, [tenantSlug, logout, navigate]);
 
   const handleLogoutRef = useRef(handleLogout);
   handleLogoutRef.current = handleLogout;

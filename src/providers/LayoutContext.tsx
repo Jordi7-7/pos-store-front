@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import { useAuthStore, SystemRole } from '@/modules/auth';
+import { useAuthStore, useIsOwner, useUser } from '@/modules/auth';
 import { useBranches, type Branch } from '@/modules/branches';
 
 interface LayoutContextType {
@@ -14,24 +14,21 @@ interface LayoutContextType {
 const LayoutContext = createContext<LayoutContextType | null>(null);
 
 export const LayoutContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const {
-    selectedBranchId,
-    setSelectedBranchId,
-    user,
-    role,
-  } = useAuthStore();
+  const { selectedBranchId, setSelectedBranchId } = useAuthStore();
+  const user = useUser();
 
   const { branches } = useBranches();
-  const isOwner = role === SystemRole.OWNER;
+  const isOwner = useIsOwner();
 
   // Filter allowed branches (OWNER sees all, cashier sees assigned branchIds)
   const allowedBranches = React.useMemo(() => {
     if (!branches || branches.length === 0) return [];
-    if (!isOwner && user?.branchIds && user.branchIds.length > 0) {
-      return branches.filter((b: Branch) => user.branchIds!.includes(b.id));
+    if (!isOwner && user && user.branches.length > 0) {
+      const assignedIds = user.branches.map((b) => b.id);
+      return branches.filter((b: Branch) => assignedIds.includes(b.id));
     }
     return branches;
-  }, [branches, user?.branchIds, isOwner]);
+  }, [branches, user, isOwner]);
 
   const selectedBranch = React.useMemo(() => {
     if (!selectedBranchId || allowedBranches.length === 0) return null;

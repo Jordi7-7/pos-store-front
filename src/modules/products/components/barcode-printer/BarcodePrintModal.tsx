@@ -3,7 +3,7 @@ import { Printer, Barcode, Settings2, Zap } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useTenant } from '@/modules/auth/hooks/useSession';
 import type { BarcodeLabelItem } from './types';
 import { BarcodeQueueList } from './BarcodeQueueList';
 import { BarcodePreviewPanel } from './BarcodePreviewPanel';
@@ -26,7 +26,7 @@ export const BarcodePrintModal: React.FC<BarcodePrintModalProps> = ({
   items,
   onUpdateItems,
 }) => {
-  const publicTenant = useAuthStore((state) => state.publicTenant);
+  const publicTenant = useTenant();
   const defaultStoreName = publicTenant?.name ? publicTenant.name.toUpperCase() : 'LEIZA STORE';
   
   const [storeName, setStoreName] = useState(defaultStoreName);

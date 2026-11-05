@@ -8,7 +8,7 @@ import type {
   ProductHistorySaleDTO,
   PaginatedResult,
 } from '../types/inventory.types';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
 
 export const useInventoryMovementsByVariant = (
   variantId?: string,
@@ -16,7 +16,8 @@ export const useInventoryMovementsByVariant = (
   limit = 10,
   branchId?: string,
 ) => {
-  const { tenantId, isAuthenticated } = useAuthStore();
+  const tenantId = useTenantId();
+  const isAuthenticated = useIsAuthenticated();
   const movementsQuery = useQuery<PaginatedResult<InventoryMovementDTO>>({
     queryKey: ['variant-movements', tenantId, variantId, page, limit, branchId],
     queryFn: () => productsService.getInventoryMovementsByVariant(variantId!, page, limit, branchId),
@@ -41,7 +42,8 @@ export const useVariantBatches = (
   limit = 10,
   branchId?: string,
 ) => {
-  const { tenantId, isAuthenticated } = useAuthStore();
+  const tenantId = useTenantId();
+  const isAuthenticated = useIsAuthenticated();
   const query = useQuery<PaginatedResult<VariantBatchItemDTO>>({
     queryKey: ['variant-batches', tenantId, variantId, page, limit, branchId],
     queryFn: () => productsService.getVariantBatches(variantId!, page, limit, branchId),
@@ -66,7 +68,8 @@ export const useVariantSales = (
   limit = 10,
   branchId?: string,
 ) => {
-  const { tenantId, isAuthenticated } = useAuthStore();
+  const tenantId = useTenantId();
+  const isAuthenticated = useIsAuthenticated();
   const query = useQuery<PaginatedResult<ProductHistorySaleDTO>>({
     queryKey: ['variant-sales', tenantId, variantId, page, limit, branchId],
     queryFn: () => productsService.getVariantSales(variantId!, page, limit, branchId),
@@ -87,7 +90,8 @@ export const useVariantPurchases = (
   limit = 10,
   branchId?: string,
 ) => {
-  const { tenantId, isAuthenticated } = useAuthStore();
+  const tenantId = useTenantId();
+  const isAuthenticated = useIsAuthenticated();
   const query = useQuery<PaginatedResult<ProductHistoryPurchaseDTO>>({
     queryKey: ['variant-purchases', tenantId, variantId, page, limit, branchId],
     queryFn: () => productsService.getVariantPurchases(variantId!, page, limit, branchId),

@@ -2,11 +2,11 @@ import type { PaginatedSaleSummaryDTO, SaleDetailDTO, SaleDetailItemDTO } from '
 import type { SaleSummaryEntity, SaleDetailEntity, SaleDetailItemEntity } from '../entities/sale.entity';
 import { SaleStatus, PaymentMethod } from '../enums';
 import type { TicketSaleData } from '../components/pos/ThermalTicketModal';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { getTenantTimezone } from '@/modules/auth/hooks/useSession';
 
 export const formatSaleDateTime = (dateVal?: string | Date | null): string => {
   if (!dateVal) return '-';
-  const tz = useAuthStore.getState().timezone || 'America/Guayaquil';
+  const tz = getTenantTimezone();
   const d = dateVal instanceof Date ? dateVal : new Date(dateVal);
   if (!isNaN(d.getTime())) {
     try {

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { productsService } from '../services/products.service';
 import { toProductEntities } from '../mappers/product.mapper';
 import type { ProductType } from '../enums';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
 
 export const useProductList = (params?: {
   page?: number;
@@ -12,7 +12,8 @@ export const useProductList = (params?: {
   branchId?: string;
   inStockOnly?: boolean;
 }) => {
-  const { tenantId, isAuthenticated } = useAuthStore();
+  const tenantId = useTenantId();
+  const isAuthenticated = useIsAuthenticated();
 
   const productsQuery = useQuery({
     queryKey: ['products', tenantId, params?.page, params?.limit, params?.search, params?.type, params?.branchId, params?.inStockOnly],

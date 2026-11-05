@@ -14,7 +14,7 @@ import { type DateRange } from 'react-day-picker';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useAuthStore } from '../../auth/hooks/useAuthStore';
+import { useTimezone } from '../../auth/hooks/useSession';
 import { useSalesCostReport } from '../hooks/useReports';
 import { Calendar } from '@/components/ui/calendar';
 import { Field } from '@/components/ui/field';
@@ -38,7 +38,7 @@ interface CostSalesTabProps {
 }
 
 export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) => {
-  const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
+  const timezone = useTimezone();
   const [currentTenant, setCurrentTenant] = useState<any>(null);
 
   // Use modular hook

@@ -2,13 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { rolesService } from '../services/roles.service';
 import type { RoleItem, CreateRoleInput, UpdateRoleInput } from '../services/roles.service';
 import type { PermissionDefinition, PermissionModuleGroup } from '@/constants/permissions';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
 import { toast } from 'sonner';
 
 export const PERMISSIONS_CATALOG_KEY = ['permissions-catalog'];
 
 export function useRoles() {
-  const { tenantId, isAuthenticated } = useAuthStore();
+  const tenantId = useTenantId();
+  const isAuthenticated = useIsAuthenticated();
 
   const { data: roles = [], isLoading, refetch } = useQuery<RoleItem[]>({
     queryKey: ['roles', tenantId],
@@ -39,7 +40,7 @@ export function usePermissionsCatalog(): {
 
 export function useCreateRole() {
   const queryClient = useQueryClient();
-  const { tenantId } = useAuthStore();
+  const tenantId = useTenantId();
 
   const mutation = useMutation({
     mutationFn: (data: CreateRoleInput) => rolesService.createRole(data),
@@ -60,7 +61,7 @@ export function useCreateRole() {
 
 export function useUpdateRole() {
   const queryClient = useQueryClient();
-  const { tenantId } = useAuthStore();
+  const tenantId = useTenantId();
 
   const mutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateRoleInput }) =>
@@ -82,7 +83,7 @@ export function useUpdateRole() {
 
 export function useDeleteRole() {
   const queryClient = useQueryClient();
-  const { tenantId } = useAuthStore();
+  const tenantId = useTenantId();
 
   const mutation = useMutation({
     mutationFn: (id: string) => rolesService.deleteRole(id),

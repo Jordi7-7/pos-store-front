@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { salesService } from '../services/sales.service';
 import type { OpenCashSessionInput } from '../types/sales.types';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useIsAuthenticated, useUser } from '@/modules/auth/hooks/useSession';
 
 export const useActiveCashSession = (branchId?: string, cashRegisterId?: string) => {
-  const { isAuthenticated, user } = useAuthStore();
+  const isAuthenticated = useIsAuthenticated();
+  const user = useUser();
   const activeSessionQuery = useQuery({
     queryKey: ['active-cash-session', user?.id, branchId, cashRegisterId || 'default'],
     queryFn: () => salesService.getActiveCashSession(branchId, cashRegisterId),

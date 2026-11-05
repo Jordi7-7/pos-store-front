@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { branchesService } from '../services/branches.service';
 import type { CreateBranchInput, UpdateBranchInput } from '../services/branches.service';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
 import { toast } from 'sonner';
 
 export const useBranches = () => {
-  const { tenantId, isAuthenticated } = useAuthStore();
+  const tenantId = useTenantId();
+  const isAuthenticated = useIsAuthenticated();
   const queryClient = useQueryClient();
 
   const branchesQuery = useQuery({

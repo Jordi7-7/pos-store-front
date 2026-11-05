@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { salesService } from '../services/sales.service';
 import type { ProcessSaleInput, RegisterExpenseInput, ProcessRefundInput } from '../types/sales.types';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
 
 export const useProcessSale = () => {
   const queryClient = useQueryClient();
-  const { tenantId } = useAuthStore();
+  const tenantId = useTenantId();
 
   const processSaleMutation = useMutation({
     mutationFn: (input: ProcessSaleInput) => salesService.processSale(input),
@@ -38,7 +38,8 @@ export const useRegisterExpense = () => {
 };
 
 export const useExpenses = (params?: { cashSessionId?: string; branchId?: string }) => {
-  const { tenantId, isAuthenticated } = useAuthStore();
+  const tenantId = useTenantId();
+  const isAuthenticated = useIsAuthenticated();
 
   const expensesQuery = useQuery({
     queryKey: ['expenses', tenantId, params?.cashSessionId, params?.branchId],
@@ -56,7 +57,7 @@ export const useExpenses = (params?: { cashSessionId?: string; branchId?: string
 
 export const useProcessRefund = () => {
   const queryClient = useQueryClient();
-  const { tenantId } = useAuthStore();
+  const tenantId = useTenantId();
 
   const processRefundMutation = useMutation({
     mutationFn: (input: ProcessRefundInput) => salesService.processRefund(input),
@@ -73,7 +74,8 @@ export const useProcessRefund = () => {
 };
 
 export const useRefunds = (params?: { cashSessionId?: string; saleId?: string }) => {
-  const { tenantId, isAuthenticated } = useAuthStore();
+  const tenantId = useTenantId();
+  const isAuthenticated = useIsAuthenticated();
 
   const refundsQuery = useQuery({
     queryKey: ['refunds', tenantId, params?.cashSessionId, params?.saleId],

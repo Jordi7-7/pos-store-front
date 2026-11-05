@@ -8,11 +8,11 @@ import type {
   UpdateVariantInput,
   ProductVariantDTO,
 } from '../types/product.types';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useTenantId } from '@/modules/auth/hooks/useSession';
 
 export const useProductMutations = () => {
   const queryClient = useQueryClient();
-  const { tenantId } = useAuthStore();
+  const tenantId = useTenantId();
 
   const invalidateProductQueries = (productId?: string) => {
     queryClient.invalidateQueries({ queryKey: ['products', tenantId] });

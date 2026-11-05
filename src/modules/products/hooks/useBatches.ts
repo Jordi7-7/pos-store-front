@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { productsService } from '../services/products.service';
 import { toInventoryLotEntity } from '../mappers';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
 import type { InventoryLotEntity } from '../entities';
 import type { PaginatedResult, InventoryLotDTO } from '../types';
 
@@ -40,7 +40,8 @@ const transformBatches = (res: PaginatedResult<InventoryLotDTO>) => ({
 });
 
 export const useBatches = (params?: UseBatchesParams): UseBatchesReturn => {
-  const { tenantId, isAuthenticated } = useAuthStore();
+  const tenantId = useTenantId();
+  const isAuthenticated = useIsAuthenticated();
 
   const batchesQuery = useQuery({
     queryKey: [

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { createFileRoute, Outlet, redirect, useNavigate, useRouterState } from '@tanstack/react-router';
-import { useAuthStore, SessionExpiredModal, useIdleTimer } from '@/modules/auth';
+import { useAuthStore, selectIsAuthenticated, useIsAuthenticated, useTenant, SessionExpiredModal, useIdleTimer } from '@/modules/auth';
 import { LayoutContextProvider, useLayoutContext } from '@/providers/LayoutContext';
 import type { Branch } from '@/modules/branches';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -10,8 +10,7 @@ import { Building, ChevronDown } from 'lucide-react';
 
 export const Route = createFileRoute('/_layout')({
   beforeLoad: () => {
-    const { isAuthenticated, accessToken, user } = useAuthStore.getState();
-    if (!isAuthenticated || !accessToken || !user) {
+    if (!selectIsAuthenticated(useAuthStore.getState())) {
       throw redirect({
         to: '/login',
       });
@@ -21,24 +20,24 @@ export const Route = createFileRoute('/_layout')({
 });
 
 function AppLayout() {
-  const { isAuthenticated, accessToken, tenantSlug, publicTenant } = useAuthStore();
+  const isAuthenticated = useIsAuthenticated();
+  const tenantSlug = useTenant()?.slug;
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) {
-      const slug = tenantSlug || publicTenant?.slug;
-      if (slug) {
-        navigate({ to: '/login/$tenantSlug', params: { tenantSlug: slug }, replace: true });
+    if (!isAuthenticated) {
+      if (tenantSlug) {
+        navigate({ to: '/login/$tenantSlug', params: { tenantSlug }, replace: true });
       } else {
         navigate({ to: '/login', replace: true });
       }
     }
-  }, [isAuthenticated, accessToken, tenantSlug, publicTenant?.slug, navigate]);
+  }, [isAuthenticated, tenantSlug, navigate]);
 
   // Monitoreo de inactividad real del usuario y renovación silenciosa proactiva
   useIdleTimer();
 
-  if (!isAuthenticated || !accessToken) {
+  if (!isAuthenticated) {
     return null;
   }
 

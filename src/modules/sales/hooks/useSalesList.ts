@@ -3,7 +3,7 @@ import { salesService } from '../services/sales.service';
 import type { PaginatedSalesDTO } from '../types/sales.types';
 import { toSaleSummaryEntities } from '../mappers/sale.mapper';
 import type { SaleSummaryEntity } from '../entities/sale.entity';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
 
 export interface UsePaginatedSalesParams {
   startDate?: string;
@@ -14,7 +14,8 @@ export interface UsePaginatedSalesParams {
 }
 
 export const usePaginatedSales = (params: UsePaginatedSalesParams) => {
-  const { tenantId, isAuthenticated } = useAuthStore();
+  const tenantId = useTenantId();
+  const isAuthenticated = useIsAuthenticated();
 
   const salesQuery = useQuery<PaginatedSalesDTO, Error, { items: SaleSummaryEntity[]; meta: PaginatedSalesDTO['meta'] }>({
     queryKey: ['sales-paginated', tenantId, params.startDate, params.endDate, params.page, params.limit, params.branchId],

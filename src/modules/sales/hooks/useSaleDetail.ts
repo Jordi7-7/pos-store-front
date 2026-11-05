@@ -3,7 +3,7 @@ import { salesService } from '../services/sales.service';
 import type { SaleDetailDTO } from '../types/sales.types';
 import { toSaleDetailEntity } from '../mappers/sale.mapper';
 import type { SaleDetailEntity } from '../entities/sale.entity';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
 
 export interface UseSaleByInvoiceReturn {
   sale: SaleDetailEntity | undefined;
@@ -13,7 +13,8 @@ export interface UseSaleByInvoiceReturn {
 }
 
 export const useSaleByInvoice = (invoiceNumber?: string, enabled = true): UseSaleByInvoiceReturn => {
-  const { tenantId, isAuthenticated } = useAuthStore();
+  const tenantId = useTenantId();
+  const isAuthenticated = useIsAuthenticated();
 
   const saleQuery = useQuery<SaleDetailDTO, Error, SaleDetailEntity>({
     queryKey: ['sale-detail', tenantId, invoiceNumber],

@@ -24,7 +24,7 @@ import type {
   CashSessionRefundEntity,
 } from '../entities';
 import { SaleStatus } from '@/modules/sales/enums';
-import { useAuthStore } from '../../auth/hooks/useAuthStore';
+import { useCurrencyCode, useTenant } from '../../auth/hooks/useSession';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -58,7 +58,8 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const publicTenant = useAuthStore((state) => state.publicTenant);
+  const publicTenant = useTenant();
+  const currencyCode = useCurrencyCode();
 
   const { details, rawDetails, isLoading } = useCashSessionDetailsQuery(sessionId);
 
@@ -794,7 +795,7 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
           }}
           saleData={reprintSaleData}
           tenantRuc={publicTenant?.ruc || ''}
-          currencyCode={publicTenant?.currencyCode || 'USD'}
+          currencyCode={currencyCode}
         />
       )}
 

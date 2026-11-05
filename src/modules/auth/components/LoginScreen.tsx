@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAuthStore } from '../hooks/useAuthStore';
-import { SystemRole } from '../types';
+import { useIsAuthenticated, useTenant, useUser } from '../hooks/useSession';
+import { homeRouteFor } from '../domain/session';
 import { Store, Lock, User, ArrowRight, Loader2, KeyRound, AlertCircle, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -9,24 +10,14 @@ const PIN_LENGTH = 6;
 
 export const LoginScreen: React.FC = () => {
   const navigate = useNavigate();
-  const {
-    publicTenant,
-    tenantSlug,
-    isLoadingTenant,
-    tenantError,
-    fetchPublicTenant,
-    clearTenant,
-    login,
-    pinLogin,
-    isAuthenticated,
-    user,
-  } = useAuthStore();
+  const { isLoadingTenant, tenantError, fetchPublicTenant, clearTenant, login, pinLogin } = useAuthStore();
+  const publicTenant = useTenant();
+  const isAuthenticated = useIsAuthenticated();
+  const user = useUser();
 
   const redirectToApp = useCallback(() => {
-    const currentRole = useAuthStore.getState().role;
-    const isOwner = currentRole === SystemRole.OWNER;
     navigate({
-      to: isOwner ? '/dashboard' : '/pos',
+      to: homeRouteFor(useAuthStore.getState().user),
       replace: true,
     });
   }, [navigate]);
@@ -65,7 +56,7 @@ export const LoginScreen: React.FC = () => {
       setPinError(false);
 
       try {
-        const targetSlug = publicTenant?.slug || tenantSlug || undefined;
+        const targetSlug = publicTenant?.slug;
         const res = await pinLogin(submittedPin, targetSlug);
 
         if (res === 'SUCCESS') {
@@ -88,7 +79,7 @@ export const LoginScreen: React.FC = () => {
         isSubmittingPinRef.current = false;
       }
     },
-    [pinLogin, publicTenant, tenantSlug]
+    [pinLogin, publicTenant]
   );
 
   // Handle keypad clicks
@@ -139,7 +130,7 @@ export const LoginScreen: React.FC = () => {
     setCredentialsError('');
     setIsCredentialsLoading(true);
     try {
-      const targetSlug = publicTenant?.slug || tenantSlug || undefined;
+      const targetSlug = publicTenant?.slug;
       const success = await login(identifier, password, 'store', targetSlug);
       if (!success) {
         setCredentialsError('Credenciales incorrectas o usuario no asignado a esta tienda.');

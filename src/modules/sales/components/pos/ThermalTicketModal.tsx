@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useTenant } from '@/modules/auth/hooks/useSession';
 import { thermalPrinterService } from '../../services/thermal-printer.service';
 import { buildSaleReceiptBytes } from '../../services/escpos-builder';
 import { parseEscPosBytes } from '../../services/escpos-parser';
@@ -62,7 +62,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
   tenantRuc,
   currencyCode,
 }) => {
-  const { publicTenant } = useAuthStore();
+  const publicTenant = useTenant();
   const [isPrinting, setIsPrinting] = useState(false);
   const [viewMode, setViewMode] = useState<'paper' | 'image'>('paper');
   const [isUsbConfigured, setIsUsbConfigured] = useState<boolean | null>(null);

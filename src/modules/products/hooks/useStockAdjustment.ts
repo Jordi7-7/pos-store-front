@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsService } from '../services/products.service';
 import type { AdjustStockInput } from '../types/inventory.types';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useTenantId } from '@/modules/auth/hooks/useSession';
 
 export const useStockAdjustment = () => {
   const queryClient = useQueryClient();
-  const { tenantId } = useAuthStore();
+  const tenantId = useTenantId();
 
   const mutation = useMutation({
     mutationFn: (input: AdjustStockInput) => productsService.adjustStock(input),

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAuthStore } from './useAuthStore';
+import { useIsAuthenticated } from './useSession';
 
 // Tiempo máximo de inactividad antes de abrir el modal (por defecto 15 minutos o configurable en .env)
 const envMinutes = Number(import.meta.env.VITE_IDLE_TIMEOUT_MINUTES);
@@ -11,11 +12,8 @@ interface UseIdleTimerOptions {
 }
 
 export function useIdleTimer({ idleTimeoutMs = DEFAULT_IDLE_TIMEOUT_MS }: UseIdleTimerOptions = {}) {
-  const {
-    isAuthenticated,
-    isSessionExpiredModalOpen,
-    openSessionExpiredModal,
-  } = useAuthStore();
+  const isAuthenticated = useIsAuthenticated();
+  const { isSessionExpiredModalOpen, openSessionExpiredModal } = useAuthStore();
 
   const lastActivityRef = useRef<number>(Date.now());
 

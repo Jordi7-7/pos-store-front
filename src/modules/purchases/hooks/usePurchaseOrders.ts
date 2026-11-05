@@ -3,11 +3,11 @@ import { purchasesService } from '../services/purchases.service';
 import type { RegisterPurchaseInput, GetPurchasesParams, PaginatedPurchasesResponse } from '../types/purchases.types';
 import { toPurchaseEntities } from '../mappers/purchase.mapper';
 import type { PurchaseEntity } from '../entities/purchase.entity';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
 
 export const useRegisterPurchase = () => {
   const queryClient = useQueryClient();
-  const { tenantId } = useAuthStore();
+  const tenantId = useTenantId();
 
   const registerPurchaseMutation = useMutation({
     mutationFn: (input: RegisterPurchaseInput) => purchasesService.registerPurchase(input),
@@ -24,7 +24,8 @@ export const useRegisterPurchase = () => {
 };
 
 export const usePurchases = (params?: GetPurchasesParams | string) => {
-  const { tenantId, isAuthenticated } = useAuthStore();
+  const tenantId = useTenantId();
+  const isAuthenticated = useIsAuthenticated();
   const normalizedParams: GetPurchasesParams | undefined =
     typeof params === 'string'
       ? { branchId: params }
@@ -65,7 +66,7 @@ export const usePurchases = (params?: GetPurchasesParams | string) => {
 
 export const useCancelPurchase = () => {
   const queryClient = useQueryClient();
-  const { tenantId } = useAuthStore();
+  const tenantId = useTenantId();
 
   const cancelMutation = useMutation({
     mutationFn: (purchaseOrderId: string) =>

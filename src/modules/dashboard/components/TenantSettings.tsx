@@ -73,7 +73,7 @@ export const TenantSettings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'general' | 'branches'>('general');
 
   // Theme Colors state
-  const currentTenantId = useAuthStore((s) => s.tenantId || s.publicTenant?.id);
+  const currentTenantId = useAuthStore((s) => s.tenant?.id ?? null);
   const [theme, setTheme] = useState<TenantThemeColors>(() => getSavedTheme(currentTenantId));
 
   const handleColorChange = (key: keyof TenantThemeColors, value: string) => {
@@ -163,7 +163,7 @@ export const TenantSettings: React.FC = () => {
     e.preventDefault();
     try {
       setSaving(true);
-      const updated = await apiClient.request<Tenant>('/tenants/current', {
+      await apiClient.request<Tenant>('/tenants/current', {
         method: 'PUT',
         body: JSON.stringify({
           name,
@@ -174,22 +174,8 @@ export const TenantSettings: React.FC = () => {
           timezone,
         }),
       });
-      useAuthStore.setState({ timezone });
-      if (updated.slug) {
-        useAuthStore.setState({ tenantSlug: updated.slug });
-      }
-      if (updated.logoUrl !== undefined) {
-        const auth = useAuthStore.getState();
-        if (auth.publicTenant) {
-          useAuthStore.setState({
-            publicTenant: {
-              ...auth.publicTenant,
-              logoUrl: updated.logoUrl,
-              slug: updated.slug || auth.publicTenant.slug,
-            },
-          });
-        }
-      }
+      // Re-sincroniza la tienda de la sesión (nombre, slug, logo, país, moneda, zona horaria) con el servidor.
+      await useAuthStore.getState().fetchProfile();
       toast.success('Configuración del negocio y logo actualizados con éxito');
     } catch (error: any) {
       console.error('Error updating tenant:', error);

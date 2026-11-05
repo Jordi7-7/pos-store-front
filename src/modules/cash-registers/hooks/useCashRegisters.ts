@@ -6,11 +6,12 @@ import {
   type CreateCashRegisterInput,
   type UpdateCashRegisterInput,
 } from '../services/cash-registers.service';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
 import { toast } from 'sonner';
 
 export const useMyCashRegisters = (branchId?: string) => {
-  const { tenantId, isAuthenticated } = useAuthStore();
+  const tenantId = useTenantId();
+  const isAuthenticated = useIsAuthenticated();
 
   const query = useQuery<MyCashRegisterItem[]>({
     queryKey: ['my-cash-registers', tenantId, branchId || 'all'],
@@ -27,7 +28,8 @@ export const useMyCashRegisters = (branchId?: string) => {
 };
 
 export const useCashRegisters = (branchId?: string) => {
-  const { tenantId, isAuthenticated } = useAuthStore();
+  const tenantId = useTenantId();
+  const isAuthenticated = useIsAuthenticated();
 
   const query = useQuery<CashRegisterItem[]>({
     queryKey: ['cash-registers', tenantId, branchId || 'all'],

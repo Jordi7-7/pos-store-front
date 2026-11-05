@@ -8,7 +8,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useAuthStore } from '../../auth/hooks/useAuthStore';
+import { useTimezone } from '../../auth/hooks/useSession';
 import { useValuedInventoryReport } from '../hooks/useReports';
 import { ProductPagination } from '@/modules/products/components/ProductPagination';
 import { 
@@ -29,7 +29,7 @@ interface ValuedInventoryTabProps {
 }
 
 export const ValuedInventoryTab: React.FC<ValuedInventoryTabProps> = ({ selectedBranchId }) => {
-  const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
+  const timezone = useTimezone();
   const [currentTenant, setCurrentTenant] = useState<any>(null);
 
   const [page, setPage] = useState(1);

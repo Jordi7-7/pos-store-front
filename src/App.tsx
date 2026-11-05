@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { RouterProvider, createRouter } from '@tanstack/react-router';
 import { routeTree } from './routeTree.gen';
-import { useAuthStore } from './modules/auth';
+import { useTenantId } from './modules/auth';
 import { getSavedTheme, applyTheme } from './lib/themeManager';
 
 // Create TanStack Router instance
@@ -18,13 +18,13 @@ declare module '@tanstack/react-router' {
 }
 
 const App: React.FC = () => {
-  const { tenantId, publicTenant } = useAuthStore();
+  const tenantId = useTenantId();
 
   // Apply tenant theme on load and tenant change
   useEffect(() => {
-    const theme = getSavedTheme(tenantId || publicTenant?.id);
+    const theme = getSavedTheme(tenantId);
     applyTheme(theme);
-  }, [tenantId, publicTenant?.id]);
+  }, [tenantId]);
 
   return <RouterProvider router={router} />;
 };

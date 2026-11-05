@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Receipt, RotateCcw, Printer } from 'lucide-react';
 import { useSaleByInvoice } from '../hooks/useSaleDetail';
 import { ThermalTicketModal } from './pos/ThermalTicketModal';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useTenant } from '@/modules/auth/hooks/useSession';
 import { toTicketSaleData } from '../mappers/sale.mapper';
 import type { SaleDetailItemEntity, SaleRefundItemEntity } from '../entities/sale.entity';
 
@@ -19,7 +19,7 @@ const money = (value: number) => `$${Number(value || 0).toFixed(2)}`;
 
 export const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ invoiceNumber, isOpen, onClose }) => {
   const { sale, isLoading, isError } = useSaleByInvoice(invoiceNumber, isOpen);
-  const publicTenant = useAuthStore((state) => state.publicTenant);
+  const publicTenant = useTenant();
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
 
   const saleDataForTicket = useMemo(() => (sale ? toTicketSaleData(sale) : null), [sale]);

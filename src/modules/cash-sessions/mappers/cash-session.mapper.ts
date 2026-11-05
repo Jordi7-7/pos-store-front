@@ -8,7 +8,7 @@ import type {
   CashSessionRefundEntity,
 } from '../entities/cash-session.entity';
 
-import { useAuthStore } from '../../auth/hooks/useAuthStore';
+import { getTenantTimezone } from '../../auth/hooks/useSession';
 import { CashSessionStatus, CashSessionDifferenceStatus } from '../enums';
 import { SaleStatus } from '@/modules/sales/enums';
 
@@ -18,7 +18,7 @@ const formatMoney = (value: number | null | undefined): string => {
 
 const formatDate = (dateString?: string | null): string => {
   if (!dateString) return '';
-  const tz = useAuthStore.getState().timezone || 'America/Guayaquil';
+  const tz = getTenantTimezone();
   try {
     return new Date(dateString).toLocaleDateString('es-EC', {
       timeZone: tz,
@@ -33,7 +33,7 @@ const formatDate = (dateString?: string | null): string => {
 
 const formatTime = (dateString?: string | null): string => {
   if (!dateString) return '';
-  const tz = useAuthStore.getState().timezone || 'America/Guayaquil';
+  const tz = getTenantTimezone();
   try {
     return new Date(dateString).toLocaleTimeString('es-EC', {
       timeZone: tz,

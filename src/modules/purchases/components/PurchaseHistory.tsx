@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { usePurchases, useCancelPurchase, useSuppliers } from '../hooks';
-import { useAuthStore } from '../../auth/hooks/useAuthStore';
+import { useTimezone } from '../../auth/hooks/useSession';
 import {
   ClipboardList,
   Calendar as CalendarIcon,
@@ -38,7 +38,7 @@ interface PurchaseHistoryProps {
 
 export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranchId }) => {
   const isAll = !selectedBranchId;
-  const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
+  const timezone = useTimezone();
 
   // Date Range Defaults: Start of month to today
   const [dateRange, setDateRange] = useState<DateRange | undefined>({

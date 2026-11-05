@@ -14,6 +14,7 @@ import { useCashSessionDetailsQuery } from '../../cash-sessions/hooks/useCashSes
 import { PaymentMethod } from '../enums';
 import { CashSessionStatus } from '@/modules/cash-sessions/enums';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
+import { useTenant, useTimezone } from '../../auth/hooks/useSession';
 import { toast } from 'sonner';
 import { DateTime } from 'luxon';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -165,8 +166,8 @@ export const POSView: React.FC<POSViewProps> = ({
   const [isPrinterConfigOpen, setIsPrinterConfigOpen] = useState(false);
 
   const currentUser = useAuthStore((state) => state.user);
-  const publicTenant = useAuthStore((state) => state.publicTenant);
-  const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
+  const publicTenant = useTenant();
+  const timezone = useTimezone();
 
   // Clock & shift timer
   const [currentTime, setCurrentTime] = useState(() => DateTime.now().setZone(timezone).toFormat('HH:mm:ss'));

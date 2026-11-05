@@ -7,7 +7,7 @@ import { SaleDetailModal } from './SaleDetailModal';
 import { ThermalTicketModal, type TicketSaleData } from './pos/ThermalTicketModal';
 import { useSaleByInvoice } from '../hooks/useSaleDetail';
 import { toTicketSaleData } from '../mappers/sale.mapper';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useTenant, useTimezone } from '@/modules/auth/hooks/useSession';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import { ProductPagination } from '@/modules/products/components/ProductPagination';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,8 +30,8 @@ export const SalesView: React.FC = () => {
   const [printingInvoice, setPrintingInvoice] = useState<string | null>(null);
 
   const { fetchSale } = useSaleByInvoice();
-  const publicTenant = useAuthStore((state) => state.publicTenant);
-  const timezone = useAuthStore((state) => state.timezone) || 'America/Guayaquil';
+  const publicTenant = useTenant();
+  const timezone = useTimezone();
   const startDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined;
   const endDate = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined;
   const isAllBranches = !selectedBranchId;

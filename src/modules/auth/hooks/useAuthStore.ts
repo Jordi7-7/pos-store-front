@@ -1,68 +1,53 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { authService, type PublicTenantResponse, type OnboardPayload } from '../services/auth.service';
+import { authService } from '../services/auth.service';
 import { queryClient } from '@/providers/QueryProvider';
-import { SystemRole, type RoleType } from '../types';
+import { isApiError } from '@/shared/infrastructure/http/api-error';
+import { getErrorMessage } from '@/shared/presentation/error-messages';
+import {
+  hasAnyPermission,
+  hasPermission,
+  type SessionCashRegister,
+  type SessionTenant,
+} from '../domain/session';
+import { toSessionTenant, toSessionUser } from '../mappers/session.mapper';
+import { AUTH_STORAGE_VERSION, migratePersistedAuth, type PersistedAuth } from './auth-persistence';
 
-export type PublicTenant = PublicTenantResponse;
+export type PublicTenant = SessionTenant;
+export type AssignedCashRegister = SessionCashRegister;
 
-export interface AssignedCashRegister {
-  id: string;
-  name: string;
-  code: number;
-  branchId: string;
-}
-
-interface User {
-  id: string;
-  name: string;
-  username: string;
-  email?: string | null;
-  timezone?: string;
-  branchIds?: string[];
-  cashRegisters?: AssignedCashRegister[];
-}
-
-interface AuthState {
-  accessToken: string | null;
-  refreshToken: string | null;
-  tenantId: string | null;
-  tenantSlug: string | null;
-  publicTenant: PublicTenant | null;
+interface AuthState extends PersistedAuth {
+  // Estado transitorio (no se guarda)
   isLoadingTenant: boolean;
   tenantError: string | null;
-  role: RoleType | null;
-  roleId: string | null;
-  roleName: string | null;
-  permissions: string[];
-  timezone: string | null;
-  user: User | null;
-  branchIds: string[];
-  cashRegisters: AssignedCashRegister[];
-  isAuthenticated: boolean;
-  _hasHydrated: boolean;
-  setHasHydrated: (state: boolean) => void;
+  isSessionExpiredModalOpen: boolean;
 
-  // Actions & Helpers
+  // Permisos
   can: (permission: string) => boolean;
   canAny: (permissions: string[]) => boolean;
+
+  // Tienda
   fetchPublicTenant: (slug: string) => Promise<boolean>;
-  setTenantSlug: (slug: string | null) => void;
   clearTenant: () => void;
+
+  // Sesión
   login: (identifier: string, password: string, _targetWorkflow?: 'admin' | 'store', slugOverride?: string) => Promise<boolean>;
   pinLogin: (pin: string, slugOverride?: string) => Promise<'SUCCESS' | 'INVALID' | 'EXPIRED' | 'NOT_FOUND'>;
-  onboard: (data: any) => Promise<boolean>;
   logout: () => void;
-  selectedBranchId: string | null;
-  setSelectedBranchId: (branchId: string | null) => void;
-  selectedCashRegisterId: string | null;
-  setSelectedCashRegisterId: (registerId: string | null) => void;
   fetchProfile: () => Promise<boolean>;
-  isSessionExpiredModalOpen: boolean;
+  refreshSession: () => Promise<boolean>;
+
+  // Selección de trabajo
+  setSelectedBranchId: (branchId: string | null) => void;
+  setSelectedCashRegisterId: (registerId: string | null) => void;
+
   openSessionExpiredModal: () => void;
   closeSessionExpiredModal: () => void;
-  refreshSession: () => Promise<boolean>;
 }
+
+/** Autenticado = hay token, perfil y tienda. Se deriva; no se guarda. */
+export const selectIsAuthenticated = (s: Pick<PersistedAuth, 'accessToken' | 'user' | 'tenant'>): boolean =>
+  Boolean(s.accessToken && s.user && s.tenant);
 
 let inFlightProfilePromise: Promise<boolean> | null = null;
 
@@ -71,155 +56,69 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       accessToken: null,
       refreshToken: null,
-      tenantId: null,
-      tenantSlug: null,
-      publicTenant: null,
+      user: null,
+      tenant: null,
+      selectedBranchId: null,
+      selectedCashRegisterId: null,
       isLoadingTenant: false,
       tenantError: null,
-      role: null,
-      roleId: null,
-      roleName: null,
-      permissions: [],
-      timezone: null,
-      user: null,
-      branchIds: [],
-      cashRegisters: [],
-      isAuthenticated: false,
       isSessionExpiredModalOpen: false,
-      _hasHydrated: false,
-      setHasHydrated: (state) => set({ _hasHydrated: state }),
 
       openSessionExpiredModal: () => {
-        if (get().isAuthenticated) {
-          set({ isSessionExpiredModalOpen: true });
-        }
+        if (selectIsAuthenticated(get())) set({ isSessionExpiredModalOpen: true });
       },
       closeSessionExpiredModal: () => set({ isSessionExpiredModalOpen: false }),
 
-      refreshSession: async () => {
-        const { refreshToken } = get();
-        if (!refreshToken) {
-          return false;
-        }
-        try {
-          const response = await authService.refresh(refreshToken);
-          if (response && response.accessToken) {
-            set({
-              accessToken: response.accessToken,
-              refreshToken: response.refreshToken || refreshToken,
-              isSessionExpiredModalOpen: false,
-              isAuthenticated: true,
-            });
-            // Refrescar perfil para asegurar sincronización
-            get().fetchProfile().catch(() => {});
-            return true;
-          }
-          return false;
-        } catch (err) {
-          console.error('Error al renovar sesión con refresh token:', err);
-          return false;
-        }
+      setSelectedBranchId: (branchId) => set({ selectedBranchId: branchId }),
+      setSelectedCashRegisterId: (registerId) => set({ selectedCashRegisterId: registerId }),
+
+      can: (permission) => {
+        const { accessToken, user } = get();
+        return Boolean(accessToken) && hasPermission(user, permission);
+      },
+      canAny: (permissions) => {
+        const { accessToken, user } = get();
+        return Boolean(accessToken) && hasAnyPermission(user, permissions);
       },
 
-      selectedBranchId: null,
-      selectedCashRegisterId: null,
-      setSelectedCashRegisterId: (registerId: string | null) => set({ selectedCashRegisterId: registerId }),
+      clearTenant: () => set({ tenant: null, tenantError: null }),
 
-      can: (permission: string) => {
-        const state = get();
-        if (!state.accessToken || !state.user) return false;
-        if (state.role === SystemRole.OWNER || state.permissions.includes('*')) return true;
-        return state.permissions.includes(permission);
-      },
-
-      canAny: (perms: string[]) => {
-        const state = get();
-        if (!state.accessToken || !state.user) return false;
-        if (state.role === SystemRole.OWNER || state.permissions.includes('*')) return true;
-        return perms.some((p) => state.permissions.includes(p));
-      },
-
-      clearTenant: () => set({
-        publicTenant: null,
-        tenantSlug: null,
-        tenantId: null,
-        tenantError: null,
-      }),
-
-      setTenantSlug: (slug) => {
-        if (!slug) {
-          set({
-            publicTenant: null,
-            tenantSlug: null,
-            tenantId: null,
-            tenantError: null,
-          });
-        } else {
-          set({ tenantSlug: slug });
-        }
-      },
-
-      fetchPublicTenant: async (slug: string) => {
-        if (!slug || !slug.trim()) return false;
+      fetchPublicTenant: async (slug) => {
         const cleanSlug = slug.toLowerCase().trim();
-        const state = get();
+        if (!cleanSlug) return false;
 
-        // Si ya tenemos en caché exactamente este tenant, no volvemos a consultar
-        if (state.publicTenant?.slug?.toLowerCase() === cleanSlug) {
-          return true;
-        }
+        // Si ya tenemos exactamente esta tienda, no volvemos a consultar.
+        if (get().tenant?.slug.toLowerCase() === cleanSlug) return true;
 
         set({ isLoadingTenant: true, tenantError: null });
         try {
-          const data = await authService.getPublicTenantBySlug(cleanSlug);
-          set({
-            publicTenant: data,
-            tenantSlug: data.slug,
-            tenantId: data.id,
-            timezone: data.timezone,
-            isLoadingTenant: false,
-            tenantError: null,
-          });
+          const tenant = toSessionTenant(await authService.getPublicTenantBySlug(cleanSlug));
+          set({ tenant, isLoadingTenant: false, tenantError: null });
           return true;
-        } catch (err: any) {
-          console.error('Error fetching public tenant info:', err);
-          set({
-            publicTenant: null,
-            tenantSlug: cleanSlug,
+        } catch (err) {
+          console.error('Error al consultar la tienda:', err);
+          set((state) => ({
+            // Con sesión abierta no se borra la tienda: la interfaz la necesita.
+            tenant: selectIsAuthenticated(state) ? state.tenant : null,
             isLoadingTenant: false,
-            tenantError: err.message || 'Error al conectar con la tienda',
-          });
+            tenantError: getErrorMessage(err, 'Error al conectar con la tienda'),
+          }));
           return false;
         }
       },
 
       login: async (identifier, password, _targetWorkflow = 'store', slugOverride) => {
-        const state = get();
-        const effectiveSlug = slugOverride || state.tenantSlug || state.publicTenant?.slug || undefined;
-
+        const effectiveSlug = slugOverride || get().tenant?.slug || undefined;
         try {
-          const response = await authService.login({
-            email: identifier,
-            password,
-            tenantSlug: effectiveSlug,
-          });
+          const response = await authService.login({ email: identifier, password, tenantSlug: effectiveSlug });
+          if (!response?.accessToken) return false;
 
-          if (!response || !response.accessToken) {
-            return false;
-          }
+          set({ accessToken: response.accessToken, refreshToken: response.refreshToken });
 
-          set({
-            accessToken: response.accessToken,
-            refreshToken: response.refreshToken,
-            tenantSlug: effectiveSlug || state.tenantSlug,
-          });
-
-          const profileOk = await get().fetchProfile();
-          if (!profileOk) {
+          if (!(await get().fetchProfile())) {
             get().logout();
             return false;
           }
-
           return true;
         } catch (error) {
           console.error('Error de login en backend:', error);
@@ -227,107 +126,45 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Direct Cashier PIN login (no admin token required when tenantSlug is known)
+      // Login directo del cajero por PIN (solo necesita el identificador de la tienda).
       pinLogin: async (pin, slugOverride) => {
-        const state = get();
-        const effectiveSlug = slugOverride || state.tenantSlug || state.publicTenant?.slug || '';
-
+        const effectiveSlug = slugOverride || get().tenant?.slug || '';
         try {
-          const response = await authService.pinLogin({
-            pin,
-            tenantSlug: effectiveSlug,
-          });
+          const response = await authService.pinLogin({ pin, tenantSlug: effectiveSlug });
+          if (!response?.accessToken) return 'INVALID';
 
-          if (response && response.accessToken) {
-            set({
-              accessToken: response.accessToken,
-              refreshToken: response.refreshToken,
-              tenantSlug: effectiveSlug || state.tenantSlug,
-            });
+          set({ accessToken: response.accessToken, refreshToken: response.refreshToken });
 
-            const profileOk = await get().fetchProfile();
-            if (!profileOk) {
-              get().logout();
-              return 'INVALID';
-            }
-
-            return 'SUCCESS';
+          if (!(await get().fetchProfile())) {
+            get().logout();
+            return 'INVALID';
           }
-          return 'INVALID';
-        } catch (error: any) {
-          console.error('Error de PIN login:', error);
-          if (error.message?.includes('Tienda no encontrada')) {
-            return 'NOT_FOUND';
-          }
-          return 'INVALID';
-        }
-      },
-
-      onboard: async (data) => {
-        try {
-          const payload: OnboardPayload = {
-            tenantName: data.businessName,
-            ruc: data.taxId,
-            country: data.country,
-            currencyCode: data.currency,
-            currencySymbol: '$',
-            timezone: data.timezone || 'America/Guayaquil',
-            adminName: data.adminName,
-            username: data.adminUsername || (data.adminEmail ? data.adminEmail.split('@')[0] : 'admin'),
-            email: data.adminEmail || undefined,
-            password: data.adminPassword,
-            branchName: data.branchName,
-            branchAddress: data.branchAddress,
-            slug: data.slug,
-          };
-
-          const response = await authService.onboard(payload);
-
-          if (response && response.accessToken) {
-            set({
-              accessToken: response.accessToken,
-              refreshToken: response.refreshToken,
-            });
-
-            const profileOk = await get().fetchProfile();
-            if (!profileOk) {
-              get().logout();
-              return false;
-            }
-
-            return true;
-          }
-          return false;
+          return 'SUCCESS';
         } catch (error) {
-          console.error('Error de onboarding en backend:', error);
-          return false;
+          console.error('Error de PIN login:', error);
+          return isApiError(error) && error.code === 'TENANT_NOT_FOUND' ? 'NOT_FOUND' : 'INVALID';
         }
       },
 
       logout: () => {
         const { accessToken } = get();
 
-        // Notificar al backend con el token para que revoque la sesión en Redis
+        // Avisar al backend para que revoque la sesión en Redis.
         if (accessToken) {
           authService.logout(accessToken).catch(() => {});
         }
 
-        // Limpiar estado de autenticación inmediatamente
+        // La tienda se conserva a propósito: la pantalla de login la usa.
         set({
           accessToken: null,
           refreshToken: null,
-          role: null,
-          roleId: null,
-          roleName: null,
-          permissions: [],
           user: null,
           selectedBranchId: null,
           selectedCashRegisterId: null,
-          isAuthenticated: false,
           isSessionExpiredModalOpen: false,
         });
 
-        // Limpiar completamente la caché de React Query (dashboard, métricas, ventas, etc.)
+        // Vaciar la caché de datos (dashboard, ventas, métricas…) del usuario anterior.
         try {
           queryClient.clear();
         } catch {
@@ -336,62 +173,30 @@ export const useAuthStore = create<AuthState>()(
       },
 
       fetchProfile: async () => {
-        if (inFlightProfilePromise) {
-          return inFlightProfilePromise;
-        }
+        if (inFlightProfilePromise) return inFlightProfilePromise;
 
         inFlightProfilePromise = (async () => {
-          const state = get();
-          const token = state.accessToken;
-          if (!token) return false;
+          if (!get().accessToken) return false;
           try {
             const profile = await authService.getProfile();
-            const branches = profile.branches || [];
-            const branchIds = branches.map((b) => b.id);
-            const isOwner = Boolean(profile.isOwner);
-            const roleName = isOwner ? 'Propietario' : (profile.role?.name || 'Usuario');
-            const roleCode = isOwner ? 'OWNER' : (profile.role?.name || 'USER');
+            const user = toSessionUser(profile);
+            const tenant = toSessionTenant(profile.tenant);
+            const only = <T>(items: T[]): T | null => (items.length === 1 ? (items[0] ?? null) : null);
 
-            set({
-                tenantId: profile.tenant?.id || state.tenantId,
-                timezone: profile.tenant.timezone || 'America/Guayaquil',
-                role: roleCode,
-                roleId: profile.role?.id || null,
-                roleName,
-                permissions: profile.permissions || [],
-                branchIds,
-                cashRegisters: profile.cashRegisters || [],
-                selectedBranchId: branchIds.length === 1 ? branchIds[0] : (state.selectedBranchId || null),
-                selectedCashRegisterId: (profile.cashRegisters && profile.cashRegisters.length === 1) ? (profile.cashRegisters[0]?.id ?? null) : (state.selectedCashRegisterId || null),
-                publicTenant: profile.tenant
-                  ? {
-                      id: profile.tenant.id,
-                      name: profile.tenant.name,
-                      ruc: profile.tenant.ruc,
-                      slug: profile.tenant.slug,
-                      logoUrl: profile.tenant.logoUrl,
-                      country: profile.tenant.country || 'EC',
-                      currencyCode: profile.tenant.currencyCode || 'USD',
-                      currencySymbol: profile.tenant.currencySymbol || '$',
-                      timezone: profile.tenant.timezone || 'America/Guayaquil',
-                    }
-                  : state.publicTenant,
-                tenantSlug: profile.tenant?.slug || state.tenantSlug,
-                user: {
-                  id: profile.id,
-                  name: profile.name,
-                  username: profile.username,
-                  email: profile.email || null,
-                  timezone: profile.tenant.timezone,
-                  branchIds,
-                  cashRegisters: profile.cashRegisters || [],
-                },
-                isAuthenticated: true,
-              });
+            set((state) => ({
+              user,
+              tenant,
+              selectedBranchId: only(user.branches)?.id ?? state.selectedBranchId,
+              selectedCashRegisterId: only(user.cashRegisters)?.id ?? state.selectedCashRegisterId,
+            }));
             return true;
           } catch (error) {
-            console.error('Error fetching user profile (token inválido o expirado):', error);
-            get().logout();
+            console.error('Error al obtener el perfil:', error);
+            // Solo un 401 (sesión inválida incluso tras intentar renovarla) cierra la sesión.
+            // Una caída de red o un 500 no debe sacar al cajero en pleno turno.
+            if (isApiError(error) && error.status === 401) {
+              get().logout();
+            }
             return false;
           } finally {
             inFlightProfilePromise = null;
@@ -401,32 +206,38 @@ export const useAuthStore = create<AuthState>()(
         return inFlightProfilePromise;
       },
 
-      setSelectedBranchId: (branchId) => set({ selectedBranchId: branchId }),
+      refreshSession: async () => {
+        const { refreshToken } = get();
+        if (!refreshToken) return false;
+        try {
+          const response = await authService.refresh(refreshToken);
+          if (!response?.accessToken) return false;
+          set({
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken || refreshToken,
+            isSessionExpiredModalOpen: false,
+          });
+          // Mantener permisos y datos de la tienda sincronizados con el servidor.
+          get().fetchProfile().catch(() => {});
+          return true;
+        } catch (err) {
+          console.error('Error al renovar sesión con refresh token:', err);
+          return false;
+        }
+      },
     }),
     {
       name: 'aura-pos-auth',
-      onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true);
-      },
-      partialize: (state) => ({
+      version: AUTH_STORAGE_VERSION,
+      migrate: (persisted, version) => migratePersistedAuth(persisted, version) as unknown as AuthState,
+      partialize: (state): PersistedAuth => ({
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
-        tenantId: state.tenantId,
-        tenantSlug: state.tenantSlug,
-        publicTenant: state.publicTenant,
-        role: state.role,
-        roleId: state.roleId,
-        roleName: state.roleName,
-        permissions: state.permissions,
         user: state.user,
-        branchIds: state.branchIds,
-        cashRegisters: state.cashRegisters,
-        timezone: state.timezone,
+        tenant: state.tenant,
         selectedBranchId: state.selectedBranchId,
         selectedCashRegisterId: state.selectedCashRegisterId,
-        isAuthenticated: state.isAuthenticated,
       }),
-    }
-  )
+    },
+  ),
 );
-

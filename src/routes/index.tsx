@@ -1,14 +1,11 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { useAuthStore, LoginScreen, SystemRole } from '@/modules/auth';
+import { useAuthStore, selectIsAuthenticated, homeRouteFor, LoginScreen } from '@/modules/auth';
 
 export const Route = createFileRoute('/')({
   beforeLoad: () => {
-    const { isAuthenticated, user, role } = useAuthStore.getState();
-    if (isAuthenticated && user) {
-      const isOwner = role === SystemRole.OWNER;
-      throw redirect({
-        to: isOwner ? '/dashboard' : '/pos',
-      });
+    const state = useAuthStore.getState();
+    if (selectIsAuthenticated(state)) {
+      throw redirect({ to: homeRouteFor(state.user) });
     }
   },
   component: () => <LoginScreen />,

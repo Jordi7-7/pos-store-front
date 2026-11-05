@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { categoryService } from '../services/category.service';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useTenantId } from '@/modules/auth/hooks/useSession';
 
 export const useCategories = () => {
   const queryClient = useQueryClient();
-  const { tenantId } = useAuthStore();
+  const tenantId = useTenantId();
 
   const categoriesQuery = useQuery({
     queryKey: ['categories', tenantId],
