@@ -147,7 +147,7 @@ export const LoginScreen: React.FC = () => {
         toast.success('¡Bienvenido al sistema!');
         redirectToApp();
       }
-    } catch (err) {
+    } catch {
       setCredentialsError('Ocurrió un error en el inicio de sesión.');
     } finally {
       setIsCredentialsLoading(false);

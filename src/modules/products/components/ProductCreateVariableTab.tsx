@@ -156,7 +156,7 @@ export const ProductCreateVariableTab: React.FC<ProductCreateVariableTabProps> =
     const attrPool = activeAttrIds.map((attrId) => {
       const attr = attributes.find((a:Attribute) => a.id === attrId);
       const valIds = selectedAttributeValues[attrId];
-      const vals = (attr?.values || []).filter((v: AttributeValue) => valIds.includes(v.id));
+      const vals = (attr?.values || []).filter((v: AttributeValue) => (valIds ?? []).includes(v.id));
       return {
         attributeId: attrId,
         attributeName: attr?.name || 'Atributo',

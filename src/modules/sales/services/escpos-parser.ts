@@ -56,7 +56,7 @@ export function parseEscPosBytes(
 
   let i = 0;
   while (i < bytes.length) {
-    const byte = bytes[i];
+    const byte = bytes[i] ?? 0;
 
     // ESC @ (Init / Reset)
     if (byte === 0x1b && bytes[i + 1] === 0x40) {
@@ -93,7 +93,7 @@ export function parseEscPosBytes(
 
     // GS ! n (Character size)
     if (byte === 0x1d && bytes[i + 1] === 0x21) {
-      const n = bytes[i + 2];
+      const n = bytes[i + 2] ?? 0;
       doubleWidth = (n & 0x10) !== 0;
       doubleHeight = (n & 0x01) !== 0;
       i += 3;
@@ -140,7 +140,7 @@ export function parseEscPosBytes(
   // Generar volcado Hexadecimal para depuración
   const hexParts: string[] = [];
   for (let idx = 0; idx < bytes.length; idx++) {
-    hexParts.push(bytes[idx].toString(16).padStart(2, '0').toUpperCase());
+    hexParts.push((bytes[idx] ?? 0).toString(16).padStart(2, '0').toUpperCase());
   }
   const hexDump = hexParts.join(' ');
 

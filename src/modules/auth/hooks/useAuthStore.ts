@@ -362,7 +362,7 @@ export const useAuthStore = create<AuthState>()(
                 branchIds,
                 cashRegisters: profile.cashRegisters || [],
                 selectedBranchId: branchIds.length === 1 ? branchIds[0] : (state.selectedBranchId || null),
-                selectedCashRegisterId: (profile.cashRegisters && profile.cashRegisters.length === 1) ? profile.cashRegisters[0].id : (state.selectedCashRegisterId || null),
+                selectedCashRegisterId: (profile.cashRegisters && profile.cashRegisters.length === 1) ? (profile.cashRegisters[0]?.id ?? null) : (state.selectedCashRegisterId || null),
                 publicTenant: profile.tenant
                   ? {
                       id: profile.tenant.id,

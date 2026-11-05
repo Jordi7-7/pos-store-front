@@ -52,7 +52,10 @@ export const LayoutContextProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       const isSelectedValid = allowedBranches.some((b: Branch) => b.id === selectedBranchId);
       if (!selectedBranchId || !isSelectedValid) {
-        setSelectedBranchId(allowedBranches[0].id);
+        const firstBranch = allowedBranches[0];
+        if (firstBranch) {
+          setSelectedBranchId(firstBranch.id);
+        }
       }
     }
   }, [allowedBranches, selectedBranchId, setSelectedBranchId, isOwner]);

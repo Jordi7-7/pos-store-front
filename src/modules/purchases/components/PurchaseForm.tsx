@@ -62,7 +62,10 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
       if (generic) {
         setSelectedSupplierId(generic.id);
       } else {
-        setSelectedSupplierId(suppliers[0].id);
+        const firstSupplier = suppliers[0];
+        if (firstSupplier) {
+          setSelectedSupplierId(firstSupplier.id);
+        }
       }
     }
   }, [suppliers, selectedSupplierId]);
@@ -81,7 +84,9 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
 
   const updateRow = (index: number, fields: Partial<PurchaseItemInput>) => {
     const updated = [...purchaseItems];
-    updated[index] = { ...updated[index], ...fields };
+    const current = updated[index];
+    if (!current) return;
+    updated[index] = { ...current, ...fields };
     setPurchaseItems(updated);
   };
 
@@ -107,8 +112,10 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
 
         setPurchaseItems((prevItems) => {
           const updated = [...prevItems];
+          const current = updated[index];
+          if (!current) return prevItems;
           updated[index] = {
-            ...updated[index],
+            ...current,
             variantId: variant.id,
             variantSku: variant.sku,
             productName: variant.productName,

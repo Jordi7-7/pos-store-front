@@ -34,7 +34,7 @@ const extractImageUrlFromDataTransfer = (dataTransfer: DataTransfer): string | n
         const urlObj = new URL(cleanText);
         const imgUrl = urlObj.searchParams.get('imgurl');
         if (imgUrl) return decodeURIComponent(imgUrl);
-      } catch (e) {}
+      } catch {}
     }
     if (
       cleanText.startsWith('http://') ||
@@ -52,7 +52,7 @@ const extractImageUrlFromDataTransfer = (dataTransfer: DataTransfer): string | n
       const doc = parser.parseFromString(htmlData, 'text/html');
       const img = doc.querySelector('img');
       if (img && img.src) return img.src;
-    } catch (e) {}
+    } catch {}
   }
 
   return null;

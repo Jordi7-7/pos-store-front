@@ -232,7 +232,7 @@ export function useExchangeReturn({
         reason: reason.trim() || 'Devolución desde POS',
         items: selectedReturnItems.map((item: SaleItemRow) => ({
           variantId: item.variantId,
-          quantity: returnQtyMap[item.variantId],
+          quantity: returnQtyMap[item.variantId] ?? 0,
         })),
       });
       toast.success(`Devolución procesada: ${formatMoney(totalToReturn)}`);
@@ -253,7 +253,7 @@ export function useExchangeReturn({
         reason: reason.trim() || 'Cambio de prenda',
         items: selectedReturnItems.map((item: SaleItemRow) => ({
           variantId: item.variantId,
-          quantity: returnQtyMap[item.variantId],
+          quantity: returnQtyMap[item.variantId] ?? 0,
         })),
       });
 

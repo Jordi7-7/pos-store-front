@@ -112,7 +112,7 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
         day: '2-digit',
         month: '2-digit'
       });
-    } catch (e) {
+    } catch {
       return '';
     }
   };

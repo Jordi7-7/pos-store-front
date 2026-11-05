@@ -97,7 +97,7 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
         });
       }
       onClose();
-    } catch (err) {
+    } catch {
       // Error handled by hook
     }
   };

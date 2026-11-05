@@ -56,7 +56,10 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
       if (generic) {
         setSelectedSupplierId(generic.id);
       } else {
-        setSelectedSupplierId(suppliers[0].id);
+        const firstSupplier = suppliers[0];
+        if (firstSupplier) {
+          setSelectedSupplierId(firstSupplier.id);
+        }
       }
     }
   }, [suppliers, selectedSupplierId]);
@@ -97,7 +100,10 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
         const bstr = evt.target?.result;
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsname = wb.SheetNames[0];
-        const ws = wb.Sheets[wsname];
+        const ws = wsname ? wb.Sheets[wsname] : undefined;
+        if (!ws) {
+          throw new Error('El archivo no contiene hojas de cálculo.');
+        }
 
         // Read headers to validate template strictly
         const range = XLSX.utils.decode_range(ws['!ref'] || '');

@@ -93,7 +93,7 @@ export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranch
         minute: '2-digit',
         hour12: true,
       });
-    } catch (e) {
+    } catch {
       return '';
     }
   };

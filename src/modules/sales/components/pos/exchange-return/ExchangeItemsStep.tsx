@@ -74,8 +74,8 @@ export const ExchangeItemsStep: React.FC<ExchangeItemsStepProps> = ({
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-xs text-muted-foreground">×{returnQtyMap[item.variantId]}</p>
-                <p className="text-sm font-semibold text-rose-500">-{formatMoney(getNetUnitPrice(item) * returnQtyMap[item.variantId])}</p>
+                <p className="text-xs text-muted-foreground">×{returnQtyMap[item.variantId] ?? 0}</p>
+                <p className="text-sm font-semibold text-rose-500">-{formatMoney(getNetUnitPrice(item) * (returnQtyMap[item.variantId] ?? 0))}</p>
               </div>
             </div>
           ))}

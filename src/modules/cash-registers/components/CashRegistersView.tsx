@@ -102,7 +102,7 @@ export const CashRegistersView: React.FC = () => {
         name: createName.trim(),
       });
       setShowCreateModal(false);
-    } catch (err: any) {
+    } catch {
       // Error handled by hook
     }
   };
@@ -131,7 +131,7 @@ export const CashRegistersView: React.FC = () => {
         },
       });
       setShowEditModal(false);
-    } catch (err: any) {
+    } catch {
       // Error handled by hook
     }
   };
@@ -158,7 +158,7 @@ export const CashRegistersView: React.FC = () => {
         userIds: selectedUserIds,
       });
       setShowAssignModal(false);
-    } catch (err: any) {
+    } catch {
       // Handled by hook
     }
   };
