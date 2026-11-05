@@ -152,12 +152,17 @@ export function buildClosingTicketData(
         quantity: Number(it.quantity || 0),
       })),
     })),
-    salesList: (details.sales || []).map((s) => ({
-      invoiceNumber: s.invoiceNumber,
-      createdAt: s.createdAt,
-      total: Number(s.total),
-      paymentMethods: (s.payments || []).map((p) => p.paymentMethod || 'EFECTIVO'),
-    })),
+    salesList: (details.sales || []).map((s) => {
+      const paymentMethods = (s.payments && s.payments.length > 0)
+        ? s.payments.map((p) => p.paymentMethod || 'EFECTIVO')
+        : [s.paymentMethod || 'EFECTIVO'];
+      return {
+        invoiceNumber: s.invoiceNumber,
+        createdAt: s.createdAt,
+        total: Number(s.total),
+        paymentMethods,
+      };
+    }),
     userName: details.session.user?.name || 'Usuario',
     branchName,
     branchAddress,

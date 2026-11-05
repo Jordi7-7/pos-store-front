@@ -100,6 +100,10 @@ const SAMPLE_CLOSING_DATA = {
     { description: 'Pago de limpieza', amount: 25.0, createdAt: new Date().toISOString() },
     { description: 'Compra de bolsas', amount: 15.0, createdAt: new Date().toISOString() },
   ],
+  salesList: [
+    { invoiceNumber: '001-001-000000683', createdAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(), total: 380.0, paymentMethods: ['EFECTIVO'] },
+    { invoiceNumber: '001-001-000000682', createdAt: new Date(Date.now() - 75 * 60 * 1000).toISOString(), total: 270.0, paymentMethods: ['TARJETA'] },
+  ],
 };
 
 export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({

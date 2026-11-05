@@ -16,7 +16,7 @@ export function renderEscPosToCanvas(
 ): HTMLCanvasElement {
   const scale = options.scale || 2; // 2x para nitidez Retina
   const is80mm = parseResult.paperWidth === '80mm';
-  const maxCols = is80mm ? 42 : 32;
+  const maxCols = is80mm ? 48 : 32;
 
   const baseFontSize = 13;
   const fontFamily = '"Courier New", Courier, monospace';
@@ -33,7 +33,7 @@ export function renderEscPosToCanvas(
     charWidth = testCtx.measureText('M').width || 7.82;
   }
 
-  // Ancho exacto del contenido correspondiente a maxCols (32 o 42 columnas)
+  // Ancho exacto del contenido correspondiente a maxCols (32 o 48 columnas)
   const contentWidth = Math.ceil(maxCols * charWidth);
   const baseWidth = contentWidth + paddingX * 2;
 

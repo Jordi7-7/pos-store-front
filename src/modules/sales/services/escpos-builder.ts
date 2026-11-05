@@ -23,9 +23,13 @@ export class EscPosBuilder {
   private readonly maxCols: number;
 
   constructor(paperWidth: PaperWidth = '58mm') {
-    // 58mm = 32 columnas estándar | 80mm = 42 columnas estándar
-    this.maxCols = paperWidth === '80mm' ? 42 : 32;
+    // 58mm = 32 columnas estándar | 80mm = 48 columnas estándar
+    this.maxCols = paperWidth === '80mm' ? 48 : 32;
     this.init();
+  }
+
+  getMaxCols(): number {
+    return this.maxCols;
   }
 
   /** Inicializar impresora (ESC @) */
@@ -348,6 +352,19 @@ function formatClosingDateTime(dateStr?: string): string {
   }
 }
 
+function formatClosingTime(dateStr?: string): string {
+  if (!dateStr) return '--:--';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '--:--';
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    return `${hours}:${mins}`;
+  } catch {
+    return '--:--';
+  }
+}
+
 function formatShiftDuration(openDateStr?: string, closeDateStr?: string): string {
   if (!openDateStr) return '---';
   try {
@@ -500,7 +517,34 @@ export function buildClosingReceiptBytes(
     .bold(false)
     .separator();
 
-  // 5. Desglose de Gastos de Turno (si existen)
+  // 5. Cronología de Ventas (si existen ventas)
+  const salesList = sessionData.salesList || sessionData.sales || [];
+  if (salesList.length > 0) {
+    builder
+      .bold(true)
+      .line('CRONOLOGIA DE VENTAS:')
+      .bold(false);
+
+    salesList.forEach((sale: any) => {
+      const timeStr = `[${formatClosingTime(sale.createdAt)}]`;
+      const invNum = sale.invoiceNumber || '---';
+      const totalStr = `$${Number(sale.total || 0).toFixed(2)}`;
+      const leftText = `${timeStr} ${invNum}`;
+
+      // Si cabe en una sola línea (ej. 80mm o folios estándar)
+      if (leftText.length + totalStr.length + 1 <= builder.getMaxCols()) {
+        builder.row(leftText, totalStr);
+      } else {
+        // En formatos angostos (58mm con folios largos)
+        builder.line(leftText);
+        builder.row('', totalStr);
+      }
+    });
+
+    builder.separator();
+  }
+
+  // 6. Desglose de Gastos de Turno (si existen)
   if (sessionData.expensesList && sessionData.expensesList.length > 0) {
     builder.bold(true).line('DETALLE DE GASTOS').bold(false);
     sessionData.expensesList.forEach((exp: any) => {
