@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import type { CartItem } from '../types/pos.types';
 import { ProductType } from '@/modules/products/enums';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { roundMoney } from '@/shared/domain/money';
 
 export function usePOSCart() {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -109,7 +111,7 @@ export function usePOSCart() {
       prevCart.map((item) => {
         if (item.cartItemId !== cartItemId) return item;
 
-        let val = Number(inputVal.toFixed(2));
+        let val = roundMoney(inputVal);
         if (isNaN(val) || val < 0) {
           val = 0;
         }
@@ -123,16 +125,16 @@ export function usePOSCart() {
             displayRate = 100;
             toast.warning('El descuento por producto no puede superar el 100%');
           }
-          calculatedAmount = Number(((item.price * val) / 100).toFixed(2));
+          calculatedAmount = roundMoney((item.price * val) / 100);
         } else {
           if (val > item.price) {
             val = item.price;
             displayRate = item.price;
             toast.warning(
-              `El precio de venta no puede superar el precio original del producto ($${item.price.toFixed(2)})`,
+              `El precio de venta no puede superar el precio original del producto (${formatMoney(item.price)})`,
             );
           }
-          calculatedAmount = Number((item.price - val).toFixed(2));
+          calculatedAmount = roundMoney(item.price - val);
         }
         calculatedAmount = Math.max(0, Math.min(item.price, calculatedAmount));
 
@@ -161,9 +163,9 @@ export function usePOSCart() {
 
         let newDiscountAmount = 0;
         if (item.discountType === 'PERCENTAGE') {
-          newDiscountAmount = Number(((newPrice * (item.discountRate || 0)) / 100).toFixed(2));
+          newDiscountAmount = roundMoney((newPrice * (item.discountRate || 0)) / 100);
         } else if (item.discountType === 'AMOUNT' && (item.discountAmount || 0) > 0) {
-          newDiscountAmount = Math.max(0, Number((newPrice - (item.discountRate || 0)).toFixed(2)));
+          newDiscountAmount = Math.max(0, roundMoney(newPrice - (item.discountRate || 0)));
         }
 
         return {
@@ -201,9 +203,9 @@ export function usePOSCart() {
 
         let newDiscountAmount = 0;
         if (item.discountType === 'PERCENTAGE') {
-          newDiscountAmount = Number(((newPrice * (item.discountRate || 0)) / 100).toFixed(2));
+          newDiscountAmount = roundMoney((newPrice * (item.discountRate || 0)) / 100);
         } else if (item.discountType === 'AMOUNT' && (item.discountAmount || 0) > 0) {
-          newDiscountAmount = Math.max(0, Number((newPrice - (item.discountRate || 0)).toFixed(2)));
+          newDiscountAmount = Math.max(0, roundMoney(newPrice - (item.discountRate || 0)));
         }
 
         return {
@@ -225,7 +227,7 @@ export function usePOSCart() {
   }, [cart]);
 
   const netSubtotal = useMemo(() => {
-    return Number((grossSubtotal - totalItemDiscounts).toFixed(2));
+    return roundMoney(grossSubtotal - totalItemDiscounts);
   }, [grossSubtotal, totalItemDiscounts]);
 
   const setGlobalDiscountRateSafe = (rate: number) => {
@@ -242,7 +244,7 @@ export function usePOSCart() {
     } else {
       if (finalRate > netSubtotal) {
         finalRate = netSubtotal;
-        toast.warning(`El descuento global no puede superar el subtotal neto ($${netSubtotal.toFixed(2)})`);
+        toast.warning(`El descuento global no puede superar el subtotal neto (${formatMoney(netSubtotal)})`);
       }
     }
     setGlobalDiscountRate(finalRate);
@@ -251,7 +253,7 @@ export function usePOSCart() {
   const globalDiscountAmount = useMemo(() => {
     let amount = 0;
     if (globalDiscountType === 'PERCENTAGE') {
-      amount = Number(((netSubtotal * globalDiscountRate) / 100).toFixed(2));
+      amount = roundMoney((netSubtotal * globalDiscountRate) / 100);
     } else {
       amount = globalDiscountRate;
     }
@@ -259,7 +261,7 @@ export function usePOSCart() {
   }, [netSubtotal, globalDiscountType, globalDiscountRate]);
 
   const cartTotal = useMemo(() => {
-    return Number((netSubtotal - globalDiscountAmount).toFixed(2));
+    return roundMoney(netSubtotal - globalDiscountAmount);
   }, [netSubtotal, globalDiscountAmount]);
 
   const totalItemsCount = useMemo(() => {

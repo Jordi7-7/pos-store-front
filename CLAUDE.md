@@ -19,7 +19,7 @@ Contexto y reglas para cualquier sesión de trabajo en la web. **Léelo entero a
 - **Errores por `code`**, nunca parseando `message`. Un catálogo `code → mensaje en español` en `shared`.
 - **Cero `any`**, lint estricto; la deuda baja, no sube (`oxlint --max-warnings` es un tope que se reduce).
 - **Sesión = tokens + `user` + `tenant` y nada más**; lo demás se deriva (selectores `useTenantId`, `useTimezone`…). La tienda no tiene valores por defecto: si falta un dato se exige. Contrato común con el móvil en `docs/auth-session-contract.md`.
-- **Dinero con `Money`** (no `number` + `toFixed`); la moneda sale de la tienda, no se fija `$`.
+- **Dinero con `Money`** (`src/shared/domain/money.ts`, copia del backend: céntimos enteros, mitad hacia arriba). Redondear con `roundMoney(x)`, nunca `Number(x.toFixed(2))`; mostrar con `formatMoney(x)` (`useSession`), que usa la moneda y el idioma de la tienda. Nada de `$`, `USD` ni `es-EC` fijos (lo vigila `no-hardcoded-tenant-data.test.ts`). Los tickets térmicos (`escpos-builder`, `label-builder`) quedan fuera hasta los puertos de impresión (Etapa 3).
 - **Offline** se prepara (repositorios como puertos, `clientRequestId` por intento de cobro) pero no se implementa todavía.
 - Stack fijado: TS 6.0.x, pnpm 11, Node 24, React 19, Vite 8.
 

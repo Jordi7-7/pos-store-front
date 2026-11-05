@@ -9,6 +9,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { TrendingUp, TrendingDown, Calendar } from 'lucide-react';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface DayBreakdown {
   dayKey: string;
@@ -27,20 +28,12 @@ interface WeeklySummaryCardProps {
 export const WeeklySummaryCard: React.FC<WeeklySummaryCardProps> = ({ data }) => {
   const isPositive = (data?.changePercentage || 0) >= 0;
 
-  const formattedWeekTotal = new Intl.NumberFormat('es-EC', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  }).format(data?.totalWeek || 0);
+  const formattedWeekTotal = formatMoney(data?.totalWeek);
 
   const customTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const val = payload[0].value;
-      const formatted = new Intl.NumberFormat('es-EC', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2,
-      }).format(val || 0);
+      const formatted = formatMoney(val);
 
       return (
         <div className="bg-bg-card border border-border-card p-2.5 rounded-xl shadow-lg">

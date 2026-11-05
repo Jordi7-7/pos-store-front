@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useVariantSearch } from '@/modules/products/hooks';
 import { ProductType } from '@/modules/products/enums';
 import { PosVariableProductModal } from './PosVariableProductModal';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface POSProductSearchProps {
   branchId: string;
@@ -261,7 +262,7 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
 
                     <div className="text-right shrink-0">
                       <span className="font-extrabold text-xs text-secondary block font-mono">
-                        ${Number(variant.salePrice || 0).toFixed(2)}
+                        {formatMoney(Number(variant.salePrice || 0))}
                       </span>
                       <span
                         className={`text-[11px] font-bold mt-0.5 block ${

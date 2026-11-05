@@ -1,6 +1,7 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Banknote, CreditCard } from 'lucide-react';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface PaymentMethodsCardProps {
   data: {
@@ -22,23 +23,9 @@ export const PaymentMethodsCard: React.FC<PaymentMethodsCardProps> = ({ data }) 
   const displayChartData = hasData ? chartData : [{ name: 'Sin ventas', value: 1 }];
   const displayColors = hasData ? COLORS : ['#E2E8F0'];
 
-  const formattedTotal = new Intl.NumberFormat('es-EC', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  }).format(data?.total || 0);
-
-  const formattedCash = new Intl.NumberFormat('es-EC', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  }).format(data?.cash?.amount || 0);
-
-  const formattedCard = new Intl.NumberFormat('es-EC', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  }).format(data?.card?.amount || 0);
+  const formattedTotal = formatMoney(data?.total);
+  const formattedCash = formatMoney(data?.cash?.amount);
+  const formattedCard = formatMoney(data?.card?.amount);
 
   return (
     <div className="bg-bg-card border border-border-card rounded-2xl p-4 shadow-sm flex flex-col justify-between h-full">

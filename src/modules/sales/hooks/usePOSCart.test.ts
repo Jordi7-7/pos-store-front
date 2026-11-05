@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePOSCart } from './usePOSCart';
+import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 
 const toast = vi.hoisted(() => ({
   success: vi.fn(),
@@ -18,6 +19,22 @@ const variant = (overrides: Record<string, unknown> = {}) => ({
   wholesalePrice: 15,
   attributes: [],
   ...overrides,
+});
+
+// Los mensajes del carrito formatean importes con la moneda de la tienda: la sesión debe tener una.
+beforeAll(() => {
+  useAuthStore.setState({
+    tenant: {
+      id: 't1',
+      name: 'Tienda',
+      slug: 'tienda',
+      logoUrl: null,
+      country: 'MX',
+      currencyCode: 'MXN',
+      currencySymbol: '$',
+      timezone: 'America/Mexico_City',
+    },
+  });
 });
 
 function setup() {

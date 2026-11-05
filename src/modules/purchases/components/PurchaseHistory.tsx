@@ -31,6 +31,7 @@ import {
   ComboboxItem,
   ComboboxEmpty,
 } from '@/components/ui/combobox';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface PurchaseHistoryProps {
   selectedBranchId?: string;
@@ -268,7 +269,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                     )}
 
                     <span className="text-xs font-bold text-primary font-mono">
-                      Total: {pur.formattedTotalAmount || `$${Number(pur.totalAmount || 0).toFixed(2)}`}
+                      Total: {pur.formattedTotalAmount || formatMoney(Number(pur.totalAmount || 0))}
                     </span>
 
                     {/* Cancel button or disabled indicator */}
@@ -363,7 +364,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                         <div className="text-right">
                           <span className="font-bold block">x{item.quantity}</span>
                           <span className="text-[9.5px] text-neutral font-mono block">
-                            Costo U: {item.formattedUnitCost || `$${Number(item.purchasePrice || item.unitCost || 0).toFixed(2)}`}
+                            Costo U: {item.formattedUnitCost || formatMoney(Number(item.purchasePrice || item.unitCost || 0))}
                           </span>
                         </div>
                       </div>

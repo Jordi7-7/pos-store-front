@@ -1,11 +1,6 @@
 import type { Purchase, PurchaseItem } from '../types/purchases.types';
 import type { PurchaseEntity, PurchaseItemEntity } from '../entities/purchase.entity';
-
-const currencyFormatter = new Intl.NumberFormat('es-EC', {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 2,
-});
+import { formatMoney, getTenantLocale } from '@/modules/auth/hooks/useSession';
 
 export const toPurchaseItemEntity = (dto: PurchaseItem): PurchaseItemEntity => {
   const purchasePrice = Number(dto.purchasePrice ?? 0);
@@ -20,11 +15,11 @@ export const toPurchaseItemEntity = (dto: PurchaseItem): PurchaseItemEntity => {
     productName: dto.variant?.product?.name || 'Producto Desconocido',
     quantity,
     purchasePrice,
-    formattedPurchasePrice: currencyFormatter.format(purchasePrice),
+    formattedPurchasePrice: formatMoney(purchasePrice),
     unitCost,
-    formattedUnitCost: currencyFormatter.format(unitCost),
+    formattedUnitCost: formatMoney(unitCost),
     subtotal,
-    formattedSubtotal: currencyFormatter.format(subtotal),
+    formattedSubtotal: formatMoney(subtotal),
   };
 };
 
@@ -35,7 +30,7 @@ export const toPurchaseEntity = (dto: Purchase): PurchaseEntity => {
 
   let formattedDate = '';
   try {
-    formattedDate = dto.createdAt ? new Date(dto.createdAt).toLocaleString('es-EC') : 'Sin fecha';
+    formattedDate = dto.createdAt ? new Date(dto.createdAt).toLocaleString(getTenantLocale()) : 'Sin fecha';
   } catch {
     formattedDate = dto.createdAt || 'Sin fecha';
   }
@@ -63,7 +58,7 @@ export const toPurchaseEntity = (dto: Purchase): PurchaseEntity => {
     statusLabel,
     statusBadgeVariant,
     totalAmount,
-    formattedTotalAmount: currencyFormatter.format(totalAmount),
+    formattedTotalAmount: formatMoney(totalAmount),
     isCancellable: Boolean(dto.isCancellable),
     supplierName: dto.supplier?.name || 'Proveedor General',
     supplierIdentity: dto.supplier?.identityNumber || 'S/N',

@@ -4,6 +4,7 @@ import type { ProductDTO, ProductVariantDTO } from '../../types';
 import type { ProductEntity } from '../../entities/product.entity';
 import { Badge } from '@/components/ui/badge';
 import { Barcode } from 'lucide-react';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface ProductDetailInfoTabProps {
   detailProduct: ProductDTO | ProductEntity;
@@ -118,10 +119,10 @@ export const ProductDetailInfoTab: React.FC<ProductDetailInfoTabProps> = ({
                   )}
                 </div>
                 <span className="text-muted-foreground font-mono">
-                  Costo: ${Number(variant.purchasePrice || 0).toFixed(2)}
+                  Costo: {formatMoney(Number(variant.purchasePrice || 0))}
                 </span>
                 <span className="font-bold font-mono text-foreground">
-                  Venta: ${Number(variant.salePrice || 0).toFixed(2)}
+                  Venta: {formatMoney(Number(variant.salePrice || 0))}
                 </span>
                 <Badge variant={isSelected ? "default" : "secondary"} className="font-mono">
                   {variant.stocks?.find((stock) => stock.branchId === selectedBranchId)?.quantity || 0} pzs

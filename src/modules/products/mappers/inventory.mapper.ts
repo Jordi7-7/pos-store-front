@@ -11,11 +11,12 @@ import type {
   LotItemEntity,
 } from '../entities/inventory.entity';
 import { InventoryMovementType, BatchStatus } from '../enums';
+import { formatMoney, getTenantLocale } from '@/modules/auth/hooks/useSession';
 
 export const toInventoryMovementEntity = (dto: InventoryMovementDTO): InventoryMovementEntity => {
   const dateObj = new Date(dto.createdAt);
   const dateFormatted = !isNaN(dateObj.getTime())
-    ? dateObj.toLocaleDateString('es-EC', {
+    ? dateObj.toLocaleDateString(getTenantLocale(), {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -41,7 +42,7 @@ export const toInventoryMovementEntity = (dto: InventoryMovementDTO): InventoryM
 export const toVariantBatchEntity = (dto: VariantBatchItemDTO): VariantBatchEntity => {
   const dateObj = new Date(dto.createdAt);
   const dateFormatted = !isNaN(dateObj.getTime())
-    ? dateObj.toLocaleDateString('es-EC', {
+    ? dateObj.toLocaleDateString(getTenantLocale(), {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -67,9 +68,9 @@ export const toVariantBatchEntity = (dto: VariantBatchItemDTO): VariantBatchEnti
     remainingQuantity: Number(dto.remainingQuantity || 0),
     consumedQuantity: Number(dto.consumedQuantity || 0),
     unitCost,
-    unitCostFormatted: `$${unitCost.toFixed(2)}`,
+    unitCostFormatted: formatMoney(unitCost),
     totalCostValue,
-    totalCostFormatted: `$${totalCostValue.toFixed(2)}`,
+    totalCostFormatted: formatMoney(totalCostValue),
     status: dto.status === BatchStatus.DEPLETED ? BatchStatus.DEPLETED : BatchStatus.ACTIVE,
   };
 };
@@ -77,7 +78,7 @@ export const toVariantBatchEntity = (dto: VariantBatchItemDTO): VariantBatchEnti
 export const toLotItemEntity = (dto: LotItemDTO): LotItemEntity => {
   const dateObj = new Date(dto.createdAt);
   const dateFormatted = !isNaN(dateObj.getTime())
-    ? dateObj.toLocaleDateString('es-EC', {
+    ? dateObj.toLocaleDateString(getTenantLocale(), {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -112,18 +113,18 @@ export const toLotItemEntity = (dto: LotItemDTO): LotItemEntity => {
     percentRemaining,
     isAvailable,
     unitCost,
-    unitCostFormatted: `$${unitCost.toFixed(2)}`,
+    unitCostFormatted: formatMoney(unitCost),
     totalCostValue,
-    totalCostFormatted: `$${totalCostValue.toFixed(2)}`,
+    totalCostFormatted: formatMoney(totalCostValue),
     initialCostValue,
-    initialCostFormatted: `$${initialCostValue.toFixed(2)}`,
+    initialCostFormatted: formatMoney(initialCostValue),
   };
 };
 
 export const toInventoryLotEntity = (dto: InventoryLotDTO): InventoryLotEntity => {
   const dateObj = new Date(dto.createdAt);
   const dateFormatted = !isNaN(dateObj.getTime())
-    ? dateObj.toLocaleDateString('es-EC', {
+    ? dateObj.toLocaleDateString(getTenantLocale(), {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -165,9 +166,9 @@ export const toInventoryLotEntity = (dto: InventoryLotDTO): InventoryLotEntity =
     percentRemaining: percentLeftRaw,
     percentDisplay,
     totalCostValue,
-    totalCostFormatted: `$${totalCostValue.toFixed(2)}`,
+    totalCostFormatted: formatMoney(totalCostValue),
     totalInitialCostValue,
-    totalInitialCostFormatted: `$${totalInitialCostValue.toFixed(2)}`,
+    totalInitialCostFormatted: formatMoney(totalInitialCostValue),
     status: dto.status === BatchStatus.CANCELLED
       ? BatchStatus.CANCELLED
       : dto.status === BatchStatus.DEPLETED

@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface ValuedInventoryTabProps {
   selectedBranchId?: string;
@@ -103,8 +104,8 @@ export const ValuedInventoryTab: React.FC<ValuedInventoryTabProps> = ({ selected
         <td>${row.sku}</td>
         <td style="text-transform: uppercase;">${row.name}</td>
         <td style="text-align: right;">${Math.floor(row.quantity)}</td>
-        <td style="text-align: right;">$${Number(row.purchasePrice).toFixed(2)}</td>
-        <td style="text-align: right;">$${Number(row.totalValue).toFixed(2)}</td>
+        <td style="text-align: right;">${formatMoney(Number(row.purchasePrice))}</td>
+        <td style="text-align: right;">${formatMoney(Number(row.totalValue))}</td>
       </tr>
     `).join('');
 
@@ -195,7 +196,7 @@ export const ValuedInventoryTab: React.FC<ValuedInventoryTabProps> = ({ selected
                 <td colspan="2">Gran total...</td>
                 <td style="text-align: right;">${Math.floor(printTotals.quantity)}</td>
                 <td style="text-align: right;">-</td>
-                <td style="text-align: right;">$${Number(printTotals.totalValue).toFixed(2)}</td>
+                <td style="text-align: right;">${formatMoney(Number(printTotals.totalValue))}</td>
               </tr>
             </tbody>
           </table>
@@ -341,8 +342,8 @@ export const ValuedInventoryTab: React.FC<ValuedInventoryTabProps> = ({ selected
                       <TableCell className="py-3 pr-2 font-mono font-semibold text-primary">{row.sku}</TableCell>
                       <TableCell className="py-3 px-2 uppercase font-medium max-w-[300px] truncate">{row.name}</TableCell>
                       <TableCell className="py-3 px-2 text-right font-mono font-semibold">{Math.floor(row.quantity)}</TableCell>
-                      <TableCell className="py-3 px-2 text-right font-mono font-bold">${Number(row.purchasePrice).toFixed(2)}</TableCell>
-                      <TableCell className="py-3 pl-2 text-right font-mono font-bold text-emerald-600">${Number(row.totalValue).toFixed(2)}</TableCell>
+                      <TableCell className="py-3 px-2 text-right font-mono font-bold">{formatMoney(Number(row.purchasePrice))}</TableCell>
+                      <TableCell className="py-3 pl-2 text-right font-mono font-bold text-emerald-600">{formatMoney(Number(row.totalValue))}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -351,7 +352,7 @@ export const ValuedInventoryTab: React.FC<ValuedInventoryTabProps> = ({ selected
                     <TableCell className="py-3 pr-2 font-bold text-secondary" colSpan={2}>Gran total...</TableCell>
                     <TableCell className="py-3 px-2 text-right font-mono font-bold">{Math.floor(totals.quantity)}</TableCell>
                     <TableCell className="py-3 px-2 text-right font-mono font-bold text-neutral">-</TableCell>
-                    <TableCell className="py-3 pl-2 text-right font-mono font-extrabold text-emerald-600">${Number(totals.totalValue).toFixed(2)}</TableCell>
+                    <TableCell className="py-3 pl-2 text-right font-mono font-extrabold text-emerald-600">{formatMoney(Number(totals.totalValue))}</TableCell>
                   </TableRow>
                 </TableFooter>
               </Table>

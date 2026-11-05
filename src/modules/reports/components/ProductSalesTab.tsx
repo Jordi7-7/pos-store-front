@@ -13,7 +13,7 @@ import { type DateRange } from 'react-day-picker';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useTimezone } from '../../auth/hooks/useSession';
+import { getTenantLocale, useTimezone } from '../../auth/hooks/useSession';
 import { useProductSalesReport } from '../hooks/useReports';
 import { Calendar } from '@/components/ui/calendar';
 import { Field } from '@/components/ui/field';
@@ -31,6 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface ProductSalesTabProps {
   selectedBranchId?: string;
@@ -84,7 +85,7 @@ export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranch
   const formatReportDateTime = (isoStr: string) => {
     try {
       const d = new Date(isoStr);
-      return d.toLocaleString('es-ES', {
+      return d.toLocaleString(getTenantLocale(), {
         timeZone: timezone,
         year: 'numeric',
         month: '2-digit',
@@ -127,7 +128,7 @@ export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranch
         <td style="font-size: 8.5px; color: #555;">${formatReportDateTime(row.createdAt)}</td>
         <td style="text-align: right; font-weight: bold;">${row.soldQuantity}</td>
         <td style="text-align: right;">${row.currentStock}</td>
-        <td style="text-align: right;">$${Number(row.salePrice).toFixed(2)}</td>
+        <td style="text-align: right;">${formatMoney(Number(row.salePrice))}</td>
       </tr>
     `).join('');
 
@@ -449,7 +450,7 @@ export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranch
                       </span>
                     </TableCell>
                     <TableCell className="text-right font-mono text-xs font-semibold text-secondary">
-                      ${row.salePrice.toFixed(2)}
+                      {formatMoney(row.salePrice)}
                     </TableCell>
                   </TableRow>
                 ))}

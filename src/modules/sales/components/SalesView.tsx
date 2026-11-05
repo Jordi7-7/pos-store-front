@@ -15,6 +15,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Field } from '@/components/ui/field';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 export const SalesView: React.FC = () => {
   const { selectedBranchId } = useLayoutContext();
@@ -144,7 +145,7 @@ export const SalesView: React.FC = () => {
                         </td>
                       )}
                       <td className="p-3">{sale.customer?.name || 'Consumidor Final'}</td>
-                      <td className="p-3 text-right font-mono font-bold">${Number(sale.total || 0).toFixed(2)}</td>
+                      <td className="p-3 text-right font-mono font-bold">{formatMoney(Number(sale.total || 0))}</td>
                       <td className="p-3">
                         {sale.status === 'REFUNDED' ? (
                           <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 text-[10px] font-semibold border border-rose-200">Devuelta</span>

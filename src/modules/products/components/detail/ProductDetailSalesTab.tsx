@@ -4,6 +4,7 @@ import { useVariantSales } from '../../hooks';
 import { ProductPagination } from '../ProductPagination';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Loader2 } from 'lucide-react';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface ProductDetailSalesTabProps {
   activeVariantId: string;
@@ -86,10 +87,10 @@ export const ProductDetailSalesTab: React.FC<ProductDetailSalesTabProps> = ({
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-right font-mono font-semibold text-muted-foreground">
-                        ${soldPrice.toFixed(2)}
+                        {formatMoney(soldPrice)}
                       </td>
                       <td className="px-4 py-3 text-right font-mono font-bold text-foreground">
-                        ${Number(sale.total || 0).toFixed(2)}
+                        {formatMoney(Number(sale.total || 0))}
                       </td>
                     </tr>
                   );

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import type { BarcodeLabelItem } from './types';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface BarcodeQueueListProps {
   items: BarcodeLabelItem[];
@@ -66,7 +67,7 @@ export const BarcodeQueueList: React.FC<BarcodeQueueListProps> = ({
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-bold text-xs text-primary">{item.sku}</span>
                     <span className="text-[11px] font-bold text-emerald-600 font-mono">
-                      ${Number(item.price).toFixed(2)}
+                      {formatMoney(Number(item.price))}
                     </span>
                   </div>
                   <div className="text-xs font-semibold text-foreground truncate mt-0.5" title={item.name}>

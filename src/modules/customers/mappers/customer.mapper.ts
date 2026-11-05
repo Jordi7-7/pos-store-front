@@ -1,7 +1,7 @@
 import type { CustomerDTO } from '../types/customer.types';
 import type { CustomerEntity } from '../entities/customer.entity';
 import { DEFAULT_CUSTOMER } from '../enums/customer.enums';
-import { getTenantTimezone } from '@/modules/auth/hooks/useSession';
+import { getTenantLocale, getTenantTimezone } from '@/modules/auth/hooks/useSession';
 
 export const getCustomerInitials = (name?: string): string => {
   if (!name || !name.trim()) return 'CL';
@@ -18,7 +18,7 @@ export const formatCustomerDateTime = (dateVal?: string | Date | null): string =
   const d = dateVal instanceof Date ? dateVal : new Date(dateVal);
   if (!isNaN(d.getTime())) {
     try {
-      return d.toLocaleString('es-EC', {
+      return d.toLocaleString(getTenantLocale(), {
         timeZone: tz,
         day: '2-digit',
         month: '2-digit',

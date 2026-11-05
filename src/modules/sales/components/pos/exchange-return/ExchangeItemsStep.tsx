@@ -118,10 +118,10 @@ export const ExchangeItemsStep: React.FC<ExchangeItemsStepProps> = ({
                         </span>
                       )}
                       {item.attributes && <span className="text-[11px] text-muted-foreground">{item.attributes}</span>}
-                      <span className="text-[11px] font-mono text-muted-foreground">· ${item.price.toFixed(2)} c/u</span>
+                      <span className="text-[11px] font-mono text-muted-foreground">· {formatMoney(item.price)} c/u</span>
                       {unitDiscount > 0 && (
                         <span className="text-[10px] font-mono text-emerald-400 font-medium">
-                          (-${(unitDiscount * item.quantity).toFixed(2)})
+                          (-{formatMoney(unitDiscount * item.quantity)})
                         </span>
                       )}
                     </div>

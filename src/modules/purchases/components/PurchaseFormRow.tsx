@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
 import { TableRow, TableCell } from '@/components/ui/table';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface PurchaseItemInput {
   variantId: string;
@@ -88,10 +89,10 @@ export const PurchaseFormRow: React.FC<PurchaseFormRowProps> = ({
         />
       </TableCell>
       <TableCell className="p-2 text-right font-mono text-xs text-foreground/80">
-        ${(item.unitCost || 0).toFixed(2)}
+        {formatMoney(item.unitCost || 0)}
       </TableCell>
       <TableCell className="p-2 text-right font-bold text-foreground/80 font-mono text-xs">
-        ${((item.quantity || 0) * (item.unitCost || 0)).toFixed(2)}
+        {formatMoney((item.quantity || 0) * (item.unitCost || 0))}
       </TableCell>
       <TableCell className="p-2 text-center">
         <button

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { CartItem } from '../../types/pos.types';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface POSCartListProps {
   cart: CartItem[];
@@ -145,7 +146,7 @@ export const POSCartList: React.FC<POSCartListProps> = ({
                     </span>
                     <span className="text-border-card font-bold">·</span>
                     <span className="font-bold text-foreground font-mono text-[10.5px]">
-                      ${item.price.toFixed(2)}
+                      {formatMoney(item.price)}
                     </span>
 
                     {/* Selector Mayoreo / Unidad por producto */}
@@ -166,8 +167,8 @@ export const POSCartList: React.FC<POSCartListProps> = ({
                             }`}
                             title={
                               item.isWholesale
-                                ? `Venta mayoreo activa ($${Number(item.wholesalePrice).toFixed(2)}). Clic para volver a precio normal ($${item.unitSalePrice.toFixed(2)})`
-                                : `Precio mayoreo: $${Number(item.wholesalePrice).toFixed(2)}. Clic para activar`
+                                ? `Venta mayoreo activa (${formatMoney(Number(item.wholesalePrice))}). Clic para volver a precio normal (${formatMoney(item.unitSalePrice)})`
+                                : `Precio mayoreo: ${formatMoney(Number(item.wholesalePrice))}. Clic para activar`
                             }
                           >
                             <Tag
@@ -210,7 +211,7 @@ export const POSCartList: React.FC<POSCartListProps> = ({
                         variant="secondary"
                         className="text-[8px] h-3.5 px-1 leading-none font-extrabold bg-emerald-500/10 text-emerald-500 border-none"
                       >
-                        Desc. -${currentItemDiscountAmount.toFixed(2)}
+                        Desc. -{formatMoney(currentItemDiscountAmount)}
                       </Badge>
                     )}
                   </div>
@@ -294,11 +295,11 @@ export const POSCartList: React.FC<POSCartListProps> = ({
                   {/* Total Price for line */}
                   <div className="text-right min-w-[65px]">
                     <span className="text-xs sm:text-[13px] font-extrabold text-foreground font-mono block leading-tight">
-                      ${lineTotal.toFixed(2)}
+                      {formatMoney(lineTotal)}
                     </span>
                     {currentItemDiscountAmount > 0 && (
                       <span className="text-[8.5px] font-mono text-emerald-400 block leading-tight">
-                        -${(currentItemDiscountAmount * item.quantity).toFixed(2)}
+                        -{formatMoney(currentItemDiscountAmount * item.quantity)}
                       </span>
                     )}
                   </div>

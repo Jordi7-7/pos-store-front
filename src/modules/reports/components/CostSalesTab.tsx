@@ -14,7 +14,7 @@ import { type DateRange } from 'react-day-picker';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useTimezone } from '../../auth/hooks/useSession';
+import { getTenantLocale, useTimezone } from '../../auth/hooks/useSession';
 import { useSalesCostReport } from '../hooks/useReports';
 import { Calendar } from '@/components/ui/calendar';
 import { Field } from '@/components/ui/field';
@@ -32,6 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface CostSalesTabProps {
   selectedBranchId?: string;
@@ -107,7 +108,7 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
   const formatReportDate = (isoStr: string) => {
     try {
       const date = new Date(isoStr);
-      return date.toLocaleDateString('es-ES', {
+      return date.toLocaleDateString(getTenantLocale(), {
         timeZone: timezone,
         day: '2-digit',
         month: '2-digit'
@@ -145,11 +146,11 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
           <tr style="background-color: #fafafa; font-size: 8.5px; color: #555;">
             <td style="padding-left: 14px;">↳ ${item.sku ? `[${item.sku}] ` : ''}${item.productName}</td>
             <td></td>
-            <td style="text-align: right;">Costo U: $${item.unitCost.toFixed(2)} | Venta U: $${item.unitPrice.toFixed(2)}</td>
+            <td style="text-align: right;">Costo U: ${formatMoney(item.unitCost)} | Venta U: ${formatMoney(item.unitPrice)}</td>
             <td style="text-align: right;">${item.quantity}</td>
-            <td style="text-align: right;">$${item.totalPrice.toFixed(2)}</td>
-            <td style="text-align: right;">$${item.totalCost.toFixed(2)}</td>
-            <td style="text-align: right;">$${item.profit.toFixed(2)}</td>
+            <td style="text-align: right;">${formatMoney(item.totalPrice)}</td>
+            <td style="text-align: right;">${formatMoney(item.totalCost)}</td>
+            <td style="text-align: right;">${formatMoney(item.profit)}</td>
           </tr>
         `).join('');
 
@@ -167,9 +168,9 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
           <td>${formatReportDate(row.createdAt)}</td>
           <td style="text-transform: uppercase;">${row.clientName}</td>
           <td style="text-align: right;">${Math.floor(row.pieces)}</td>
-          <td style="text-align: right;">$${Number(row.salePrice).toFixed(2)}</td>
-          <td style="text-align: right;">$${Number(row.costPrice).toFixed(2)}</td>
-          <td style="text-align: right;">$${Number(row.difference).toFixed(2)}</td>
+          <td style="text-align: right;">${formatMoney(Number(row.salePrice))}</td>
+          <td style="text-align: right;">${formatMoney(Number(row.costPrice))}</td>
+          <td style="text-align: right;">${formatMoney(Number(row.difference))}</td>
         </tr>
         ${itemsHtml}
       `;
@@ -264,9 +265,9 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
               <tr class="total-row">
                 <td colspan="3">Gran total...</td>
                 <td style="text-align: right;">${Math.floor(totals.pieces)}</td>
-                <td style="text-align: right;">$${Number(totals.sales).toFixed(2)}</td>
-                <td style="text-align: right;">$${Number(totals.cost).toFixed(2)}</td>
-                <td style="text-align: right;">$${Number(totals.difference).toFixed(2)}</td>
+                <td style="text-align: right;">${formatMoney(Number(totals.sales))}</td>
+                <td style="text-align: right;">${formatMoney(Number(totals.cost))}</td>
+                <td style="text-align: right;">${formatMoney(Number(totals.difference))}</td>
               </tr>
             </tbody>
           </table>
@@ -497,10 +498,10 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
                         <TableCell className="py-3 px-2 text-neutral">{formatReportDate(row.createdAt)}</TableCell>
                         <TableCell className="py-3 px-2 uppercase font-medium max-w-[200px] truncate">{row.clientName}</TableCell>
                         <TableCell className="py-3 px-2 text-right font-mono font-semibold">{Math.floor(row.pieces)}</TableCell>
-                        <TableCell className="py-3 px-2 text-right font-mono font-bold">${Number(row.salePrice).toFixed(2)}</TableCell>
-                        <TableCell className="py-3 px-2 text-right font-mono font-bold text-rose-500/80">${Number(row.costPrice).toFixed(2)}</TableCell>
+                        <TableCell className="py-3 px-2 text-right font-mono font-bold">{formatMoney(Number(row.salePrice))}</TableCell>
+                        <TableCell className="py-3 px-2 text-right font-mono font-bold text-rose-500/80">{formatMoney(Number(row.costPrice))}</TableCell>
                         <TableCell className={`py-3 pl-2 text-right font-mono font-bold ${row.difference >= 0 ? 'text-emerald-500' : 'text-rose-600'}`}>
-                          ${Number(row.difference).toFixed(2)}
+                          {formatMoney(Number(row.difference))}
                         </TableCell>
                       </TableRow>
 
@@ -546,19 +547,19 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
                                           </span>
                                         )}
                                       </td>
-                                      <td className="py-2 px-3 text-right font-mono text-neutral">${item.unitCost.toFixed(2)}</td>
-                                      <td className="py-2 px-3 text-right font-mono font-medium text-rose-500/90">${item.totalCost.toFixed(2)}</td>
-                                      <td className="py-2 px-3 text-right font-mono text-neutral">${item.unitPrice.toFixed(2)}</td>
+                                      <td className="py-2 px-3 text-right font-mono text-neutral">{formatMoney(item.unitCost)}</td>
+                                      <td className="py-2 px-3 text-right font-mono font-medium text-rose-500/90">{formatMoney(item.totalCost)}</td>
+                                      <td className="py-2 px-3 text-right font-mono text-neutral">{formatMoney(item.unitPrice)}</td>
                                       <td className="py-2 px-3 text-right font-mono font-semibold text-secondary">
-                                        ${item.totalPrice.toFixed(2)}
+                                        {formatMoney(item.totalPrice)}
                                         {item.discountAmount > 0 && (
                                           <span className="block text-[9px] text-amber-500 font-normal">
-                                            (-${item.discountAmount.toFixed(2)})
+                                            (-{formatMoney(item.discountAmount)})
                                           </span>
                                         )}
                                       </td>
                                       <td className={`py-2 px-3 text-right font-mono font-bold ${item.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                        ${item.profit.toFixed(2)}
+                                        {formatMoney(item.profit)}
                                       </td>
                                     </tr>
                                   ))}
@@ -577,10 +578,10 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
                   <TableCell className="w-8 px-1"></TableCell>
                   <TableCell className="py-3 pr-2 font-bold text-secondary" colSpan={3}>Gran total...</TableCell>
                   <TableCell className="py-3 px-2 text-right font-mono font-bold">{Math.floor(totals.pieces)}</TableCell>
-                  <TableCell className="py-3 px-2 text-right font-mono font-bold text-primary">${Number(totals.sales).toFixed(2)}</TableCell>
-                  <TableCell className="py-3 px-2 text-right font-mono font-bold text-rose-500">${Number(totals.cost).toFixed(2)}</TableCell>
+                  <TableCell className="py-3 px-2 text-right font-mono font-bold text-primary">{formatMoney(Number(totals.sales))}</TableCell>
+                  <TableCell className="py-3 px-2 text-right font-mono font-bold text-rose-500">{formatMoney(Number(totals.cost))}</TableCell>
                   <TableCell className={`py-3 pl-2 text-right font-mono font-extrabold ${totals.difference >= 0 ? 'text-emerald-500' : 'text-rose-600'}`}>
-                    ${Number(totals.difference).toFixed(2)}
+                    {formatMoney(Number(totals.difference))}
                   </TableCell>
                 </TableRow>
               </TableFooter>

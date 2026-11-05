@@ -2,7 +2,8 @@ import type { PaginatedSaleSummaryDTO, SaleDetailDTO, SaleDetailItemDTO } from '
 import type { SaleSummaryEntity, SaleDetailEntity, SaleDetailItemEntity } from '../entities/sale.entity';
 import { SaleStatus, PaymentMethod } from '../enums';
 import type { TicketSaleData } from '../components/pos/ThermalTicketModal';
-import { getTenantTimezone } from '@/modules/auth/hooks/useSession';
+import { getTenantLocale, getTenantTimezone } from '@/modules/auth/hooks/useSession';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 export const formatSaleDateTime = (dateVal?: string | Date | null): string => {
   if (!dateVal) return '-';
@@ -10,7 +11,7 @@ export const formatSaleDateTime = (dateVal?: string | Date | null): string => {
   const d = dateVal instanceof Date ? dateVal : new Date(dateVal);
   if (!isNaN(d.getTime())) {
     try {
-      return d.toLocaleString('es-EC', {
+      return d.toLocaleString(getTenantLocale(), {
         timeZone: tz,
         day: '2-digit',
         month: '2-digit',
@@ -41,9 +42,9 @@ export const toSaleSummaryEntity = (dto: PaginatedSaleSummaryDTO): SaleSummaryEn
     createdAt: dateObj,
     dateFormatted,
     total,
-    totalFormatted: `$${total.toFixed(2)}`,
+    totalFormatted: formatMoney(total),
     discountAmount,
-    discountAmountFormatted: `$${discountAmount.toFixed(2)}`,
+    discountAmountFormatted: formatMoney(discountAmount),
     status,
     customerName: dto.customer?.name?.trim() || 'Consumidor Final',
     branchName: dto.branch?.name || 'Sucursal Principal',
@@ -67,11 +68,11 @@ export const toSaleDetailItemEntity = (dto: SaleDetailItemDTO): SaleDetailItemEn
     refundedQty: Number(dto.refundedQty || 0),
     refundableQty: Number(dto.refundableQty || 0),
     price,
-    priceFormatted: `$${price.toFixed(2)}`,
+    priceFormatted: formatMoney(price),
     cost: Number(dto.cost || 0),
     discountAmount: Number(dto.discountAmount || 0),
     lineTotal,
-    lineTotalFormatted: `$${lineTotal.toFixed(2)}`,
+    lineTotalFormatted: formatMoney(lineTotal),
   };
 };
 
@@ -91,7 +92,7 @@ export const toSaleDetailEntity = (dto: SaleDetailDTO): SaleDetailEntity => {
       id: p.id,
       paymentMethod: p.paymentMethod,
       amount,
-      amountFormatted: `$${amount.toFixed(2)}`,
+      amountFormatted: formatMoney(amount),
     };
   });
 
@@ -104,7 +105,7 @@ export const toSaleDetailEntity = (dto: SaleDetailDTO): SaleDetailEntity => {
       dateFormatted: formatSaleDateTime(r.createdAt),
       reason: r.reason || 'Sin motivo',
       totalRefunded: rTotal,
-      totalRefundedFormatted: `$${rTotal.toFixed(2)}`,
+      totalRefundedFormatted: formatMoney(rTotal),
       items: (r.items || []).map((ri) => {
         const pRef = Number(ri.priceRefunded || 0);
         return {
@@ -114,7 +115,7 @@ export const toSaleDetailEntity = (dto: SaleDetailDTO): SaleDetailEntity => {
           productName: ri.productName || 'Producto',
           quantity: Number(ri.quantity || 0),
           priceRefunded: pRef,
-          priceRefundedFormatted: `$${pRef.toFixed(2)}`,
+          priceRefundedFormatted: formatMoney(pRef),
         };
       }),
     };
@@ -126,11 +127,11 @@ export const toSaleDetailEntity = (dto: SaleDetailDTO): SaleDetailEntity => {
     createdAt: dateObj,
     dateFormatted,
     total,
-    totalFormatted: `$${total.toFixed(2)}`,
+    totalFormatted: formatMoney(total),
     subtotal,
-    subtotalFormatted: `$${subtotal.toFixed(2)}`,
+    subtotalFormatted: formatMoney(subtotal),
     discountAmount,
-    discountAmountFormatted: `$${discountAmount.toFixed(2)}`,
+    discountAmountFormatted: formatMoney(discountAmount),
     itemsDiscountAmount: dto.itemsDiscountAmount !== undefined ? Number(dto.itemsDiscountAmount) : undefined,
     globalDiscountAmount: dto.globalDiscountAmount !== undefined ? Number(dto.globalDiscountAmount) : undefined,
     status: Object.values(SaleStatus).includes(dto.status as SaleStatus)

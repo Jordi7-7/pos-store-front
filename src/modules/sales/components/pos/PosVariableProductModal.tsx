@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { X, Package, Check, ShoppingCart,} from 'lucide-react';
 import { toast } from 'sonner';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 export interface PosVariableProductModalProps {
   isOpen: boolean;
@@ -182,7 +183,7 @@ export const PosVariableProductModal: React.FC<PosVariableProductModalProps> = (
               </span>
               <div className="flex items-baseline gap-2">
                 <span className="text-xl font-black font-mono text-secondary">
-                  ${currentPrice.toFixed(2)}
+                  {formatMoney(currentPrice)}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">

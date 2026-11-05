@@ -24,6 +24,7 @@ import type {
   SessionExpense,
   SessionRefund,
 } from '@/modules/cash-sessions/types/cash-sessions.types';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface CierreModalProps {
   isOpen: boolean;
@@ -220,20 +221,20 @@ export const CierreModal: React.FC<CierreModalProps> = ({
                 <div className="mt-2 space-y-1 font-mono text-[11px] leading-tight">
                   <div className="flex justify-between text-neutral">
                     <span>(+) Fondo Inicial:</span>
-                    <span className="text-secondary font-semibold">${openingBalance.toFixed(2)}</span>
+                    <span className="text-secondary font-semibold">{formatMoney(openingBalance)}</span>
                   </div>
                   <div className="flex justify-between text-emerald-600">
                     <span>(+) Cobros Efectivo:</span>
-                    <span className="font-semibold">+${cashSales.toFixed(2)}</span>
+                    <span className="font-semibold">+{formatMoney(cashSales)}</span>
                   </div>
                   <div className="flex justify-between text-rose-500">
                     <span>(-) Gastos en Caja:</span>
-                    <span className="font-semibold">-${expensesTotal.toFixed(2)}</span>
+                    <span className="font-semibold">-{formatMoney(expensesTotal)}</span>
                   </div>
                   {refundsTotal > 0 && (
                     <div className="flex justify-between text-amber-600">
                       <span>(-) Devoluciones Efec:</span>
-                      <span className="font-semibold">-${refundsTotal.toFixed(2)}</span>
+                      <span className="font-semibold">-{formatMoney(refundsTotal)}</span>
                     </div>
                   )}
                 </div>
@@ -244,7 +245,7 @@ export const CierreModal: React.FC<CierreModalProps> = ({
                   (=) Efectivo Esperado:
                 </span>
                 <span className="font-mono text-base font-black text-primary">
-                  ${expectedCashInDrawer.toFixed(2)}
+                  {formatMoney(expectedCashInDrawer)}
                 </span>
               </div>
             </div>
@@ -271,20 +272,20 @@ export const CierreModal: React.FC<CierreModalProps> = ({
                   </div>
                   <div className="flex justify-between text-neutral">
                     <span>Ticket Promedio:</span>
-                    <span className="text-secondary font-semibold">${avgTicket.toFixed(2)}</span>
+                    <span className="text-secondary font-semibold">{formatMoney(avgTicket)}</span>
                   </div>
                   <div className="flex justify-between text-emerald-600">
                     <span>Ventas Efectivo:</span>
-                    <span className="font-semibold">${cashSales.toFixed(2)}</span>
+                    <span className="font-semibold">{formatMoney(cashSales)}</span>
                   </div>
                   <div className="flex justify-between text-blue-500">
                     <span>Ventas Tarjeta/Dig:</span>
-                    <span className="font-semibold">${cardSales.toFixed(2)}</span>
+                    <span className="font-semibold">{formatMoney(cardSales)}</span>
                   </div>
                   {refundsTotal > 0 && (
                     <div className="flex justify-between text-amber-600">
                       <span>(-) Devoluciones:</span>
-                      <span className="font-semibold">-${refundsTotal.toFixed(2)}</span>
+                      <span className="font-semibold">-{formatMoney(refundsTotal)}</span>
                     </div>
                   )}
                 </div>
@@ -295,7 +296,7 @@ export const CierreModal: React.FC<CierreModalProps> = ({
                   Total Ventas Netas:
                 </span>
                 <span className="font-mono text-base font-black text-emerald-600">
-                  ${netSales.toFixed(2)}
+                  {formatMoney(netSales)}
                 </span>
               </div>
             </div>
@@ -403,7 +404,7 @@ export const CierreModal: React.FC<CierreModalProps> = ({
                             )}
                           </div>
                           <span className="font-bold text-secondary">
-                            ${Number(sale.total || 0).toFixed(2)}
+                            {formatMoney(Number(sale.total || 0))}
                           </span>
                         </div>
                       );
@@ -431,7 +432,7 @@ export const CierreModal: React.FC<CierreModalProps> = ({
                         </div>
                         <div className="flex items-center gap-3 shrink-0 font-mono">
                           <span className="text-neutral text-[10px]">x{prod.quantity}</span>
-                          <span className="font-bold text-secondary">${prod.total.toFixed(2)}</span>
+                          <span className="font-bold text-secondary">{formatMoney(prod.total)}</span>
                         </div>
                       </div>
                     ))}
@@ -464,7 +465,7 @@ export const CierreModal: React.FC<CierreModalProps> = ({
                             <span className="text-secondary font-sans">{exp.description}</span>
                           </div>
                           <span className="font-bold text-rose-500">
-                            -${Number(exp.amount || 0).toFixed(2)}
+                            -{formatMoney(Number(exp.amount || 0))}
                           </span>
                         </div>
                       );
@@ -498,7 +499,7 @@ export const CierreModal: React.FC<CierreModalProps> = ({
                             <span className="text-secondary font-sans">{refund.reason || 'Devolución de prendas'}</span>
                           </div>
                           <span className="font-bold text-amber-600">
-                            -${Number(refund.totalRefunded || 0).toFixed(2)}
+                            -{formatMoney(Number(refund.totalRefunded || 0))}
                           </span>
                         </div>
                       );
@@ -517,7 +518,7 @@ export const CierreModal: React.FC<CierreModalProps> = ({
                 Monto de Cierre Físico en Gaveta ($)
               </label>
               <span className="text-[10px] text-neutral">
-                Esperado: <strong className="text-primary font-mono">${expectedCashInDrawer.toFixed(2)}</strong>
+                Esperado: <strong className="text-primary font-mono">{formatMoney(expectedCashInDrawer)}</strong>
               </span>
             </div>
 
@@ -562,7 +563,7 @@ export const CierreModal: React.FC<CierreModalProps> = ({
                   </span>
                 </div>
                 <span className="font-mono text-sm font-black">
-                  {difference > 0 ? `+$${difference.toFixed(2)}` : `$${difference.toFixed(2)}`}
+                  {difference > 0 ? `+${formatMoney(difference)}` : formatMoney(difference)}
                 </span>
               </div>
             )}

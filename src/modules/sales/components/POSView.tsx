@@ -43,6 +43,8 @@ import { buildClosingTicketData } from '../../cash-sessions/utils/buildClosingTi
 import { ExchangeReturnModal } from './pos/ExchangeReturnModal';
 import { usePOSHotkeys } from '../hooks/usePOSHotkeys';
 import { formatSaleDateTime } from '../mappers/sale.mapper';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { roundMoney } from '@/shared/domain/money';
 
 interface POSViewProps {
   activeSession?: any;
@@ -366,11 +368,11 @@ export const POSView: React.FC<POSViewProps> = ({
   };
 
   const amountPaid = useMemo(() => {
-    return Number(addedPayments.reduce((sum, p) => sum + p.amount, 0).toFixed(2));
+    return roundMoney(addedPayments.reduce((sum, p) => sum + p.amount, 0));
   }, [addedPayments]);
 
   const remaining = useMemo(() => {
-    return Math.max(0, Number((cartTotal - amountPaid).toFixed(2)));
+    return Math.max(0, roundMoney(cartTotal - amountPaid));
   }, [cartTotal, amountPaid]);
 
   const handleAddPayment = () => {
@@ -385,7 +387,7 @@ export const POSView: React.FC<POSViewProps> = ({
       return;
     }
 
-    setAddedPayments([...addedPayments, { paymentMethod: selectedMethod, amount: Number(targetAmt.toFixed(2)) }]);
+    setAddedPayments([...addedPayments, { paymentMethod: selectedMethod, amount: roundMoney(targetAmt) }]);
     setCustomAmountText('');
   };
 
@@ -410,7 +412,7 @@ export const POSView: React.FC<POSViewProps> = ({
     }
 
     if (amountPaid < cartTotal) {
-      toast.warning(`Falta cubrir $${remaining.toFixed(2)} del total para poder procesar la venta.`);
+      toast.warning(`Falta cubrir ${formatMoney(remaining)} del total para poder procesar la venta.`);
       return;
     }
 
@@ -421,8 +423,8 @@ export const POSView: React.FC<POSViewProps> = ({
       if (p.paymentMethod !== PaymentMethod.EFECTIVO && remainingBudget > 0) {
         const allowed = Math.min(p.amount, remainingBudget);
         if (allowed > 0) {
-          normalizedPayments.push({ ...p, amount: Number(allowed.toFixed(2)) });
-          remainingBudget = Number((remainingBudget - allowed).toFixed(2));
+          normalizedPayments.push({ ...p, amount: roundMoney(allowed) });
+          remainingBudget = roundMoney(remainingBudget - allowed);
         }
       }
     }
@@ -431,8 +433,8 @@ export const POSView: React.FC<POSViewProps> = ({
       if (p.paymentMethod === PaymentMethod.EFECTIVO && remainingBudget > 0) {
         const allowed = Math.min(p.amount, remainingBudget);
         if (allowed > 0) {
-          normalizedPayments.push({ ...p, amount: Number(allowed.toFixed(2)) });
-          remainingBudget = Number((remainingBudget - allowed).toFixed(2));
+          normalizedPayments.push({ ...p, amount: roundMoney(allowed) });
+          remainingBudget = roundMoney(remainingBudget - allowed);
         }
       }
     }
@@ -449,7 +451,7 @@ export const POSView: React.FC<POSViewProps> = ({
         discountAmount: globalDiscountAmount || 0,
         items: cart.map(i => {
           const hasItemDisc = (i.discountAmount || 0) > 0;
-          const totalLineDiscount = Number(((i.discountAmount || 0) * i.quantity).toFixed(2));
+          const totalLineDiscount = roundMoney((i.discountAmount || 0) * i.quantity);
           return {
             variantId: i.variantId,
             quantity: i.quantity,
@@ -464,7 +466,7 @@ export const POSView: React.FC<POSViewProps> = ({
 
       const change = amountPaid - cartTotal;
       if (change > 0) {
-        toast.info(`Cambio a entregar al cliente: $${change.toFixed(2)}`, { duration: 8000 });
+        toast.info(`Cambio a entregar al cliente: ${formatMoney(change)}`, { duration: 8000 });
       }
 
       const clientName = customers.find((c: any) => c.id === selectedCustomerId)?.name || 'Consumidor Final';
@@ -490,7 +492,7 @@ export const POSView: React.FC<POSViewProps> = ({
         subtotal: grossSubtotal,
         itemsDiscountAmount: totalItemDiscounts,
         globalDiscountAmount: globalDiscountAmount,
-        discountAmount: Number((totalItemDiscounts + globalDiscountAmount).toFixed(2)),
+        discountAmount: roundMoney(totalItemDiscounts + globalDiscountAmount),
         total: cartTotal,
         userName: currentUser?.name || 'Vendedor',
       };

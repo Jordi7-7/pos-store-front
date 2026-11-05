@@ -1,5 +1,6 @@
 import React from 'react';
 import { Package } from 'lucide-react';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface CatalogGridProps {
   products: any[];
@@ -85,8 +86,8 @@ export const CatalogGrid: React.FC<CatalogGridProps> = ({
                   <div className="flex items-center gap-1.5 mt-1">
                     <span className="text-[11px] font-bold text-primary">
                       {hasMultipleVars 
-                        ? `$${Math.min(...prod.variants.map((v: any) => v.salePrice)).toFixed(2)}`
-                        : `$${(prod.variants?.[0]?.salePrice || 0).toFixed(2)}`
+                        ? formatMoney(Math.min(...prod.variants.map((v: any) => v.salePrice)))
+                        : formatMoney(prod.variants?.[0]?.salePrice || 0)
                       }
                     </span>
                     <span className="text-[9px] text-neutral">/ Nos</span>

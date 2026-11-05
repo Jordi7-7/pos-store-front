@@ -5,6 +5,7 @@ import { useVariantBatches } from '../../hooks';
 import { ProductPagination } from '../ProductPagination';
 import { Badge } from '@/components/ui/badge';
 import { Boxes, Loader2 } from 'lucide-react';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface ProductDetailBatchesTabProps {
   activeVariantId: string;
@@ -104,7 +105,7 @@ export const ProductDetailBatchesTab: React.FC<ProductDetailBatchesTabProps> = (
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right font-mono font-semibold">
-                        ${Number(batch.unitCost).toFixed(2)}
+                        {formatMoney(Number(batch.unitCost))}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <Badge

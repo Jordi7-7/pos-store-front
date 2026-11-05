@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select';
 import type { CustomerEntity } from '@/modules/customers';
 import type { CartItem } from '../../types/pos.types';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface AddedPayment {
   paymentMethod: PaymentMethod;
@@ -178,7 +179,7 @@ export const POSPaymentPanel: React.FC<POSPaymentPanelProps> = ({
               <span>Desc. (%)</span>
               {globalDiscountAmount > 0 && (
                 <span className="text-emerald-400 font-mono font-bold">
-                  -${globalDiscountAmount.toFixed(2)}
+                  -{formatMoney(globalDiscountAmount)}
                 </span>
               )}
             </div>
@@ -207,23 +208,23 @@ export const POSPaymentPanel: React.FC<POSPaymentPanelProps> = ({
           <div className="flex justify-between items-center">
             <span>Subtotal Bruto</span>
             <span className="font-bold text-secondary font-mono">
-              ${grossSubtotal.toFixed(2)}
+              {formatMoney(grossSubtotal)}
             </span>
           </div>
           {totalItemDiscounts > 0 && (
             <div className="flex justify-between items-center text-emerald-400 font-medium">
               <span>Descuento por Ítem</span>
-              <span className="font-bold font-mono">-${totalItemDiscounts.toFixed(2)}</span>
+              <span className="font-bold font-mono">-{formatMoney(totalItemDiscounts)}</span>
             </div>
           )}
           <div className="flex justify-between items-center">
             <span>Subtotal Neto</span>
-            <span className="font-bold text-secondary font-mono">${netSubtotal.toFixed(2)}</span>
+            <span className="font-bold text-secondary font-mono">{formatMoney(netSubtotal)}</span>
           </div>
           {globalDiscountAmount > 0 && (
             <div className="flex justify-between items-center text-emerald-400 font-medium">
               <span>Descuento Global Venta</span>
-              <span className="font-bold font-mono">-${globalDiscountAmount.toFixed(2)}</span>
+              <span className="font-bold font-mono">-{formatMoney(globalDiscountAmount)}</span>
             </div>
           )}
         </div>
@@ -239,7 +240,7 @@ export const POSPaymentPanel: React.FC<POSPaymentPanelProps> = ({
             </span>
           </div>
           <span className="text-2xl sm:text-3xl font-black text-brand-secondary-foreground font-mono tracking-tight leading-none">
-            ${cartTotal.toFixed(2)}
+            {formatMoney(cartTotal)}
           </span>
         </div>
 
@@ -256,7 +257,7 @@ export const POSPaymentPanel: React.FC<POSPaymentPanelProps> = ({
                   className={`text-base font-black font-mono ${remaining <= 0 ? 'text-emerald-400' : 'text-amber-400'
                     }`}
                 >
-                  ${remaining <= 0 ? '0.00' : remaining.toFixed(2)}
+                  {formatMoney(Math.max(0, remaining))}
                 </span>
               </div>
             </div>
@@ -338,7 +339,7 @@ export const POSPaymentPanel: React.FC<POSPaymentPanelProps> = ({
                 <div className="flex justify-between items-center text-[9px] font-bold text-neutral uppercase tracking-wider">
                   <span>Pagos Registrados ({addedPayments.length})</span>
                   <span className="font-mono text-emerald-400 font-bold">
-                    Total: ${amountPaid.toFixed(2)}
+                    Total: {formatMoney(amountPaid)}
                   </span>
                 </div>
                 <div className="max-h-20 space-y-1 overflow-y-auto pr-1">
@@ -360,7 +361,7 @@ export const POSPaymentPanel: React.FC<POSPaymentPanelProps> = ({
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-secondary font-mono text-[11px]">
-                            ${p.amount.toFixed(2)}
+                            {formatMoney(p.amount)}
                           </span>
                           <button
                             type="button"
@@ -387,7 +388,7 @@ export const POSPaymentPanel: React.FC<POSPaymentPanelProps> = ({
                   <span className="text-[8.5px] opacity-80 block">Entregar al cliente</span>
                 </div>
                 <span className="text-2xl font-mono font-black tracking-tight text-emerald-400">
-                  ${(amountPaid - cartTotal).toFixed(2)}
+                  {formatMoney(amountPaid - cartTotal)}
                 </span>
               </div>
             )}

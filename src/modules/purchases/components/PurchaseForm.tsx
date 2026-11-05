@@ -25,6 +25,7 @@ import {
   TableFooter
 } from "@/components/ui/table";
 import { PurchaseFormRow } from './PurchaseFormRow';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface PurchaseItemInput {
   variantId: string;
@@ -413,7 +414,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
             <TableFooter className="bg-muted/20 border-t border-border">
               <TableRow>
                 <TableCell colSpan={4} className="text-right text-xs font-bold text-muted-foreground">Total de Ingreso:</TableCell>
-                <TableCell className="text-right text-sm font-extrabold text-primary font-mono">${totalCostOfPurchase.toFixed(2)}</TableCell>
+                <TableCell className="text-right text-sm font-extrabold text-primary font-mono">{formatMoney(totalCostOfPurchase)}</TableCell>
                 <TableCell />
               </TableRow>
             </TableFooter>

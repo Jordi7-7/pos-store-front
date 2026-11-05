@@ -31,6 +31,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
 import type { CashRegisterItem } from '../services/cash-registers.service';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 export const CashRegistersView: React.FC = () => {
   const { can } = usePermissions();
@@ -318,7 +319,7 @@ export const CashRegistersView: React.FC = () => {
                             <Wallet className="w-3 h-3 text-emerald-400" /> Fondo inicial:
                           </span>
                           <span className="font-mono font-bold text-emerald-400">
-                            ${Number(reg.activeSession.openingBalance || 0).toFixed(2)}
+                            {formatMoney(Number(reg.activeSession.openingBalance || 0))}
                           </span>
                         </div>
                       </div>

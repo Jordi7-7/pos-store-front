@@ -34,6 +34,4 @@ export const getNetUnitPrice = (item: SaleItemRow): number => {
   return Math.max(0, Number(item.price) - disc / qty);
 };
 
-export const formatMoney = (n: number) => {
-  return `$${Number(n).toFixed(2)}`;
-};
+export { formatMoney } from '@/modules/auth/hooks/useSession';

@@ -1,5 +1,6 @@
 import { selectIsAuthenticated, useAuthStore } from './useAuthStore';
 import { branchIdsOf, roleLabel, type SessionTenant, type SessionUser } from '../domain/session';
+import { formatMoneyAmount, localeForCountry } from '@/shared/domain/format-money';
 
 /**
  * Lectura de la sesión mediante selectores: cada componente se suscribe solo al dato que usa
@@ -46,3 +47,21 @@ export function getTenantTimezone(): string {
 }
 
 export const getUserBranchIds = (): string[] => branchIdsOf(useAuthStore.getState().user);
+
+function requireTenant(): SessionTenant {
+  const tenant = useAuthStore.getState().tenant;
+  if (!tenant) throw new MissingTenantDataError('datos');
+  return tenant;
+}
+
+/** Idioma de formato (fechas, números) según el país de la tienda: `MX` → `es-MX`. */
+export const getTenantLocale = (): string => localeForCountry(requireTenant().country);
+
+/**
+ * Importe con la moneda y el idioma de la tienda (`$1,234.50` en MXN). Se lee de la sesión al
+ * llamarse, así que sirve en mappers y componentes; debe usarse solo con sesión abierta.
+ */
+export function formatMoney(value: number | null | undefined): string {
+  const tenant = requireTenant();
+  return formatMoneyAmount(value, tenant.currencyCode, localeForCountry(tenant.country));
+}

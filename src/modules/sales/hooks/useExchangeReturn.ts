@@ -13,6 +13,7 @@ import {
   getNetUnitPrice,
   formatMoney,
 } from '../components/pos/exchange-return/exchange-return.types';
+import { roundMoney } from '@/shared/domain/money';
 
 interface UseExchangeReturnProps {
   branchId: string;
@@ -176,7 +177,7 @@ export function useExchangeReturn({
         prev.map((item) => {
           if (item.variantId !== variantId) return item;
 
-          let val = Number(inputVal.toFixed(2));
+          let val = roundMoney(inputVal);
           if (isNaN(val) || val < 0) val = 0;
 
           let calculatedAmount = 0;
@@ -188,16 +189,16 @@ export function useExchangeReturn({
               displayRate = 100;
               toast.warning('El descuento por producto no puede superar el 100%');
             }
-            calculatedAmount = Number(((item.price * val) / 100).toFixed(2));
+            calculatedAmount = roundMoney((item.price * val) / 100);
           } else {
             if (val > item.price) {
               val = item.price;
               displayRate = item.price;
               toast.warning(
-                `El precio de venta no puede superar el precio original ($${item.price.toFixed(2)})`,
+                `El precio de venta no puede superar el precio original (${formatMoney(item.price)})`,
               );
             }
-            calculatedAmount = Number((item.price - val).toFixed(2));
+            calculatedAmount = roundMoney(item.price - val);
           }
           calculatedAmount = Math.max(0, Math.min(item.price, calculatedAmount));
 
@@ -219,7 +220,7 @@ export function useExchangeReturn({
     return acc + lineTotal;
   }, 0);
 
-  const exchangeDiff = Number((totalNewItems - totalToReturn).toFixed(2));
+  const exchangeDiff = roundMoney(totalNewItems - totalToReturn);
 
   // Confirm Refund
   const handleConfirmRefund = useCallback(async () => {
@@ -266,7 +267,7 @@ export function useExchangeReturn({
         items: newItems.map((x) => {
           const unitDiscount = Number(x.discountAmount || 0);
           const hasDiscount = unitDiscount > 0;
-          const totalLineDiscount = Number((unitDiscount * x.quantity).toFixed(2));
+          const totalLineDiscount = roundMoney(unitDiscount * x.quantity);
           return {
             variantId: x.variantId,
             quantity: x.quantity,

@@ -8,6 +8,7 @@ import { ThermalTicketModal } from './pos/ThermalTicketModal';
 import { useTenant } from '@/modules/auth/hooks/useSession';
 import { toTicketSaleData } from '../mappers/sale.mapper';
 import type { SaleDetailItemEntity, SaleRefundItemEntity } from '../entities/sale.entity';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface SaleDetailModalProps {
   invoiceNumber?: string;
@@ -15,7 +16,7 @@ interface SaleDetailModalProps {
   onClose: () => void;
 }
 
-const money = (value: number) => `$${Number(value || 0).toFixed(2)}`;
+const money = (value: number) => formatMoney(Number(value || 0));
 
 export const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ invoiceNumber, isOpen, onClose }) => {
   const { sale, isLoading, isError } = useSaleByInvoice(invoiceNumber, isOpen);

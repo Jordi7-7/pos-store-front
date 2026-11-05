@@ -8,19 +8,15 @@ import type {
   CashSessionRefundEntity,
 } from '../entities/cash-session.entity';
 
-import { getTenantTimezone } from '../../auth/hooks/useSession';
+import { formatMoney, getTenantLocale, getTenantTimezone } from '../../auth/hooks/useSession';
 import { CashSessionStatus, CashSessionDifferenceStatus } from '../enums';
 import { SaleStatus } from '@/modules/sales/enums';
-
-const formatMoney = (value: number | null | undefined): string => {
-  return `$${Number(value || 0).toFixed(2)}`;
-};
 
 const formatDate = (dateString?: string | null): string => {
   if (!dateString) return '';
   const tz = getTenantTimezone();
   try {
-    return new Date(dateString).toLocaleDateString('es-EC', {
+    return new Date(dateString).toLocaleDateString(getTenantLocale(), {
       timeZone: tz,
       day: '2-digit',
       month: 'short',
@@ -35,7 +31,7 @@ const formatTime = (dateString?: string | null): string => {
   if (!dateString) return '';
   const tz = getTenantTimezone();
   try {
-    return new Date(dateString).toLocaleTimeString('es-EC', {
+    return new Date(dateString).toLocaleTimeString(getTenantLocale(), {
       timeZone: tz,
       hour: '2-digit',
       minute: '2-digit',

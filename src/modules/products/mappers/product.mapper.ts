@@ -1,6 +1,7 @@
 import type { ProductDTO, ProductVariantDTO } from '../types/product.types';
 import type { ProductEntity, ProductVariantEntity, ProductImageEntity } from '../entities/product.entity';
 import { ProductType } from '../enums';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 export const toProductVariantEntity = (dto: ProductVariantDTO): ProductVariantEntity => {
   const purchasePrice = Number(dto.purchasePrice || 0);
@@ -35,11 +36,11 @@ export const toProductVariantEntity = (dto: ProductVariantDTO): ProductVariantEn
     sku: dto.sku || '',
     barcode: dto.barcode || '',
     purchasePrice,
-    purchasePriceFormatted: `$${purchasePrice.toFixed(2)}`,
+    purchasePriceFormatted: formatMoney(purchasePrice),
     salePrice,
-    salePriceFormatted: `$${salePrice.toFixed(2)}`,
+    salePriceFormatted: formatMoney(salePrice),
     wholesalePrice,
-    wholesalePriceFormatted: wholesalePrice !== null ? `$${wholesalePrice.toFixed(2)}` : 'N/A',
+    wholesalePriceFormatted: wholesalePrice !== null ? formatMoney(wholesalePrice) : 'N/A',
     images,
     primaryImageUrl: images[0]?.url || '',
     attributes,
@@ -67,7 +68,7 @@ export const toProductEntity = (dto: ProductDTO): ProductEntity => {
     if (valid.length === 0) return '—';
     const min = Math.min(...valid);
     const max = Math.max(...valid);
-    return min === max ? `$${min.toFixed(2)}` : `$${min.toFixed(2)} - $${max.toFixed(2)}`;
+    return min === max ? formatMoney(min) : `${formatMoney(min)} - ${formatMoney(max)}`;
   };
 
   const salePrices = variants.map((v) => v.salePrice);

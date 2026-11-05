@@ -1,5 +1,6 @@
 import React from 'react';
 import { DollarSign, Package, RotateCcw } from 'lucide-react';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface TodaySalesCardProps {
   totalSales: number;
@@ -22,12 +23,7 @@ export const TodaySalesCard: React.FC<TodaySalesCardProps> = ({
   const hasRefunds = (refunds?.totalRefunded || 0) > 0;
   const effectiveNetSales = netSales !== undefined ? netSales : totalSales;
 
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat('es-EC', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(amount || 0);
+  const formatCurrency = formatMoney;
 
   return (
     <div className="bg-bg-card border border-border-card rounded-2xl p-4 shadow-sm flex flex-col justify-between h-full">

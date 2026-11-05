@@ -28,6 +28,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { APP_PERMISSIONS } from '@/constants/permissions';
 
 import type { ProductEntity } from '../entities/product.entity';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 type TabName = 'details' | 'sales' | 'purchases' | 'batches' | 'movements' | 'adjustment';
 
@@ -245,7 +246,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   <div className="flex justify-between items-center text-muted-foreground">
                     <span>Precio de Venta:</span>
                     <strong className="text-foreground font-bold font-mono text-sm text-primary">
-                      ${Number(activeVariant?.salePrice || 0).toFixed(2)}
+                      {formatMoney(Number(activeVariant?.salePrice || 0))}
                     </strong>
                   </div>
                 </div>

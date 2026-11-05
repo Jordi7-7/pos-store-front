@@ -4,6 +4,7 @@ import { useVariantPurchases } from '../../hooks';
 import { ProductPagination } from '../ProductPagination';
 import { Badge } from '@/components/ui/badge';
 import { Truck, Loader2 } from 'lucide-react';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface ProductDetailPurchasesTabProps {
   activeVariantId: string;
@@ -86,10 +87,10 @@ export const ProductDetailPurchasesTab: React.FC<ProductDetailPurchasesTabProps>
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-right font-mono font-semibold text-muted-foreground">
-                        ${unitCost.toFixed(2)}
+                        {formatMoney(unitCost)}
                       </td>
                       <td className="px-4 py-3 text-right font-mono font-bold text-foreground">
-                        ${Number(purchase.totalAmount || 0).toFixed(2)}
+                        {formatMoney(Number(purchase.totalAmount || 0))}
                       </td>
                     </tr>
                   );

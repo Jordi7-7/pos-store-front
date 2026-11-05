@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 interface PreviewTableItem {
   sku: string;
@@ -82,11 +83,11 @@ export const BulkImportPreviewTable: React.FC<BulkImportPreviewTableProps> = ({
                   <>
                     <td className="px-4 py-2.5 font-medium truncate max-w-[150px]">{productName || 'S/N'}</td>
                     <td className="px-4 py-2.5 font-mono text-[11px] text-muted-foreground">{item.barcode || 'S/Barra'}</td>
-                    <td className="px-4 py-2.5 text-right font-mono">${Number(item.purchasePrice || 0).toFixed(2)}</td>
-                    <td className="px-4 py-2.5 text-right font-mono">${Number(item.salePrice || 0).toFixed(2)}</td>
+                    <td className="px-4 py-2.5 text-right font-mono">{formatMoney(Number(item.purchasePrice || 0))}</td>
+                    <td className="px-4 py-2.5 text-right font-mono">{formatMoney(Number(item.salePrice || 0))}</td>
                     <td className="px-4 py-2.5 text-right font-mono">
                       {item.wholesalePrice !== undefined && item.wholesalePrice !== null && Number(item.wholesalePrice) > 0 ? (
-                        `$${Number(item.wholesalePrice).toFixed(2)}`
+                        formatMoney(Number(item.wholesalePrice))
                       ) : (
                         <span className="text-muted-foreground/50 text-[11px]">—</span>
                       )}
