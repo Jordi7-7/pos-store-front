@@ -6,23 +6,33 @@
  * Regla: la clave se conserva mientras el contenido de la venta no cambie y no haya terminado;
  * si el cajero cambia el carrito o los pagos es otra venta y recibe una clave nueva (el backend
  * rechaza reutilizar una clave con una venta distinta); al confirmarse la venta se descarta.
+ * Varios intentos pueden estar pendientes a la vez (p. ej. un cobro fallido y un cambio de producto).
  */
 export class CheckoutAttempt {
-  private current: { id: string; fingerprint: string } | null = null;
+  /** Intentos pendientes por huella; se acota para que los abandonados no se acumulen. */
+  private readonly pending = new Map<string, string>();
 
-  constructor(private readonly newId: () => string) {}
+  constructor(
+    private readonly newId: () => string,
+    private readonly maxPending = 20,
+  ) {}
 
-  /** Clave para esta venta: la misma si es el mismo contenido que el intento en curso. */
+  /** Clave para esta venta: la misma si es el mismo contenido que un intento pendiente. */
   idFor(fingerprint: string): string {
-    if (!this.current || this.current.fingerprint !== fingerprint) {
-      this.current = { id: this.newId(), fingerprint };
+    const existing = this.pending.get(fingerprint);
+    if (existing) return existing;
+    const id = this.newId();
+    this.pending.set(fingerprint, id);
+    if (this.pending.size > this.maxPending) {
+      const oldest = this.pending.keys().next().value;
+      if (oldest !== undefined) this.pending.delete(oldest);
     }
-    return this.current.id;
+    return id;
   }
 
-  /** La venta se confirmó: el siguiente cobro es otra venta. */
-  complete(): void {
-    this.current = null;
+  /** La venta se confirmó: el siguiente cobro (aunque sea idéntico) es otra venta. */
+  complete(fingerprint: string): void {
+    this.pending.delete(fingerprint);
   }
 }
 

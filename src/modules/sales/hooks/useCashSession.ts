@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { salesService } from '../services/sales.service';
+import { closeCashSession } from '@/modules/cash-sessions/infrastructure/dependencies';
+import { salesService } from '../infrastructure/sales.service';
 import type { OpenCashSessionInput } from '../types/sales.types';
 import { useIsAuthenticated, useUser } from '@/modules/auth/hooks/useSession';
 
@@ -41,8 +42,8 @@ export const useOpenCashSession = () => {
 export const useCloseCashSession = () => {
   const queryClient = useQueryClient();
   const closeCashMutation = useMutation({
-    mutationFn: ({ id, closingBalance }: { id: string; closingBalance: number }) =>
-      salesService.closeCashSession(id, closingBalance),
+    mutationFn: ({ id, countedCash }: { id: string; countedCash: string }) =>
+      closeCashSession.execute({ sessionId: id, countedCash }),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['active-cash-session'] });
       queryClient.invalidateQueries({ queryKey: ['my-cash-registers'] });

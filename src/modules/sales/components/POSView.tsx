@@ -37,11 +37,12 @@ import { AperturaModal } from './pos/AperturaModal';
 import { EgresoModal } from './pos/EgresoModal';
 import { CierreModal } from './pos/CierreModal';
 import { CashSessionAuditModal } from '../../cash-sessions/components/CashSessionAuditModal';
-import { useFetchCashSessionDetails } from '@/modules/cash-sessions/hooks';
+import { CloseCashSessionError } from '@/modules/cash-sessions/application/close-cash-session';
+import { getErrorMessage } from '@/shared/presentation/error-messages';
 import { buildClosingTicketData } from '../../cash-sessions/utils/buildClosingTicketData';
 import { ExchangeReturnModal } from './pos/ExchangeReturnModal';
-import { allocatePayments, changeDue, paymentsCoverTotal, remainingToPay } from '../domain/rules/sale-pricing';
-import { CheckoutAttempt, checkoutFingerprint } from '../domain/checkout-attempt';
+import { remainingToPay } from '../domain/rules/sale-pricing';
+import { CheckoutError } from '../application/checkout';
 import { usePOSHotkeys } from '../hooks/usePOSHotkeys';
 import { formatSaleDateTime } from '../mappers/sale.mapper';
 import { formatMoney } from '@/modules/auth/hooks/useSession';
@@ -112,8 +113,6 @@ export const POSView: React.FC<POSViewProps> = ({
   const { closeSession, isClosing } = useCloseCashSession();
   const { registerExpense: apiRegisterExpense, isRegistering } = useRegisterExpense();
   const { processSale, isProcessing } = useProcessSale();
-  const checkoutAttempt = useRef(new CheckoutAttempt(() => crypto.randomUUID()));
-  const { fetchDetails: fetchCashSessionDetails } = useFetchCashSessionDetails();
 
   // Session Balance & Expense Form fields
   const [openingBalance, setOpeningBalance] = useState('1000.00');
@@ -269,32 +268,10 @@ export const POSView: React.FC<POSViewProps> = ({
   const handleCloseSession = async () => {
     if (!activeSession) return;
 
-    const parsedClosing = parseFloat(closingBalance);
-    if (
-      closingBalance === '' ||
-      closingBalance === null ||
-      closingBalance === undefined ||
-      isNaN(parsedClosing) ||
-      parsedClosing < 0
-    ) {
-      toast.error('Debes ingresar el monto de efectivo físico para cerrar la caja.');
-      return;
-    }
     try {
-      const closingSessionId = activeSession.id;
-
-      await closeSession({
-        id: closingSessionId,
-        closingBalance: parsedClosing,
-      });
-
-      // El corte Z solo se imprime con datos reales del servidor: si no se pueden leer, no se inventan.
-      let closingDataToUse: ReturnType<typeof buildClosingTicketData> | null = null;
-      try {
-        closingDataToUse = buildClosingTicketData(await fetchCashSessionDetails(closingSessionId));
-      } catch (detailsErr) {
-        console.error('Error fetching closing session details for ticket:', detailsErr);
-      }
+      // El corte Z solo se imprime con datos reales del servidor: si no se pudieron leer, no se inventan.
+      const { details } = await closeSession({ id: activeSession.id, countedCash: closingBalance });
+      const closingDataToUse = details ? buildClosingTicketData(details) : null;
 
       setActiveSession(null);
       setIsCierreModalOpen(false);
@@ -318,7 +295,7 @@ export const POSView: React.FC<POSViewProps> = ({
         setIsClosingTicketOpen(true);
       }
     } catch (err: any) {
-      toast.error(err.message || 'Error al cerrar la caja.');
+      toast.error(err instanceof CloseCashSessionError ? err.message : getErrorMessage(err, 'Error al cerrar la caja.'));
     }
   };
 
@@ -391,47 +368,16 @@ export const POSView: React.FC<POSViewProps> = ({
       return;
     }
 
-    if (!paymentsCoverTotal(cartTotal, paymentAmounts)) {
-      toast.warning(`Falta cubrir ${formatMoney(remaining)} del total para poder procesar la venta.`);
-      return;
-    }
-
-    // Lo que excede el total es vuelto, no ingreso: se recorta del efectivo (misma regla que el servidor).
-    const normalizedPayments = allocatePayments(cartTotal, addedPayments);
-
     try {
-      const hasGlobalDiscount = (globalDiscountAmount || 0) > 0;
-
-      const saleInput = {
+      const { receipt: res, change } = await processSale({
         branchId: branch,
         cashSessionId: activeSession.id,
         customerId: selectedCustomerId || undefined,
-        discountType: hasGlobalDiscount ? globalDiscountType : undefined,
-        discountRate: hasGlobalDiscount ? globalDiscountRate : undefined,
-        discountAmount: globalDiscountAmount || 0,
-        items: cart.map(i => {
-          const hasItemDisc = (i.discountAmount || 0) > 0;
-          const totalLineDiscount = roundMoney((i.discountAmount || 0) * i.quantity);
-          return {
-            variantId: i.variantId,
-            quantity: i.quantity,
-            price: i.price,
-            discountType: hasItemDisc ? i.discountType : undefined,
-            discountRate: hasItemDisc ? i.discountRate : undefined,
-            discountAmount: totalLineDiscount,
-          };
-        }),
-        payments: normalizedPayments,
-      };
-      // Misma venta reintentada = misma clave: el servidor devuelve la venta ya creada en vez de duplicarla.
-      const res = await processSale({
-        ...saleInput,
-        clientRequestId: checkoutAttempt.current.idFor(checkoutFingerprint(saleInput)),
+        lines: cart,
+        globalDiscount: { type: globalDiscountType, rate: globalDiscountRate, amount: globalDiscountAmount || 0 },
+        payments: addedPayments,
       });
-      checkoutAttempt.current.complete();
 
-
-      const change = changeDue(cartTotal, paymentAmounts);
       if (change > 0) {
         toast.info(`Cambio a entregar al cliente: ${formatMoney(change)}`, { duration: 8000 });
       }
@@ -487,7 +433,11 @@ export const POSView: React.FC<POSViewProps> = ({
         setIsTicketModalOpen(true);
       }
     } catch (err: any) {
-      toast.error(err.message || 'Error al procesar la venta.');
+      if (err instanceof CheckoutError && err.code === 'INSUFFICIENT_PAYMENT') {
+        toast.warning(`Falta cubrir ${formatMoney(err.missing)} del total para poder procesar la venta.`);
+      } else {
+        toast.error(getErrorMessage(err, 'Error al procesar la venta.'));
+      }
       throw err;
     }
   };

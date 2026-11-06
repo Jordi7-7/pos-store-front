@@ -264,26 +264,8 @@ export function useExchangeReturn({
         branchId,
         cashSessionId,
         customerId: exchangeCustomerId,
-        items: newItems.map((x) => {
-          const unitDiscount = Number(x.discountAmount || 0);
-          const hasDiscount = unitDiscount > 0;
-          const totalLineDiscount = roundMoney(unitDiscount * x.quantity);
-          return {
-            variantId: x.variantId,
-            quantity: x.quantity,
-            price: x.price,
-            discountType: hasDiscount ? x.discountType : undefined,
-            discountRate: hasDiscount ? x.discountRate : undefined,
-            discountAmount: totalLineDiscount,
-          };
-        }),
-        payments: [
-          {
-            paymentMethod: PaymentMethod.EFECTIVO,
-            amount: totalNewItems,
-          },
-        ],
-        discountAmount: 0,
+        lines: newItems,
+        payments: [{ paymentMethod: PaymentMethod.EFECTIVO, amount: totalNewItems }],
       });
 
       const msg =

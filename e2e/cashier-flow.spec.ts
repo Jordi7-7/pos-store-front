@@ -116,13 +116,10 @@ test.describe('turno completo del cajero', () => {
 
     // 4. Cerrar turno: fondo 100 + cobros 310 − devolución 310 = 100 en el cajón
     await page.getByRole('button', { name: /Cerrar Caja/ }).click();
-    // El resumen del turno o se muestra con importes reales, o se avisa de que no está disponible: nunca ceros inventados.
-    const unavailable = page.getByText(/No se pudo cargar el resumen del turno/);
-    const expected = page.getByText('(=) Efectivo Esperado:');
-    await expect(unavailable.or(expected)).toBeVisible();
-    if (await expected.isVisible()) {
-      await expect(page.getByText(/\$?\s?100[.,]00/).first()).toBeVisible(); // 100 + 310 − 310
-    }
+    // El cajero (con abrir/cerrar caja) ve el efectivo esperado real del turno: 100 + 310 − 310 = 100.
+    await expect(page.getByText('(=) Efectivo Esperado:')).toBeVisible();
+    await expect(page.getByText(/No se pudo cargar el resumen del turno/)).toHaveCount(0);
+    await expect(page.getByText('(=) Efectivo Esperado:').locator('xpath=following-sibling::span')).toHaveText(/100[.,]00/);
     await page.getByPlaceholder(/Ingresa el dinero físico/).fill(String(OPENING));
     const closed = page.waitForResponse((r) => /\/sales\/cash-sessions\/[^/]+\/close$/.test(r.url()) && r.request().method() === 'POST');
     await page.getByRole('button', { name: /Cerrar Caja y Emitir Corte Z/ }).click();

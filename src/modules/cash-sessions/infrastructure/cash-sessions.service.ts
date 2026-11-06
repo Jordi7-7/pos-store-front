@@ -8,5 +8,8 @@ export const cashSessionsService = {
   },
   getCashSessionDetails: async (id: string): Promise<CashSessionDetails> => {
     return apiClient.get<CashSessionDetails>(`/sales/cash-sessions/${id}/details`);
-  }
+  },
+  closeCashSession: async (id: string, closingBalance: number): Promise<void> => {
+    await apiClient.post(`/sales/cash-sessions/${id}/close`, { closingBalance });
+  },
 };

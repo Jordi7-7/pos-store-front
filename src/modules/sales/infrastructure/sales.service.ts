@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/apiClient';
+import type { SaleReceipt } from '../application/ports/sales-gateway';
 import type {
   PaginatedSalesDTO,
   SaleDetailDTO,
@@ -29,16 +30,12 @@ export const salesService = {
     return apiClient.get<SaleDetailDTO>(`/sales/invoice/${encodeURIComponent(invoiceNumber)}`);
   },
 
-  processSale: async (input: ProcessSaleInput): Promise<any> => {
-    return apiClient.post('/sales', input);
+  processSale: async (input: ProcessSaleInput): Promise<SaleReceipt> => {
+    return apiClient.post<SaleReceipt>('/sales', input);
   },
 
   openCashSession: async (input: OpenCashSessionInput): Promise<any> => {
     return apiClient.post('/sales/cash-sessions/open', input);
-  },
-
-  closeCashSession: async (id: string, closingBalance: number): Promise<any> => {
-    return apiClient.post(`/sales/cash-sessions/${id}/close`, { closingBalance });
   },
 
   registerExpense: async (input: RegisterExpenseInput): Promise<any> => {

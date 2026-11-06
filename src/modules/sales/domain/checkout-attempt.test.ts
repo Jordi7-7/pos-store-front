@@ -22,6 +22,22 @@ describe('intento de cobro (idempotencia)', () => {
     expect(retry).toBe(first);
   });
 
+  it('un cobro pendiente conserva su clave aunque entre otro cobro distinto en medio', () => {
+    const attempt = new CheckoutAttempt(counter());
+    const pos = attempt.idFor(checkoutFingerprint(sale()));
+    const exchange = attempt.idFor(checkoutFingerprint(sale({ items: [{ variantId: 'v9', quantity: 1, price: 5 }] })));
+    expect(exchange).not.toBe(pos);
+    expect(attempt.idFor(checkoutFingerprint(sale()))).toBe(pos);
+  });
+
+  it('los intentos abandonados no se acumulan sin límite', () => {
+    const attempt = new CheckoutAttempt(counter(), 2);
+    const first = attempt.idFor('a');
+    attempt.idFor('b');
+    attempt.idFor('c');
+    expect(attempt.idFor('a')).not.toBe(first); // 'a' ya se descartó por antigüedad
+  });
+
   it('si cambia el carrito, los pagos o el cliente es otra venta y lleva otra clave', () => {
     const attempt = new CheckoutAttempt(counter());
     const base = attempt.idFor(checkoutFingerprint(sale()));
@@ -36,7 +52,7 @@ describe('intento de cobro (idempotencia)', () => {
   it('tras confirmarse la venta, la siguiente (aunque sea idéntica) lleva clave nueva', () => {
     const attempt = new CheckoutAttempt(counter());
     const first = attempt.idFor(checkoutFingerprint(sale()));
-    attempt.complete();
+    attempt.complete(checkoutFingerprint(sale()));
     expect(attempt.idFor(checkoutFingerprint(sale()))).not.toBe(first);
   });
 

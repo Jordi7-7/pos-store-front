@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { salesService } from '../services/sales.service';
+import { salesService } from '../infrastructure/sales.service';
 import type { SaleDetailDTO } from '../types/sales.types';
 import { toSaleDetailEntity } from '../mappers/sale.mapper';
 import type { SaleDetailEntity } from '../entities/sale.entity';

@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { salesService } from '../services/sales.service';
-import type { ProcessSaleInput, RegisterExpenseInput, ProcessRefundInput } from '../types/sales.types';
+import { salesService } from '../infrastructure/sales.service';
+import type { RegisterExpenseInput, ProcessRefundInput } from '../types/sales.types';
+import type { CheckoutCommand } from '../application/checkout';
+import { checkout } from '../infrastructure/dependencies';
 import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
 
 export const useProcessSale = () => {
@@ -8,7 +10,7 @@ export const useProcessSale = () => {
   const tenantId = useTenantId();
 
   const processSaleMutation = useMutation({
-    mutationFn: (input: ProcessSaleInput) => salesService.processSale(input),
+    mutationFn: (command: CheckoutCommand) => checkout.execute(command),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products', tenantId] }); // update stock
       queryClient.invalidateQueries({ queryKey: ['cash-session-details'] });

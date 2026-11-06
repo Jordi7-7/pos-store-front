@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { cashSessionsService } from '../services/cash-sessions.service';
+import { cashSessionsService } from '../infrastructure/cash-sessions.service';
 import type { CashSessionHeader, CashSessionDetails } from '../types/cash-sessions.types';
 import type { CashSessionDetailsEntity, CashSessionHeaderEntity } from '../entities';
 import { toCashSessionDetailsEntity, toCashSessionHeaderEntities } from '../mappers';
