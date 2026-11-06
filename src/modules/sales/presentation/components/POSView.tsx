@@ -198,9 +198,6 @@ export const POSView: React.FC<POSViewProps> = ({ activeSession: externalActiveS
           activeSession={shift.activeSession}
           sessionDetails={shift.sessionDetails}
           detailsStatus={shift.detailsStatus}
-          activeSessionSales={shift.sessionDetails?.sales || []}
-          activeSessionExpenses={shift.sessionDetails?.expenses || []}
-          activeSessionRefunds={shift.sessionDetails?.refunds || []}
         />
       )}
 
