@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { PaymentMethod } from '../enums';
+import { PaymentMethod } from '../domain/enums';
 import { CheckoutAttempt } from '../domain/checkout-attempt';
 import { Checkout, CheckoutError, type CheckoutCommand } from './checkout';
 import type { SalesRepository } from './ports/sales.repository';

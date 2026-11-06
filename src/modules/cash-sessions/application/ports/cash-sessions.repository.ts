@@ -1,4 +1,4 @@
-import type { CashSessionDetails } from '../../types/cash-sessions.types';
+import type { CashSessionDetails } from '../../domain/session-types';
 
 /** Puerto de salida: cerrar un turno y leer su resumen (la implementación va en `infrastructure`). */
 export interface CashSessionsRepository {

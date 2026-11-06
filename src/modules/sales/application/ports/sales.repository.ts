@@ -1,4 +1,4 @@
-import type { PaymentMethod } from '../../enums';
+import type { PaymentMethod } from '../../domain/enums';
 
 export interface ProcessSaleItem {
   variantId: string;

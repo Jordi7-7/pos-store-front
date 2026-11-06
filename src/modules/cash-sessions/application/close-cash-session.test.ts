@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { CloseCashSession, CloseCashSessionError } from './close-cash-session';
 import type { CashSessionsRepository } from './ports/cash-sessions.repository';
-import type { CashSessionDetails } from '../types/cash-sessions.types';
+import type { CashSessionDetails } from '../domain/session-types';
 
 const details = { session: { id: 's1' } } as unknown as CashSessionDetails;
 

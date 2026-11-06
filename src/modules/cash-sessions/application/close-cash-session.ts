@@ -1,5 +1,5 @@
 import { parseCountedCash } from '../domain/cash-closing';
-import type { CashSessionDetails } from '../types/cash-sessions.types';
+import type { CashSessionDetails } from '../domain/session-types';
 import type { CashSessionsRepository } from './ports/cash-sessions.repository';
 
 export class CloseCashSessionError extends Error {

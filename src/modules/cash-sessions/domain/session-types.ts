@@ -1,0 +1,173 @@
+import { CashSessionStatus } from './enums';
+import { SaleStatus, PaymentMethod } from '@/modules/sales/domain/enums';
+
+export interface ProductAttributeValue {
+  id?: string;
+  value: string;
+  attribute?: {
+    id?: string;
+    name: string;
+  };
+}
+
+export interface SessionProductVariant {
+  id: string;
+  sku: string;
+  barcode?: string;
+  price: number;
+  product: {
+    id: string;
+    name: string;
+  };
+  attributeValues?: ProductAttributeValue[];
+}
+
+export interface SessionSaleItem {
+  id: string;
+  saleId?: string;
+  variantId: string;
+  quantity: number;
+  price: number;
+  cost?: number;
+  subtotal?: number;
+  total?: number;
+  discountType?: string | null;
+  discountRate?: number | null;
+  discountAmount?: number;
+  globalDiscountAmount?: number;
+  variant: SessionProductVariant;
+}
+
+export interface SessionSalePayment {
+  id: string;
+  saleId?: string;
+  paymentMethod: PaymentMethod;
+  amount: number;
+  referenceNumber?: string | null;
+}
+
+export interface SessionSale {
+  id: string;
+  invoiceNumber: string;
+  cashSessionId: string;
+  subtotal?: number;
+  total: number;
+  discountAmount?: number;
+  itemsDiscountAmount?: number;
+  globalDiscountAmount?: number;
+  discountType?: string | null;
+  discountRate?: number | null;
+  paymentMethod: PaymentMethod;
+  status: SaleStatus;
+  createdAt: string;
+  updatedAt?: string;
+  customer?: {
+    id: string;
+    name: string;
+    identityNumber?: string;
+  } | null;
+  user?: {
+    id: string;
+    name: string;
+  };
+  userName?: string;
+  items: SessionSaleItem[];
+  payments: SessionSalePayment[];
+}
+
+export interface SessionExpense {
+  id: string;
+  tenantId?: string;
+  branchId?: string;
+  cashSessionId?: string;
+  description: string;
+  amount: number;
+  category: string;
+  createdAt: string;
+  updatedAt?: string;
+  userName?: string;
+}
+
+export interface SessionRefundItem {
+  id: string;
+  refundId?: string;
+  variantId?: string;
+  quantity: number;
+  priceRefunded: number;
+  variant?: {
+    id: string;
+    sku: string;
+    product?: {
+      id: string;
+      name: string;
+    };
+  };
+}
+
+export interface SessionRefund {
+  id: string;
+  tenantId?: string;
+  branchId?: string;
+  saleId?: string;
+  cashSessionId?: string;
+  totalRefunded: number;
+  reason: string;
+  createdAt: string;
+  updatedAt?: string;
+  userName?: string;
+  user?: {
+    id: string;
+    name: string;
+  };
+  sale?: {
+    id: string;
+    invoiceNumber: string;
+  };
+  items: SessionRefundItem[];
+}
+
+export interface CashSessionHeader {
+  id: string;
+  branchId?: string;
+  userId?: string;
+  openingBalance: number;
+  closingBalance: number | null;
+  expectedBalance: number | null;
+  difference: number | null;
+  status: CashSessionStatus ;
+  openedAt: string;
+  closedAt: string | null;
+  cashRegister?: {
+    id: string;
+    name: string;
+    code: number;
+  } | null;
+  totalSales?: number;
+  branch?: { id?: string; name: string; address?: string | null };
+  user?: { id?: string; name: string };
+}
+
+export interface SessionKPIs {
+  grossSales: number;
+  netSales: number;
+  cashSales: number;
+  cardSales: number;
+  totalExpenses: number;
+  totalRefunds: number;
+  salesCount: number;
+  expensesCount: number;
+  refundsCount: number;
+}
+
+export interface DetailedSessionSale extends SessionSale {
+  customerName?: string;
+  totalItems?: number;
+}
+
+export interface CashSessionDetails {
+  session: CashSessionHeader;
+  kpis: SessionKPIs;
+  sales: DetailedSessionSale[];
+  expenses: SessionExpense[];
+  refunds: SessionRefund[];
+}

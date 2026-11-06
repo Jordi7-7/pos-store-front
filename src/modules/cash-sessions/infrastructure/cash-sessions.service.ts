@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/apiClient';
-import type { CashSessionHeader, CashSessionDetails } from '../types/cash-sessions.types';
+import type { CashSessionHeader, CashSessionDetails } from '../domain/session-types';
 
 export const cashSessionsService = {
   getCashSessions: async (branchId?: string): Promise<CashSessionHeader[]> => {

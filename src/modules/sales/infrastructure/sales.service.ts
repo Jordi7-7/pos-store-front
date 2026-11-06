@@ -6,7 +6,7 @@ import type {
   OpenCashSessionInput,
   RegisterExpenseInput,
   ProcessRefundInput,
-} from '../types/sales.types';
+} from './dtos/sales.dto';
 
 export const salesService = {
   getPaginatedSales: async (params: {
