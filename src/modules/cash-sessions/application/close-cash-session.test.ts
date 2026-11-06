@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { CloseCashSession, CloseCashSessionError } from './close-cash-session';
+import { CashSessionError } from './cash-session-error';
+import { CloseCashSession } from './close-cash-session';
 import type { CashSessionsRepository } from './ports/cash-sessions.repository';
 import type { CashSessionDetailsEntity } from '../domain/entities/cash-session.entity';
 
@@ -25,7 +26,7 @@ describe('CloseCashSession', () => {
 
   it.each(['', '  ', 'abc', '-5'])('no llama al servidor con un efectivo contado inválido (%j)', async (countedCash) => {
     const { repository, useCase } = setup();
-    await expect(useCase.execute({ sessionId: 's1', countedCash })).rejects.toBeInstanceOf(CloseCashSessionError);
+    await expect(useCase.execute({ sessionId: 's1', countedCash })).rejects.toBeInstanceOf(CashSessionError);
     expect(repository.close).not.toHaveBeenCalled();
   });
 

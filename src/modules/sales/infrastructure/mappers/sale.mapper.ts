@@ -100,6 +100,7 @@ export const toSaleDetailEntity = (dto: SaleDetailDTO): SaleDetailEntity => {
       : SaleStatus.COMPLETED,
     branchName: dto.branch?.name || 'Sucursal Principal',
     branchAddress: dto.branch?.address || '',
+    customerId: dto.customer?.id,
     customerName: dto.customer?.name?.trim() || 'Consumidor Final',
     userName: dto.user?.name || 'Cajero',
     items,

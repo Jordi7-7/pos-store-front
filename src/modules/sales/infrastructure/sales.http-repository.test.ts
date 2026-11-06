@@ -32,22 +32,10 @@ describe('SalesHttpRepository', () => {
     expect(sale.createdAt).toBeInstanceOf(Date);
   });
 
-  it('sin turno abierto, el turno activo es null (el servidor responde vacío)', async () => {
-    api.get.mockResolvedValueOnce('');
-    expect(await repository.getActiveCashSession('b1')).toBeNull();
-    expect(api.get).toHaveBeenCalledWith('/sales/cash-sessions/active?branchId=b1');
-  });
-
-  it('con turno abierto devuelve la entidad', async () => {
-    api.get.mockResolvedValueOnce({ id: 'a', status: 'OPEN', branchId: 'b1', cashRegisterId: 'c1', cashRegisterName: 'Caja 1', openingBalance: 100, openedAt: 'x', openedByName: 'Ana' });
-    expect(await repository.getActiveCashSession('b1', 'c1')).toMatchObject({ id: 'a', cashRegisterName: 'Caja 1', openingBalance: 100 });
-  });
-
-  it('cobrar, gastos y devoluciones van a su endpoint', async () => {
+  it('cobrar y devolver van a su endpoint', async () => {
     api.post.mockResolvedValue({ id: 's1', invoiceNumber: '001' });
     await repository.processSale({ branchId: 'b', cashSessionId: 's', items: [], payments: [] });
-    await repository.registerExpense({ branchId: 'b', description: 'x', amount: 1, category: 'c' });
     await repository.processRefund({ branchId: 'b', saleId: 's', cashSessionId: 'c', reason: 'r', items: [] });
-    expect(api.post.mock.calls.map(([path]) => path)).toEqual(['/sales', '/sales/expenses', '/sales/refunds']);
+    expect(api.post.mock.calls.map(([path]) => path)).toEqual(['/sales', '/sales/refunds']);
   });
 });

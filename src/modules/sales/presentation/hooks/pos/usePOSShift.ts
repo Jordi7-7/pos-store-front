@@ -2,14 +2,13 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useMyCashRegisters } from '@/modules/cash-registers/presentation/hooks/useCashRegisters';
 import { useCashSessionDetailsQuery } from '@/modules/cash-sessions/presentation/hooks/useCashSessions';
-import { CloseCashSessionError } from '@/modules/cash-sessions/application/close-cash-session';
+import { CashSessionError } from '@/modules/cash-sessions/application/cash-session-error';
 import { buildClosingTicketData } from '@/modules/cash-sessions/domain/closing-ticket';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import { useWorkspaceStore } from '@/shared/presentation/stores/workspace.store';
 import { getErrorMessage } from '@/shared/presentation/error-messages';
 import { ticketPrinter } from '../../../infrastructure/dependencies';
-import { useActiveCashSession, useCloseCashSession, useOpenCashSession } from '../useCashSession';
-import { useRegisterExpense } from '../useSalesMutations';
+import { useActiveCashSession, useCloseCashSession, useOpenCashSession, useRegisterExpense } from '@/modules/cash-sessions/presentation/hooks/useCashSession';
 import { useTicketFormat } from '../useTicketFormat';
 import type { ActiveCashSessionEntity } from '@/modules/cash-sessions/domain/entities/cash-session.entity';
 import type { ClosingDetailsStatus } from '@/modules/cash-sessions/presentation/view-models/closing-details-status';
@@ -33,15 +32,15 @@ export function usePOSShift({ externalActiveSession, setExternalActiveSession }:
   const [selectedRegisterId, setSelectedRegisterId] = useState<string>(selectedCashRegisterId || '');
 
   // Sesión activa: la que llega por props o, si no, la que consulta el servidor
-  const { activeSession: queryActiveCashSession } = useActiveCashSession(selectedBranchId || undefined);
+  const { activeSession: queryActiveSession } = useActiveCashSession(selectedBranchId || undefined);
   const [internalSession, setInternalSession] = useState<ActiveCashSessionEntity | null>(null);
   useEffect(() => {
-    if (queryActiveCashSession !== undefined) setInternalSession(queryActiveCashSession && queryActiveCashSession.id ? queryActiveCashSession : null);
-  }, [queryActiveCashSession]);
+    if (queryActiveSession !== undefined) setInternalSession(queryActiveSession && queryActiveSession.id ? queryActiveSession : null);
+  }, [queryActiveSession]);
 
   const rawSession = externalActiveSession !== undefined ? externalActiveSession : internalSession;
   const activeSession = rawSession && rawSession.id ? rawSession : null;
-  const setActiveCashSession = (session: ActiveCashSessionEntity | null) => {
+  const setActiveSession = (session: ActiveCashSessionEntity | null) => {
     const valid = session && session.id ? session : null;
     setInternalSession(valid);
     setExternalActiveSession?.(valid);
@@ -85,26 +84,24 @@ export function usePOSShift({ externalActiveSession, setExternalActiveSession }:
   const { closeSession, isClosing } = useCloseCashSession();
   const { registerExpense, isRegistering } = useRegisterExpense();
 
+  /** Avisos por código: las reglas viven en los casos de uso; aquí solo se decide el tipo de aviso. */
+  const notifyFailure = (err: unknown, fallback: string) => {
+    if (err instanceof CashSessionError) {
+      if (err.code === 'INVALID_COUNT' || err.code === 'INVALID_OPENING_BALANCE') toast.error(err.message);
+      else toast.warning(err.message);
+    } else {
+      toast.error(getErrorMessage(err, fallback));
+    }
+  };
+
   const handleOpenSession = async () => {
-    if (!selectedBranchId) {
-      toast.warning('Por favor selecciona una sucursal activa.');
-      return;
-    }
-    if (!selectedRegisterId) {
-      toast.warning('Por favor selecciona una caja registradora.');
-      return;
-    }
     try {
-      const session = await openSession({
-        branchId: selectedBranchId,
-        cashRegisterId: selectedRegisterId,
-        openingBalance: parseFloat(openingBalance || '0'),
-      });
-      setActiveCashSession(session);
+      const session = await openSession({ branchId: selectedBranchId, cashRegisterId: selectedRegisterId || null, openingBalance });
+      setActiveSession(session);
       setIsAperturaModalOpen(false);
       toast.success('¡Caja registradora abierta con éxito!');
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Error al abrir la caja.'));
+      notifyFailure(err, 'Error al abrir la caja.');
     }
   };
 
@@ -115,7 +112,7 @@ export function usePOSShift({ externalActiveSession, setExternalActiveSession }:
       const { details } = await closeSession({ id: activeSession.id, countedCash: closingBalance });
       const closingData = details ? buildClosingTicketData(details) : null;
 
-      setActiveCashSession(null);
+      setActiveSession(null);
       setIsCierreModalOpen(false);
 
       if (!closingData) {
@@ -136,34 +133,19 @@ export function usePOSShift({ externalActiveSession, setExternalActiveSession }:
         setIsClosingTicketOpen(true);
       }
     } catch (err) {
-      toast.error(err instanceof CloseCashSessionError ? err.message : getErrorMessage(err, 'Error al cerrar la caja.'));
+      notifyFailure(err, 'Error al cerrar la caja.');
     }
   };
 
   const handleAddExpense = async () => {
-    if (!selectedBranchId) return;
-    if (!expenseDesc.trim()) {
-      toast.warning('Por favor ingresa una descripción para el gasto.');
-      return;
-    }
-    if (!expenseAmount || parseFloat(expenseAmount) <= 0) {
-      toast.warning('Por favor ingresa un monto válido.');
-      return;
-    }
     try {
-      await registerExpense({
-        branchId: selectedBranchId,
-        cashSessionId: activeSession?.id,
-        description: expenseDesc.trim(),
-        amount: parseFloat(expenseAmount),
-        category: EXPENSE_CATEGORY,
-      });
+      await registerExpense({ branchId: selectedBranchId, cashSessionId: activeSession?.id, description: expenseDesc, amount: expenseAmount, category: EXPENSE_CATEGORY });
       setExpenseDesc('');
       setExpenseAmount('');
       setIsEgresoModalOpen(false);
       toast.success('¡Gasto registrado con éxito!');
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Error al registrar el gasto.'));
+      notifyFailure(err, 'Error al registrar el gasto.');
     }
   };
 

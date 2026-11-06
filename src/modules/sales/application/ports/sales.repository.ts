@@ -1,6 +1,5 @@
 import type { PaymentMethod } from '../../domain/enums';
 import type { SaleDetailEntity, SaleSummaryEntity } from '../../domain/entities/sale.entity';
-import type { ActiveCashSessionEntity } from '@/modules/cash-sessions/domain/entities/cash-session.entity';
 
 export interface ProcessSaleItem {
   variantId: string;
@@ -38,20 +37,6 @@ export interface SaleReceipt {
   createdAt?: string;
 }
 
-export interface OpenCashSessionInput {
-  branchId: string;
-  cashRegisterId: string;
-  openingBalance: number;
-}
-
-export interface RegisterExpenseInput {
-  branchId: string;
-  cashSessionId?: string;
-  description: string;
-  amount: number;
-  category: string;
-}
-
 export interface ProcessRefundInput {
   branchId: string;
   saleId: string;
@@ -74,15 +59,12 @@ export interface SalesPage {
 }
 
 /**
- * Puerto de salida: ventas y turnos de caja en el servidor. La implementación (`infrastructure`)
+ * Puerto de salida: ventas en el servidor. La implementación (`infrastructure`)
  * habla HTTP y devuelve entidades del dominio; los DTO no salen de ahí.
  */
 export interface SalesRepository {
   processSale(input: ProcessSaleInput): Promise<SaleReceipt>;
   list(query: SalesQuery): Promise<SalesPage>;
   getByInvoice(invoiceNumber: string): Promise<SaleDetailEntity>;
-  openCashSession(input: OpenCashSessionInput): Promise<ActiveCashSessionEntity>;
-  getActiveCashSession(branchId?: string, cashRegisterId?: string): Promise<ActiveCashSessionEntity | null>;
-  registerExpense(input: RegisterExpenseInput): Promise<void>;
   processRefund(input: ProcessRefundInput): Promise<void>;
 }

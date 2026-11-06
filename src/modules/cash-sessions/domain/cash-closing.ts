@@ -1,4 +1,5 @@
 import { Money } from '@/shared/domain/money';
+import { parseMoneyInput } from '@/shared/domain/money-input';
 
 /**
  * Arqueo de caja: reglas puras con paridad con el backend
@@ -35,17 +36,5 @@ export function classifyDifference(difference: number): DifferenceKind {
   return 'EXACT';
 }
 
-/**
- * Lo que el cajero escribió como efectivo contado, o `null` si está vacío o no es un importe
- * válido (el backend rechaza cierres negativos con `VALIDATION_FAILED`).
- */
-export function parseCountedCash(input: string): number | null {
-  const text = input.trim();
-  if (text === '') return null;
-  try {
-    const value = Money.of(text);
-    return value.isNegative() ? null : value.toNumber();
-  } catch {
-    return null;
-  }
-}
+/** Lo que el cajero escribió como efectivo contado, o `null` si no es un importe válido (el backend rechaza cierres negativos). */
+export const parseCountedCash = parseMoneyInput;

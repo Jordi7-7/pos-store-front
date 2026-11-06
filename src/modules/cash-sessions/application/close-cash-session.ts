@@ -1,14 +1,7 @@
 import { parseCountedCash } from '../domain/cash-closing';
 import type { CashSessionDetailsEntity } from '../domain/entities/cash-session.entity';
+import { CashSessionError } from './cash-session-error';
 import type { CashSessionsRepository } from './ports/cash-sessions.repository';
-
-export class CloseCashSessionError extends Error {
-  readonly code = 'INVALID_COUNT';
-  constructor() {
-    super('Debes ingresar el monto de efectivo físico para cerrar la caja.');
-    this.name = 'CloseCashSessionError';
-  }
-}
 
 export interface CloseCashSessionResult {
   /**
@@ -27,7 +20,7 @@ export class CloseCashSession {
 
   async execute(input: { sessionId: string; countedCash: string }): Promise<CloseCashSessionResult> {
     const counted = parseCountedCash(input.countedCash);
-    if (counted === null) throw new CloseCashSessionError();
+    if (counted === null) throw new CashSessionError('INVALID_COUNT', 'Debes ingresar el monto de efectivo físico para cerrar la caja.');
 
     await this.repository.close(input.sessionId, counted);
 

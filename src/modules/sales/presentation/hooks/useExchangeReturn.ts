@@ -2,9 +2,12 @@ import { DiscountType } from '@/modules/sales/domain/enums';
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useSaleByInvoice } from './useSaleDetail';
-import { useProcessRefund, useProcessSale } from './useSalesMutations';
+import { useExchangeProducts, useRefundSale } from './useSalesMutations';
+import { getErrorMessage } from '@/shared/presentation/error-messages';
+import { ExchangeError } from '../../application/exchange-products';
+import { RefundSaleError } from '../../application/refund-sale';
+import type { SaleDetailEntity } from '../../domain/entities/sale.entity';
 import { productsService } from '@/modules/products/services/products.service';
-import { PaymentMethod } from '../../domain/enums';
 import type {
   ModalStep,
   SaleItemRow,
@@ -26,14 +29,14 @@ export function useExchangeReturn({
   onClose,
 }: UseExchangeReturnProps) {
   const { fetchSale } = useSaleByInvoice();
-  const { processRefund, isProcessing: isRefunding } = useProcessRefund();
-  const { processSale, isProcessing: isSelling } = useProcessSale();
+  const { refundSale, isRefunding } = useRefundSale();
+  const { exchangeProducts, isExchanging } = useExchangeProducts();
 
   // Modal flow state
   const [step, setStep] = useState<ModalStep>('search');
   const [invoiceInput, setInvoiceInput] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [foundSale, setFoundSale] = useState<any | null>(null);
+  const [foundSale, setFoundSale] = useState<SaleDetailEntity | null>(null);
 
   // Map variantId -> qty to return
   const [returnQtyMap, setReturnQtyMap] = useState<Record<string, number>>({});
@@ -96,12 +99,8 @@ export function useExchangeReturn({
     [foundSale, returnQtyMap],
   );
 
-  const allItemsFullyRefunded =
-    foundSale?.isFullyRefunded === true ||
-    (foundSale?.items?.length > 0 &&
-      foundSale.items.every((item: SaleItemRow) => item.refundableQty === 0));
+  const allItemsFullyRefunded = !!foundSale && foundSale.items.length > 0 && foundSale.items.every((item) => item.refundableQty === 0);
 
-  // Lo que se devuelve es lo que el cliente pagó por la línea (misma regla que el servidor)
   const totalToReturn = returnTotal(selectedReturnItems, returnQtyMap);
 
   // Scan new items
@@ -188,50 +187,39 @@ export function useExchangeReturn({
   const totalNewItems = newItemsTotal(newItems);
   const exchangeDiff = exchangeDifference(totalNewItems, totalToReturn);
 
+  const returnedItems = useMemo(
+    () => selectedReturnItems.map((item: SaleItemRow) => ({ variantId: item.variantId, quantity: returnQtyMap[item.variantId] ?? 0 })),
+    [selectedReturnItems, returnQtyMap],
+  );
+
+  /** Los avisos de las reglas del caso de uso se muestran tal cual; el resto, por su código de error. */
+  const failureMessage = (err: unknown, fallback: string): string =>
+    err instanceof RefundSaleError || err instanceof ExchangeError ? err.message : getErrorMessage(err, fallback);
+
   // Confirm Refund
   const handleConfirmRefund = useCallback(async () => {
     if (!foundSale || selectedReturnItems.length === 0) return;
     try {
-      await processRefund({
-        branchId,
-        saleId: foundSale.id,
-        cashSessionId,
-        reason: reason.trim() || 'Devolución desde POS',
-        items: selectedReturnItems.map((item: SaleItemRow) => ({
-          variantId: item.variantId,
-          quantity: returnQtyMap[item.variantId] ?? 0,
-        })),
-      });
+      await refundSale({ branchId, saleId: foundSale.id, cashSessionId, reason, defaultReason: 'Devolución desde POS', items: returnedItems });
       toast.success(`Devolución procesada: ${formatMoney(totalToReturn)}`);
       handleClose();
-    } catch (err: any) {
-      toast.error(err?.message || 'Error al procesar la devolución');
+    } catch (err) {
+      toast.error(failureMessage(err, 'Error al procesar la devolución'));
     }
-  }, [foundSale, selectedReturnItems, branchId, cashSessionId, reason, returnQtyMap, totalToReturn, processRefund, handleClose]);
+  }, [foundSale, selectedReturnItems, branchId, cashSessionId, reason, returnedItems, totalToReturn, refundSale, handleClose]);
 
   // Confirm Exchange
   const handleConfirmExchange = useCallback(async () => {
     if (!foundSale || selectedReturnItems.length === 0 || newItems.length === 0) return;
     try {
-      await processRefund({
+      await exchangeProducts({
         branchId,
+        cashSessionId,
         saleId: foundSale.id,
-        cashSessionId,
-        reason: reason.trim() || 'Cambio de prenda',
-        items: selectedReturnItems.map((item: SaleItemRow) => ({
-          variantId: item.variantId,
-          quantity: returnQtyMap[item.variantId] ?? 0,
-        })),
-      });
-
-      const exchangeCustomerId = foundSale.customer?.id || undefined;
-
-      await processSale({
-        branchId,
-        cashSessionId,
-        customerId: exchangeCustomerId,
-        lines: newItems,
-        payments: [{ paymentMethod: PaymentMethod.EFECTIVO, amount: totalNewItems }],
+        customerId: foundSale.customerId,
+        returned: returnedItems,
+        reason,
+        newLines: newItems,
       });
 
       const msg =
@@ -242,25 +230,14 @@ export function useExchangeReturn({
           : 'Cambio completado. Sin diferencia.';
       toast.success(msg);
       handleClose();
-    } catch (err: any) {
-      toast.error(err?.message || 'Error al procesar el cambio');
+    } catch (err) {
+      toast.error(failureMessage(err, 'Error al procesar el cambio'), { duration: 10000 });
+      // Si la devolución ya se registró, esta venta ya no tiene esas unidades por devolver
+      if (err instanceof ExchangeError && err.code === 'REFUND_DONE_SALE_FAILED') handleClose();
     }
-  }, [
-    foundSale,
-    selectedReturnItems,
-    newItems,
-    branchId,
-    cashSessionId,
-    reason,
-    returnQtyMap,
-    totalNewItems,
-    exchangeDiff,
-    processRefund,
-    processSale,
-    handleClose,
-  ]);
+  }, [foundSale, selectedReturnItems, newItems, branchId, cashSessionId, reason, returnedItems, exchangeDiff, exchangeProducts, handleClose]);
 
-  const isProcessing = isRefunding || isSelling;
+  const isProcessing = isRefunding || isExchanging;
 
   return {
     step,

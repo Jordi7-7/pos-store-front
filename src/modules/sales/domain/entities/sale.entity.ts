@@ -63,6 +63,7 @@ export interface SaleDetailEntity {
   status: SaleStatus;
   branchName: string;
   branchAddress?: string;
+  customerId?: string;
   customerName: string;
   customerIdentity?: string;
   userName: string;
