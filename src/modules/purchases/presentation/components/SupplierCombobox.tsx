@@ -34,7 +34,7 @@ export const SupplierCombobox: React.FC<SupplierComboboxProps> = ({ suppliers, v
             <ComboboxItem key={supplier.id} value={supplier.id} className="text-xs py-1.5 cursor-pointer">
               <div className="flex flex-col">
                 <span className="font-semibold text-foreground">{supplier.name}</span>
-                <span className="text-[10px] text-muted-foreground font-mono">RUC / ID: {supplier.identityNumber}</span>
+                <span className="text-xs text-muted-foreground font-mono">RUC / ID: {supplier.identityNumber}</span>
               </div>
             </ComboboxItem>
           ))}

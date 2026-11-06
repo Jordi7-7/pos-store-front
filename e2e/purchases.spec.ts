@@ -97,7 +97,7 @@ test('compras: la carga masiva por Excel valida los SKU, marca los que no existe
     await page.locator('header select').selectOption({ index: 1 });
     await page.goto('/compras/registrar');
     await page.waitForLoadState('networkidle');
-    await page.getByRole('button', { name: /Carga Masiva/ }).click();
+    await page.getByRole('button', { name: /Carga masiva/i }).click();
     const dialog = page.getByRole('dialog');
 
     // 1. Archivo con un SKU inexistente: se marca y no deja confirmar

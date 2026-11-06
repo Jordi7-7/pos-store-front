@@ -12,12 +12,13 @@ import { UsersTab } from '../UsersTab';
 import { RolesTab } from '../RolesTab';
 import { usePermissions } from '@/hooks/usePermissions';
 import { APP_PERMISSIONS } from '@/constants/permissions';
-import { Users, UserPlus, Search, Shield, Plus } from 'lucide-react';
+import { Users, UserPlus, Shield, Plus } from 'lucide-react';
 import { useBranches } from '@/modules/branches';
 import { useAuthStore } from '@/modules/auth/presentation/stores/useAuthStore';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
+import { SearchInput } from '@/shared/presentation/components/SearchInput';
 
 export const UsersView: React.FC = () => {
   const { user: currentAuthUser } = useAuthStore();
@@ -136,34 +137,12 @@ export const UsersView: React.FC = () => {
     <div className="space-y-6">
       {/* ── HEADER TOOLBAR ── */}
       <div className="bg-bg-card border border-border-card rounded-2xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5 mb-1">
-            <div className="p-2 rounded-xl bg-primary/10 border border-primary/20 text-primary">
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-lg font-black text-secondary tracking-tight">Personal & Roles</h1>
-              <p className="text-xs text-neutral">
-                Gestiona usuarios, roles personalizados y permisos de acceso para tu equipo.
-              </p>
-            </div>
-          </div>
-        </div>
+        <p className="text-sm text-muted-foreground">Usuarios y roles personalizados con sus permisos de acceso.</p>
 
         <div className="flex flex-wrap items-center gap-2.5">
           {activeMainTab === 'users' ? (
             <>
-              {/* Search Box */}
-              <div className="relative min-w-[200px] flex-1 sm:flex-initial">
-                <Search className="w-3.5 h-3.5 text-neutral absolute left-3 top-3" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Buscar por nombre o usuario..."
-                  className="w-full bg-bg-dark border border-border-card rounded-xl py-2 pl-9 pr-3 text-xs text-secondary placeholder-neutral focus:outline-none focus:border-primary transition-all font-medium"
-                />
-              </div>
+              <SearchInput value={searchTerm} onValueChange={setSearchTerm} placeholder="Buscar por nombre o usuario…" aria-label="Buscar usuario" className="sm:w-64" />
 
               {/* Role Filter */}
               <select

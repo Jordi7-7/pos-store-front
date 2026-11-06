@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { AlertCircle, Building, ClipboardList, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { AlertCircle, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import { filledLines, toPurchaseRequest } from '../../domain/rules/purchase-lines';
@@ -12,6 +12,7 @@ import { useSuppliers } from '../hooks/useSuppliers';
 import { BulkPurchaseModal } from './BulkPurchaseModal';
 import { PurchaseLinesTable } from './PurchaseLinesTable';
 import { SupplierCombobox } from './SupplierCombobox';
+import { Button } from '@/components/ui/button';
 
 interface PurchaseFormProps {
   selectedBranchId?: string;
@@ -20,7 +21,7 @@ interface PurchaseFormProps {
 
 /** Ingreso de mercancía: proveedor, referencia y filas por SKU. Las filas y sus reglas viven en `usePurchaseLines`. */
 export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
-  const { selectedBranchId, selectedBranchName } = useLayoutContext();
+  const { selectedBranchId } = useLayoutContext();
   const { suppliers } = useSuppliers();
   const { registerPurchase, isRegistering } = useRegisterPurchase();
   const { supplierId, setSupplierId } = useDefaultSupplier(suppliers);
@@ -66,36 +67,18 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
       <Card className="border border-border/80 shadow-xs">
         <CardHeader className="border-b border-border/60 pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <CardTitle className="text-sm font-bold flex items-center gap-2">
-                <ClipboardList className="w-4 h-4 text-primary" />
-                <span>Registrar Ingreso de Mercancía</span>
-                {selectedBranchId && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 font-normal">
-                    <Building className="w-3 h-3" />
-                    {selectedBranchName}
-                  </span>
-                )}
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Ingresa mercancía al inventario indicando el SKU del producto. El sistema te mostrará sugerencias a medida que escribes.
-              </CardDescription>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsBulkOpen(true)}
-              className="flex items-center gap-1.5 text-xs text-primary font-bold border border-primary/20 hover:border-primary/40 bg-primary/5 hover:bg-primary/10 px-3 py-1.5 rounded-xl transition-all cursor-pointer shadow-xs self-start sm:self-center"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              Carga Masiva (Excel)
-            </button>
+            <p className="text-sm text-muted-foreground">Ingresa mercancía al inventario indicando el SKU del producto; el sistema sugiere mientras escribes.</p>
+            <Button type="button" variant="outline" onClick={() => setIsBulkOpen(true)}>
+              <FileSpreadsheet />
+              Carga masiva (Excel)
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} onKeyDown={preventEnterSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] uppercase tracking-wider font-bold mb-1 text-muted-foreground">Proveedor Comercial *</label>
+ <label className="block text-xs font-bold mb-1 text-muted-foreground">Proveedor Comercial *</label>
                 <SupplierCombobox
                   suppliers={suppliers}
                   value={supplierId}
@@ -106,7 +89,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
                 />
               </div>
               <div>
-                <label className="block text-[10px] uppercase tracking-wider font-bold mb-1 text-muted-foreground">Referencia / Factura (Opcional)</label>
+ <label className="block text-xs font-bold mb-1 text-muted-foreground">Referencia / Factura (Opcional)</label>
                 <input
                   type="text"
                   value={invoice}

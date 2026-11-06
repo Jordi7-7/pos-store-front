@@ -29,12 +29,12 @@ export const CustomerDeleteDialog: React.FC<CustomerDeleteDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-sm bg-card border border-border rounded-2xl shadow-xl p-6 text-foreground">
         <DialogHeader>
-          <DialogTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+ <DialogTitle className="text-base font-semibold flex items-center gap-2">
             Eliminar Cliente
           </DialogTitle>
           <DialogDescription className="text-xs text-neutral mt-1">
             ¿Estás seguro de que deseas eliminar a{' '}
-            <strong className="text-secondary uppercase">{customer?.name}</strong>? Esta acción no se
+ <strong className="text-secondary ">{customer?.name}</strong>? Esta acción no se
             puede deshacer y desvinculará sus datos directos del directorio.
           </DialogDescription>
         </DialogHeader>

@@ -19,7 +19,7 @@ export const AuditMovements: React.FC<AuditMovementsProps> = ({ details, onPrint
         <button
           type="button"
           onClick={() => setActiveTab('sales')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+ className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
             activeTab === 'sales'
               ? 'bg-primary text-white shadow-xs'
               : 'text-neutral hover:text-secondary hover:bg-muted/10'
@@ -31,7 +31,7 @@ export const AuditMovements: React.FC<AuditMovementsProps> = ({ details, onPrint
         <button
           type="button"
           onClick={() => setActiveTab('expenses')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+ className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
             activeTab === 'expenses'
               ? 'bg-primary text-white shadow-xs'
               : 'text-neutral hover:text-secondary hover:bg-muted/10'
@@ -43,7 +43,7 @@ export const AuditMovements: React.FC<AuditMovementsProps> = ({ details, onPrint
         <button
           type="button"
           onClick={() => setActiveTab('refunds')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer ${
+ className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
             activeTab === 'refunds'
               ? 'bg-primary text-white shadow-xs'
               : 'text-neutral hover:text-secondary hover:bg-muted/10'
@@ -64,7 +64,7 @@ export const AuditMovements: React.FC<AuditMovementsProps> = ({ details, onPrint
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="uppercase text-[10px] font-bold bg-muted/20">
+ <TableRow className=" text-xs font-bold bg-muted/20">
                   <TableHead className="py-3 px-4">Folio / Ticket</TableHead>
                   <TableHead className="py-3 px-4">Hora</TableHead>
                   <TableHead className="py-3 px-4">Cajero</TableHead>
@@ -88,12 +88,12 @@ export const AuditMovements: React.FC<AuditMovementsProps> = ({ details, onPrint
                       {sale.createdAtFormatted}
                     </TableCell>
                     <TableCell className="py-3 px-4 font-medium text-secondary">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-bg-dark border border-border-card text-[11px]">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-bg-dark border border-border-card text-xs">
                         <User className="w-3 h-3 text-neutral" />
                         {sale.userName}
                       </span>
                     </TableCell>
-                    <TableCell className="py-3 px-4 font-semibold text-secondary uppercase">
+ <TableCell className="py-3 px-4 font-semibold text-secondary ">
                       {sale.customerName}
                     </TableCell>
                     <TableCell className="py-3 px-4 text-center font-mono font-medium">
@@ -101,7 +101,7 @@ export const AuditMovements: React.FC<AuditMovementsProps> = ({ details, onPrint
                     </TableCell>
                     <TableCell className="py-3 px-4 text-center">
                       <span
-                        className={`inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        className={`inline-flex items-center text-xs font-bold px-2 py-0.5 rounded-full ${
                           sale.status === SaleStatus.COMPLETED
                             ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
                             : sale.status === SaleStatus.PARTIALLY_REFUNDED
@@ -139,7 +139,7 @@ export const AuditMovements: React.FC<AuditMovementsProps> = ({ details, onPrint
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="uppercase text-[10px] font-bold bg-muted/20">
+ <TableRow className=" text-xs font-bold bg-muted/20">
                   <TableHead className="py-3 px-4">Descripción del Gasto</TableHead>
                   <TableHead className="py-3 px-4">Hora</TableHead>
                   <TableHead className="py-3 px-4">Registrado por</TableHead>
@@ -153,20 +153,20 @@ export const AuditMovements: React.FC<AuditMovementsProps> = ({ details, onPrint
                     key={exp.id}
                     className="text-xs hover:bg-muted/10 transition-colors"
                   >
-                    <TableCell className="py-3 px-4 font-semibold text-secondary uppercase">
+ <TableCell className="py-3 px-4 font-semibold text-secondary ">
                       {exp.description}
                     </TableCell>
                     <TableCell className="py-3 px-4 text-neutral font-medium">
                       {exp.createdAtFormatted}
                     </TableCell>
                     <TableCell className="py-3 px-4 font-medium text-secondary">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-bg-dark border border-border-card text-[11px]">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-bg-dark border border-border-card text-xs">
                         <User className="w-3 h-3 text-neutral" />
                         {exp.userName}
                       </span>
                     </TableCell>
                     <TableCell className="py-3 px-4">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-neutral bg-bg-dark border border-border-card px-2.5 py-1 rounded-lg">
+ <span className="text-xs font-bold text-neutral bg-bg-dark border border-border-card px-2.5 py-1 rounded-lg">
                         {exp.category}
                       </span>
                     </TableCell>
@@ -187,7 +187,7 @@ export const AuditMovements: React.FC<AuditMovementsProps> = ({ details, onPrint
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="uppercase text-[10px] font-bold bg-muted/20">
+ <TableRow className=" text-xs font-bold bg-muted/20">
                   <TableHead className="py-3 px-4">Motivo de Devolución</TableHead>
                   <TableHead className="py-3 px-4">Hora</TableHead>
                   <TableHead className="py-3 px-4">Procesado por</TableHead>
@@ -210,7 +210,7 @@ export const AuditMovements: React.FC<AuditMovementsProps> = ({ details, onPrint
                       {ref.createdAtFormatted}
                     </TableCell>
                     <TableCell className="py-3 px-4 font-medium text-secondary">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-bg-dark border border-border-card text-[11px]">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-bg-dark border border-border-card text-xs">
                         <User className="w-3 h-3 text-neutral" />
                         {ref.userName}
                       </span>

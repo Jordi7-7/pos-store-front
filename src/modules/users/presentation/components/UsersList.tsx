@@ -93,13 +93,13 @@ export const UsersList: React.FC<UsersListProps> = ({
                   <div className="overflow-hidden">
                     <h4 className="text-xs font-bold text-secondary truncate">{user.name}</h4>
                     {user.username && (
-                      <div className="flex items-center gap-1 text-[10px] text-primary font-mono font-semibold">
+                      <div className="flex items-center gap-1 text-xs text-primary font-mono font-semibold">
                         <AtSign className="w-2.5 h-2.5" />
                         <span>{user.username}</span>
                       </div>
                     )}
                     {user.email && (
-                      <p className="text-[10px] text-neutral truncate mt-0.5">{user.email}</p>
+                      <p className="text-xs text-neutral truncate mt-0.5">{user.email}</p>
                     )}
                   </div>
                 </div>
@@ -107,12 +107,12 @@ export const UsersList: React.FC<UsersListProps> = ({
                 {/* Status & Role Badges */}
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   <span
-                    className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${roleInfo.className}`}
+                    className={`text-xs font-bold px-2 py-0.5 rounded-full border ${roleInfo.className}`}
                   >
                     {roleInfo.label}
                   </span>
                   <span
-                    className={`text-[9px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 border ${
+                    className={`text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 border ${
                       isActive
                         ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                         : 'bg-rose-500/10 text-rose-500 border-rose-500/20'
@@ -129,17 +129,17 @@ export const UsersList: React.FC<UsersListProps> = ({
               </div>
 
               {/* PIN & Security Status */}
-              <div className="p-2.5 bg-bg-dark/60 rounded-xl border border-border-card flex items-center justify-between text-[11px]">
+              <div className="p-2.5 bg-bg-dark/60 rounded-xl border border-border-card flex items-center justify-between text-xs">
                 <div className="flex items-center gap-1.5">
                   <Key className="w-3.5 h-3.5 text-neutral" />
                   <span className="text-neutral font-medium">Acceso por PIN:</span>
                 </div>
                 {user.hasPin ? (
-                  <span className="text-emerald-500 font-bold flex items-center gap-1 text-[10px]">
+                  <span className="text-emerald-500 font-bold flex items-center gap-1 text-xs">
                     <Check className="w-3 h-3" /> Configurado
                   </span>
                 ) : (
-                  <span className="text-neutral font-medium text-[10px]">Sin PIN</span>
+                  <span className="text-neutral font-medium text-xs">Sin PIN</span>
                 )}
               </div>
             </div>

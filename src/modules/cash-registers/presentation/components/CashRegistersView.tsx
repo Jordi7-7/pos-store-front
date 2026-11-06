@@ -32,6 +32,7 @@ import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
 import type { CashRegisterEntity } from '../../domain/entities/cash-register.entity';
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
+import { SearchInput } from '@/shared/presentation/components/SearchInput';
 
 export const CashRegistersView: React.FC = () => {
   const { can } = usePermissions();
@@ -179,57 +180,24 @@ export const CashRegistersView: React.FC = () => {
   }, [users, assignUserSearch]);
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-bg-dark h-[calc(100vh-4rem)] overflow-hidden">
-      {/* Top Header Controls */}
-      <div className="border-b border-border-card bg-bg-card px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0">
-        <div>
-          <div className="flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-primary" />
-            <h2 className="text-base font-bold text-secondary tracking-wide">
-              Cajas Registradoras
-            </h2>
-          </div>
-          <p className="text-xs text-neutral mt-0.5">
-            Administra los puntos de cobro físicos de cada sucursal y qué personal tiene permiso para operarlos.
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-4">
+          <SearchInput value={searchTerm} onValueChange={setSearchTerm} placeholder="Buscar caja registradora…" aria-label="Buscar caja registradora" />
+          <p className="text-sm text-muted-foreground">
+            {filteredRegisters.length} {filteredRegisters.length === 1 ? 'caja' : 'cajas'}
           </p>
         </div>
-
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          {canCreate && (
-            <Button
-              onClick={handleOpenCreate}
-              className="bg-primary hover:bg-primary-hover text-white text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow transition-all cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Nueva Caja</span>
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Filters Toolbar */}
-      <div className="px-6 py-3 border-b border-border-card bg-bg-card/50 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          {/* Search bar */}
-          <div className="relative w-full sm:w-72">
-            <Search className="w-3.5 h-3.5 text-neutral absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Buscar caja registradora..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-bg-dark border border-border-card rounded-xl text-xs text-secondary placeholder:text-neutral/60 focus:outline-none focus:border-primary/50"
-            />
-          </div>
-        </div>
-
-        <div className="text-xs text-neutral font-medium">
-          Total de cajas: <span className="text-secondary font-bold">{filteredRegisters.length}</span>
-        </div>
+        {canCreate && (
+          <Button onClick={handleOpenCreate}>
+            <Plus />
+            Nueva caja
+          </Button>
+        )}
       </div>
 
       {/* Main Grid List */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div>
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 text-neutral gap-2">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -272,7 +240,7 @@ export const CashRegistersView: React.FC = () => {
                     {/* Top Row: Code Badge & Status */}
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-lg bg-bg-dark border border-border-card text-[11px] font-mono font-bold text-primary">
+                        <span className="px-2.5 py-0.5 rounded-lg bg-bg-dark border border-border-card text-xs font-mono font-bold text-primary">
                           #{reg.code}
                         </span>
                         <h4 className="text-sm font-bold text-secondary truncate" title={reg.name}>
@@ -282,7 +250,7 @@ export const CashRegistersView: React.FC = () => {
 
                       {/* Status indicator */}
                       <div
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase ${
+ className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
                           isTurnoAbierto
                             ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : 'bg-neutral/10 text-neutral border border-border-card'
@@ -306,7 +274,7 @@ export const CashRegistersView: React.FC = () => {
                     {/* Live Session Info if open */}
                     {isTurnoAbierto && reg.activeSession && (
                       <div className="p-2.5 rounded-xl bg-bg-dark border border-emerald-500/20 mb-3 space-y-1.5">
-                        <div className="flex items-center justify-between text-[11px]">
+                        <div className="flex items-center justify-between text-xs">
                           <span className="text-neutral flex items-center gap-1">
                             <Clock className="w-3 h-3 text-emerald-400" /> Abierta por:
                           </span>
@@ -314,7 +282,7 @@ export const CashRegistersView: React.FC = () => {
                             {reg.activeSession.userName}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between text-[11px]">
+                        <div className="flex items-center justify-between text-xs">
                           <span className="text-neutral flex items-center gap-1">
                             <Wallet className="w-3 h-3 text-emerald-400" /> Fondo inicial:
                           </span>
@@ -333,7 +301,7 @@ export const CashRegistersView: React.FC = () => {
                       </span>
                       <span className="font-semibold text-secondary">
                         {assignedCount === 0 ? (
-                          <span className="text-neutral/60 italic text-[11px]">Todos / Global</span>
+                          <span className="text-neutral/60 italic text-xs">Todos / Global</span>
                         ) : (
                           `${assignedCount} usuario(s)`
                         )}
@@ -350,7 +318,7 @@ export const CashRegistersView: React.FC = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => handleOpenAssign(reg)}
-                          className="flex-1 text-[11px] h-8 cursor-pointer flex items-center justify-center gap-1 hover:text-primary hover:border-primary/40"
+                          className="flex-1 text-xs h-8 cursor-pointer flex items-center justify-center gap-1 hover:text-primary hover:border-primary/40"
                         >
                           <UserCheck className="w-3.5 h-3.5" />
                           <span>Asignar Cajeros</span>
@@ -382,7 +350,7 @@ export const CashRegistersView: React.FC = () => {
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
         <DialogContent className="sm:max-w-md bg-bg-card border border-border-card p-6">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-secondary flex items-center gap-2">
+            <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-primary" />
               <span>Registrar Nueva Caja</span>
             </DialogTitle>
@@ -393,7 +361,7 @@ export const CashRegistersView: React.FC = () => {
 
           <form onSubmit={handleCreateSubmit} className="space-y-4 mt-2">
             <Field>
-              <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+ <FieldLabel className="text-xs font-bold flex items-center gap-1.5">
                 <Building className="w-3.5 h-3.5 text-primary" /> Sucursal *
               </FieldLabel>
               <select
@@ -411,7 +379,7 @@ export const CashRegistersView: React.FC = () => {
             </Field>
 
             <Field>
-              <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+ <FieldLabel className="text-xs font-bold flex items-center gap-1.5">
                 <CreditCard className="w-3.5 h-3.5 text-primary" /> Nombre de la Caja *
               </FieldLabel>
               <Input
@@ -451,7 +419,7 @@ export const CashRegistersView: React.FC = () => {
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
         <DialogContent className="sm:max-w-md bg-bg-card border border-border-card p-6">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-secondary flex items-center gap-2">
+            <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
               <Edit2 className="w-4 h-4 text-primary" />
               <span>Editar Caja Registradora</span>
             </DialogTitle>
@@ -462,7 +430,7 @@ export const CashRegistersView: React.FC = () => {
 
           <form onSubmit={handleEditSubmit} className="space-y-4 mt-2">
             <Field>
-              <FieldLabel className="text-[11px] font-bold uppercase tracking-wider">
+ <FieldLabel className="text-xs font-bold ">
                 Nombre de la Caja *
               </FieldLabel>
               <Input
@@ -476,7 +444,7 @@ export const CashRegistersView: React.FC = () => {
             <div className="flex items-center justify-between p-3 rounded-xl bg-bg-dark border border-border-card">
               <div>
                 <span className="text-xs font-semibold text-secondary block">Estado de la Caja</span>
-                <span className="text-[11px] text-neutral">
+                <span className="text-xs text-neutral">
                   {editIsActive ? 'Habilitada para aperturas' : 'Deshabilitada temporalmente'}
                 </span>
               </div>
@@ -516,7 +484,7 @@ export const CashRegistersView: React.FC = () => {
       <Dialog open={showAssignModal} onOpenChange={setShowAssignModal}>
         <DialogContent className="sm:max-w-lg bg-bg-card border border-border-card p-6">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-secondary flex items-center gap-2">
+            <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
               <UserCheck className="w-4 h-4 text-primary" />
               <span>Asignar Personal a {assigningRegister?.name}</span>
             </DialogTitle>
@@ -538,7 +506,7 @@ export const CashRegistersView: React.FC = () => {
               />
             </div>
 
-            <div className="text-[11px] text-neutral flex items-center justify-between">
+            <div className="text-xs text-neutral flex items-center justify-between">
               <span>
                 {selectedUserIds.length} usuario(s) seleccionado(s)
               </span>
@@ -586,7 +554,7 @@ export const CashRegistersView: React.FC = () => {
                           <span className="text-xs font-semibold text-secondary block truncate">
                             {user.name}
                           </span>
-                          <span className="text-[10px] text-neutral block truncate">
+                          <span className="text-xs text-neutral block truncate">
                             {(user.isOwner ? 'Propietario' : (user.role?.name || 'Usuario'))}{user.email ? ` • ${user.email}` : (user.username ? ` • @${user.username}` : '')}
                           </span>
                         </div>

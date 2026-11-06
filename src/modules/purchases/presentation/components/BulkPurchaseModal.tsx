@@ -39,7 +39,7 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-4xl w-full bg-card border border-border rounded-2xl shadow-2xl p-6 text-foreground">
         <DialogHeader className="border-b border-border pb-3">
-          <DialogTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+ <DialogTitle className="text-base font-semibold flex items-center gap-2">
             <FileSpreadsheet className="w-5 h-5 text-primary" />
             <span>Ingreso Masivo de Mercancía (Excel)</span>
           </DialogTitle>

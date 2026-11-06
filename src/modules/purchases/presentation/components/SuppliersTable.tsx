@@ -30,13 +30,13 @@ export const SuppliersTable: React.FC<SuppliersTableProps> = ({ suppliers, onEdi
                     <TableRow key={sup.id} className="border-b border-border/60 last:border-0 hover:bg-muted/30 transition-colors">
                       {/* Avatar / Icon */}
                       <TableCell className="py-2.5 pl-4 pr-1">
-                        <div className="w-8 h-8 rounded-lg bg-muted border border-border flex items-center justify-center text-muted-foreground shrink-0 font-bold text-xs uppercase">
+ <div className="w-8 h-8 rounded-lg bg-muted border border-border flex items-center justify-center text-muted-foreground shrink-0 font-bold text-xs ">
                           {sup.name ? sup.name.charAt(0) : <Truck className="w-4 h-4" />}
                         </div>
                       </TableCell>
 
                       {/* ID / RUC */}
-                      <TableCell className="py-2.5 font-mono text-[11px] font-bold text-primary">
+                      <TableCell className="py-2.5 font-mono text-xs font-bold text-primary">
                         {sup.identityNumber}
                       </TableCell>
 

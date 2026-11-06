@@ -30,7 +30,7 @@ export const TodaySalesCard: React.FC<TodaySalesCardProps> = ({
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-bold text-secondary">Ventas de hoy</h3>
         {hasRefunds && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20">
             {refunds?.count || 1} dev. hoy
           </span>
         )}
@@ -40,14 +40,14 @@ export const TodaySalesCard: React.FC<TodaySalesCardProps> = ({
         {/* Total Neto o Principal */}
         <div className="p-3 rounded-xl bg-bg-dark/50 border border-border-card/60 flex items-center justify-between">
           <div>
-            <p className="text-[10px] text-neutral font-medium uppercase tracking-wider">
+ <p className="text-xs text-neutral font-medium ">
               {hasRefunds ? 'Venta Neta' : 'Total vendido'}
             </p>
             <p className="text-xl font-black text-secondary tracking-tight">
               {formatCurrency(effectiveNetSales)}
             </p>
             {hasRefunds && (
-              <p className="text-[10px] text-neutral mt-0.5">
+              <p className="text-xs text-neutral mt-0.5">
                 Bruto: {formatCurrency(totalSales)}
               </p>
             )}
@@ -68,7 +68,7 @@ export const TodaySalesCard: React.FC<TodaySalesCardProps> = ({
               <span className="font-bold text-rose-500">
                 -{formatCurrency(refunds?.totalRefunded || 0)}
               </span>
-              <span className="text-[10px] text-rose-400 block leading-tight">
+              <span className="text-xs text-rose-400 block leading-tight">
                 {refunds?.itemsCount || 0} {refunds?.itemsCount === 1 ? 'unidad' : 'unidades'} dev.
               </span>
             </div>
@@ -78,7 +78,7 @@ export const TodaySalesCard: React.FC<TodaySalesCardProps> = ({
         {/* Sold Items Box */}
         <div className="p-2.5 rounded-xl bg-bg-dark/50 border border-border-card/60 flex items-center justify-between">
           <div>
-            <p className="text-[10px] text-neutral font-medium uppercase tracking-wider">
+ <p className="text-xs text-neutral font-medium ">
               Productos vendidos
             </p>
             <p className="text-base font-black text-secondary tracking-tight">

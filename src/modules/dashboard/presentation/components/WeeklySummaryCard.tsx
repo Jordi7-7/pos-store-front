@@ -38,7 +38,7 @@ export const WeeklySummaryCard: React.FC<WeeklySummaryCardProps> = ({ data }) =>
 
       return (
         <div className="bg-bg-card border border-border-card p-2.5 rounded-xl shadow-lg">
-          <p className="text-[11px] font-semibold text-neutral mb-0.5">{label}</p>
+          <p className="text-xs font-semibold text-neutral mb-0.5">{label}</p>
           <p className="text-xs font-bold text-primary">{formatted}</p>
         </div>
       );
@@ -55,18 +55,18 @@ export const WeeklySummaryCard: React.FC<WeeklySummaryCardProps> = ({ data }) =>
           </div>
           <div>
             <h3 className="text-sm font-bold text-secondary">Resumen de la semana</h3>
-            <p className="text-[10px] text-neutral">Comportamiento diario (Lunes - Domingo)</p>
+            <p className="text-xs text-neutral">Comportamiento diario (Lunes - Domingo)</p>
           </div>
         </div>
 
         {/* Total & Comparative badge */}
         <div className="flex items-center gap-3 bg-bg-dark/50 border border-border-card/60 px-3 py-1.5 rounded-xl">
           <div>
-            <span className="text-[9px] uppercase font-bold text-neutral">Total Semana</span>
+ <span className="text-xs font-bold text-neutral">Total Semana</span>
             <p className="text-sm font-black text-secondary">{formattedWeekTotal}</p>
           </div>
           <div
-            className={`flex items-center gap-0.5 px-2 py-0.5 rounded-md text-[11px] font-bold ${
+            className={`flex items-center gap-0.5 px-2 py-0.5 rounded-md text-xs font-bold ${
               isPositive
                 ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
                 : 'bg-red-500/10 text-red-600 border border-red-500/20'

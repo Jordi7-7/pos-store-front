@@ -15,14 +15,14 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
       <div className="p-3.5 bg-bg-dark border border-border-card rounded-2xl flex flex-col justify-between">
         <div className="flex items-center justify-between text-neutral mb-2">
           <div className="flex items-center gap-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider">Apertura</span>
+ <span className="text-xs font-bold ">Apertura</span>
             <Tooltip>
               <TooltipTrigger className="text-neutral/60 hover:text-primary transition-colors cursor-help inline-flex items-center">
                 <Info className="w-3 h-3" />
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-[220px] p-2.5 text-xs bg-popover text-popover-foreground border border-border shadow-lg">
                 <p className="font-bold text-foreground mb-0.5">Fondo Inicial de Caja</p>
-                <p className="text-muted-foreground text-[11px] leading-tight">
+                <p className="text-muted-foreground text-xs leading-tight">
                   Efectivo base asignado al cajón al abrir el turno para poder dar cambio a los clientes.
                 </p>
               </TooltipContent>
@@ -34,7 +34,7 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
           <span className="text-base sm:text-lg font-black font-mono text-secondary">
             {details.session.openingBalanceFormatted}
           </span>
-          <span className="text-[10px] text-neutral block mt-0.5">Base en caja</span>
+          <span className="text-xs text-neutral block mt-0.5">Base en caja</span>
         </div>
       </div>
 
@@ -42,7 +42,7 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
       <div className="p-3.5 bg-emerald-500/5 border border-emerald-500/15 rounded-2xl flex flex-col justify-between">
         <div className="flex items-center justify-between text-emerald-600 mb-2">
           <div className="flex items-center gap-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider">
+ <span className="text-xs font-bold ">
               Ventas Netas
             </span>
             <Tooltip>
@@ -51,10 +51,10 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-[230px] p-2.5 text-xs bg-popover text-popover-foreground border border-border shadow-lg">
                 <p className="font-bold text-foreground mb-0.5">Ventas Netas del Turno</p>
-                <p className="text-muted-foreground text-[11px] leading-tight mb-1">
+                <p className="text-muted-foreground text-xs leading-tight mb-1">
                   Facturación comercial neta total en todos los medios de pago:
                 </p>
-                <p className="font-mono text-[10px] bg-muted/60 p-1 rounded font-bold text-emerald-600">
+                <p className="font-mono text-xs bg-muted/60 p-1 rounded font-bold text-emerald-600">
                   (Efectivo + Tarjeta) - Devoluciones
                 </p>
               </TooltipContent>
@@ -66,7 +66,7 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
           <span className="text-base sm:text-lg font-black font-mono text-emerald-600">
             {details.kpis.netSalesFormatted}
           </span>
-          <div className="flex items-center gap-1.5 text-[10px] font-mono font-medium text-emerald-700/80 mt-0.5">
+          <div className="flex items-center gap-1.5 text-xs font-mono font-medium text-emerald-700/80 mt-0.5">
             <span>Ef: {details.kpis.cashSalesFormatted}</span>
             <span>•</span>
             <span>Tarj: {details.kpis.cardSalesFormatted}</span>
@@ -78,7 +78,7 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
       <div className="p-3.5 bg-rose-500/5 border border-rose-500/15 rounded-2xl flex flex-col justify-between">
         <div className="flex items-center justify-between text-rose-500 mb-2">
           <div className="flex items-center gap-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider">
+ <span className="text-xs font-bold ">
               Gastos / Retiros
             </span>
             <Tooltip>
@@ -87,7 +87,7 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-[220px] p-2.5 text-xs bg-popover text-popover-foreground border border-border shadow-lg">
                 <p className="font-bold text-foreground mb-0.5">Salidas de Efectivo</p>
-                <p className="text-muted-foreground text-[11px] leading-tight">
+                <p className="text-muted-foreground text-xs leading-tight">
                   Total de dinero físico retirado del cajón durante el turno para compras menores, pagos o retiros autorizados.
                 </p>
               </TooltipContent>
@@ -99,7 +99,7 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
           <span className="text-base sm:text-lg font-black font-mono text-rose-500">
             {details.kpis.totalExpensesFormatted}
           </span>
-          <span className="text-[10px] text-rose-500/80 block mt-0.5">
+          <span className="text-xs text-rose-500/80 block mt-0.5">
             {details.kpis.expensesLabel}
           </span>
         </div>
@@ -109,7 +109,7 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
       <div className="p-3.5 bg-amber-500/5 border border-amber-500/15 rounded-2xl flex flex-col justify-between">
         <div className="flex items-center justify-between text-amber-600 mb-2">
           <div className="flex items-center gap-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider">
+ <span className="text-xs font-bold ">
               Devoluciones
             </span>
             <Tooltip>
@@ -118,7 +118,7 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-[230px] p-2.5 text-xs bg-popover text-popover-foreground border border-border shadow-lg">
                 <p className="font-bold text-foreground mb-0.5">Reembolsos de Efectivo</p>
-                <p className="text-muted-foreground text-[11px] leading-tight">
+                <p className="text-muted-foreground text-xs leading-tight">
                   Efectivo devuelto a clientes en este turno por cancelaciones o prendas retornadas. Se resta del cajón.
                 </p>
               </TooltipContent>
@@ -130,7 +130,7 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
           <span className="text-base sm:text-lg font-black font-mono text-amber-600">
             {details.kpis.totalRefundsFormatted}
           </span>
-          <span className="text-[10px] text-amber-600/80 block mt-0.5">
+          <span className="text-xs text-amber-600/80 block mt-0.5">
             {details.kpis.refundsLabel}
           </span>
         </div>
@@ -140,7 +140,7 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
       <div className="p-3.5 bg-primary/5 border border-primary/20 rounded-2xl flex flex-col justify-between">
         <div className="flex items-center justify-between text-primary mb-2">
           <div className="flex items-center gap-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider">
+ <span className="text-xs font-bold ">
               Efectivo Esperado
             </span>
             <Tooltip>
@@ -149,10 +149,10 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-[250px] p-2.5 text-xs bg-popover text-popover-foreground border border-border shadow-lg">
                 <p className="font-bold text-foreground mb-0.5">Fórmula de Efectivo en Gaveta</p>
-                <p className="font-mono text-[10px] bg-muted/60 p-1 rounded font-bold text-primary mb-1">
+                <p className="font-mono text-xs bg-muted/60 p-1 rounded font-bold text-primary mb-1">
                   Apertura + Cobros Efec - Gastos - Devoluciones
                 </p>
-                <p className="text-muted-foreground text-[11px] leading-tight">
+                <p className="text-muted-foreground text-xs leading-tight">
                   Cantidad física exacta en billetes y monedas que debe haber en la gaveta al momento del cierre.
                 </p>
               </TooltipContent>
@@ -164,7 +164,7 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
           <span className="text-base sm:text-lg font-black font-mono text-primary">
             {details.session.expectedBalanceFormatted}
           </span>
-          <span className="text-[10px] text-primary/80 block mt-0.5">
+          <span className="text-xs text-primary/80 block mt-0.5">
             Físico en gaveta
           </span>
         </div>
@@ -174,7 +174,7 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
       <div className="p-3.5 bg-bg-dark border border-border-card rounded-2xl flex flex-col justify-between">
         <div className="flex items-center justify-between text-neutral mb-2">
           <div className="flex items-center gap-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider">
+ <span className="text-xs font-bold ">
               Arqueo Cierre
             </span>
             <Tooltip>
@@ -183,10 +183,10 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-[240px] p-2.5 text-xs bg-popover text-popover-foreground border border-border shadow-lg">
                 <p className="font-bold text-foreground mb-0.5">Efectivo Contado y Cuadre</p>
-                <p className="text-muted-foreground text-[11px] leading-tight mb-1">
+                <p className="text-muted-foreground text-xs leading-tight mb-1">
                   Dinero real contado físicamente por el cajero al momento del cierre.
                 </p>
-                <p className="font-mono text-[10px] bg-muted/60 p-1 rounded font-bold text-secondary">
+                <p className="font-mono text-xs bg-muted/60 p-1 rounded font-bold text-secondary">
                   Diferencia = Contado - Esperado
                 </p>
               </TooltipContent>
@@ -201,7 +201,7 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
                 {details.session.closingBalanceFormatted}
               </span>
               <span
-                className={`text-[10px] font-bold block mt-0.5 ${
+                className={`text-xs font-bold block mt-0.5 ${
                   details.session.differenceStatus === 'EXACT'
                     ? 'text-emerald-600'
                     : details.session.differenceStatus === 'SURPLUS'
@@ -215,7 +215,7 @@ export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {
           ) : (
             <>
               <span className="text-sm font-bold text-neutral">Pendiente</span>
-              <span className="text-[10px] text-emerald-600 font-medium block mt-0.5">
+              <span className="text-xs text-emerald-600 font-medium block mt-0.5">
                 {details.session.differenceStatusText}
               </span>
             </>

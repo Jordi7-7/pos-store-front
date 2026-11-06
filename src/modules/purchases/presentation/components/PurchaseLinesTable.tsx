@@ -15,7 +15,7 @@ interface PurchaseLinesTableProps {
   onAddRow: () => void;
 }
 
-const HEAD = 'text-[10px] font-bold uppercase tracking-wider text-muted-foreground';
+const HEAD = 'text-xs font-bold text-muted-foreground';
 
 /** Tabla de filas del ingreso (SKU, cantidad, costo) con el total y el botón de añadir fila. */
 export const PurchaseLinesTable: React.FC<PurchaseLinesTableProps> = ({ lines, total, onUpdateRow, onRemoveRow, onProductSelect, onKeyDown, onAddRow }) => {

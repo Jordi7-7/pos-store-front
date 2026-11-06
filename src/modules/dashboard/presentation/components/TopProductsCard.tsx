@@ -20,7 +20,7 @@ export const TopProductsCard: React.FC<TopProductsCardProps> = ({ products }) =>
     <div className="bg-bg-card border border-border-card rounded-2xl p-4 shadow-sm flex flex-col h-full">
       <div className="flex items-center justify-between mb-2 shrink-0">
         <h3 className="text-sm font-bold text-secondary">Productos más vendidos</h3>
-        <span className="text-[10px] font-semibold text-neutral uppercase tracking-wider">Top 5</span>
+ <span className="text-xs font-semibold text-neutral ">Top 5</span>
       </div>
 
       <div className="flex-1 space-y-1.5 overflow-hidden">
@@ -36,7 +36,7 @@ export const TopProductsCard: React.FC<TopProductsCardProps> = ({ products }) =>
                   {index < 3 ? (
                     <span className="text-sm">{MEDAL_EMOJIS[index]}</span>
                   ) : (
-                    <span className="text-[11px] text-neutral">{index + 1}</span>
+                    <span className="text-xs text-neutral">{index + 1}</span>
                   )}
                 </div>
 
@@ -54,14 +54,14 @@ export const TopProductsCard: React.FC<TopProductsCardProps> = ({ products }) =>
                   <p className="text-xs font-semibold text-secondary truncate max-w-[130px] xl:max-w-[180px]">
                     {item.productName}
                   </p>
-                  <p className="text-[9px] text-neutral font-mono truncate">{item.sku || 'Sin SKU'}</p>
+                  <p className="text-xs text-neutral font-mono truncate">{item.sku || 'Sin SKU'}</p>
                 </div>
               </div>
 
               {/* Cantidad vendida */}
               <div className="text-right flex-shrink-0 pl-2">
                 <span className="text-xs font-bold text-secondary">{item.quantitySold}</span>
-                <span className="text-[9px] text-neutral ml-0.5">uds</span>
+                <span className="text-xs text-neutral ml-0.5">uds</span>
               </div>
             </div>
           ))

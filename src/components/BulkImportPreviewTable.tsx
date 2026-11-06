@@ -28,7 +28,7 @@ export const BulkImportPreviewTable: React.FC<BulkImportPreviewTableProps> = ({
   return (
     <div className="border border-border rounded-xl overflow-hidden shadow-inner max-h-[350px] overflow-y-auto overflow-x-auto bg-muted/10 w-full">
       <table className="w-full min-w-[750px] text-left border-collapse text-xs">
-        <thead className="bg-muted/80 sticky top-0 border-b border-border text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+        <thead className="bg-muted/80 sticky top-0 border-b border-border text-xs uppercase font-bold text-muted-foreground tracking-wider">
           <tr>
             <th className="px-4 py-2.5">Estado</th>
             <th className="px-4 py-2.5 font-mono">SKU</th>
@@ -82,14 +82,14 @@ export const BulkImportPreviewTable: React.FC<BulkImportPreviewTableProps> = ({
                 {type === 'products' ? (
                   <>
                     <td className="px-4 py-2.5 font-medium truncate max-w-[150px]">{productName || 'S/N'}</td>
-                    <td className="px-4 py-2.5 font-mono text-[11px] text-muted-foreground">{item.barcode || 'S/Barra'}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{item.barcode || 'S/Barra'}</td>
                     <td className="px-4 py-2.5 text-right font-mono">{formatMoney(Number(item.purchasePrice || 0))}</td>
                     <td className="px-4 py-2.5 text-right font-mono">{formatMoney(Number(item.salePrice || 0))}</td>
                     <td className="px-4 py-2.5 text-right font-mono">
                       {item.wholesalePrice !== undefined && item.wholesalePrice !== null && Number(item.wholesalePrice) > 0 ? (
                         formatMoney(Number(item.wholesalePrice))
                       ) : (
-                        <span className="text-muted-foreground/50 text-[11px]">—</span>
+                        <span className="text-muted-foreground/50 text-xs">—</span>
                       )}
                     </td>
                     <td className="px-4 py-2.5 text-right font-mono font-bold">
@@ -106,7 +106,7 @@ export const BulkImportPreviewTable: React.FC<BulkImportPreviewTableProps> = ({
                   <>
                     <td className="px-4 py-2.5 font-semibold text-secondary truncate max-w-[200px]">
                       {hasError ? (
-                        <span className="text-muted-foreground italic text-[11px]">{errorMsg === 'Este SKU no existe en el catálogo de productos.' ? 'Desconocido' : productName}</span>
+                        <span className="text-muted-foreground italic text-xs">{errorMsg === 'Este SKU no existe en el catálogo de productos.' ? 'Desconocido' : productName}</span>
                       ) : (
                         productName
                       )}
@@ -116,11 +116,11 @@ export const BulkImportPreviewTable: React.FC<BulkImportPreviewTableProps> = ({
                 )}
                 <td className="px-4 py-2.5 max-w-[200px]">
                   {hasError ? (
-                    <span className="text-[11px] text-rose-400 leading-tight font-medium block">
+                    <span className="text-xs text-rose-400 leading-tight font-medium block">
                       {errorMsg}
                     </span>
                   ) : (
-                    <span className="text-[10px] text-muted-foreground italic">Datos correctos</span>
+                    <span className="text-xs text-muted-foreground italic">Datos correctos</span>
                   )}
                 </td>
               </tr>

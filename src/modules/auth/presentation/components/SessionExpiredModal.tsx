@@ -104,7 +104,7 @@ export const SessionExpiredModal: React.FC = () => {
             <ShieldAlert className="w-8 h-8 animate-pulse" />
           </div>
 
-          <DialogTitle className="text-xl font-bold text-secondary tracking-tight">
+          <DialogTitle className="text-xl font-semibold text-secondary tracking-tight">
             Tu sesión ha expirado
           </DialogTitle>
 

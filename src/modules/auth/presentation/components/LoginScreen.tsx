@@ -199,7 +199,7 @@ export const LoginScreen: React.FC = () => {
                 <span className="text-xl font-extrabold tracking-tight text-secondary truncate block">
                   {publicTenant ? publicTenant.name : 'POS STORE'}
                 </span>
-                <span className="text-[10px] text-primary font-bold uppercase tracking-widest block">
+ <span className="text-xs text-primary font-bold block">
                   {publicTenant ? `Tienda: @${publicTenant.slug}` : 'SaaS ERP Multi-tenant'}
                 </span>
               </div>
@@ -223,13 +223,13 @@ export const LoginScreen: React.FC = () => {
           <div className="mt-8 pt-6 border-t border-border-card flex items-center justify-between text-xs text-neutral">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[11px] font-medium">Terminal POS Lista</span>
+              <span className="text-xs font-medium">Terminal POS Lista</span>
             </div>
             {publicTenant && (
               <button
                 type="button"
                 onClick={handleClearTenant}
-                className="text-[11px] text-primary hover:underline font-semibold cursor-pointer"
+                className="text-xs text-primary hover:underline font-semibold cursor-pointer"
               >
                 Cambiar Tienda
               </button>
@@ -258,7 +258,7 @@ export const LoginScreen: React.FC = () => {
 
               <form onSubmit={handleSelectTenantSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-neutral mb-1.5">
+ <label className="block text-xs font-bold text-neutral mb-1.5">
                     Identificador de la Tienda (Slug)
                   </label>
                   <div className="relative">
@@ -411,7 +411,7 @@ export const LoginScreen: React.FC = () => {
                   )}
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral mb-1">
+ <label className="block text-xs font-bold text-neutral mb-1">
                       Usuario o Correo
                     </label>
                     <div className="relative">
@@ -427,7 +427,7 @@ export const LoginScreen: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-neutral mb-1">
+ <label className="block text-xs font-bold text-neutral mb-1">
                       Contraseña
                     </label>
                     <div className="relative">

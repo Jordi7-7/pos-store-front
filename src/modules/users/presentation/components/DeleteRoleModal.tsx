@@ -27,7 +27,7 @@ export const DeleteRoleModal: React.FC<DeleteRoleModalProps> = ({
     <Dialog open={!!roleToDelete} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md bg-bg-card border border-border-card p-6">
         <DialogHeader>
-          <DialogTitle className="text-base font-bold text-secondary flex items-center gap-2">
+          <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shrink-0">
               <AlertTriangle className="w-4 h-4" />
             </div>

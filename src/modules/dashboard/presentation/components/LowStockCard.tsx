@@ -28,11 +28,11 @@ export const LowStockCard: React.FC<LowStockCardProps> = ({ products }) => {
           </div>
           <div>
             <h3 className="text-sm font-bold text-secondary">Poco inventario</h3>
-            <p className="text-[10px] text-neutral">Stock menor o igual a 5</p>
+            <p className="text-xs text-neutral">Stock menor o igual a 5</p>
           </div>
         </div>
         {totalCount > 0 && (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
+          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
             {totalCount >= 50 ? 'Top 50 críticos' : `${totalCount} ${totalCount === 1 ? 'prod' : 'prods'}`}
           </span>
         )}
@@ -42,7 +42,7 @@ export const LowStockCard: React.FC<LowStockCardProps> = ({ products }) => {
         {displayProducts.length > 0 ? (
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 bg-bg-card z-10">
-              <tr className="border-b border-border-card/60 text-[9px] uppercase font-bold text-neutral">
+ <tr className="border-b border-border-card/60 text-xs font-bold text-neutral">
                 <th className="py-1 px-1.5">SKU</th>
                 <th className="py-1 px-1.5">Producto</th>
                 <th className="py-1 px-1.5 text-right">Stock</th>
@@ -53,7 +53,7 @@ export const LowStockCard: React.FC<LowStockCardProps> = ({ products }) => {
                 const isCritical = item.stock <= 2;
                 return (
                   <tr key={item.variantId || index} className="hover:bg-bg-dark/30 transition-colors">
-                    <td className="py-1.5 px-1.5 font-mono text-[10px] text-neutral truncate max-w-[70px]">
+                    <td className="py-1.5 px-1.5 font-mono text-xs text-neutral truncate max-w-[70px]">
                       {item.sku || 'N/A'}
                     </td>
                     <td className="py-1.5 px-1.5 font-medium text-secondary truncate max-w-[120px] sm:max-w-[160px]">
@@ -61,7 +61,7 @@ export const LowStockCard: React.FC<LowStockCardProps> = ({ products }) => {
                     </td>
                     <td className="py-1.5 px-1.5 text-right">
                       <span
-                        className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-bold ${
                           isCritical
                             ? 'bg-red-500/10 text-red-600 border border-red-500/20'
                             : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'

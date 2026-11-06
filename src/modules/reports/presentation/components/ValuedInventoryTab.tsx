@@ -90,12 +90,7 @@ export const ValuedInventoryTab: React.FC<ValuedInventoryTabProps> = ({ selected
   return (
     <div className="space-y-4 animate-fadeIn">
       {/* Header Panel Bar */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-primary/5 to-bg-card border border-primary/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
-        <div>
-          <h2 className="text-lg font-bold text-secondary mb-1">Existencias Valuadas</h2>
-          <p className="text-xs text-neutral">Consulta el volumen consolidado y valor total actual de los productos variantes en almacén.</p>
-        </div>
-
+      <div className="flex flex-wrap items-center justify-end gap-3 rounded-xl border border-border-card bg-bg-card p-4 shadow-xs">
         {/* Actions */}
         <div className="flex items-center gap-2">
           <Button 
@@ -143,7 +138,7 @@ export const ValuedInventoryTab: React.FC<ValuedInventoryTabProps> = ({ selected
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="uppercase tracking-wider text-[10px] font-bold">
+ <TableRow className=" text-xs font-bold">
                     <TableHead className="pr-2">SKU</TableHead>
                     <TableHead className="px-2">Nombre</TableHead>
                     <TableHead className="px-2 text-right">Cantidad</TableHead>
@@ -155,7 +150,7 @@ export const ValuedInventoryTab: React.FC<ValuedInventoryTabProps> = ({ selected
                   {inventoryData.map((row) => (
                     <TableRow key={row.sku} className="text-secondary hover:bg-muted/10 transition-colors">
                       <TableCell className="py-3 pr-2 font-mono font-semibold text-primary">{row.sku}</TableCell>
-                      <TableCell className="py-3 px-2 uppercase font-medium max-w-[300px] truncate">{row.name}</TableCell>
+ <TableCell className="py-3 px-2 font-medium max-w-[300px] truncate">{row.name}</TableCell>
                       <TableCell className="py-3 px-2 text-right font-mono font-semibold">{Math.floor(row.quantity)}</TableCell>
                       <TableCell className="py-3 px-2 text-right font-mono font-bold">{formatMoney(Number(row.purchasePrice))}</TableCell>
                       <TableCell className="py-3 pl-2 text-right font-mono font-bold text-emerald-600">{formatMoney(Number(row.totalValue))}</TableCell>

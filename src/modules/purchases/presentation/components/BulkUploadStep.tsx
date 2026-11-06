@@ -21,11 +21,11 @@ interface BulkUploadStepProps {
 export const BulkUploadStep: React.FC<BulkUploadStepProps> = ({ branchId, branchName, suppliers, supplierId, onSupplierChange, invoiceNumber, onInvoiceChange, fileInputRef, onPickFile, onFileSelected }) => (
           <div className="space-y-6 py-4">
             <div className="bg-muted/30 border border-border rounded-xl p-4 space-y-3">
-              <h5 className="text-xs font-bold uppercase tracking-wide text-secondary flex items-center gap-1.5">
+ <h5 className="text-xs font-bold text-secondary flex items-center gap-1.5">
                 <FileDown className="w-4 h-4 text-primary" />
                 <span>Descarga la Plantilla de Ingresos</span>
               </h5>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 Registra tus compras en lote subiendo un archivo Excel con las columnas: <strong className="text-secondary">SKU</strong> y <strong className="text-secondary">Cantidad</strong>. Los productos deben existir previamente en el catálogo.
               </p>
               <button
@@ -49,11 +49,11 @@ export const BulkUploadStep: React.FC<BulkUploadStepProps> = ({ branchId, branch
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="block text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+ <label className="block text-xs font-bold text-muted-foreground">
                     Proveedor Comercial *
                   </label>
                   {branchId && (
-                    <span className="inline-flex items-center gap-1 text-[10px] text-primary font-semibold bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
+                    <span className="inline-flex items-center gap-1 text-xs text-primary font-semibold bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
                       <Building className="w-2.5 h-2.5" />
                       {branchName}
                     </span>
@@ -70,7 +70,7 @@ export const BulkUploadStep: React.FC<BulkUploadStepProps> = ({ branchId, branch
               </div>
 
               <div className="space-y-1">
-                <label className="block text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+ <label className="block text-xs font-bold text-muted-foreground">
                   N° de Factura o Referencia (Opcional)
                 </label>
                 <input
@@ -101,7 +101,7 @@ export const BulkUploadStep: React.FC<BulkUploadStepProps> = ({ branchId, branch
               </div>
               <div className="text-center space-y-1">
                 <p className="text-xs font-bold text-secondary">Sube o arrastra tu archivo Excel de Cantidades</p>
-                <p className="text-[10px] text-muted-foreground">Debe tener las columnas SKU y Cantidad</p>
+                <p className="text-xs text-muted-foreground">Debe tener las columnas SKU y Cantidad</p>
               </div>
             </div>
           </div>

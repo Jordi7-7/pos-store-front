@@ -66,7 +66,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md bg-card border border-border rounded-2xl shadow-xl p-6 text-foreground">
         <DialogHeader className="border-b border-border pb-3">
-          <DialogTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+ <DialogTitle className="text-base font-semibold flex items-center gap-2">
             <User className="w-4 h-4 text-primary" />
             {isEditing ? 'Editar Cliente' : 'Registrar Nuevo Cliente'}
           </DialogTitle>
@@ -79,7 +79,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <Field>
-            <FieldLabel htmlFor="cust-id" className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel htmlFor="cust-id" className="text-xs font-bold text-secondary">
               Identificación / RUC / Cédula *
             </FieldLabel>
             <div className="relative mt-1">
@@ -96,7 +96,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="cust-name" className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel htmlFor="cust-name" className="text-xs font-bold text-secondary">
               Nombre Completo / Razón Social *
             </FieldLabel>
             <div className="relative mt-1">
@@ -106,7 +106,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ej: Juan Pérez"
-                className="pl-9 text-xs uppercase"
+ className="pl-9 text-xs "
                 required
               />
             </div>
@@ -114,7 +114,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field>
-              <FieldLabel htmlFor="cust-phone" className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel htmlFor="cust-phone" className="text-xs font-bold text-secondary">
                 Teléfono / Celular
               </FieldLabel>
               <div className="relative mt-1">
@@ -130,7 +130,7 @@ export const CustomerFormModal: React.FC<CustomerFormModalProps> = ({
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="cust-email" className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel htmlFor="cust-email" className="text-xs font-bold text-secondary">
                 Correo Electrónico
               </FieldLabel>
               <div className="relative mt-1">

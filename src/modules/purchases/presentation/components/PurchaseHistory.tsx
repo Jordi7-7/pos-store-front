@@ -211,11 +211,11 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                       {pur.invoiceNumber}
                     </span>
                     {isAll && pur.branchName && (
-                      <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">
+                      <span className="text-xs font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">
                         {pur.branchName}
                       </span>
                     )}
-                    <span className="text-[10px] text-neutral flex items-center gap-1">
+                    <span className="text-xs text-neutral flex items-center gap-1">
                       <CalendarIcon className="w-3.5 h-3.5" />
                       {pur.dateFormatted}
                     </span>
@@ -224,12 +224,12 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                   <div className="flex flex-wrap items-center gap-2">
                     {/* Status badge */}
                     {isCancelled ? (
-                      <span className="text-[10px] font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20 flex items-center gap-1">
+                      <span className="text-xs font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20 flex items-center gap-1">
                         <XCircle className="w-3 h-3" />
                         Anulada
                       </span>
                     ) : (
-                      <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 flex items-center gap-1">
+                      <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 flex items-center gap-1">
                         <CheckCircle2 className="w-3 h-3" />
                         {pur.status}
                       </span>
@@ -246,7 +246,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                           onClick={() => handleCancelClick(pur.id)}
                           disabled={isCancellingThis}
                           title="Anular este ingreso y revertir el stock"
-                          className="flex items-center gap-1 text-[10px] font-bold text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-400/60 bg-red-500/5 hover:bg-red-500/15 px-2.5 py-1 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex items-center gap-1 text-xs font-bold text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-400/60 bg-red-500/5 hover:bg-red-500/15 px-2.5 py-1 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isCancellingThis ? (
                             <Loader2 className="w-3 h-3 animate-spin" />
@@ -258,7 +258,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                       ) : (
                         <span
                           title="No se puede anular: ya se vendieron unidades de este lote"
-                          className="flex items-center gap-1 text-[10px] font-bold text-neutral border border-border-card bg-muted/20 px-2.5 py-1 rounded-lg cursor-not-allowed opacity-50"
+                          className="flex items-center gap-1 text-xs font-bold text-neutral border border-border-card bg-muted/20 px-2.5 py-1 rounded-lg cursor-not-allowed opacity-50"
                         >
                           <XCircle className="w-3 h-3" />
                           No anulable
@@ -276,19 +276,19 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                       <p className="text-xs font-semibold text-red-300">
                         ¿Confirmar anulación de ingreso?
                       </p>
-                      <p className="text-[10px] text-neutral leading-relaxed">
+                      <p className="text-xs text-neutral leading-relaxed">
                         Se revertirá el stock de todos los productos de esta orden. Esta acción queda registrada en el Kardex como <strong className="text-secondary">ANULACION_COMPRA</strong> y no puede deshacerse.
                       </p>
                       <div className="flex gap-2 pt-1">
                         <button
                           onClick={() => handleConfirmCancel(pur.id)}
-                          className="text-[10px] font-bold text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-lg transition-colors"
+                          className="text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-lg transition-colors"
                         >
                           Sí, anular ingreso
                         </button>
                         <button
                           onClick={handleDismissConfirm}
-                          className="text-[10px] font-bold text-secondary border border-border-card hover:border-primary/40 px-3 py-1.5 rounded-lg transition-colors"
+                          className="text-xs font-bold text-secondary border border-border-card hover:border-primary/40 px-3 py-1.5 rounded-lg transition-colors"
                         >
                           Cancelar
                         </button>
@@ -302,14 +302,14 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 text-neutral" />
                     <div>
-                      <span className="text-[10px] text-neutral block font-bold uppercase tracking-wider">Proveedor</span>
+ <span className="text-xs text-neutral block font-bold ">Proveedor</span>
                       <span className="font-semibold">{pur.supplierName}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-neutral" />
                     <div>
-                      <span className="text-[10px] text-neutral block font-bold uppercase tracking-wider">Sucursal Destino</span>
+ <span className="text-xs text-neutral block font-bold ">Sucursal Destino</span>
                       <span className="font-semibold">{pur.branchName}</span>
                     </div>
                   </div>
@@ -317,20 +317,20 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
 
                 {/* Items */}
                 <div className="border-t border-border-card/40 pt-2.5">
-                  <span className="text-[9.5px] font-bold text-neutral uppercase tracking-wider block mb-1.5">Desglose de Artículos</span>
+ <span className="text-xs font-bold text-neutral block mb-1.5">Desglose de Artículos</span>
                   <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
                     {(pur.items || []).map((item) => (
                       <div
                         key={item.id}
-                        className="flex justify-between items-center text-[11px] bg-bg-card border border-border-card/60 p-2 rounded-xl"
+                        className="flex justify-between items-center text-xs bg-bg-card border border-border-card/60 p-2 rounded-xl"
                       >
                         <div>
                           <span className="font-bold">{item.productName}</span>
-                          <span className="text-[9.5px] text-neutral font-mono block">SKU: {item.sku}</span>
+                          <span className="text-xs text-neutral font-mono block">SKU: {item.sku}</span>
                         </div>
                         <div className="text-right">
                           <span className="font-bold block">x{item.quantity}</span>
-                          <span className="text-[9.5px] text-neutral font-mono block">
+                          <span className="text-xs text-neutral font-mono block">
                             Costo U: {item.unitCostFormatted}
                           </span>
                         </div>

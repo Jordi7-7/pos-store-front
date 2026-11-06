@@ -54,7 +54,7 @@ export const SupplierFormDialog: React.FC<SupplierFormDialogProps> = ({ open, on
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md bg-card border border-border rounded-2xl shadow-xl p-6 text-foreground">
         <DialogHeader className="border-b border-border pb-3">
-          <DialogTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+ <DialogTitle className="text-base font-semibold flex items-center gap-2">
             <Truck className="w-4 h-4 text-primary" />
             {supplier ? 'Editar Proveedor' : 'Registrar Nuevo Proveedor'}
           </DialogTitle>
@@ -65,7 +65,7 @@ export const SupplierFormDialog: React.FC<SupplierFormDialogProps> = ({ open, on
 
           <form onSubmit={handleSubmit} className="space-y-4 mt-4">
             <Field>
-              <FieldLabel htmlFor="sup-id" className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel htmlFor="sup-id" className="text-xs font-bold text-secondary">
                 RUC / Identificación *
               </FieldLabel>
               <div className="relative mt-1">
@@ -82,7 +82,7 @@ export const SupplierFormDialog: React.FC<SupplierFormDialogProps> = ({ open, on
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="sup-name" className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel htmlFor="sup-name" className="text-xs font-bold text-secondary">
                 Nombre / Razón Social *
               </FieldLabel>
               <div className="relative mt-1">
@@ -100,7 +100,7 @@ export const SupplierFormDialog: React.FC<SupplierFormDialogProps> = ({ open, on
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field>
-                <FieldLabel htmlFor="sup-phone" className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel htmlFor="sup-phone" className="text-xs font-bold text-secondary">
                   Teléfono / Celular
                 </FieldLabel>
                 <div className="relative mt-1">
@@ -116,7 +116,7 @@ export const SupplierFormDialog: React.FC<SupplierFormDialogProps> = ({ open, on
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="sup-email" className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel htmlFor="sup-email" className="text-xs font-bold text-secondary">
                   Correo Electrónico
                 </FieldLabel>
                 <div className="relative mt-1">
@@ -134,7 +134,7 @@ export const SupplierFormDialog: React.FC<SupplierFormDialogProps> = ({ open, on
             </div>
 
             <Field>
-              <FieldLabel htmlFor="sup-address" className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel htmlFor="sup-address" className="text-xs font-bold text-secondary">
                 Dirección / Ubicación
               </FieldLabel>
               <div className="relative mt-1">

@@ -81,7 +81,7 @@ export const CustomersTable: React.FC<CustomersTableProps> = ({
               {/* Avatar / Initials */}
               <TableCell className="py-2.5 pl-4 pr-1">
                 <div 
-                  className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 font-bold text-xs uppercase ${
+ className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 font-bold text-xs ${
                     c.isFinalConsumer 
                       ? 'bg-primary/10 border-primary/20 text-primary' 
                       : 'bg-muted border-border text-muted-foreground'
@@ -92,7 +92,7 @@ export const CustomersTable: React.FC<CustomersTableProps> = ({
               </TableCell>
 
               {/* ID / Cédula */}
-              <TableCell className="py-2.5 font-mono text-[11px] font-bold text-primary">
+              <TableCell className="py-2.5 font-mono text-xs font-bold text-primary">
                 {c.identityNumber}
               </TableCell>
 
@@ -103,7 +103,7 @@ export const CustomersTable: React.FC<CustomersTableProps> = ({
                     {c.name}
                   </span>
                   {c.isFinalConsumer && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-medium">
+                    <span className="text-xs px-1.5 py-0.5 rounded bg-primary/15 text-primary font-medium">
                       Consumidor Final
                     </span>
                   )}

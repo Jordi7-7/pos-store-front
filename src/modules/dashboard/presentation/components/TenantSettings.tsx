@@ -8,7 +8,7 @@ import type { CountryOption, CurrencyOption, TimezoneOption } from '../../domain
 import { getSavedTheme, saveTheme, DEFAULT_THEME, type TenantThemeColors } from '@/lib/themeManager';
 import { BranchesManagementTab } from '@/modules/branches';
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel } from '@/components/ui/field';
@@ -121,7 +121,7 @@ export const TenantSettings: React.FC = () => {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5">
+    <div className="max-w-3xl space-y-5">
       {/* Tabs navigation */}
       <div className="flex items-center gap-2 border-b border-border-card pb-1">
         <button
@@ -155,20 +155,13 @@ export const TenantSettings: React.FC = () => {
         <BranchesManagementTab />
       ) : (
       <Card className="border border-border-card shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-bold text-secondary">Configuración del Negocio</CardTitle>
-          <CardDescription className="text-xs text-neutral">
-            Administra la información de tu empresa, zona horaria y moneda.
-          </CardDescription>
-        </CardHeader>
-
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               
               {/* Business Name */}
               <Field>
-                <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+ <FieldLabel className="text-xs font-bold flex items-center gap-1.5">
                   <Building className="w-3.5 h-3.5 text-primary" /> Nombre del Negocio
                 </FieldLabel>
                 <Input
@@ -182,7 +175,7 @@ export const TenantSettings: React.FC = () => {
 
               {/* RUC (Read Only) */}
               <Field>
-                <FieldLabel className="text-[11px] font-bold uppercase tracking-wider">
+ <FieldLabel className="text-xs font-bold ">
                   RUC / Identificación Fiscal
                 </FieldLabel>
                 <Input
@@ -194,7 +187,7 @@ export const TenantSettings: React.FC = () => {
 
               {/* Country Select (Combobox) */}
               <Field>
-                <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+ <FieldLabel className="text-xs font-bold flex items-center gap-1.5">
                   <Globe className="w-3.5 h-3.5 text-primary" /> País
                 </FieldLabel>
                 <div className="w-full">
@@ -232,7 +225,7 @@ export const TenantSettings: React.FC = () => {
 
               {/* Currency Select (Combobox) */}
               <Field>
-                <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+ <FieldLabel className="text-xs font-bold flex items-center gap-1.5">
                   <DollarSign className="w-3.5 h-3.5 text-primary" /> Moneda del Sistema
                 </FieldLabel>
                 <div className="w-full">
@@ -267,7 +260,7 @@ export const TenantSettings: React.FC = () => {
 
               {/* Slug (URL Identifier) */}
               <Field className="md:col-span-2">
-                <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+ <FieldLabel className="text-xs font-bold flex items-center gap-1.5">
                   <Link2 className="w-3.5 h-3.5 text-primary" /> Identificador URL (Slug de la Tienda)
                 </FieldLabel>
                 <Input
@@ -277,14 +270,14 @@ export const TenantSettings: React.FC = () => {
                   placeholder="ej. zapateria-gomez"
                   className="text-xs h-9 font-mono"
                 />
-                <p className="text-[10px] text-neutral mt-1">
+                <p className="text-xs text-neutral mt-1">
                   Enlace directo de acceso: <span className="font-mono text-primary font-semibold">http://localhost:5173/{slug || 'mi-tienda'}</span>
                 </p>
               </Field>
 
               {/* Logo Upload Section */}
               <div className="md:col-span-2 space-y-2">
-                <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+ <FieldLabel className="text-xs font-bold flex items-center gap-1.5">
                   <ImageIcon className="w-3.5 h-3.5 text-primary" /> Logotipo de la Empresa
                 </FieldLabel>
 
@@ -300,7 +293,7 @@ export const TenantSettings: React.FC = () => {
                   <div className="border border-dashed border-primary/50 bg-primary/5 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 transition-all">
                     <Loader2 className="w-8 h-8 text-primary animate-spin" />
                     <span className="text-xs font-semibold text-secondary">Subiendo imagen al bucket...</span>
-                    <span className="text-[10px] text-neutral">Generando URL pública segura</span>
+                    <span className="text-xs text-neutral">Generando URL pública segura</span>
                   </div>
                 ) : logoUrl ? (
                   <div className="p-3 bg-bg-dark/60 rounded-2xl border border-border-card flex items-center justify-between gap-4">
@@ -347,7 +340,7 @@ export const TenantSettings: React.FC = () => {
                       <p className="text-xs font-bold text-secondary group-hover:text-primary transition-colors">
                         Haz clic para subir el logo de tu empresa
                       </p>
-                      <p className="text-[10px] text-neutral mt-0.5">
+                      <p className="text-xs text-neutral mt-0.5">
                         Formatos soportados: PNG, JPG, WEBP o SVG (Máx. 5MB)
                       </p>
                     </div>
@@ -357,7 +350,7 @@ export const TenantSettings: React.FC = () => {
 
               {/* Timezone Select (Combobox) */}
               <Field className="md:col-span-2">
-                <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+ <FieldLabel className="text-xs font-bold flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-primary" /> Zona Horaria
                 </FieldLabel>
                 <div className="w-full">
@@ -390,7 +383,7 @@ export const TenantSettings: React.FC = () => {
                   </Combobox>
                 </div>
                 {filteredTimezones.length === 0 && country && (
-                  <p className="text-[10px] text-amber-500 flex items-center gap-1 mt-1">
+                  <p className="text-xs text-amber-500 flex items-center gap-1 mt-1">
                     <AlertCircle className="w-3 h-3" /> No se encontraron zonas específicas para este país.
                   </p>
                 )}
@@ -399,7 +392,7 @@ export const TenantSettings: React.FC = () => {
               {/* Theme Customization Section */}
               <div className="md:col-span-2 pt-2 border-t border-border-card/40 space-y-3">
                 <div className="flex items-center justify-between">
-                  <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 text-secondary">
+ <FieldLabel className="text-xs font-bold flex items-center gap-1.5 text-secondary">
                     <Palette className="w-3.5 h-3.5 text-primary" /> Colores de Marca y Tema
                   </FieldLabel>
                   <Button
@@ -407,7 +400,7 @@ export const TenantSettings: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     onClick={handleResetTheme}
-                    className="h-7 text-[10px] gap-1 text-neutral hover:text-secondary cursor-pointer"
+                    className="h-7 text-xs gap-1 text-neutral hover:text-secondary cursor-pointer"
                   >
                     <RotateCcw className="w-3 h-3" /> Restaurar colores
                   </Button>
@@ -418,10 +411,10 @@ export const TenantSettings: React.FC = () => {
                   <div className="p-3 bg-bg-dark/60 rounded-2xl border border-border-card flex items-center justify-between gap-3">
                     <div className="space-y-0.5">
                       <span className="text-xs font-bold text-secondary block">Color Primario</span>
-                      <span className="text-[10px] text-neutral block">Barra lateral y botones principales</span>
+                      <span className="text-xs text-neutral block">Barra lateral y botones principales</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-mono font-medium text-neutral uppercase">
+ <span className="text-xs font-mono font-medium text-neutral ">
                         {theme.primary}
                       </span>
                       <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-border-card shadow-sm cursor-pointer hover:scale-105 transition-transform">
@@ -439,10 +432,10 @@ export const TenantSettings: React.FC = () => {
                   <div className="p-3 bg-bg-dark/60 rounded-2xl border border-border-card flex items-center justify-between gap-3">
                     <div className="space-y-0.5">
                       <span className="text-xs font-bold text-secondary block">Color Secundario</span>
-                      <span className="text-[10px] text-neutral block">Puntos activos y destaques</span>
+                      <span className="text-xs text-neutral block">Puntos activos y destaques</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-mono font-medium text-neutral uppercase">
+ <span className="text-xs font-mono font-medium text-neutral ">
                         {theme.secondary}
                       </span>
                       <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-border-card shadow-sm cursor-pointer hover:scale-105 transition-transform">
@@ -459,7 +452,7 @@ export const TenantSettings: React.FC = () => {
 
                 {/* Live Preview Pill */}
                 <div className="flex items-center justify-between p-2.5 rounded-xl border border-border-card bg-bg-card/40 text-xs">
-                  <span className="text-[11px] text-neutral font-medium">Vista previa de botones activos:</span>
+                  <span className="text-xs text-neutral font-medium">Vista previa de botones activos:</span>
                   <div className="flex items-center gap-2">
                     <div 
                       className="px-3 py-1.5 rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5"

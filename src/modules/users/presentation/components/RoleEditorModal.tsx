@@ -110,7 +110,7 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="sm:max-w-3xl w-full bg-card border border-border rounded-2xl shadow-2xl p-6 text-foreground">
         <DialogHeader className="border-b border-border pb-3">
-          <DialogTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+ <DialogTitle className="text-base font-semibold flex items-center gap-2">
             <Shield className="w-5 h-5 text-primary" />
             <span>{isEditing ? `Editar Rol: ${roleToEdit.name}` : 'Crear Nuevo Rol'}</span>
           </DialogTitle>
@@ -132,7 +132,7 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
                 className="h-9 text-xs"
               />
               {roleToEdit?.isSystem && (
-                <span className="text-[10px] text-muted-foreground italic mt-0.5">
+                <span className="text-xs text-muted-foreground italic mt-0.5">
                   Los roles base del sistema no permiten renombrarse.
                 </span>
               )}
@@ -152,7 +152,7 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
           {/* Quick Presets Toolbar */}
           {!roleToEdit?.isSystem && (
             <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-muted/40 rounded-xl border border-border text-xs">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+ <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-primary" /> Plantillas Rápidas:
               </span>
               <button
@@ -170,7 +170,7 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
                   setActiveModuleTab('pos');
                   toast.success('Plantilla de Cajero aplicada.');
                 }}
-                className="px-2.5 py-1 rounded-lg bg-background border border-border hover:border-primary/50 text-[11px] font-semibold text-foreground cursor-pointer transition-colors"
+                className="px-2.5 py-1 rounded-lg bg-background border border-border hover:border-primary/50 text-xs font-semibold text-foreground cursor-pointer transition-colors"
               >
                 🛒 Cajero POS
               </button>
@@ -190,7 +190,7 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
                   setActiveModuleTab('products');
                   toast.success('Plantilla de Bodeguero / Almacén aplicada.');
                 }}
-                className="px-2.5 py-1 rounded-lg bg-background border border-border hover:border-primary/50 text-[11px] font-semibold text-foreground cursor-pointer transition-colors"
+                className="px-2.5 py-1 rounded-lg bg-background border border-border hover:border-primary/50 text-xs font-semibold text-foreground cursor-pointer transition-colors"
               >
                 📦 Bodega e Inventario
               </button>
@@ -210,7 +210,7 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
                   setActiveModuleTab('reports');
                   toast.success('Plantilla de Auditor / Contador aplicada.');
                 }}
-                className="px-2.5 py-1 rounded-lg bg-background border border-border hover:border-primary/50 text-[11px] font-semibold text-foreground cursor-pointer transition-colors"
+                className="px-2.5 py-1 rounded-lg bg-background border border-border hover:border-primary/50 text-xs font-semibold text-foreground cursor-pointer transition-colors"
               >
                 📊 Auditor / Contador
               </button>
@@ -221,7 +221,7 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
           <div className="border border-border rounded-xl bg-muted/20 overflow-hidden flex flex-col md:flex-row h-[360px]">
             {/* Left Column: Module tabs */}
             <div className="w-full md:w-48 bg-muted/40 border-r border-border p-2 space-y-1 overflow-y-auto">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground px-2 py-1 block">
+ <span className="text-xs font-bold text-muted-foreground px-2 py-1 block">
                 Módulos
               </span>
               {modules.map((mod) => {
@@ -242,7 +242,7 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
                   >
                     <span className="truncate">{mod.label}</span>
                     <span
-                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                      className={`text-xs px-1.5 py-0.2 rounded-full font-mono font-bold ${
                         isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground'
                       }`}
                     >
@@ -262,7 +262,7 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleSelectAllModule(activeModuleTab)}
-                  className="text-[11px] font-semibold text-primary hover:underline cursor-pointer"
+                  className="text-xs font-semibold text-primary hover:underline cursor-pointer"
                 >
                   Seleccionar Todo / Ninguno
                 </button>
@@ -301,13 +301,13 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs font-bold text-foreground">{perm.label}</span>
                             {perm.isDangerous && (
-                              <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                              <span className="inline-flex items-center gap-0.5 text-xs font-bold px-1.5 py-0.2 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">
                                 <AlertTriangle className="w-2.5 h-2.5" />
                                 Crítico
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                          <p className="text-xs text-muted-foreground leading-snug mt-0.5">
                             {perm.description}
                           </p>
                         </div>
@@ -342,7 +342,7 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="text-[11px] text-muted-foreground hidden sm:inline">
+              <span className="text-xs text-muted-foreground hidden sm:inline">
                 Permisos activos: <strong className="text-foreground">{selectedPermissions.includes('*') ? 'Todos (*)' : selectedPermissions.length}</strong>
               </span>
               <div className="flex gap-2">
@@ -364,7 +364,7 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
     <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
       <DialogContent className="sm:max-w-md bg-bg-card border border-border-card p-6">
         <DialogHeader>
-          <DialogTitle className="text-base font-bold text-secondary flex items-center gap-2">
+          <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shrink-0">
               <AlertTriangle className="w-4 h-4" />
             </div>

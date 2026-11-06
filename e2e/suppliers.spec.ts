@@ -24,7 +24,7 @@ test('proveedores: crear, buscar, editar y eliminar desde la pantalla', async ({
     await page.waitForLoadState('networkidle');
 
     // 1. Crear: sin nombre el formulario avisa; completo, se guarda
-    await page.getByRole('button', { name: 'Nuevo Proveedor' }).click();
+    await page.getByRole('button', { name: 'Nuevo proveedor' }).click();
     const dialog = page.getByRole('dialog');
     await dialog.getByLabel(/RUC \/ Identificación/).fill(identity);
     await dialog.getByLabel(/Nombre \/ Razón Social/).fill(name);
@@ -35,7 +35,7 @@ test('proveedores: crear, buscar, editar y eliminar desde la pantalla', async ({
     expect(await mine()).toMatchObject({ name, phone: '0991112233' });
 
     // 2. Buscar por identificación
-    await page.getByPlaceholder('Buscar por nombre o RUC...').fill(identity);
+    await page.getByPlaceholder(/Buscar por nombre o RUC/).fill(identity);
     const row = page.getByRole('row', { name: new RegExp(name) });
     await expect(row).toBeVisible();
 
@@ -70,7 +70,7 @@ test('un proveedor repetido muestra el texto del catálogo para SUPPLIER_IDENTIT
     await login(page);
     await page.goto('/compras/proveedores');
     await page.waitForLoadState('networkidle');
-    await page.getByRole('button', { name: 'Nuevo Proveedor' }).click();
+    await page.getByRole('button', { name: 'Nuevo proveedor' }).click();
     const dialog = page.getByRole('dialog');
     await dialog.getByLabel(/RUC \/ Identificación/).fill(identity);
     await dialog.getByLabel(/Nombre \/ Razón Social/).fill(`Otro nombre ${stamp}`);

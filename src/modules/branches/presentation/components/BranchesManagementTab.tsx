@@ -111,7 +111,7 @@ export const BranchesManagementTab: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <h4 className="text-sm font-bold text-secondary">{b.name}</h4>
                       {b.code && (
-                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-neutral/10 text-neutral">
+                        <span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-neutral/10 text-neutral">
                           #{String(b.code).padStart(3, '0')}
                         </span>
                       )}
@@ -124,7 +124,7 @@ export const BranchesManagementTab: React.FC = () => {
 
                   <div className="flex items-center gap-1.5">
                     <Badge
-                      className={`text-[9.5px] px-2 py-0.5 font-bold ${
+                      className={`text-xs px-2 py-0.5 font-bold ${
                         b.isActive !== false
                           ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                           : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
@@ -156,7 +156,7 @@ export const BranchesManagementTab: React.FC = () => {
           <Dialog open={isModalOpen} onOpenChange={(open) => !open && setIsModalOpen(false)}>
             <DialogContent className="sm:max-w-md bg-bg-card border border-border-card text-text-main">
               <DialogHeader>
-                <DialogTitle className="text-sm font-bold text-secondary flex items-center gap-2">
+                <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
                   <Building className="w-4 h-4 text-primary" />
                   {editingBranch ? 'Editar Sucursal' : 'Nueva Sucursal'}
                 </DialogTitle>
@@ -164,7 +164,7 @@ export const BranchesManagementTab: React.FC = () => {
 
               <form onSubmit={handleSave} className="space-y-4 pt-2">
                 <Field>
-                  <FieldLabel className="text-[11px] font-bold uppercase tracking-wider">
+ <FieldLabel className="text-xs font-bold ">
                     Nombre de la Sucursal *
                   </FieldLabel>
                   <Input
@@ -178,7 +178,7 @@ export const BranchesManagementTab: React.FC = () => {
                 </Field>
 
                 <Field>
-                  <FieldLabel className="text-[11px] font-bold uppercase tracking-wider">
+ <FieldLabel className="text-xs font-bold ">
                     Dirección / Ubicación *
                   </FieldLabel>
                   <Input
@@ -200,7 +200,7 @@ export const BranchesManagementTab: React.FC = () => {
                     />
                     <span>Sucursal Activa para Operaciones</span>
                   </label>
-                  <p className="text-[10px] text-neutral mt-0.5 pl-6">
+                  <p className="text-xs text-neutral mt-0.5 pl-6">
                     Las sucursales inactivas no aparecen en el punto de venta ni permiten aperturas de caja.
                   </p>
                 </div>

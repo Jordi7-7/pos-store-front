@@ -7,6 +7,8 @@ import { LowStockCard } from './LowStockCard';
 import { YesterdaySoldCard } from './YesterdaySoldCard';
 import { WeeklySummaryCard } from './WeeklySummaryCard';
 import { RefreshCw, AlertCircle } from 'lucide-react';
+import { PageHeader } from '@/shared/presentation/components/PageHeader';
+import { Button } from '@/components/ui/button';
 
 interface DashboardViewProps {
   branchId?: string | null;
@@ -55,23 +57,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ branchId }) => {
   }
 
   return (
-    <div className="space-y-3">
-      {/* Top Header / Actions - Compact bar */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-bold text-secondary tracking-tight">Dashboard General</h2>
-          <p className="text-[11px] text-neutral">Resumen en tiempo real del rendimiento de tu negocio</p>
-        </div>
-        <button
-          onClick={() => refetch()}
-          disabled={isFetching}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-border-card bg-bg-card hover:bg-bg-dark text-xs font-medium text-secondary transition-colors disabled:opacity-50"
-          title="Actualizar datos"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin text-primary' : 'text-neutral'}`} />
-          <span>Actualizar</span>
-        </button>
-      </div>
+    <div className="space-y-5">
+      <PageHeader
+        title="Dashboard"
+        description="Resumen en tiempo real del rendimiento de tu negocio."
+        actions={
+          <Button variant="outline" onClick={() => refetch()} disabled={isFetching} title="Actualizar datos">
+            <RefreshCw className={isFetching ? 'animate-spin' : ''} />
+            Actualizar
+          </Button>
+        }
+      />
 
       {/* Row 1: Ventas Hoy (3 cols) + Métodos de Pago (4 cols) + Resumen de la Semana (5 cols) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-3 items-stretch">

@@ -134,7 +134,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
       <DialogContent className="sm:max-w-md max-h-[95vh] flex flex-col bg-bg-card border border-border-card p-6 overflow-hidden">
         <DialogHeader className="shrink-0 pb-3 border-b border-border-card">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-sm font-bold text-secondary flex items-center gap-2">
+            <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
               <Printer className="w-4 h-4 text-primary" />
               <span>{isSessionClosed ? 'Ticket de Cierre de Caja' : 'Corte Parcial / Arqueo'}</span>
               <span className="text-xs font-mono text-neutral font-normal">
@@ -181,7 +181,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
               size="sm"
               onClick={handleConnectUsb}
               disabled={isConnectingUsb}
-              className="text-[11px] h-7 px-2.5 font-bold bg-amber-500 hover:bg-amber-600 text-white cursor-pointer"
+              className="text-xs h-7 px-2.5 font-bold bg-amber-500 hover:bg-amber-600 text-white cursor-pointer"
             >
               {isConnectingUsb ? 'Conectando...' : 'Vincular USB'}
             </Button>
@@ -192,7 +192,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
         <div className="flex-1 overflow-y-auto py-3 flex justify-center items-start bg-bg-dark/40 rounded-xl my-2 p-3">
           {viewMode === 'paper' ? (
             <div
-              className="bg-white text-black shadow-xl border border-neutral-300 rounded-sm font-mono text-[11px] leading-[17px] p-5 select-text h-fit shrink-0 my-1 w-fit"
+              className="bg-white text-black shadow-xl border border-neutral-300 rounded-sm font-mono text-xs leading-[17px] p-5 select-text h-fit shrink-0 my-1 w-fit"
               style={{ fontFamily: '"Courier New", Courier, monospace' }}
             >
               <div className="space-y-0.5">
@@ -203,7 +203,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
                     return (
                       <div
                         key={idx}
-                        className="my-3 border-t border-dashed border-neutral-400 text-center text-[9px] text-neutral-400 uppercase tracking-widest pt-1"
+ className="my-3 border-t border-dashed border-neutral-400 text-center text-xs text-neutral-400 pt-1"
                       >
                         ✂ Corte de Papel
                       </div>

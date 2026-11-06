@@ -115,14 +115,9 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
   return (
     <div className="space-y-4 animate-fadeIn">
       {/* Filter Panel Bar */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-primary/5 to-bg-card border border-primary/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
-        <div>
-          <h2 className="text-lg font-bold text-secondary mb-1">Costo de Ventas por Documentos</h2>
-          <p className="text-xs text-neutral">Analiza la rentabilidad detallada cruzando el costo de tus variantes vendidas contra el precio final.</p>
-        </div>
-
+      <div className="flex flex-wrap items-center justify-end gap-3 rounded-xl border border-border-card bg-bg-card p-4 shadow-xs">
         {/* Inputs & Actions */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           
           {/* Shadcn DatePickerWithRange Integration */}
           <Field className="w-64">
@@ -205,7 +200,7 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="uppercase tracking-wider text-[10px] font-bold">
+ <TableRow className=" text-xs font-bold">
                   <TableHead className="w-8 px-1"></TableHead>
                   <TableHead className="pr-2">Factura</TableHead>
                   <TableHead className="px-2">Fecha</TableHead>
@@ -247,7 +242,7 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
                           </div>
                         </TableCell>
                         <TableCell className="py-3 px-2 text-neutral">{formatReportDate(row.createdAt)}</TableCell>
-                        <TableCell className="py-3 px-2 uppercase font-medium max-w-[200px] truncate">{row.clientName}</TableCell>
+ <TableCell className="py-3 px-2 font-medium max-w-[200px] truncate">{row.clientName}</TableCell>
                         <TableCell className="py-3 px-2 text-right font-mono font-semibold">{Math.floor(row.pieces)}</TableCell>
                         <TableCell className="py-3 px-2 text-right font-mono font-bold">{formatMoney(Number(row.salePrice))}</TableCell>
                         <TableCell className="py-3 px-2 text-right font-mono font-bold text-rose-500/80">{formatMoney(Number(row.costPrice))}</TableCell>
@@ -261,18 +256,18 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
                         <TableRow className="bg-muted/15 border-b border-border/80 hover:bg-muted/15">
                           <TableCell colSpan={8} className="p-3 pl-6 sm:pl-10 whitespace-normal">
                             <div className="rounded-xl border border-border/60 bg-bg-dark/50 overflow-hidden shadow-inner">
-                              <div className="px-3 py-2 bg-muted/40 border-b border-border/60 flex items-center justify-between text-[11px] font-semibold text-secondary">
+                              <div className="px-3 py-2 bg-muted/40 border-b border-border/60 flex items-center justify-between text-xs font-semibold text-secondary">
                                 <span className="flex items-center gap-1.5">
                                   <Package className="w-3.5 h-3.5 text-primary" />
                                   Productos vendidos ({row.items.length})
                                 </span>
-                                <span className="text-[10px] text-neutral">
+                                <span className="text-xs text-neutral">
                                   Costos y márgenes individuales de la factura
                                 </span>
                               </div>
                               <table className="w-full text-xs">
                                 <thead>
-                                  <tr className="border-b border-border/40 text-[10px] uppercase font-medium text-neutral bg-muted/20">
+ <tr className="border-b border-border/40 text-xs font-medium text-neutral bg-muted/20">
                                     <th className="py-1.5 px-3 text-left">SKU</th>
                                     <th className="py-1.5 px-3 text-left">Producto</th>
                                     <th className="py-1.5 px-3 text-right">Cant.</th>
@@ -286,14 +281,14 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
                                 <tbody>
                                   {row.items.map((item) => (
                                     <tr key={item.id} className="border-b border-border/20 last:border-0 hover:bg-muted/10">
-                                      <td className="py-2 px-3 font-mono text-[11px] text-primary">{item.sku || '-'}</td>
+                                      <td className="py-2 px-3 font-mono text-xs text-primary">{item.sku || '-'}</td>
                                       <td className="py-2 px-3">
                                         <div className="font-medium text-secondary">{item.productName}</div>
                                       </td>
                                       <td className="py-2 px-3 text-right font-mono font-semibold">
                                         {item.quantity}
                                         {item.refundedQuantity > 0 && (
-                                          <span className="block text-[9px] text-rose-500 font-normal">
+                                          <span className="block text-xs text-rose-500 font-normal">
                                             ({item.refundedQuantity} dev.)
                                           </span>
                                         )}
@@ -304,7 +299,7 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
                                       <td className="py-2 px-3 text-right font-mono font-semibold text-secondary">
                                         {formatMoney(item.totalPrice)}
                                         {item.discountAmount > 0 && (
-                                          <span className="block text-[9px] text-amber-500 font-normal">
+                                          <span className="block text-xs text-amber-500 font-normal">
                                             (-{formatMoney(item.discountAmount)})
                                           </span>
                                         )}

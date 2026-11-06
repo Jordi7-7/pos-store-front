@@ -29,16 +29,16 @@ export const BulkPreviewStep: React.FC<BulkPreviewStepProps> = ({ fileName, item
               <div className="flex flex-wrap items-center gap-2">
                 <FileSpreadsheet className="w-4 h-4 text-primary" />
                 <span className="text-xs font-mono font-bold text-secondary truncate max-w-[200px]">{fileName}</span>
-                <span className="text-[10px] text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-md font-mono">
+                <span className="text-xs text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-md font-mono">
                   {items.length} registros
                 </span>
                 {invoiceNumber && (
-                  <span className="text-[10px] text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md font-mono font-bold">
+                  <span className="text-xs text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md font-mono font-bold">
                     Ref: {invoiceNumber}
                   </span>
                 )}
                 {branchId && (
-                  <span className="inline-flex items-center gap-1 text-[10px] text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md font-semibold">
+                  <span className="inline-flex items-center gap-1 text-xs text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md font-semibold">
                     <Building className="w-2.5 h-2.5" />
                     {branchName}
                   </span>
@@ -67,7 +67,7 @@ export const BulkPreviewStep: React.FC<BulkPreviewStepProps> = ({ fileName, item
                     <AlertTriangle className="w-4.5 h-4.5 text-rose-400 shrink-0" />
                     <div>
                       <p className="font-semibold">Límite excedido o error de validación</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">{globalError}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{globalError}</p>
                     </div>
                   </div>
                 ) : errorCount > 0 ? (
@@ -75,7 +75,7 @@ export const BulkPreviewStep: React.FC<BulkPreviewStepProps> = ({ fileName, item
                     <AlertTriangle className="w-4.5 h-4.5 text-rose-400 shrink-0" />
                     <div>
                       <p className="font-semibold">El archivo de compras contiene {errorCount} SKU(s) no válidos.</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Las filas marcadas en rojo no existen en el sistema. Agrégalos al catálogo antes de ingresar mercadería.</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Las filas marcadas en rojo no existen en el sistema. Agrégalos al catálogo antes de ingresar mercadería.</p>
                     </div>
                   </div>
                 ) : isValidated ? (
@@ -83,7 +83,7 @@ export const BulkPreviewStep: React.FC<BulkPreviewStepProps> = ({ fileName, item
                     <CheckCircle2 className="w-4.5 h-4.5 text-emerald-500 shrink-0" />
                     <div>
                       <p className="font-semibold">¡Validación exitosa!</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Todos los SKUs existen y están listos para ingresar al inventario de la sucursal.</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Todos los SKUs existen y están listos para ingresar al inventario de la sucursal.</p>
                     </div>
                   </div>
                 ) : null}

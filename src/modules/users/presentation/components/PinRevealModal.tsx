@@ -31,7 +31,7 @@ export const PinRevealModal: React.FC<PinRevealModalProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md bg-bg-card border border-border-card p-6">
         <DialogHeader>
-          <DialogTitle className="text-base font-bold text-secondary flex items-center gap-2">
+          <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
             <Key className="w-5 h-5 text-primary" />
             <span>Nuevo PIN Asignado</span>
           </DialogTitle>
@@ -42,10 +42,10 @@ export const PinRevealModal: React.FC<PinRevealModalProps> = ({
 
         <div className="space-y-4 my-2">
           <div className="bg-bg-dark border border-border-card rounded-2xl p-6 text-center space-y-2 relative overflow-hidden">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-primary block">
+ <span className="text-xs font-bold text-primary block">
               Código de Cajero POS
             </span>
-            <div className="text-4xl font-mono font-black tracking-widest text-secondary select-all">
+ <div className="text-4xl font-mono font-black text-secondary select-all">
               {pin}
             </div>
           </div>

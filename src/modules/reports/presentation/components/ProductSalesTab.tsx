@@ -144,17 +144,7 @@ export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranch
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Top Filter and Actions Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-bg-card border border-border-card shadow-sm">
-        <div>
-          <h2 className="text-base font-bold text-secondary flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-primary" />
-            Reporte de Ventas por Producto
-          </h2>
-          <p className="text-xs text-neutral mt-0.5">
-            Analiza las unidades vendidas por producto, existencias actuales y total recaudado en el período.
-          </p>
-        </div>
-
+      <div className="flex flex-wrap items-center justify-end gap-3 rounded-xl border border-border-card bg-bg-card p-4 shadow-xs">
         {/* Date Picker Range + Action Buttons */}
         <div className="flex flex-wrap items-center gap-3">
           <Field className="w-auto">
@@ -226,23 +216,23 @@ export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranch
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card className="border border-border-card bg-bg-card rounded-2xl shadow-sm p-4">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-neutral uppercase tracking-widest font-semibold">Piezas Vendidas</span>
+ <span className="text-xs text-neutral font-semibold">Piezas Vendidas</span>
             <div className="p-2 bg-primary/10 rounded-lg"><ShoppingBag className="w-4 h-4 text-primary" /></div>
           </div>
           <div className="mt-2">
             <h3 className="text-xl font-black text-secondary">{totals.soldQuantity}</h3>
-            <p className="text-[10px] text-neutral mt-0.5">Total de unidades despachadas en el período</p>
+            <p className="text-xs text-neutral mt-0.5">Total de unidades despachadas en el período</p>
           </div>
         </Card>
 
         <Card className="border border-border-card bg-bg-card rounded-2xl shadow-sm p-4">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-neutral uppercase tracking-widest font-semibold">Registros de Venta</span>
+ <span className="text-xs text-neutral font-semibold">Registros de Venta</span>
             <div className="p-2 bg-blue-500/10 rounded-lg"><PackageCheck className="w-4 h-4 text-blue-500" /></div>
           </div>
           <div className="mt-2">
             <h3 className="text-xl font-black text-secondary">{productSalesData.length}</h3>
-            <p className="text-[10px] text-neutral mt-0.5">Transacciones / líneas procesadas</p>
+            <p className="text-xs text-neutral mt-0.5">Transacciones / líneas procesadas</p>
           </div>
         </Card>
       </div>
@@ -263,12 +253,12 @@ export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranch
             <Table>
               <TableHeader>
                 <TableRow className="border-border-card hover:bg-transparent">
-                  <TableHead className="text-[11px] font-bold text-neutral uppercase tracking-wider">SKU</TableHead>
-                  <TableHead className="text-[11px] font-bold text-neutral uppercase tracking-wider">Nombre</TableHead>
-                  <TableHead className="text-[11px] font-bold text-neutral uppercase tracking-wider">Fecha / Hora</TableHead>
-                  <TableHead className="text-[11px] font-bold text-neutral uppercase tracking-wider text-right">Stock Vendido</TableHead>
-                  <TableHead className="text-[11px] font-bold text-neutral uppercase tracking-wider text-right">Stock Actual</TableHead>
-                  <TableHead className="text-[11px] font-bold text-neutral uppercase tracking-wider text-right">Precio Venta</TableHead>
+                  <TableHead className="text-xs font-bold text-neutral uppercase tracking-wider">SKU</TableHead>
+                  <TableHead className="text-xs font-bold text-neutral uppercase tracking-wider">Nombre</TableHead>
+                  <TableHead className="text-xs font-bold text-neutral uppercase tracking-wider">Fecha / Hora</TableHead>
+                  <TableHead className="text-xs font-bold text-neutral uppercase tracking-wider text-right">Stock Vendido</TableHead>
+                  <TableHead className="text-xs font-bold text-neutral uppercase tracking-wider text-right">Stock Actual</TableHead>
+                  <TableHead className="text-xs font-bold text-neutral uppercase tracking-wider text-right">Precio Venta</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -283,14 +273,14 @@ export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranch
                     <TableCell className="text-xs text-neutral whitespace-nowrap">
                       <div className="font-medium text-secondary/90">{formatReportDateTime(row.createdAt)}</div>
                       {row.invoiceNumber && (
-                        <div className="font-mono text-[10px] text-neutral/70">Doc: {row.invoiceNumber}</div>
+                        <div className="font-mono text-xs text-neutral/70">Doc: {row.invoiceNumber}</div>
                       )}
                     </TableCell>
                     <TableCell className="text-right text-xs font-bold text-secondary">
                       {row.soldQuantity}
                     </TableCell>
                     <TableCell className="text-right text-xs font-semibold text-neutral">
-                      <span className={`px-2 py-0.5 rounded-md text-[11px] font-mono ${
+                      <span className={`px-2 py-0.5 rounded-md text-xs font-mono ${
                         row.currentStock <= 5 
                           ? 'bg-rose-500/10 text-rose-500 font-bold' 
                           : 'bg-bg-dark text-secondary'
@@ -306,7 +296,7 @@ export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranch
               </TableBody>
               <TableFooter className="bg-bg-dark border-t border-border-card font-bold">
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={3} className="text-xs uppercase tracking-wider text-secondary">
+ <TableCell colSpan={3} className="text-xs text-secondary">
                     Total Piezas Vendidas ({productSalesData.length} registros)
                   </TableCell>
                   <TableCell className="text-right text-xs font-bold text-secondary">

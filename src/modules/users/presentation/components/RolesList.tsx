@@ -38,12 +38,12 @@ export const RolesList: React.FC<RolesListProps> = ({
                     <h4 className="text-sm font-bold text-secondary flex items-center gap-1.5">
                       {r.name}
                       {r.isSystem && (
-                        <span className="text-[9px] font-semibold bg-neutral/10 text-neutral px-1.5 py-0.2 rounded border border-border-card">
+                        <span className="text-xs font-semibold bg-neutral/10 text-neutral px-1.5 py-0.2 rounded border border-border-card">
                           Sistema
                         </span>
                       )}
                     </h4>
-                    <span className="text-[10px] text-muted-foreground font-medium">
+                    <span className="text-xs text-muted-foreground font-medium">
                       {r.userCount || 0} usuario(s) asignado(s)
                     </span>
                   </div>
@@ -54,9 +54,9 @@ export const RolesList: React.FC<RolesListProps> = ({
                 {r.description || 'Sin descripción configurada.'}
               </p>
 
-              <div className="pt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
+              <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground">
                 <span>Permisos activos:</span>
-                <strong className="text-foreground font-mono bg-muted px-2 py-0.5 rounded-md text-[10px]">
+                <strong className="text-foreground font-mono bg-muted px-2 py-0.5 rounded-md text-xs">
                   {permsCount}
                 </strong>
               </div>

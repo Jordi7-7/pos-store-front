@@ -47,16 +47,16 @@ export const SupplierForm: React.FC = () => {
       <div className="lg:col-span-1 bg-bg-card border border-border-card rounded-2xl p-6 space-y-4 shadow-sm flex flex-col justify-between">
         <div className="space-y-4">
           <div className="border-b border-border-card pb-3">
-            <h4 className="text-xs font-bold text-secondary uppercase tracking-wide flex items-center gap-1.5">
+ <h4 className="text-xs font-bold text-secondary flex items-center gap-1.5">
               <Plus className="w-4 h-4 text-primary" />
               <span>Nuevo Proveedor</span>
             </h4>
-            <p className="text-[10px] text-neutral mt-0.5">Ingresa los datos fiscales y de contacto.</p>
+            <p className="text-xs text-neutral mt-0.5">Ingresa los datos fiscales y de contacto.</p>
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label className="block text-[9px] text-neutral mb-1 uppercase tracking-wider font-bold">RUC / Cédula *</label>
+ <label className="block text-xs text-neutral mb-1 font-bold">RUC / Cédula *</label>
               <input 
                 type="text" 
                 required
@@ -68,7 +68,7 @@ export const SupplierForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-[9px] text-neutral mb-1 uppercase tracking-wider font-bold">Razón Social / Nombre *</label>
+ <label className="block text-xs text-neutral mb-1 font-bold">Razón Social / Nombre *</label>
               <input 
                 type="text" 
                 required
@@ -80,7 +80,7 @@ export const SupplierForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-[9px] text-neutral mb-1 uppercase tracking-wider font-bold">Correo Electrónico</label>
+ <label className="block text-xs text-neutral mb-1 font-bold">Correo Electrónico</label>
               <input 
                 type="email" 
                 placeholder="Ej. compras@proveedor.com" 
@@ -91,7 +91,7 @@ export const SupplierForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-[9px] text-neutral mb-1 uppercase tracking-wider font-bold">Teléfono de Contacto</label>
+ <label className="block text-xs text-neutral mb-1 font-bold">Teléfono de Contacto</label>
               <input 
                 type="text" 
                 placeholder="Ej. +593 999 999 999" 
@@ -102,7 +102,7 @@ export const SupplierForm: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-[9px] text-neutral mb-1 uppercase tracking-wider font-bold">Dirección Física</label>
+ <label className="block text-xs text-neutral mb-1 font-bold">Dirección Física</label>
               <input 
                 type="text" 
                 placeholder="Ej. Av. de los Shyris y Portugal" 
@@ -128,11 +128,11 @@ export const SupplierForm: React.FC = () => {
       <div className="lg:col-span-2 bg-bg-card border border-border-card rounded-2xl p-6 space-y-4 shadow-sm flex flex-col justify-between">
         <div className="space-y-4">
           <div className="border-b border-border-card pb-3">
-            <h4 className="text-xs font-bold text-secondary uppercase tracking-wide flex items-center gap-1.5">
+ <h4 className="text-xs font-bold text-secondary flex items-center gap-1.5">
               <Truck className="w-4 h-4 text-primary" />
               <span>Directorio de Proveedores Activos</span>
             </h4>
-            <p className="text-[10px] text-neutral mt-0.5 font-medium">Listado detallado de contacto de proveedores registrados.</p>
+            <p className="text-xs text-neutral mt-0.5 font-medium">Listado detallado de contacto de proveedores registrados.</p>
           </div>
 
           {isLoading ? (
@@ -150,12 +150,12 @@ export const SupplierForm: React.FC = () => {
                 <div key={sup.id} className="p-4 bg-bg-dark border border-border-card hover:border-primary/30 rounded-2xl text-secondary space-y-2.5 transition-all shadow-sm">
                   <div className="flex justify-between items-start gap-2 border-b border-border-card/50 pb-1.5">
                     <span className="text-xs font-bold block truncate max-w-[170px]">{sup.name}</span>
-                    <span className="text-[9px] font-bold text-primary font-mono bg-primary/10 border border-primary/20 px-2 py-0.5 rounded">
+                    <span className="text-xs font-bold text-primary font-mono bg-primary/10 border border-primary/20 px-2 py-0.5 rounded">
                       RUC: {sup.identityNumber}
                     </span>
                   </div>
                   
-                  <div className="space-y-1.5 text-[10.5px] text-neutral">
+                  <div className="space-y-1.5 text-xs text-neutral">
                     {sup.email && (
                       <div className="flex items-center gap-1.5">
                         <Mail className="w-3.5 h-3.5 text-neutral" />

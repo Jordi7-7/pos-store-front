@@ -57,7 +57,7 @@ export const PurchaseFormRow: React.FC<PurchaseFormRowProps> = ({
         />
       </TableCell>
       <TableCell className="p-2 text-xs font-semibold text-foreground/80 max-w-[200px] truncate">
-        {item.productName || <span className="text-muted-foreground italic text-[10px]">Ingrese SKU y presione Enter</span>}
+        {item.productName || <span className="text-muted-foreground italic text-xs">Ingrese SKU y presione Enter</span>}
       </TableCell>
       <TableCell className="p-2">
         <input

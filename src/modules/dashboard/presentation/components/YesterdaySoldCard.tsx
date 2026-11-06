@@ -28,11 +28,11 @@ export const YesterdaySoldCard: React.FC<YesterdaySoldCardProps> = ({ products }
           </div>
           <div>
             <h3 className="text-sm font-bold text-secondary">Vendidos el día anterior</h3>
-            <p className="text-[10px] text-neutral">Productos con salida registrada ayer</p>
+            <p className="text-xs text-neutral">Productos con salida registrada ayer</p>
           </div>
         </div>
         {totalCount > 0 && (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">
+          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">
             {totalCount >= 50 ? 'Top 50' : `${totalCount} ${totalCount === 1 ? 'prod' : 'prods'}`}
           </span>
         )}
@@ -43,7 +43,7 @@ export const YesterdaySoldCard: React.FC<YesterdaySoldCardProps> = ({ products }
         {displayProducts.length > 0 ? (
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 bg-bg-card z-10">
-              <tr className="border-b border-border-card/60 text-[9px] uppercase font-bold text-neutral">
+ <tr className="border-b border-border-card/60 text-xs font-bold text-neutral">
                 <th className="py-1 px-1.5">SKU</th>
                 <th className="py-1 px-1.5">Producto</th>
                 <th className="py-1 px-1.5 text-right">Stock Actual</th>
@@ -52,13 +52,13 @@ export const YesterdaySoldCard: React.FC<YesterdaySoldCardProps> = ({ products }
             <tbody className="divide-y divide-border-card/30 text-xs">
               {displayProducts.map((item, index) => (
                 <tr key={item.variantId || index} className="hover:bg-bg-dark/30 transition-colors">
-                  <td className="py-1.5 px-1.5 font-mono text-[10px] text-neutral truncate max-w-[70px]">
+                  <td className="py-1.5 px-1.5 font-mono text-xs text-neutral truncate max-w-[70px]">
                     {item.sku || 'N/A'}
                   </td>
                   <td className="py-1.5 px-1.5 font-medium text-secondary truncate max-w-[120px] sm:max-w-[160px]">
                     {item.productName}
                   </td>
-                  <td className="py-1.5 px-1.5 text-right font-semibold text-secondary text-[11px]">
+                  <td className="py-1.5 px-1.5 text-right font-semibold text-secondary text-xs">
                     {item.currentStock} uds
                   </td>
                 </tr>
@@ -76,7 +76,7 @@ export const YesterdaySoldCard: React.FC<YesterdaySoldCardProps> = ({ products }
       {/* Notice / Callout */}
       <div className="p-2 rounded-xl bg-blue-500/5 border border-blue-500/20 flex items-center gap-2">
         <Info className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
-        <p className="text-[11px] text-blue-700 dark:text-blue-300 truncate">
+        <p className="text-xs text-blue-700 dark:text-blue-300 truncate">
           Repón estos artículos para evitar quiebres de inventario durante el día.
         </p>
       </div>

@@ -150,7 +150,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md bg-bg-card border border-border-card p-6">
         <DialogHeader>
-          <DialogTitle className="text-base font-bold text-secondary flex items-center gap-2">
+          <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
             {isEditing ? (
               <>
                 <Edit2 className="w-4 h-4 text-primary" />
@@ -172,7 +172,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <Field>
-            <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+ <FieldLabel className="text-xs font-bold flex items-center gap-1.5">
               <UserIcon className="w-3.5 h-3.5 text-primary" /> Nombre Completo *
             </FieldLabel>
             <Input
@@ -186,7 +186,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field>
-              <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+ <FieldLabel className="text-xs font-bold flex items-center gap-1.5">
                 <AtSign className="w-3.5 h-3.5 text-primary" /> Nombre de Usuario *
               </FieldLabel>
               <Input
@@ -199,7 +199,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
             </Field>
 
             <Field>
-              <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+ <FieldLabel className="text-xs font-bold flex items-center gap-1.5">
                 <Shield className="w-3.5 h-3.5 text-primary" /> Rol {isEditing ? '' : 'Operativo'}
               </FieldLabel>
               {userToEdit?.isOwner ? (
@@ -207,7 +207,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                   <span className="flex items-center gap-1.5">
                     <Shield className="w-3.5 h-3.5" /> Propietario (Acceso Total)
                   </span>
-                  <span className="text-[10px] text-muted-foreground font-medium">
+                  <span className="text-xs text-muted-foreground font-medium">
                     Acceso total permanente
                   </span>
                 </div>
@@ -228,7 +228,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           </div>
 
           <Field>
-            <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+ <FieldLabel className="text-xs font-bold flex items-center gap-1.5">
               <Mail className="w-3.5 h-3.5 text-primary" /> Correo Electrónico (Opcional)
             </FieldLabel>
             <Input
@@ -241,7 +241,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
           </Field>
 
           <Field>
-            <FieldLabel className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
+ <FieldLabel className="text-xs font-bold flex items-center gap-1.5">
               <Lock className="w-3.5 h-3.5 text-primary" />
               {isEditing ? 'Nueva Contraseña' : 'Contraseña Temporal *'}
             </FieldLabel>
@@ -267,7 +267,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                   const rnd = Math.floor(100000 + Math.random() * 900000).toString();
                   setPin(rnd);
                 }}
-                className="text-[10px] text-primary hover:underline font-bold cursor-pointer flex items-center gap-1"
+                className="text-xs text-primary hover:underline font-bold cursor-pointer flex items-center gap-1"
               >
                 <Sparkles className="w-3 h-3" /> Generar PIN
               </button>
@@ -285,7 +285,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                   ? 'Ingresar PIN de 4 a 6 dígitos'
                   : '6 dígitos (ej. 123456)'
               }
-              className="text-xs h-9 font-mono tracking-widest text-center"
+ className="text-xs h-9 font-mono text-center"
             />
           </div>
 
@@ -296,7 +296,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                 <span className="text-xs font-bold text-secondary flex items-center gap-1.5">
                   <Building className="w-3.5 h-3.5 text-primary" /> Sucursales con Acceso
                 </span>
-                <span className="text-[11px] text-neutral block mt-0.5">
+                <span className="text-xs text-neutral block mt-0.5">
                   {branchIds.length === branches.length && branches.length > 0
                     ? 'Todas las sucursales asignadas'
                     : branchIds.length === 0
@@ -316,7 +316,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
                       setIsActive(true);
                     }
                   }}
-                  className="text-[11px] font-semibold text-primary hover:underline transition-all"
+                  className="text-xs font-semibold text-primary hover:underline transition-all"
                 >
                   {branchIds.length === branches.length ? 'Deseleccionar todas' : 'Seleccionar todas'}
                 </button>
@@ -372,7 +372,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
             <div className="p-3.5 bg-bg-dark/70 rounded-2xl border border-border-card flex items-center justify-between">
               <div>
                 <span className="text-xs font-bold text-secondary block">Estado de la Cuenta</span>
-                <span className="text-[10px] text-neutral">
+                <span className="text-xs text-neutral">
                   {branchIds.length === 0
                     ? 'Inactivo: requiere al menos una sucursal asignada para activarse.'
                     : isSelf

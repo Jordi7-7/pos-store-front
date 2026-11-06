@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { 
   History, 
-  Search, 
   ArrowRight, 
   Loader2,
   Lock,
@@ -17,7 +16,7 @@ import { useLayoutContext } from '@/providers/LayoutContext';
 import { ThermalClosingTicketModal } from '../../../printing/presentation/components/ThermalClosingTicketModal';
 import { buildClosingTicketData } from '../../domain/rules/closing-ticket';
 import { toast } from 'sonner';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -29,6 +28,7 @@ import {
 } from "@/components/ui/table";
 import { CashSessionAuditModal } from './CashSessionAuditModal';
 import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
+import { SearchInput } from '@/shared/presentation/components/SearchInput';
 
 export const CashSessionsHistoryView: React.FC = () => {
   const { selectedBranchId } = useLayoutContext();
@@ -82,41 +82,15 @@ export const CashSessionsHistoryView: React.FC = () => {
       <Card className="border border-border/80 shadow-xs">
         <CardHeader className="border-b border-border/60 pb-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <History className="w-4 h-4 text-primary" />
-                  Historial de Sesiones de Caja ({filteredSessions.length})
-                </CardTitle>
-              </div>
-              <CardDescription className="text-xs">
-                Auditoría de aperturas, ventas facturadas y arqueos de cierre por caja.
-              </CardDescription>
-            </div>
+            <p className="text-sm text-muted-foreground">{filteredSessions.length} {filteredSessions.length === 1 ? 'turno' : 'turnos'}</p>
 
             <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-              {/* Search input */}
-              <div className="relative w-full sm:w-60">
-                <Search className="w-3.5 h-3.5 text-neutral absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Buscar por caja..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 bg-bg-dark border border-border-card rounded-xl text-xs text-secondary placeholder:text-neutral/60 focus:outline-none focus:border-primary/50"
-                />
-              </div>
+              <SearchInput value={searchTerm} onValueChange={setSearchTerm} placeholder="Buscar por caja…" aria-label="Buscar por caja" />
 
               {/* Refresh Button */}
-              <Button
-                onClick={() => refetch()}
-                variant="outline"
-                size="sm"
-                className="h-8 px-3 rounded-xl border-border bg-card hover:bg-muted text-xs font-medium text-foreground shadow-xs cursor-pointer flex items-center gap-1.5"
-                title="Sincronizar sesiones"
-              >
-                <RotateCcw className="w-3.5 h-3.5 text-muted-foreground" />
-                <span>Sincronizar</span>
+              <Button variant="outline" onClick={() => refetch()} title="Sincronizar turnos">
+                <RotateCcw />
+                Sincronizar
               </Button>
             </div>
           </div>
@@ -172,7 +146,7 @@ export const CashSessionsHistoryView: React.FC = () => {
                     {/* Sucursal (Modo Consolidado) */}
                     {isAllBranches && (
                       <TableCell className="py-2.5">
-                        <span className="text-[10px] font-semibold bg-muted text-foreground/80 px-2 py-0.5 rounded-md border border-border whitespace-nowrap">
+                        <span className="text-xs font-semibold bg-muted text-foreground/80 px-2 py-0.5 rounded-md border border-border whitespace-nowrap">
                           {s.branchName}
                         </span>
                       </TableCell>
@@ -183,9 +157,9 @@ export const CashSessionsHistoryView: React.FC = () => {
                       <div>
                         <span className="font-semibold text-secondary block">{s.dateFormatted}</span>
                         {s.isClosed ? (
-                          <span className="text-[11px] text-neutral font-medium">{s.openTimeFormatted} — {s.closeTimeFormatted}</span>
+                          <span className="text-xs text-neutral font-medium">{s.openTimeFormatted} — {s.closeTimeFormatted}</span>
                         ) : (
-                          <span className="text-[11px] text-emerald-600 font-medium">Desde {s.openTimeFormatted} (En curso)</span>
+                          <span className="text-xs text-emerald-600 font-medium">Desde {s.openTimeFormatted} (En curso)</span>
                         )}
                       </div>
                     </TableCell>
@@ -200,15 +174,15 @@ export const CashSessionsHistoryView: React.FC = () => {
                       {s.status === CashSessionStatus.OPEN ? (
                         <span className="text-muted-foreground/60 text-xs italic">En turno</span>
                       ) : s.differenceStatus === CashSessionDifferenceStatus.EXACT ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                        <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
                           {s.differenceStatusText}
                         </span>
                       ) : s.differenceStatus === CashSessionDifferenceStatus.SURPLUS ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-500 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">
+                        <span className="inline-flex items-center gap-1 text-xs font-bold text-blue-500 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">
                           +{s.differenceFormatted}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
+                        <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-500 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20">
                           -{s.differenceFormatted}
                         </span>
                       )}
@@ -216,7 +190,7 @@ export const CashSessionsHistoryView: React.FC = () => {
 
                     {/* Estado */}
                     <TableCell className="py-2.5 text-center">
-                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+ <span className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full ${
                         s.isClosed 
                           ? 'bg-muted text-muted-foreground border border-border' 
                           : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'

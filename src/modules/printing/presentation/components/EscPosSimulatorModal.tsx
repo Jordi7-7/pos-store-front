@@ -222,9 +222,9 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
                 <Printer className="w-5 h-5" />
               </div>
               <div>
-                <DialogTitle className="text-sm font-bold text-secondary flex items-center gap-2">
+                <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
                   <span>Simulador de Salida ESC/POS</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-normal">
+                  <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-normal">
                     {parseResult.totalChars} bytes
                   </span>
                 </DialogTitle>
@@ -238,7 +238,7 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
           {/* Barra de Controles y Filtros */}
           <div className="flex items-center justify-between gap-2 pt-3">
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] text-neutral font-medium">Ancho:</span>
+              <span className="text-xs text-neutral font-medium">Ancho:</span>
               <div className="inline-flex rounded-lg bg-bg-dark p-0.5 border border-border-card">
                 <button
                   type="button"
@@ -340,7 +340,7 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
           </div>
 
           {hasOverflows && (
-            <div className="mt-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-500 text-[11px] flex items-center gap-1.5">
+            <div className="mt-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-500 text-xs flex items-center gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
               <span>
                 Atención: Algunas líneas superan las {parseResult.maxCols} columnas y se desbordarán en papel real.
@@ -354,7 +354,7 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
           {activeTab === 'paper' ? (
             /* Papel Térmico Virtual */
             <div
-              className="bg-[#fdfcf7] text-neutral-900 shadow-2xl border border-neutral-300 rounded-sm font-mono text-[11.5px] leading-[18px] p-5 select-text transition-all w-fit h-fit shrink-0 my-1"
+              className="bg-[#fdfcf7] text-neutral-900 shadow-2xl border border-neutral-300 rounded-sm font-mono text-xs leading-[18px] p-5 select-text transition-all w-fit h-fit shrink-0 my-1"
               style={{
                 boxShadow: '0 8px 30px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)',
                 fontFamily: '"Courier New", Courier, monospace',
@@ -362,7 +362,7 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
             >
               {/* Regla de columnas superior */}
               <div
-                className="pb-2 mb-2 border-b border-dashed border-neutral-300 text-[9px] text-neutral-400 select-none tracking-widest overflow-hidden whitespace-nowrap"
+ className="pb-2 mb-2 border-b border-dashed border-neutral-300 text-xs text-neutral-400 select-none overflow-hidden whitespace-nowrap"
                 title={`Guía de ancho de papel (${parseResult.maxCols} caracteres)`}
               >
                 {columnRuler}
@@ -375,7 +375,7 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
                     return (
                       <div
                         key={idx}
-                        className="my-1.5 py-1 px-2 rounded bg-amber-100 border border-amber-300 text-amber-900 text-[10px] flex items-center justify-center gap-1.5 font-bold"
+                        className="my-1.5 py-1 px-2 rounded bg-amber-100 border border-amber-300 text-amber-900 text-xs flex items-center justify-center gap-1.5 font-bold"
                       >
                         <Zap className="w-3 h-3 text-amber-600 shrink-0" />
                         <span>[ORDEN DE APERTURA DE CAJON]</span>
@@ -387,7 +387,7 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
                     return (
                       <div
                         key={idx}
-                        className="my-3 py-1 border-t-2 border-b-2 border-dashed border-neutral-400 text-neutral-500 text-[10px] flex items-center justify-center gap-2 tracking-widest uppercase font-bold"
+ className="my-3 py-1 border-t-2 border-b-2 border-dashed border-neutral-400 text-neutral-500 text-xs flex items-center justify-center gap-2 font-bold"
                       >
                         <Scissors className="w-3.5 h-3.5 shrink-0" />
                         <span>[CORTE DE PAPEL]</span>
@@ -406,7 +406,7 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
 
                   const sizeClass =
                     line.doubleWidth && line.doubleHeight
-                      ? 'text-base font-extrabold tracking-wide'
+ ? 'text-base font-extrabold '
                       : line.doubleHeight
                       ? 'text-sm font-bold'
                       : '';
@@ -428,7 +428,7 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
               </div>
 
               {/* Diente de sierra / corte inferior simulado */}
-              <div className="mt-6 pt-3 border-t border-dashed border-neutral-300 text-center text-[9px] text-neutral-400 uppercase tracking-widest">
+ <div className="mt-6 pt-3 border-t border-dashed border-neutral-300 text-center text-xs text-neutral-400 ">
                 Fin del Rollo Térmico
               </div>
             </div>
@@ -460,20 +460,20 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
             </div>
           ) : (
             /* Inspector Hexadecimal de Bytes */
-            <div className="w-full bg-black/90 text-emerald-400 font-mono text-[11px] p-4 rounded-lg overflow-x-auto leading-relaxed border border-border-card select-all">
-              <div className="flex justify-between items-center pb-2 mb-2 border-b border-neutral-800 text-neutral-400 text-[10px]">
+            <div className="w-full bg-black/90 text-emerald-400 font-mono text-xs p-4 rounded-lg overflow-x-auto leading-relaxed border border-border-card select-all">
+              <div className="flex justify-between items-center pb-2 mb-2 border-b border-neutral-800 text-neutral-400 text-xs">
                 <span>Volcado Hexadecimal ({parseResult.totalChars} bytes)</span>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={handleCopyHex}
-                  className="h-6 text-[10px] gap-1 bg-neutral-900 border-neutral-700 text-neutral-200 hover:text-white"
+                  className="h-6 text-xs gap-1 bg-neutral-900 border-neutral-700 text-neutral-200 hover:text-white"
                 >
                   {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   {copied ? 'Copiado' : 'Copiar Hex'}
                 </Button>
               </div>
-              <div className="break-all tracking-wider font-mono">
+ <div className="break-all font-mono">
                 {parseResult.hexDump}
               </div>
             </div>

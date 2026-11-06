@@ -97,7 +97,7 @@ export const PrinterConfigModal: React.FC<PrinterConfigModalProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md bg-bg-card border border-border-card p-6">
         <DialogHeader>
-          <DialogTitle className="text-base font-bold text-secondary flex items-center gap-2">
+          <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
               <Printer className="w-4 h-4" />
             </div>
@@ -132,7 +132,7 @@ export const PrinterConfigModal: React.FC<PrinterConfigModalProps> = ({
                   <h4 className="text-xs font-bold text-secondary">
                     {isConfigured ? 'Impresora Vinculada' : 'Sin impresora vinculada'}
                   </h4>
-                  <span className="text-[10px] text-neutral">
+                  <span className="text-xs text-neutral">
                     {isConfigured
                       ? 'Lista para impresión directa por USB'
                       : 'Presiona el botón para vincular tu impresora USB'}
@@ -146,7 +146,7 @@ export const PrinterConfigModal: React.FC<PrinterConfigModalProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={handleUnlink}
-                  className="h-7 text-[11px] text-rose-500 hover:text-rose-600 gap-1"
+                  className="h-7 text-xs text-rose-500 hover:text-rose-600 gap-1"
                 >
                   <Unplug className="w-3 h-3" />
                   <span>Desvincular</span>
@@ -168,7 +168,7 @@ export const PrinterConfigModal: React.FC<PrinterConfigModalProps> = ({
             {/* Opciones de Papel y Hardware */}
             <div className="space-y-3 pt-2">
               <div>
-                <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+ <label className="text-xs font-bold text-muted-foreground block mb-1">
                   Ancho de Papel Térmico
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -182,7 +182,7 @@ export const PrinterConfigModal: React.FC<PrinterConfigModalProps> = ({
                     }`}
                   >
                     <div className="text-xs">58 mm (2 pulgadas)</div>
-                    <div className="text-[10px] opacity-70">Mini impresoras (32 cols)</div>
+                    <div className="text-xs opacity-70">Mini impresoras (32 cols)</div>
                   </button>
 
                   <button
@@ -195,7 +195,7 @@ export const PrinterConfigModal: React.FC<PrinterConfigModalProps> = ({
                     }`}
                   >
                     <div className="text-xs">80 mm (3 pulgadas)</div>
-                    <div className="text-[10px] opacity-70">Epson / Bixolon (42 cols)</div>
+                    <div className="text-xs opacity-70">Epson / Bixolon (42 cols)</div>
                   </button>
                 </div>
               </div>

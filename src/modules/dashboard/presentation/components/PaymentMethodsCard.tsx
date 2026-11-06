@@ -51,8 +51,8 @@ export const PaymentMethodsCard: React.FC<PaymentMethodsCardProps> = ({ data }) 
             </PieChart>
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-1">
-            <span className="text-[9px] uppercase font-bold text-neutral">Total</span>
-            <span className="text-[11px] font-black text-secondary tracking-tight truncate max-w-[70px]">
+ <span className="text-xs font-bold text-neutral">Total</span>
+            <span className="text-xs font-black text-secondary tracking-tight truncate max-w-[70px]">
               {formattedTotal}
             </span>
           </div>
@@ -71,7 +71,7 @@ export const PaymentMethodsCard: React.FC<PaymentMethodsCardProps> = ({ data }) 
             </div>
             <div className="text-right">
               <p className="text-xs font-bold text-secondary">{formattedCash}</p>
-              <p className="text-[10px] text-neutral font-medium">{data?.cash?.percentage || 0}%</p>
+              <p className="text-xs text-neutral font-medium">{data?.cash?.percentage || 0}%</p>
             </div>
           </div>
 
@@ -86,7 +86,7 @@ export const PaymentMethodsCard: React.FC<PaymentMethodsCardProps> = ({ data }) 
             </div>
             <div className="text-right">
               <p className="text-xs font-bold text-secondary">{formattedCard}</p>
-              <p className="text-[10px] text-neutral font-medium">{data?.card?.percentage || 0}%</p>
+              <p className="text-xs text-neutral font-medium">{data?.card?.percentage || 0}%</p>
             </div>
           </div>
         </div>

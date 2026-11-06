@@ -31,7 +31,7 @@ export const DeleteSupplierDialog: React.FC<DeleteSupplierDialogProps> = ({ supp
     <Dialog open={supplier !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-sm bg-card border border-border rounded-2xl shadow-xl p-6 text-foreground">
         <DialogHeader className="border-b border-border pb-3">
-          <DialogTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2 text-rose-500">
+ <DialogTitle className="text-base font-semibold flex items-center gap-2 text-rose-500">
             <Trash2 className="w-4 h-4 text-rose-500" />
             Eliminar Proveedor
           </DialogTitle>

@@ -17,7 +17,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ selectedBranchId }
       <div className="flex gap-2 border-b border-border pb-1 overflow-x-auto max-w-full">
         <button
           onClick={() => setActiveTab('register')}
-          className={`pb-2.5 px-4 text-xs font-bold uppercase tracking-wider transition-all border-b-2 flex items-center gap-1.5 whitespace-nowrap ${
+ className={`pb-2.5 px-4 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 whitespace-nowrap ${
             activeTab === 'register'
               ? 'border-primary text-foreground'
               : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -29,7 +29,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({ selectedBranchId }
 
         <button
           onClick={() => setActiveTab('history')}
-          className={`pb-2.5 px-4 text-xs font-bold uppercase tracking-wider transition-all border-b-2 flex items-center gap-1.5 whitespace-nowrap ${
+ className={`pb-2.5 px-4 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 whitespace-nowrap ${
             activeTab === 'history'
               ? 'border-primary text-foreground'
               : 'border-transparent text-muted-foreground hover:text-foreground'

@@ -25,7 +25,7 @@ export const AuditHeader: React.FC<AuditHeaderProps> = ({ details, showFormulasG
                 Arqueo y Auditoría de Caja
               </h2>
               <span
-                className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+ className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full ${
                   details.session.isClosed
                     ? 'bg-zinc-500/10 text-zinc-500 border border-zinc-500/20'
                     : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
@@ -91,7 +91,7 @@ export const AuditHeader: React.FC<AuditHeaderProps> = ({ details, showFormulasG
         <div className="flex items-center gap-2">
           <User className="w-4 h-4 text-neutral shrink-0" />
           <div className="truncate">
-            <span className="text-[10px] uppercase font-bold text-neutral block leading-none">
+ <span className="text-xs font-bold text-neutral block leading-none">
               Abierta por
             </span>
             <span className="font-semibold text-secondary truncate block mt-0.5">
@@ -103,7 +103,7 @@ export const AuditHeader: React.FC<AuditHeaderProps> = ({ details, showFormulasG
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-neutral shrink-0" />
           <div>
-            <span className="text-[10px] uppercase font-bold text-neutral block leading-none">
+ <span className="text-xs font-bold text-neutral block leading-none">
               Tiempo Abierta
             </span>
             <span className="font-semibold text-primary font-mono block mt-0.5">
@@ -115,7 +115,7 @@ export const AuditHeader: React.FC<AuditHeaderProps> = ({ details, showFormulasG
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-neutral shrink-0" />
           <div>
-            <span className="text-[10px] uppercase font-bold text-neutral block leading-none">
+ <span className="text-xs font-bold text-neutral block leading-none">
               Hora Apertura
             </span>
             <span className="font-semibold text-secondary font-mono block mt-0.5">
@@ -127,7 +127,7 @@ export const AuditHeader: React.FC<AuditHeaderProps> = ({ details, showFormulasG
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-neutral shrink-0" />
           <div>
-            <span className="text-[10px] uppercase font-bold text-neutral block leading-none">
+ <span className="text-xs font-bold text-neutral block leading-none">
               Hora Cierre
             </span>
             <span className="font-semibold text-secondary font-mono block mt-0.5">

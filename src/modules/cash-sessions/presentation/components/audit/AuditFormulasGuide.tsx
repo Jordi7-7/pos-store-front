@@ -19,7 +19,7 @@ export const AuditFormulasGuide: React.FC<AuditFormulasGuideProps> = ({ details,
           <button
             type="button"
             onClick={() => onClose()}
-            className="text-[11px] text-neutral hover:text-primary cursor-pointer font-semibold"
+            className="text-xs text-neutral hover:text-primary cursor-pointer font-semibold"
           >
             Cerrar guía
           </button>
@@ -28,7 +28,7 @@ export const AuditFormulasGuide: React.FC<AuditFormulasGuideProps> = ({ details,
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
           {/* Fórmula 1: Efectivo Físico en Gaveta */}
           <div className="p-3.5 rounded-xl bg-card border border-border-card space-y-2">
-            <div className="flex items-center justify-between font-bold text-secondary text-[11px]">
+            <div className="flex items-center justify-between font-bold text-secondary text-xs">
               <span className="flex items-center gap-1.5">
                 <Coins className="w-3.5 h-3.5 text-primary" />
                 1. Arqueo de Efectivo en Gaveta (Físico)
@@ -37,7 +37,7 @@ export const AuditFormulasGuide: React.FC<AuditFormulasGuideProps> = ({ details,
                 {details.session.expectedBalanceFormatted}
               </span>
             </div>
-            <div className="text-[11px] font-mono bg-bg-dark/70 p-2.5 rounded-lg border border-border-card text-neutral leading-relaxed">
+            <div className="text-xs font-mono bg-bg-dark/70 p-2.5 rounded-lg border border-border-card text-neutral leading-relaxed">
               <div className="text-secondary font-bold mb-1">Cálculo matemático:</div>
               <div>(+) Fondo Inicial: <span className="text-secondary font-bold">{details.session.openingBalanceFormatted}</span></div>
               <div>(+) Cobros Efectivo: <span className="text-emerald-600 font-bold">{details.kpis.cashSalesFormatted}</span></div>
@@ -48,14 +48,14 @@ export const AuditFormulasGuide: React.FC<AuditFormulasGuideProps> = ({ details,
                 <span>{details.session.expectedBalanceFormatted}</span>
               </div>
             </div>
-            <p className="text-[10px] text-neutral leading-tight">
+            <p className="text-xs text-neutral leading-tight">
               * Solo cuenta el flujo que entra y sale de la gaveta física. Las ventas con tarjeta no se suman al cajón porque se depositan directamente en la cuenta bancaria.
             </p>
           </div>
 
           {/* Fórmula 2: Ventas Netas Comerciales */}
           <div className="p-3.5 rounded-xl bg-card border border-border-card space-y-2">
-            <div className="flex items-center justify-between font-bold text-secondary text-[11px]">
+            <div className="flex items-center justify-between font-bold text-secondary text-xs">
               <span className="flex items-center gap-1.5">
                 <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
                 2. Ventas Netas del Negocio (Comercial)
@@ -64,7 +64,7 @@ export const AuditFormulasGuide: React.FC<AuditFormulasGuideProps> = ({ details,
                 {details.kpis.netSalesFormatted}
               </span>
             </div>
-            <div className="text-[11px] font-mono bg-bg-dark/70 p-2.5 rounded-lg border border-border-card text-neutral leading-relaxed">
+            <div className="text-xs font-mono bg-bg-dark/70 p-2.5 rounded-lg border border-border-card text-neutral leading-relaxed">
               <div className="text-secondary font-bold mb-1">Cálculo comercial:</div>
               <div>(+) Ventas Efectivo: <span className="text-emerald-600 font-bold">{details.kpis.cashSalesFormatted}</span></div>
               <div>(+) Ventas Tarjeta: <span className="text-secondary font-bold">{details.kpis.cardSalesFormatted}</span></div>
@@ -74,7 +74,7 @@ export const AuditFormulasGuide: React.FC<AuditFormulasGuideProps> = ({ details,
                 <span>{details.kpis.netSalesFormatted}</span>
               </div>
             </div>
-            <p className="text-[10px] text-neutral leading-tight">
+            <p className="text-xs text-neutral leading-tight">
               * Facturación neta comercial que generó la tienda en este turno sumando todos los métodos de pago (Efectivo + Tarjeta) menos devoluciones.
             </p>
           </div>
