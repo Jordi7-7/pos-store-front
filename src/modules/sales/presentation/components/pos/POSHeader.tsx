@@ -1,3 +1,4 @@
+import type { ActiveCashSession } from '@/modules/cash-sessions/domain/session-types';
 import {
   Wallet,
   ArrowRightLeft,
@@ -15,7 +16,7 @@ import { APP_PERMISSIONS } from '@/constants/permissions';
 interface POSHeaderProps {
   currentTime: string;
   shiftDuration: string;
-  activeSession: any;
+  activeSession: ActiveCashSession | null;
   availableRegistersForUser: any[];
   onOpenApertura: () => void;
   onOpenEgreso: () => void;

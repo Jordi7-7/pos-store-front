@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/apiClient';
+import type { ActiveCashSession } from '@/modules/cash-sessions/domain/session-types';
 import type { ProcessSaleInput, SaleReceipt } from '../application/ports/sales.repository';
 import type {
   PaginatedSalesDTO,
@@ -33,8 +34,8 @@ export const salesService = {
     return apiClient.post<SaleReceipt>('/sales', input);
   },
 
-  openCashSession: async (input: OpenCashSessionInput): Promise<any> => {
-    return apiClient.post('/sales/cash-sessions/open', input);
+  openCashSession: async (input: OpenCashSessionInput): Promise<ActiveCashSession> => {
+    return apiClient.post<ActiveCashSession>('/sales/cash-sessions/open', input);
   },
 
   registerExpense: async (input: RegisterExpenseInput): Promise<any> => {
@@ -45,12 +46,12 @@ export const salesService = {
     return apiClient.post('/sales/refunds', input);
   },
 
-  getActiveCashSession: async (branchId?: string, cashRegisterId?: string): Promise<any> => {
+  getActiveCashSession: async (branchId?: string, cashRegisterId?: string): Promise<ActiveCashSession | null> => {
     const params = new URLSearchParams();
     if (branchId) params.append('branchId', branchId);
     if (cashRegisterId) params.append('cashRegisterId', cashRegisterId);
     const queryString = params.toString() ? `?${params.toString()}` : '';
-    return apiClient.get(`/sales/cash-sessions/active${queryString}`);
+    return apiClient.get<ActiveCashSession | null>(`/sales/cash-sessions/active${queryString}`);
   },
 
   getExpenses: async (params?: { cashSessionId?: string; branchId?: string }): Promise<any[]> => {

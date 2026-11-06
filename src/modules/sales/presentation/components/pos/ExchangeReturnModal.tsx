@@ -1,3 +1,4 @@
+import type { ActiveCashSession } from '@/modules/cash-sessions/domain/session-types';
 import React from 'react';
 import {
   ArrowLeftRight,
@@ -20,7 +21,7 @@ import { ExchangeItemsStep } from './exchange-return/ExchangeItemsStep';
 interface ExchangeReturnModalProps {
   isOpen: boolean;
   onClose: () => void;
-  activeSession: any | null;
+  activeSession: ActiveCashSession | null;
   branchId: string;
   cashSessionId: string;
 }

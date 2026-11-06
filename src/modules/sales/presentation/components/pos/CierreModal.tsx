@@ -19,6 +19,7 @@ import {
 import { useTimezone } from '../../../../auth/hooks/useSession';
 import type {
   CashSessionHeader,
+  ClosingDetailsStatus,
   CashSessionDetails,
   SessionSale,
   SessionExpense,
@@ -33,8 +34,6 @@ import {
   summarizeCashSession,
 } from '@/modules/cash-sessions/domain/cash-closing';
 
-/** Estado de la carga del resumen del turno: sin él no se muestran importes (nunca ceros inventados). */
-export type ClosingDetailsStatus = 'loading' | 'ready' | 'unavailable';
 
 interface CierreModalProps {
   isOpen: boolean;

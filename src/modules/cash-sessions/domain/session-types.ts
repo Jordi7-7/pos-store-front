@@ -171,3 +171,9 @@ export interface CashSessionDetails {
   expenses: SessionExpense[];
   refunds: SessionRefund[];
 }
+
+/** Turno de caja abierto del usuario, tal como lo devuelve el servidor. */
+export type ActiveCashSession = CashSessionHeader & { cashRegisterId?: string; cashRegisterName?: string };
+
+/** Estado de la carga del resumen de un turno: sin él no se muestran importes (nunca ceros inventados). */
+export type ClosingDetailsStatus = 'loading' | 'ready' | 'unavailable';
