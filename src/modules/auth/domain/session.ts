@@ -75,8 +75,3 @@ export function roleLabel(user: SessionUser | null): string {
 }
 
 export const branchIdsOf = (user: SessionUser | null): string[] => (user ? user.branches.map((b) => b.id) : []);
-
-/** Pantalla de inicio según el perfil: el propietario al panel, el resto al POS. */
-export function homeRouteFor(user: SessionUser | null): '/dashboard' | '/pos' {
-  return user?.isOwner ? '/dashboard' : '/pos';
-}

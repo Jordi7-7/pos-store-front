@@ -1,20 +1,10 @@
-import { createFileRoute, useNavigate, redirect } from '@tanstack/react-router';
+import { guardRoute } from '@/modules/auth/hooks/route-guard';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { ProductCreateView } from '@/modules/products';
 import { useLayoutContext } from '@/providers/LayoutContext';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
-import { APP_PERMISSIONS } from '@/constants/permissions';
-import { toast } from 'sonner';
 
 export const Route = createFileRoute('/_layout/inventario/crear')({
-  beforeLoad: () => {
-    const auth = useAuthStore.getState();
-    if (!auth.can(APP_PERMISSIONS.PRODUCTS_CREATE)) {
-      toast.error('Acceso denegado: No tienes permiso para crear productos');
-      throw redirect({
-        to: '/inventario/productos',
-      });
-    }
-  },
+  beforeLoad: () => guardRoute('/inventario/crear'),
   component: InventoryCreateRoute,
 });
 

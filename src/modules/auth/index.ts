@@ -6,3 +6,5 @@ export * from './hooks/useIdleTimer';
 
 export * from './hooks/useSession';
 export * from './domain/session';
+export * from './domain/route-access';
+export * from './hooks/route-guard';

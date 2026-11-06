@@ -1,8 +1,10 @@
+import { guardRoute } from '@/modules/auth/hooks/route-guard';
 import { createFileRoute } from '@tanstack/react-router';
 import { ProductSalesTab } from '@/modules/reports/components/ProductSalesTab';
 import { useLayoutContext } from '@/providers/LayoutContext';
 
 export const Route = createFileRoute('/_layout/reportes/ventas-productos')({
+  beforeLoad: () => guardRoute('/reportes/ventas-productos'),
   component: ProductSalesRoute,
 });
 

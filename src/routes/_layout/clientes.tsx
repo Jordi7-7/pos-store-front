@@ -1,7 +1,9 @@
+import { guardRoute } from '@/modules/auth/hooks/route-guard';
 import { createFileRoute } from '@tanstack/react-router';
 import { CustomersView } from '@/modules/customers';
 
 export const Route = createFileRoute('/_layout/clientes')({
+  beforeLoad: () => guardRoute('/clientes'),
   component: CustomersRoute,
 });
 

@@ -1,8 +1,10 @@
+import { guardRoute } from '@/modules/auth/hooks/route-guard';
 import { createFileRoute } from '@tanstack/react-router';
 import { ProductsListView } from '@/modules/products';
 import { useLayoutContext } from '@/providers/LayoutContext';
 
 export const Route = createFileRoute('/_layout/inventario/productos')({
+  beforeLoad: () => guardRoute('/inventario/productos'),
   component: InventoryProductsRoute,
 });
 

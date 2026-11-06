@@ -48,16 +48,14 @@ test.describe('cajero (login por PIN)', () => {
     }
   });
 
-  test('la interfaz no debería dejar abrir /usuarios al cajero', async ({ page }) => {
-    // FALLO CONOCIDO (docs/refactor-plan.md, problema 8): hoy solo 2 de 26 rutas comprueban permisos,
-    // así que el cajero ve la pantalla (vacía, con "Usuarios (0)") aunque el backend le niegue los datos.
-    // Se arregla en la Etapa 2 (beforeLoad con permisos); entonces este test pasará y Playwright avisará
-    // de que ya no hace falta marcarlo como fallo esperado.
-    test.fail(true, 'Etapa 2: guardas de ruta con permisos');
+  test('la interfaz no deja al cajero abrir pantallas de administración por URL', async ({ page }) => {
     await pinLogin(page);
-    await page.goto('/usuarios');
-    await page.waitForLoadState('networkidle');
-    await expect(page).not.toHaveURL(/\/usuarios/);
+    for (const path of ['/usuarios', '/configuracion', '/dashboard', '/reportes/costo-ventas', '/compras/historial', '/cajas/historial']) {
+      await page.goto(path);
+      await page.waitForLoadState('networkidle');
+      await expect(page, path).toHaveURL(/\/pos$/);
+    }
+    await expect(page.getByText('Punto de Venta (POS)').first()).toBeVisible();
   });
 });
 

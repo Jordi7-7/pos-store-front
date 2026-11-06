@@ -1,3 +1,4 @@
+import { guardRoute } from '@/modules/auth/hooks/route-guard';
 import { useState, useEffect } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { MediaView } from '@/modules/media/components/MediaView';
@@ -5,6 +6,7 @@ import { useMediaUpload } from '@/modules/media';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/_layout/multimedia')({
+  beforeLoad: () => guardRoute('/multimedia'),
   component: MediaRoute,
 });
 

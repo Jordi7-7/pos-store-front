@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hasAnyPermission, hasPermission, homeRouteFor, roleLabel, tenantFormatKey, type SessionUser } from './session';
+import { hasAnyPermission, hasPermission, roleLabel, tenantFormatKey, type SessionUser } from './session';
 
 const base: SessionUser = {
   id: 'u',
@@ -24,13 +24,10 @@ describe('reglas de sesión', () => {
     expect(hasAnyPermission(base, ['x', 'y'])).toBe(false);
   });
 
-  it('etiqueta de rol y pantalla de inicio', () => {
+  it('etiqueta de rol', () => {
     expect(roleLabel({ ...base, isOwner: true })).toBe('Propietario');
     expect(roleLabel(base)).toBe('Cajero');
     expect(roleLabel({ ...base, role: null })).toBe('Usuario');
-    expect(homeRouteFor({ ...base, isOwner: true })).toBe('/dashboard');
-    expect(homeRouteFor(base)).toBe('/pos');
-    expect(homeRouteFor(null)).toBe('/pos');
   });
 });
 

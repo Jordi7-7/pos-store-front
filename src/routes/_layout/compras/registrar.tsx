@@ -1,8 +1,10 @@
+import { guardRoute } from '@/modules/auth/hooks/route-guard';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { PurchaseForm } from '@/modules/purchases/components/PurchaseForm';
 import { useLayoutContext } from '@/providers/LayoutContext';
 
 export const Route = createFileRoute('/_layout/compras/registrar')({
+  beforeLoad: () => guardRoute('/compras/registrar'),
   component: PurchasesRegisterRoute,
 });
 
