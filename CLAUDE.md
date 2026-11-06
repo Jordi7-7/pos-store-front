@@ -65,7 +65,7 @@ Regla de lectura: **domain no conoce a nadie; application solo conoce a domain; 
 ## Reglas del código
 - `domain` no importa `react`, `@tanstack/*`, `zustand`, `sonner`, `fetch`, ni nada de `infrastructure`/`presentation`. `application` no importa `infrastructure` ni `presentation`. Lo hace cumplir `src/architecture.test.ts` (reglas en `src/test/layer-rules.ts`; también vigila `infrastructure` → sin `presentation`, UI ni estado). Hallazgos pendientes: `docs/hallazgos-abiertos.md`.
 - La **lógica de negocio no vive en componentes ni en hooks de UI**: va en `domain/rules` (puras, con test) o en un caso de uso. `toast` solo en `presentation`.
-- Un componente > ~300 líneas se divide en contenedor (hook/view-model) + piezas de UI. Nada de `apiClient` ni `fetch` en componentes.
+- Se trocea un componente solo cuando mezcla responsabilidades y eso dificulta leerlo (reglas de negocio, estado y varias piezas de UI en el mismo archivo); el tamaño no es criterio. Un archivo largo pero cohesionado se deja. Nada de `apiClient` ni `fetch` en componentes.
 - **Todo cambio de reglas de dinero o de caja lleva test** (Vitest). Las reglas puras (carrito, arqueo, asignación de pagos) deben tener paridad con las del backend (`../pos-store/src/modules/sales/domain/services/`).
 - **SKU:** el servidor lo normaliza (MAYÚSCULAS); el cliente no debe reimplementarlo salvo para mostrar.
 - Rutas (`src/routes`, TanStack): adaptadores finos; **toda ruta protegida con `beforeLoad` y permisos**.
