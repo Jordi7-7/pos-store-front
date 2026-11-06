@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { rolesService } from '../services/roles.service';
-import type { RoleItem, CreateRoleInput, UpdateRoleInput } from '../services/roles.service';
+import { rolesRepository } from '../../infrastructure/dependencies';
+import type { CreateRoleInput, UpdateRoleInput } from '../../application/ports/roles.repository';
+import type { RoleEntity } from '../../domain/entities/role.entity';
 import type { PermissionDefinition, PermissionModuleGroup } from '@/constants/permissions';
 import { useIsAuthenticated, useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 import { toast } from 'sonner';
@@ -11,9 +12,9 @@ export function useRoles() {
   const tenantId = useTenantId();
   const isAuthenticated = useIsAuthenticated();
 
-  const { data: roles = [], isLoading, refetch } = useQuery<RoleItem[]>({
+  const { data: roles = [], isLoading, refetch } = useQuery<RoleEntity[]>({
     queryKey: ['roles', tenantId],
-    queryFn: () => rolesService.getRoles(),
+    queryFn: () => rolesRepository.list(),
     enabled: isAuthenticated && Boolean(tenantId),
   });
 
@@ -27,7 +28,7 @@ export function usePermissionsCatalog(): {
 } {
   const { data, isLoading } = useQuery({
     queryKey: PERMISSIONS_CATALOG_KEY,
-    queryFn: () => rolesService.getPermissionsCatalog(),
+    queryFn: () => rolesRepository.permissionsCatalog(),
     staleTime: 1000 * 60 * 30, // 30 minutes cache
   });
 
@@ -43,7 +44,7 @@ export function useCreateRole() {
   const tenantId = useTenantId();
 
   const mutation = useMutation({
-    mutationFn: (data: CreateRoleInput) => rolesService.createRole(data),
+    mutationFn: (data: CreateRoleInput) => rolesRepository.create(data),
     onSuccess: (newRole) => {
       queryClient.invalidateQueries({ queryKey: ['roles', tenantId] });
       toast.success(`Rol "${newRole.name}" creado con éxito.`);
@@ -65,7 +66,7 @@ export function useUpdateRole() {
 
   const mutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateRoleInput }) =>
-      rolesService.updateRole(id, data),
+      rolesRepository.update(id, data),
     onSuccess: (updatedRole) => {
       queryClient.invalidateQueries({ queryKey: ['roles', tenantId] });
       toast.success(`Rol "${updatedRole.name}" actualizado.`);
@@ -86,7 +87,7 @@ export function useDeleteRole() {
   const tenantId = useTenantId();
 
   const mutation = useMutation({
-    mutationFn: (id: string) => rolesService.deleteRole(id),
+    mutationFn: (id: string) => rolesRepository.remove(id),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['roles', tenantId] });
       toast.success(res.message || 'Rol eliminado.');

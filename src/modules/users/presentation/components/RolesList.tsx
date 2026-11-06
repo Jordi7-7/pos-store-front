@@ -1,14 +1,14 @@
 import React from 'react';
-import type { RoleItem } from '../services/roles.service';
+import type { RoleEntity } from '../../domain/entities/role.entity';
 import { Shield, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface RolesListProps {
-  roles: RoleItem[];
+  roles: RoleEntity[];
   canManageRoles: boolean;
   isDeletingRole: boolean;
-  onEditRole: (role: RoleItem) => void;
-  onDeleteRole: (role: RoleItem) => void;
+  onEditRole: (role: RoleEntity) => void;
+  onDeleteRole: (role: RoleEntity) => void;
 }
 
 export const RolesList: React.FC<RolesListProps> = ({

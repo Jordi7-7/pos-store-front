@@ -2,8 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { useCashRegisters, useCreateCashRegister, useUpdateCashRegister, useAssignUsersToRegister } from '../hooks/useCashRegisters';
 import type { Branch } from '@/modules/branches';
 import { useLayoutContext } from '@/providers/LayoutContext';
-import { useUsers } from '@/modules/users/hooks/useUsers';
-import type { UserItem } from '@/modules/users';
+import { useUsers } from '@/modules/users/presentation/hooks/useUsers';
+import type { UserEntity } from '@/modules/users';
 import { usePermissions } from '@/hooks/usePermissions';
 import { APP_PERMISSIONS } from '@/constants/permissions';
 import {
@@ -166,7 +166,7 @@ export const CashRegistersView: React.FC = () => {
 
   // Filter users eligible for assignment (can filter by name/email/role)
   const filteredUsers = useMemo(() => {
-    return users.filter((u: UserItem) => {
+    return users.filter((u: UserEntity) => {
       const q = assignUserSearch.toLowerCase();
       const roleStr = u.isOwner ? 'Propietario' : u.role?.name;
       return (
@@ -560,7 +560,7 @@ export const CashRegistersView: React.FC = () => {
                   No se encontraron usuarios.
                 </div>
               ) : (
-                filteredUsers.map((user: UserItem) => {
+                filteredUsers.map((user: UserEntity) => {
                   const isSelected = selectedUserIds.includes(user.id);
                   return (
                     <div

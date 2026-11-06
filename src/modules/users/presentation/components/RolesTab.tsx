@@ -1,15 +1,15 @@
 import React from 'react';
-import type { RoleItem } from '../services/roles.service';
+import type { RoleEntity } from '../../domain/entities/role.entity';
 import { RolesList } from './RolesList';
 import { Loader2 } from 'lucide-react';
 
 interface RolesTabProps {
-  roles: RoleItem[];
+  roles: RoleEntity[];
   isLoadingRoles: boolean;
   canManageRoles: boolean;
   isDeletingRole: boolean;
-  onEditRole: (role: RoleItem) => void;
-  onDeleteRole: (role: RoleItem) => void;
+  onEditRole: (role: RoleEntity) => void;
+  onDeleteRole: (role: RoleEntity) => void;
 }
 
 export const RolesTab: React.FC<RolesTabProps> = ({

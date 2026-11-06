@@ -8,10 +8,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Loader2, Trash2 } from 'lucide-react';
-import type { RoleItem } from '../services/roles.service';
+import type { RoleEntity } from '../../domain/entities/role.entity';
 
 interface DeleteRoleModalProps {
-  roleToDelete: RoleItem | null;
+  roleToDelete: RoleEntity | null;
   onClose: () => void;
   onConfirmDelete: (roleId: string) => Promise<void>;
   isDeleting: boolean;

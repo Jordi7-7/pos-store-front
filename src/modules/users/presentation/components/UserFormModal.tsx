@@ -9,8 +9,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
-import type { UserItem, CreateUserInput, UpdateUserInput } from '../services/users.service';
-import type { RoleItem } from '../services/roles.service';
+import type { UserEntity } from '../../domain/entities/user.entity';
+import type { CreateUserInput, UpdateUserInput } from '../../application/ports/users.repository';
+import type { RoleEntity } from '../../domain/entities/role.entity';
 import type { Branch } from '@/modules/branches/domain/entities/branch.entity';
 import {
   UserPlus,
@@ -32,8 +33,8 @@ import { toast } from 'sonner';
 interface UserFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  userToEdit?: UserItem | null;
-  roles: RoleItem[];
+  userToEdit?: UserEntity | null;
+  roles: RoleEntity[];
   branches: Branch[];
   currentAuthUserId?: string;
   onSubmitCreate: (data: CreateUserInput) => Promise<void>;

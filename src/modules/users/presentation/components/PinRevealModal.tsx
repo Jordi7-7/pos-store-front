@@ -7,14 +7,14 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import type { UserItem } from '../services/users.service';
+import type { UserEntity } from '../../domain/entities/user.entity';
 import { Key, ShieldAlert, Check, Copy } from 'lucide-react';
 
 interface PinRevealModalProps {
   isOpen: boolean;
   onClose: () => void;
   pin: string;
-  targetUser?: UserItem | null;
+  targetUser?: UserEntity | null;
   copied: boolean;
   onCopy: () => void;
 }

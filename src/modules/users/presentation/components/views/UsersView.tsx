@@ -1,14 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { useUsers, useCreateUser, useUpdateUser, useGeneratePin } from '../hooks/useUsers';
-import { useRoles, useDeleteRole } from '../hooks/useRoles';
-import type { UserItem, CreateUserInput, UpdateUserInput } from '../services/users.service';
-import type { RoleItem } from '../services/roles.service';
-import { RoleEditorModal } from '../components/RoleEditorModal';
-import { DeleteRoleModal } from '../components/DeleteRoleModal';
-import { UserFormModal } from '../components/UserFormModal';
-import { PinRevealModal } from '../components/PinRevealModal';
-import { UsersTab } from '../components/UsersTab';
-import { RolesTab } from '../components/RolesTab';
+import { useUsers, useCreateUser, useUpdateUser, useGeneratePin } from '../../hooks/useUsers';
+import { useRoles, useDeleteRole } from '../../hooks/useRoles';
+import type { UserEntity } from '../../../domain/entities/user.entity';
+import type { CreateUserInput, UpdateUserInput } from '../../../application/ports/users.repository';
+import type { RoleEntity } from '../../../domain/entities/role.entity';
+import { RoleEditorModal } from '../RoleEditorModal';
+import { DeleteRoleModal } from '../DeleteRoleModal';
+import { UserFormModal } from '../UserFormModal';
+import { PinRevealModal } from '../PinRevealModal';
+import { UsersTab } from '../UsersTab';
+import { RolesTab } from '../RolesTab';
 import { usePermissions } from '@/hooks/usePermissions';
 import { APP_PERMISSIONS } from '@/constants/permissions';
 import { Users, UserPlus, Search, Shield, Plus } from 'lucide-react';
@@ -37,20 +38,20 @@ export const UsersView: React.FC = () => {
 
   // Modals state
   const [showUserModal, setShowUserModal] = useState(false);
-  const [userToEdit, setUserToEdit] = useState<UserItem | null>(null);
+  const [userToEdit, setUserToEdit] = useState<UserEntity | null>(null);
 
   const [showPinModal, setShowPinModal] = useState(false);
   const [revealedPin, setRevealedPin] = useState('');
-  const [pinTargetUser, setPinTargetUser] = useState<UserItem | null>(null);
+  const [pinTargetUser, setPinTargetUser] = useState<UserEntity | null>(null);
   const [copied, setCopied] = useState(false);
 
   const [showRoleModal, setShowRoleModal] = useState(false);
-  const [editingRole, setEditingRole] = useState<RoleItem | null>(null);
-  const [roleToDelete, setRoleToDelete] = useState<RoleItem | null>(null);
+  const [editingRole, setEditingRole] = useState<RoleEntity | null>(null);
+  const [roleToDelete, setRoleToDelete] = useState<RoleEntity | null>(null);
 
   // Filtered Users
   const filteredUsers = useMemo(() => {
-    return users.filter((u: UserItem) => {
+    return users.filter((u: UserEntity) => {
       const matchesSearch =
         u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (u.email ? u.email.toLowerCase().includes(searchTerm.toLowerCase()) : false) ||
@@ -70,7 +71,7 @@ export const UsersView: React.FC = () => {
   };
 
   // Open Edit User Modal
-  const handleOpenEditUser = (user: UserItem) => {
+  const handleOpenEditUser = (user: UserEntity) => {
     setUserToEdit(user);
     setShowUserModal(true);
   };
@@ -86,7 +87,7 @@ export const UsersView: React.FC = () => {
   };
 
   // Quick Toggle Active/Inactive
-  const handleToggleActive = async (user: UserItem) => {
+  const handleToggleActive = async (user: UserEntity) => {
     const newStatus = !user.isActive;
     try {
       await updateUser({
@@ -100,7 +101,7 @@ export const UsersView: React.FC = () => {
   };
 
   // Generate Fast Random PIN
-  const handleGeneratePin = async (user: UserItem) => {
+  const handleGeneratePin = async (user: UserEntity) => {
     try {
       const res = await generatePin(user.id);
       setRevealedPin(res.pin);
@@ -170,7 +171,7 @@ export const UsersView: React.FC = () => {
                 className="bg-bg-dark border border-border-card rounded-xl py-2 px-3 text-xs text-secondary focus:outline-none focus:border-primary cursor-pointer font-medium"
               >
                 <option value="ALL">Todos los Roles</option>
-                {roles.map((r: RoleItem) => (
+                {roles.map((r: RoleEntity) => (
                   <option key={r.id} value={r.name}>
                     {r.name}
                   </option>

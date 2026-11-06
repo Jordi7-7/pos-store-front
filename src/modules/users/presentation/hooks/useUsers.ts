@@ -1,15 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { usersService } from '../services/users.service';
-import type { CreateUserInput, UpdateUserInput, UserItem } from '../services/users.service';
+import { usersRepository } from '../../infrastructure/dependencies';
+import type { CreateUserInput, UpdateUserInput } from '../../application/ports/users.repository';
+import type { UserEntity } from '../../domain/entities/user.entity';
 import { useIsAuthenticated, useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 
 export const useUsers = () => {
   const tenantId = useTenantId();
   const isAuthenticated = useIsAuthenticated();
 
-  const usersQuery = useQuery<UserItem[]>({
+  const usersQuery = useQuery<UserEntity[]>({
     queryKey: ['users', tenantId],
-    queryFn: () => usersService.getUsers(),
+    queryFn: () => usersRepository.list(),
     enabled: isAuthenticated && Boolean(tenantId),
   });
 
@@ -25,7 +26,7 @@ export const useCreateUser = () => {
   const tenantId = useTenantId();
 
   const createUserMutation = useMutation({
-    mutationFn: (input: CreateUserInput) => usersService.createUser(input),
+    mutationFn: (input: CreateUserInput) => usersRepository.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users', tenantId] });
     },
@@ -43,7 +44,7 @@ export const useUpdateUser = () => {
 
   const updateUserMutation = useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateUserInput }) =>
-      usersService.updateUser(id, input),
+      usersRepository.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users', tenantId] });
     },
@@ -60,7 +61,7 @@ export const useGeneratePin = () => {
   const tenantId = useTenantId();
 
   const generatePinMutation = useMutation({
-    mutationFn: (userId: string) => usersService.generatePin(userId),
+    mutationFn: (userId: string) => usersRepository.generatePin(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users', tenantId] });
     },

@@ -1,17 +1,17 @@
 import React from 'react';
-import type { UserItem } from '../services/users.service';
+import type { UserEntity } from '../../domain/entities/user.entity';
 import { Users, UserPlus, Key, Edit2, Check, Power, AtSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface UsersListProps {
-  users: UserItem[];
+  users: UserEntity[];
   currentAuthUserId?: string;
   searchTerm: string;
   roleFilter: string;
   onOpenCreate: () => void;
-  onGeneratePin: (user: UserItem) => void;
-  onEditUser: (user: UserItem) => void;
-  onToggleActive: (user: UserItem) => void;
+  onGeneratePin: (user: UserEntity) => void;
+  onEditUser: (user: UserEntity) => void;
+  onToggleActive: (user: UserEntity) => void;
 }
 
 export const UsersList: React.FC<UsersListProps> = ({
@@ -24,7 +24,7 @@ export const UsersList: React.FC<UsersListProps> = ({
   onEditUser,
   onToggleActive,
 }) => {
-  const getRoleBadge = (user: UserItem) => {
+  const getRoleBadge = (user: UserEntity) => {
     if (user.isOwner) {
       return {
         label: 'Propietario',
