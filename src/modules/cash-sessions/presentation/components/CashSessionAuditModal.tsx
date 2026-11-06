@@ -3,13 +3,12 @@ import { Loader2 } from 'lucide-react';
 import { useCashSessionDetailsQuery } from '../hooks/useCashSessions';
 import { useAuditReprint } from '../hooks/useAuditReprint';
 import { useTenant } from '../../../auth/presentation/hooks/useSession';
-import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ThermalTicketModal } from '../../../printing/presentation/components/ThermalTicketModal';
 import { ThermalClosingTicketModal } from '../../../printing/presentation/components/ThermalClosingTicketModal';
 import { AuditHeader } from './audit/AuditHeader';
 import { AuditFormulasGuide } from './audit/AuditFormulasGuide';
-import { AuditKpis } from './audit/AuditKpis';
+import { AuditReconciliation } from './audit/AuditReconciliation';
 import { AuditMovements } from './audit/AuditMovements';
 
 interface CashSessionAuditModalProps {
@@ -28,14 +27,14 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({ se
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-        <DialogContent className="w-[96vw] max-w-[96vw] sm:max-w-5xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl bg-card border border-border rounded-3xl shadow-2xl p-6 sm:p-8 text-foreground max-h-[92vh] overflow-y-auto">
+        <DialogContent className="max-h-[92vh] w-[96vw] max-w-[96vw] overflow-x-hidden overflow-y-auto p-5 text-foreground sm:max-w-4xl sm:p-6 lg:max-w-6xl">
           {isLoading || !details ? (
             <div className="flex flex-col items-center justify-center py-28 space-y-3">
               <Loader2 className="w-9 h-9 text-primary animate-spin" />
-              <p className="text-xs text-neutral font-medium">Cargando desglose financiero de la sesión...</p>
+              <p className="text-sm text-muted-foreground">Cargando el desglose del turno…</p>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="min-w-0 space-y-6">
               <AuditHeader
                 details={details}
                 showFormulasGuide={showFormulasGuide}
@@ -43,14 +42,9 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({ se
                 onPrintSessionTicket={reprint.printSession}
               />
               {showFormulasGuide && <AuditFormulasGuide details={details} onClose={() => setShowFormulasGuide(false)} />}
-              <AuditKpis details={details} />
+              <AuditReconciliation details={details} />
               <AuditMovements details={details} onPrintSale={reprint.printSale} />
 
-              <div className="flex justify-end pt-3">
-                <Button onClick={onClose} className="text-xs font-semibold h-9 px-5 rounded-xl cursor-pointer shadow-xs">
-                  Cerrar Auditoría
-                </Button>
-              </div>
             </div>
           )}
         </DialogContent>

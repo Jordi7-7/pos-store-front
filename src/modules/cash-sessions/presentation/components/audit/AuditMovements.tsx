@@ -14,15 +14,16 @@ export const AuditMovements: React.FC<AuditMovementsProps> = ({ details, onPrint
   const [activeTab, setActiveTab] = useState<'sales' | 'expenses' | 'refunds'>('sales');
 
   return (
-    <div>
-      <div className="flex gap-2 border-b border-border/80 pb-2">
+    <div className="min-w-0">
+      <div className="flex gap-1 overflow-x-auto border-b border-border-card" role="tablist">
         <button
           type="button"
+          role="tab"
           onClick={() => setActiveTab('sales')}
- className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+ className={`-mb-px flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap border-b-2 px-3 pb-2.5 pt-1 text-sm font-medium transition-colors ${
             activeTab === 'sales'
-              ? 'bg-primary text-white shadow-xs'
-              : 'text-neutral hover:text-secondary hover:bg-muted/10'
+              ? 'border-primary text-secondary'
+              : 'border-transparent text-muted-foreground hover:text-secondary'
           }`}
         >
           <ShoppingBag className="w-4 h-4" />
@@ -30,11 +31,12 @@ export const AuditMovements: React.FC<AuditMovementsProps> = ({ details, onPrint
         </button>
         <button
           type="button"
+          role="tab"
           onClick={() => setActiveTab('expenses')}
- className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+ className={`-mb-px flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap border-b-2 px-3 pb-2.5 pt-1 text-sm font-medium transition-colors ${
             activeTab === 'expenses'
-              ? 'bg-primary text-white shadow-xs'
-              : 'text-neutral hover:text-secondary hover:bg-muted/10'
+              ? 'border-primary text-secondary'
+              : 'border-transparent text-muted-foreground hover:text-secondary'
           }`}
         >
           <TrendingDown className="w-4 h-4" />
@@ -42,11 +44,12 @@ export const AuditMovements: React.FC<AuditMovementsProps> = ({ details, onPrint
         </button>
         <button
           type="button"
+          role="tab"
           onClick={() => setActiveTab('refunds')}
- className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+ className={`-mb-px flex shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap border-b-2 px-3 pb-2.5 pt-1 text-sm font-medium transition-colors ${
             activeTab === 'refunds'
-              ? 'bg-primary text-white shadow-xs'
-              : 'text-neutral hover:text-secondary hover:bg-muted/10'
+              ? 'border-primary text-secondary'
+              : 'border-transparent text-muted-foreground hover:text-secondary'
           }`}
         >
           <RotateCcw className="w-4 h-4" />

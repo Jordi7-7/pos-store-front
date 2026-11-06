@@ -14,7 +14,7 @@ export const AuditFormulasGuide: React.FC<AuditFormulasGuideProps> = ({ details,
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 font-bold text-primary">
             <Info className="w-4 h-4 shrink-0" />
-            <span>Guía Contable: ¿Cómo se calculan los valores en esta sesión?</span>
+            <span>Cómo se calculan las cifras de este turno</span>
           </div>
           <button
             type="button"
