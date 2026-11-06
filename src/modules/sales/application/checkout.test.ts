@@ -2,12 +2,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { PaymentMethod } from '../enums';
 import { CheckoutAttempt } from '../domain/checkout-attempt';
 import { Checkout, CheckoutError, type CheckoutCommand } from './checkout';
-import type { SalesGateway } from './ports/sales-gateway';
+import type { SalesRepository } from './ports/sales.repository';
 import { SalePricingError } from '../domain/rules/sale-pricing';
 
 function setup() {
   let n = 0;
-  const processSale = vi.fn<SalesGateway['processSale']>(async () => ({ id: 's1', invoiceNumber: '001-001-000000001' }));
+  const processSale = vi.fn<SalesRepository['processSale']>(async () => ({ id: 's1', invoiceNumber: '001-001-000000001' }));
   const checkout = new Checkout({ processSale }, new CheckoutAttempt(() => `req-${++n}-aaaaaaaa`));
   return { checkout, processSale };
 }

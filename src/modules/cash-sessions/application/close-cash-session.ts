@@ -1,6 +1,6 @@
 import { parseCountedCash } from '../domain/cash-closing';
 import type { CashSessionDetails } from '../types/cash-sessions.types';
-import type { CashSessionsGateway } from './ports/cash-sessions-gateway';
+import type { CashSessionsRepository } from './ports/cash-sessions.repository';
 
 export class CloseCashSessionError extends Error {
   readonly code = 'INVALID_COUNT';
@@ -23,16 +23,16 @@ export interface CloseCashSessionResult {
  * quien calcula el esperado y la diferencia) y después intenta leer el resumen para el corte.
  */
 export class CloseCashSession {
-  constructor(private readonly gateway: CashSessionsGateway) {}
+  constructor(private readonly repository: CashSessionsRepository) {}
 
   async execute(input: { sessionId: string; countedCash: string }): Promise<CloseCashSessionResult> {
     const counted = parseCountedCash(input.countedCash);
     if (counted === null) throw new CloseCashSessionError();
 
-    await this.gateway.close(input.sessionId, counted);
+    await this.repository.close(input.sessionId, counted);
 
     try {
-      return { details: await this.gateway.getDetails(input.sessionId) };
+      return { details: await this.repository.getDetails(input.sessionId) };
     } catch {
       // El turno ya está cerrado: no falla el cierre porque no se pueda leer el resumen.
       return { details: null };

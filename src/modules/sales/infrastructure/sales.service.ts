@@ -1,9 +1,8 @@
 import { apiClient } from '@/lib/apiClient';
-import type { SaleReceipt } from '../application/ports/sales-gateway';
+import type { ProcessSaleInput, SaleReceipt } from '../application/ports/sales.repository';
 import type {
   PaginatedSalesDTO,
   SaleDetailDTO,
-  ProcessSaleInput,
   OpenCashSessionInput,
   RegisterExpenseInput,
   ProcessRefundInput,

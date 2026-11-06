@@ -1,4 +1,5 @@
 import { PaymentMethod } from '../enums';
+export type { ProcessSaleInput } from '../application/ports/sales.repository';
 
 export interface SaleItemDTO {
   variantId: string;
@@ -77,19 +78,6 @@ export interface SaleDetailDTO {
   items: SaleDetailItemDTO[];
   payments: SalePaymentDTO[];
   refunds: SaleRefundDTO[];
-}
-
-export interface ProcessSaleInput {
-  /** Clave de idempotencia por intento de cobro (8–64 caracteres): un reintento no duplica la venta. */
-  clientRequestId?: string;
-  branchId: string;
-  cashSessionId: string;
-  customerId?: string;
-  discountType?: string;
-  discountRate?: number;
-  discountAmount?: number;
-  items: SaleItemDTO[];
-  payments: SalePaymentDTO[];
 }
 
 export interface OpenCashSessionInput {

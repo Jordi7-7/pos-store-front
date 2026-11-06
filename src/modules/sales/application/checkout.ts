@@ -2,8 +2,7 @@ import { Money } from '@/shared/domain/money';
 import { CheckoutAttempt, checkoutFingerprint } from '../domain/checkout-attempt';
 import { allocatePayments, changeDue, paymentsCoverTotal, priceSale, remainingToPay } from '../domain/rules/sale-pricing';
 import type { DiscountType } from '../domain/rules/cart-rules';
-import type { ProcessSaleInput } from '../types/sales.types';
-import type { SaleReceipt, SalesGateway } from './ports/sales-gateway';
+import type { ProcessSaleInput, SaleReceipt, SalesRepository } from './ports/sales.repository';
 
 export interface CheckoutLine {
   variantId: string;
@@ -53,7 +52,7 @@ export interface CheckoutResult {
  */
 export class Checkout {
   constructor(
-    private readonly gateway: SalesGateway,
+    private readonly repository: SalesRepository,
     private readonly attempts: CheckoutAttempt,
   ) {}
 
@@ -92,7 +91,7 @@ export class Checkout {
     };
 
     const fingerprint = checkoutFingerprint(sale);
-    const receipt = await this.gateway.processSale({ ...sale, clientRequestId: this.attempts.idFor(fingerprint) });
+    const receipt = await this.repository.processSale({ ...sale, clientRequestId: this.attempts.idFor(fingerprint) });
     this.attempts.complete(fingerprint);
 
     return { receipt, total: pricing.total, change: changeDue(pricing.total, paid) };
