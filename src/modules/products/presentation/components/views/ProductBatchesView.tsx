@@ -1,5 +1,6 @@
 import React from 'react';
 import { ProductBatchesTab } from '../ProductBatchesTab';
+import { PageHeader } from '@/shared/presentation/components/PageHeader';
 
 export interface ProductBatchesViewProps {
   selectedBranchId: string;
@@ -10,12 +11,7 @@ export const ProductBatchesView: React.FC<ProductBatchesViewProps> = ({
 }) => {
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-sm font-bold text-secondary">Historial de Lotes de Inventario</h3>
-        <p className="text-xs text-neutral mt-0.5">
-          Consulta las capas de costo, stock inicial, compras y devoluciones registradas en inventario.
-        </p>
-      </div>
+      <PageHeader title="Lotes de inventario" description="Consulta las capas de costo, el stock inicial, las compras y las devoluciones registradas." />
 
       <ProductBatchesTab selectedBranchId={selectedBranchId} />
     </div>

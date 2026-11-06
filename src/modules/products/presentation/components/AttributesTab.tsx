@@ -59,7 +59,7 @@ export const AttributesTab: React.FC = () => {
         <CardContent>
           <form onSubmit={handleCreateAttribute} className="space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-[10px] uppercase tracking-wider">Nombre del Atributo</Label>
+ <Label className="text-xs ">Nombre del Atributo</Label>
               <Input
                 type="text"
                 required
@@ -106,11 +106,11 @@ export const AttributesTab: React.FC = () => {
               {attributes.map((attr) => (
                 <div key={attr.id} className="p-4 bg-muted/20 border border-border rounded-xl space-y-3">
                   <div className="flex justify-between items-center border-b border-border/50 pb-2">
-                    <span className="text-xs font-bold uppercase flex items-center gap-1.5">
+ <span className="text-xs font-bold flex items-center gap-1.5">
                       <Tag className="w-3.5 h-3.5 text-primary" />
                       {attr.name}
                     </span>
-                    <span className="text-[10px] text-muted-foreground font-mono">ID: {attr.id.substring(0, 8)}...</span>
+                    <span className="text-xs text-muted-foreground font-mono">ID: {attr.id.substring(0, 8)}...</span>
                   </div>
 
                   {/* Values list */}
@@ -122,7 +122,7 @@ export const AttributesTab: React.FC = () => {
                         </Badge>
                       ))
                     ) : (
-                      <span className="text-[11px] text-muted-foreground italic">Sin valores creados. Agrega uno abajo.</span>
+                      <span className="text-xs text-muted-foreground italic">Sin valores creados. Agrega uno abajo.</span>
                     )}
                   </div>
 

@@ -1,10 +1,10 @@
 import React from 'react';
-import { Calendar as CalendarIcon, Search, X } from 'lucide-react';
+import { Calendar as CalendarIcon, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/shared/presentation/components/SearchInput';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface BatchFiltersProps {
@@ -21,7 +21,7 @@ export const BatchFilters: React.FC<BatchFiltersProps> = ({ dateRange, onDateRan
   <>
   {/* Controls Bar */}
   <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-    <div className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-xl">
+    <div className="flex flex-1 flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:max-w-2xl">
       {/* Date Range Picker */}
       <div className="relative">
         <Popover>
@@ -60,38 +60,17 @@ export const BatchFilters: React.FC<BatchFiltersProps> = ({ dateRange, onDateRan
         )}
       </div>
 
-      {/* Search by batch code or product */}
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral" />
-        <Input
-          placeholder="Buscar por lote, producto o factura..."
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-9 text-xs bg-bg-dark border-border-card rounded-xl h-9"
-        />
-      </div>
+      <SearchInput value={search} onValueChange={onSearchChange} placeholder="Buscar por lote, producto o factura…" aria-label="Buscar lote" className="sm:flex-1" />
     </div>
 
     <div className="flex flex-wrap items-center gap-2">
       {/* Actions to Expand / Collapse */}
       <div className="flex items-center gap-1">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={onExpandAll}
-          className="h-8 px-2.5 text-[11px] rounded-lg border-border-card text-neutral hover:text-secondary"
-        >
+        <Button type="button" variant="ghost" size="sm" onClick={onExpandAll}>
           Expandir todos
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={onCollapseAll}
-          className="h-8 px-2.5 text-[11px] rounded-lg border-border-card text-neutral hover:text-secondary"
-        >
-          Colapsar todos
+        <Button type="button" variant="ghost" size="sm" onClick={onCollapseAll}>
+          Cerrar todos
         </Button>
       </div>
     </div>

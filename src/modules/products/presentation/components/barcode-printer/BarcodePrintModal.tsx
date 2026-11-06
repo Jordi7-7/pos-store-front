@@ -143,7 +143,7 @@ export const BarcodePrintModal: React.FC<BarcodePrintModalProps> = ({
                   <Barcode className="w-5 h-5" />
                 </div>
                 <div>
-                  <DialogTitle className="text-base font-bold flex items-center gap-2">
+                  <DialogTitle className="text-base font-semibold flex items-center gap-2">
                     Impresión Térmica de Etiquetas
                   </DialogTitle>
                   <DialogDescription className="text-xs text-muted-foreground mt-0.5">

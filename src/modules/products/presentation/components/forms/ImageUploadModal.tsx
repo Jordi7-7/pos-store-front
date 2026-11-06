@@ -197,7 +197,7 @@ export const ImageUploadModal: React.FC<ImageUploadModalProps> = ({
                 <span className="text-xs font-semibold text-center">
                   Haz click o arrastra una imagen aquí
                 </span>
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   PNG, JPG, WebP o URL directa
                 </span>
               </>
@@ -206,7 +206,7 @@ export const ImageUploadModal: React.FC<ImageUploadModalProps> = ({
 
           {/* URL input */}
           <Field>
-            <FieldLabel htmlFor="img-modal-url" className="text-[10px]">
+            <FieldLabel htmlFor="img-modal-url" className="text-xs">
               O Pega una URL de Imagen
             </FieldLabel>
             <Input
@@ -225,7 +225,7 @@ export const ImageUploadModal: React.FC<ImageUploadModalProps> = ({
 
           {/* Description */}
           <Field>
-            <FieldLabel htmlFor="img-modal-desc" className="text-[10px]">
+            <FieldLabel htmlFor="img-modal-desc" className="text-xs">
               Descripción o Etiqueta
             </FieldLabel>
             <Input

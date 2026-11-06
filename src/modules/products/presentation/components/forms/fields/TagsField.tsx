@@ -38,7 +38,7 @@ export const TagsField: React.FC<TagsFieldProps> = ({ allTags, selectedTagIds, o
 
   return (
 <div>
-  <label className="text-[11px] font-bold uppercase tracking-wider block mb-1.5">
+ <label className="text-xs font-bold block mb-1.5">
     Tags
   </label>
   {selectedTagIds.length > 0 && (
@@ -49,7 +49,7 @@ export const TagsField: React.FC<TagsFieldProps> = ({ allTags, selectedTagIds, o
         return (
           <span
             key={id}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/15 text-primary text-[10px] font-semibold border border-primary/30"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-semibold border border-primary/30"
           >
             {tag.name}
             <button

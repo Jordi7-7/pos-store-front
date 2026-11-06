@@ -52,7 +52,7 @@ export const MediaGallerySelectorModal: React.FC<MediaGallerySelectorModalProps>
         <DialogHeader className="px-6 pt-5 pb-3 border-b border-border shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pr-6">
             <div>
-              <DialogTitle className="text-sm font-bold text-foreground">
+              <DialogTitle className="text-base font-semibold text-foreground">
                 Seleccionar de la Galería Multimedia
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
@@ -139,7 +139,7 @@ export const MediaGallerySelectorModal: React.FC<MediaGallerySelectorModalProps>
 
                     {/* Bottom description gradient */}
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-1.5 pt-4">
-                      <p className="text-[10px] text-white font-medium truncate" title={img.description}>
+                      <p className="text-xs text-white font-medium truncate" title={img.description}>
                         {img.description || 'Sin descripción'}
                       </p>
                     </div>

@@ -80,7 +80,7 @@ export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
               control={control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="var-base-sku" className="text-[11px] font-bold uppercase tracking-wider">
+ <FieldLabel htmlFor="var-base-sku" className="text-xs font-bold ">
                     Código SKU Base <span className="text-destructive">*</span>
                   </FieldLabel>
                   <div className="relative">
@@ -105,7 +105,7 @@ export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
               control={control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="var-prod-name" className="text-[11px] font-bold uppercase tracking-wider">
+ <FieldLabel htmlFor="var-prod-name" className="text-xs font-bold ">
                     Nombre del Producto <span className="text-destructive">*</span>
                   </FieldLabel>
                   <Input
@@ -129,7 +129,7 @@ export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
               control={control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="var-description" className="text-[11px] font-bold uppercase tracking-wider">
+ <FieldLabel htmlFor="var-description" className="text-xs font-bold ">
                     Descripción
                   </FieldLabel>
                   <Textarea
@@ -154,7 +154,7 @@ export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
 
                 return (
                   <Field>
-                    <FieldLabel htmlFor="var-category" className="text-[11px] font-bold uppercase tracking-wider">
+ <FieldLabel htmlFor="var-category" className="text-xs font-bold ">
                       Categoría
                     </FieldLabel>
                     <div className="flex gap-1.5 items-center">
@@ -203,7 +203,7 @@ export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
             {isCreatingCategoryInline && (
               <div className="bg-muted/20 border border-border/50 rounded-xl p-2.5 space-y-1.5 animate-fade-in">
                 <Field>
-                  <FieldLabel htmlFor="var-new-cat" className="text-[9px] uppercase tracking-wider font-bold">
+ <FieldLabel htmlFor="var-new-cat" className="text-xs font-bold">
                     Nombre de Nueva Categoría <span className="text-destructive">*</span>
                   </FieldLabel>
                   <div className="flex gap-2">
@@ -242,7 +242,7 @@ export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
         <div className="border-t border-border/40 pt-3 space-y-2.5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-foreground">
+ <span className="text-xs font-bold text-foreground">
                 Imágenes del Producto{' '}
                 <span className="text-muted-foreground font-normal">({selectedImages.length})</span>
               </span>
@@ -264,7 +264,7 @@ export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
                 variant="link"
                 size="sm"
                 onClick={onOpenUploadModal}
-                className="text-[11px] h-auto p-0 gap-1 text-primary"
+                className="text-xs h-auto p-0 gap-1 text-primary"
               >
                 <Upload className="w-3.5 h-3.5" />
                 + Subir Nueva Imagen
@@ -287,7 +287,7 @@ export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
                   />
 
                   {index === 0 && (
-                    <span className="absolute bottom-0 inset-x-0 bg-primary/90 text-primary-foreground text-[8px] font-semibold text-center py-0.5 leading-none">
+                    <span className="absolute bottom-0 inset-x-0 bg-primary/90 text-primary-foreground text-xs font-semibold text-center py-0.5 leading-none">
                       Principal
                     </span>
                   )}

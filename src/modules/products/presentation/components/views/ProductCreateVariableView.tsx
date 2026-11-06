@@ -6,6 +6,7 @@ import { useAttributes } from '../../hooks/useAttributes';
 import { ProductCreateVariableTab } from '../ProductCreateVariableTab';
 import { AttributeCatalogManager } from '../AttributeCatalogManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PageHeader } from '@/shared/presentation/components/PageHeader';
 
 export interface ProductCreateVariableViewProps {
   selectedBranchId: string;
@@ -32,19 +33,11 @@ export const ProductCreateVariableView: React.FC<ProductCreateVariableViewProps>
 
   return (
     <div className="space-y-6">
-      {/* Header Info - consistent with the rest of the app */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-bold text-secondary">Registrar Producto Compuesto</h3>
-          <p className="text-xs text-neutral mt-0.5">
-            Crea un nuevo artículo con variantes (tallas, colores), códigos de barras y capas de costo independientes.
-          </p>
-        </div>
-      </div>
+      <PageHeader title="Crear producto con variantes" description="Registra un artículo con variantes (tallas, colores), códigos de barras y costos independientes." />
 
       {/* Tabs navigation */}
       <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as 'create' | 'attributes')}>
-        <TabsList className="bg-muted/40 p-1 mb-2">
+        <TabsList className="mb-2 h-auto max-w-full justify-start overflow-x-auto bg-muted/40 p-1">
           <TabsTrigger value="create" className="gap-2 text-xs font-semibold">
             <Layers className="w-4 h-4" />
             Crear Producto Compuesto

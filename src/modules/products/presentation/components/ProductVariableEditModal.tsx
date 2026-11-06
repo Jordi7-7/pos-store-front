@@ -107,11 +107,11 @@ export const ProductVariableEditModal: React.FC<ProductVariableEditModalProps> =
         <DialogHeader className="shrink-0 px-6 pr-14 py-4 border-b border-border bg-muted/25 flex flex-row items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <DialogTitle className="text-base font-bold text-secondary flex items-center gap-2">
+              <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
                 <Layers className="w-5 h-5 text-primary" />
                 Editar Producto Compuesto
               </DialogTitle>
-              <Badge variant="outline" className="text-[10px] font-mono">
+              <Badge variant="outline" className="text-xs font-mono">
                 {variants.rows.length} variantes
               </Badge>
             </div>
@@ -128,7 +128,7 @@ export const ProductVariableEditModal: React.FC<ProductVariableEditModalProps> =
           </div>
         ) : (
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-6 pt-3 border-b border-border bg-card">
+            <div className="overflow-x-auto border-b border-border bg-card px-4 pt-3 sm:px-6">
               <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as EditorTab)}>
                 <TabsList className="bg-muted/40 p-1 mb-2 border border-border/40">
                   <TabsTrigger value="info" className="gap-2 text-xs font-semibold data-[state=active]:shadow-xs">
@@ -143,7 +143,7 @@ export const ProductVariableEditModal: React.FC<ProductVariableEditModalProps> =
               </Tabs>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="min-w-0 flex-1 space-y-6 overflow-x-hidden overflow-y-auto p-4 sm:p-6">
               {activeTab === 'info' && (
                 <div className="space-y-5">
                   <ParentInfoTab

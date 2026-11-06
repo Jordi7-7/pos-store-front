@@ -31,7 +31,7 @@ export const CategoryField: React.FC<CategoryFieldProps> = ({ control, formId, c
 
     return (
       <Field>
-        <FieldLabel htmlFor={`${formId}-category`} className="text-[11px] font-bold uppercase tracking-wider">Categoría</FieldLabel>
+ <FieldLabel htmlFor={`${formId}-category`} className="text-xs font-bold ">Categoría</FieldLabel>
         <div className="flex gap-1.5 items-center">
           <div className="flex-1">
             <Combobox
@@ -78,7 +78,7 @@ export const CategoryField: React.FC<CategoryFieldProps> = ({ control, formId, c
 {isCreatingCategoryInline && (
   <div className="bg-muted/20 border border-border/50 rounded-xl p-2.5 space-y-1.5 animate-fade-in">
     <Field>
-      <FieldLabel htmlFor={`${formId}-new-cat`} className="text-[9px] uppercase tracking-wider font-bold">
+ <FieldLabel htmlFor={`${formId}-new-cat`} className="text-xs font-bold">
         Nombre de Nueva Categoría <span className="text-destructive">*</span>
       </FieldLabel>
       <div className="flex gap-2">

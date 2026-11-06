@@ -56,10 +56,10 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({ products, branchId
           <TableHead className="w-[60px]"></TableHead>
           <TableHead className="font-semibold text-xs">SKU</TableHead>
           <TableHead className="font-semibold text-xs">Producto</TableHead>
-          <TableHead className="font-semibold text-xs">Cód. Barras</TableHead>
+          <TableHead className="hidden lg:table-cell">Cód. barras</TableHead>
           <TableHead className="font-semibold text-xs text-right">Compra</TableHead>
           <TableHead className="font-semibold text-xs text-right">Venta</TableHead>
-          <TableHead className="font-semibold text-xs text-right">Precio Mayoreo</TableHead>
+          <TableHead className="hidden text-right xl:table-cell">Mayoreo</TableHead>
           <TableHead className="font-semibold text-xs text-center">{isAll ? 'Stock Total' : 'Stock Sucursal'}</TableHead>
           <TableHead className="w-[80px] text-center">Acciones</TableHead>
         </TableRow>

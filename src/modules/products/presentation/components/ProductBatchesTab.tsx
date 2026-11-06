@@ -5,7 +5,7 @@ import { PaginationControls } from '@/shared/presentation/components/PaginationC
 import { useBatches } from '../hooks';
 import { useBatchFilters } from '../hooks/useBatchFilters';
 import { BatchFilters } from './batches/BatchFilters';
-import { LotCard } from './batches/LotCard';
+import { LotCard, LotListHeader } from './batches/LotCard';
 
 interface ProductBatchesTabProps {
   selectedBranchId: string;
@@ -14,7 +14,7 @@ interface ProductBatchesTabProps {
 /** Lotes de inventario de la sucursal: filtros, lista de lotes desplegables y paginación. */
 export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBranchId }) => {
   const filters = useBatchFilters();
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const { lots, meta, isLoading } = useBatches({
     branchId: selectedBranchId || undefined,
@@ -25,13 +25,13 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
     limit: filters.limit,
   });
 
-  // Al cambiar de página o de filtros, los lotes vuelven a verse desplegados.
+  // Al cambiar de página o de filtros, los lotes vuelven a verse cerrados.
   useEffect(() => {
-    setCollapsed({});
+    setExpanded({});
   }, [filters.page, filters.searchTerm, selectedBranchId, filters.startDate, filters.endDate]);
 
-  const toggle = (lotId: string) => setCollapsed((prev) => ({ ...prev, [lotId]: !prev[lotId] }));
-  const collapseAll = () => setCollapsed(Object.fromEntries(lots.map((lot) => [lot.id, true])));
+  const toggle = (lotId: string) => setExpanded((prev) => ({ ...prev, [lotId]: !prev[lotId] }));
+  const expandAll = () => setExpanded(Object.fromEntries(lots.map((lot) => [lot.id, true])));
 
   return (
     <div className="space-y-4">
@@ -41,12 +41,12 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
           onDateRangeChange={filters.setDateRange}
           search={filters.search}
           onSearchChange={filters.setSearch}
-          onExpandAll={() => setCollapsed({})}
-          onCollapseAll={collapseAll}
+          onExpandAll={expandAll}
+          onCollapseAll={() => setExpanded({})}
         />
       </div>
 
-      <Card className="border border-border-card bg-bg-card rounded-2xl shadow-sm p-4 overflow-hidden">
+      <Card className="gap-0 overflow-hidden p-0">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-3">
             <Loader2 className="w-7 h-7 text-primary animate-spin" />
@@ -55,15 +55,16 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
         ) : lots.length === 0 ? (
           <div className="text-center py-16 text-neutral text-xs italic">No se encontraron lotes registrados para los filtros seleccionados.</div>
         ) : (
-          <div className="space-y-3">
+          <div>
+            <LotListHeader />
             {lots.map((lot) => (
-              <LotCard key={lot.id} lot={lot} isExpanded={!collapsed[lot.id]} onToggle={() => toggle(lot.id)} />
+              <LotCard key={lot.id} lot={lot} isExpanded={Boolean(expanded[lot.id])} onToggle={() => toggle(lot.id)} />
             ))}
           </div>
         )}
 
         {!isLoading && lots.length > 0 && (
-          <div className="mt-4 pt-3 border-t border-border-card">
+          <div className="border-t border-border-card px-4 py-3">
             <PaginationControls meta={meta} onPageChange={filters.setPage} onLimitChange={filters.setLimit} />
           </div>
         )}

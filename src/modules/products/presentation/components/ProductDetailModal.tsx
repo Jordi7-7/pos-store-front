@@ -140,10 +140,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               <div className="flex flex-wrap items-center justify-between gap-3 min-w-0">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <DialogTitle className="text-lg font-bold truncate text-foreground">
+                    <DialogTitle className="text-base font-semibold truncate text-foreground">
                       {detailProduct.name}
                     </DialogTitle>
-                    <Badge variant="outline" className="text-[11px] font-mono shrink-0">
+                    <Badge variant="outline" className="text-xs font-mono shrink-0">
                       {activeVariant?.sku || variants[0]?.sku || 'S/SKU'}
                     </Badge>
                   </div>
@@ -157,11 +157,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             <div className="flex min-h-0 flex-1 flex-col md:flex-row">
               <aside className="shrink-0 border-b border-border bg-muted/10 p-5 md:w-72 md:border-b-0 md:border-r flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+ <span className="text-xs font-bold text-muted-foreground">
                     Fotografía del Producto
                   </span>
                   {allImages.length > 1 && (
-                    <span className="text-[10px] text-muted-foreground font-semibold">
+                    <span className="text-xs text-muted-foreground font-semibold">
                       {activeImageIndex + 1} de {allImages.length}
                     </span>
                   )}

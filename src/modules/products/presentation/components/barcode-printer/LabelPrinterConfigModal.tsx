@@ -117,7 +117,7 @@ export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-xl max-h-[92vh] flex flex-col bg-card border border-border p-6 text-foreground overflow-hidden shadow-2xl">
         <DialogHeader className="shrink-0 pb-3 border-b border-border">
-          <DialogTitle className="text-base font-bold flex items-center gap-2">
+          <DialogTitle className="text-base font-semibold flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
               <Tag className="w-4 h-4" />
             </div>
@@ -136,7 +136,7 @@ export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = (
                 <Tag className="w-3.5 h-3.5 text-primary" />
                 <span>1. Formato del Rollo de Etiquetas (Válido para todo tipo de impresión):</span>
               </div>
-              <span className="text-[10px] text-muted-foreground font-mono">
+              <span className="text-xs text-muted-foreground font-mono">
                 Resolución: <strong>203 DPI</strong>
               </span>
             </div>
@@ -158,11 +158,11 @@ export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = (
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold">{preset.widthMm} × {preset.heightMm} mm</span>
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-muted text-muted-foreground">
+                      <span className="text-xs px-1.5 py-0.2 rounded bg-muted text-muted-foreground">
                         {preset.category}
                       </span>
                     </div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1">{preset.description}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{preset.description}</div>
                   </button>
                 );
               })}
@@ -170,12 +170,12 @@ export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = (
 
             {/* Medidas manuales */}
             <div className="p-3 rounded-xl bg-muted/20 border border-border space-y-2">
-              <span className="font-semibold text-foreground text-[11px] block">
+              <span className="font-semibold text-foreground text-xs block">
                 O ingresa la medida exacta de tu etiqueta en milímetros:
               </span>
               <div className="grid grid-cols-3 gap-2.5">
                 <div>
-                  <label className="text-[10px] text-muted-foreground uppercase font-semibold block mb-1">
+ <label className="text-xs text-muted-foreground font-semibold block mb-1">
                     Ancho (mm)
                   </label>
                   <input
@@ -190,7 +190,7 @@ export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = (
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-muted-foreground uppercase font-semibold block mb-1">
+ <label className="text-xs text-muted-foreground font-semibold block mb-1">
                     Alto (mm)
                   </label>
                   <input
@@ -205,7 +205,7 @@ export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = (
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-muted-foreground uppercase font-semibold block mb-1">
+ <label className="text-xs text-muted-foreground font-semibold block mb-1">
                     GAP / Separación (mm)
                   </label>
                   <input
@@ -236,7 +236,7 @@ export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = (
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>Método Recomendado: Impresora en Windows / Zebra (Cable USB normal)</span>
               </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed pl-6">
+              <p className="text-xs text-muted-foreground leading-relaxed pl-6">
                 Utiliza el botón <strong>"Imprimir en Windows / Zebra"</strong>. Tu sistema genera una imagen fija a <strong>203 DPI</strong> y la envía a través del driver oficial (ZDesigner, etc.). <strong>No necesitas configurar puertos COM ni instalar nada adicional.</strong>
               </p>
             </div>
@@ -249,17 +249,17 @@ export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = (
                   <span>Método Avanzado: Impresión Directa por Puerto Serie (COM)</span>
                 </div>
                 {isConfigured ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
                     <CheckCircle2 className="w-3 h-3" /> Puerto COM Activo
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-muted-foreground border border-border">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border">
                     Sin puerto COM
                   </span>
                 )}
               </div>
 
-              <div className="flex items-start gap-2 p-2.5 rounded-lg bg-background border border-border/70 text-[11px] text-muted-foreground leading-relaxed">
+              <div className="flex items-start gap-2 p-2.5 rounded-lg bg-background border border-border/70 text-xs text-muted-foreground leading-relaxed">
                 <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <span>
                   Solo es necesario si conectas una impresora mediante un <strong>cable convertidor Serie RS-232 a USB</strong> o una impresora con chip serie nativo (como Xprinter). Permite imprimir en 1 clic sin ventanas emergentes.
@@ -268,7 +268,7 @@ export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = (
 
               {/* Lenguaje del puerto serie */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-foreground block">
+                <label className="text-xs font-semibold text-foreground block">
                   Lenguaje de Comandos (Solo aplica para el Puerto Serie COM):
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -281,8 +281,8 @@ export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = (
                         : 'bg-muted/40 border-border text-foreground hover:bg-muted/70'
                     }`}
                   >
-                    <div className="text-[11px] font-bold">TSPL (Xprinter / TSC)</div>
-                    <div className="text-[9px] text-muted-foreground">Para impresoras de etiquetas asiáticas</div>
+                    <div className="text-xs font-bold">TSPL (Xprinter / TSC)</div>
+                    <div className="text-xs text-muted-foreground">Para impresoras de etiquetas asiáticas</div>
                   </button>
 
                   <button
@@ -294,8 +294,8 @@ export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = (
                         : 'bg-muted/40 border-border text-foreground hover:bg-muted/70'
                     }`}
                   >
-                    <div className="text-[11px] font-bold">ZPL (Zebra)</div>
-                    <div className="text-[9px] text-muted-foreground">Para impresoras Zebra con cable serie</div>
+                    <div className="text-xs font-bold">ZPL (Zebra)</div>
+                    <div className="text-xs text-muted-foreground">Para impresoras Zebra con cable serie</div>
                   </button>
                 </div>
               </div>

@@ -26,11 +26,11 @@ export const BarcodeQueueList: React.FC<BarcodeQueueListProps> = ({
     <div className="flex flex-col h-full border border-border/80 rounded-xl bg-card overflow-hidden">
       {/* Barra superior de acciones rápidas */}
       <div className="p-3 border-b border-border bg-muted/30 flex items-center justify-between gap-2 shrink-0">
-        <span className="text-xs font-bold uppercase tracking-wider text-foreground truncate">
+ <span className="text-xs font-bold text-foreground truncate">
           Cola de Impresión ({items.length})
         </span>
         <div className="flex items-center gap-1.5 shrink-0 text-xs">
-          <span className="text-[11px] text-muted-foreground hidden sm:inline">Poner a todos:</span>
+          <span className="text-xs text-muted-foreground hidden sm:inline">Poner a todos:</span>
           {[1, 5, 10].map((num) => (
             <button
               key={num}
@@ -66,7 +66,7 @@ export const BarcodeQueueList: React.FC<BarcodeQueueListProps> = ({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-bold text-xs text-primary">{item.sku}</span>
-                    <span className="text-[11px] font-bold text-emerald-600 font-mono">
+                    <span className="text-xs font-bold text-emerald-600 font-mono">
                       {formatMoney(Number(item.price))}
                     </span>
                   </div>

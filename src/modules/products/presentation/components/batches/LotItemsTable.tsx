@@ -8,7 +8,7 @@ export const LotItemsTable: React.FC<{ items: InventoryLotVM['items'] }> = ({ it
   <div className="overflow-x-auto">
   <Table>
     <TableHeader>
-      <TableRow className="uppercase tracking-wider text-[10px] font-bold border-b border-border-card">
+ <TableRow className=" text-xs font-bold border-b border-border-card">
         <TableHead className="pr-2">Producto / SKU</TableHead>
         <TableHead className="px-2 text-right">Cant. Inicial</TableHead>
         <TableHead className="px-2 text-right">Consumido</TableHead>
@@ -28,7 +28,7 @@ export const LotItemsTable: React.FC<{ items: InventoryLotVM['items'] }> = ({ it
           {/* Product Name & SKU */}
           <TableCell className="py-2.5 pr-2">
             <div className="font-semibold text-secondary text-xs">{item.productName}</div>
-            <div className="font-mono text-[10px] text-primary">{item.sku || '-'}</div>
+            <div className="font-mono text-xs text-primary">{item.sku || '-'}</div>
           </TableCell>
 
           {/* Initial Qty */}
@@ -61,7 +61,7 @@ export const LotItemsTable: React.FC<{ items: InventoryLotVM['items'] }> = ({ it
           {/* Total Value */}
           <TableCell className="py-2.5 pl-2 text-right font-mono font-bold text-xs text-primary">
             {item.totalCostFormatted}
-            <span className="text-[10px] font-normal text-neutral/80 block">
+            <span className="text-xs font-normal text-neutral/80 block">
               Ini: {item.initialCostFormatted}
             </span>
           </TableCell>

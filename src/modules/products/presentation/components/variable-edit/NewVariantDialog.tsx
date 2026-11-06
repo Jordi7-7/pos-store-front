@@ -69,7 +69,7 @@ export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpen
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden rounded-2xl bg-card border border-border shadow-2xl">
         <DialogHeader className="px-6 py-4 border-b border-border/60 bg-muted/20">
-          <DialogTitle className="text-sm sm:text-base font-bold text-secondary flex items-center gap-2">
+          <DialogTitle className="text-sm sm:text-base font-semibold text-secondary flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
               <Plus className="w-4 h-4" />
             </div>
@@ -84,17 +84,17 @@ export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpen
           {/* Selección de Atributos */}
           <div className="space-y-3 p-4 rounded-xl border border-primary/25 bg-primary/5">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
+ <span className="text-xs font-bold text-primary">
                 Combinación de Atributos <span className="text-destructive">*</span>
               </span>
-              <span className="text-[10px] text-neutral">
+              <span className="text-xs text-neutral">
                 {attributes.length} atributo(s) asignado(s)
               </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {attributes.map((attr:Attribute) => (
                 <div key={attr.id} className="space-y-1">
-                  <FieldLabel className="text-[11px] text-secondary font-bold">
+                  <FieldLabel className="text-xs text-secondary font-bold">
                     {attr.name}
                   </FieldLabel>
                   <select
@@ -122,7 +122,7 @@ export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpen
           {/* SKU & Código de Barras */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <FieldLabel className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel className="text-xs font-bold text-secondary">
                 SKU de la Variante <span className="text-destructive">*</span>
               </FieldLabel>
               <Input
@@ -135,7 +135,7 @@ export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpen
               />
             </div>
             <div className="space-y-1">
-              <FieldLabel className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel className="text-xs font-bold text-secondary">
                 Código de Barras (Opcional)
               </FieldLabel>
               <Input
@@ -150,7 +150,7 @@ export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpen
           {/* Precios */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1">
-              <FieldLabel className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel className="text-xs font-bold text-secondary">
                 P. Compra
               </FieldLabel>
               <Input
@@ -162,7 +162,7 @@ export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpen
               />
             </div>
             <div className="space-y-1">
-              <FieldLabel className="text-[10px] font-bold uppercase tracking-wider text-primary">
+ <FieldLabel className="text-xs font-bold text-primary">
                 P. Venta <span className="text-destructive">*</span>
               </FieldLabel>
               <Input
@@ -174,7 +174,7 @@ export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpen
               />
             </div>
             <div className="space-y-1">
-              <FieldLabel className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel className="text-xs font-bold text-secondary">
                 P. Mayoreo
               </FieldLabel>
               <Input
@@ -191,7 +191,7 @@ export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpen
           {/* Stock inicial en sucursal */}
           {branchId && (
             <div className="space-y-1 pt-1 border-t border-border/50">
-              <FieldLabel className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel className="text-xs font-bold text-secondary">
                 Stock Inicial en Sucursal Seleccionada
               </FieldLabel>
               <Input

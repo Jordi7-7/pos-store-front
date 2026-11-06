@@ -14,7 +14,7 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({ selected
   <div className="border-t border-border/40 pt-3 space-y-2.5">
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
       <div className="flex items-center gap-2">
-        <span className="text-[11px] font-bold uppercase tracking-wider text-foreground">
+ <span className="text-xs font-bold text-foreground">
           Imágenes del Producto{' '}
           <span className="text-muted-foreground font-normal">({selectedImages.length})</span>
         </span>
@@ -36,7 +36,7 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({ selected
           variant="link"
           size="sm"
           onClick={onOpenUploadModal}
-          className="text-[11px] h-auto p-0 gap-1 text-primary"
+          className="text-xs h-auto p-0 gap-1 text-primary"
         >
           <Upload className="w-3.5 h-3.5" />
           + Subir Nueva Imagen
@@ -59,7 +59,7 @@ export const ProductImagesField: React.FC<ProductImagesFieldProps> = ({ selected
             />
 
             {index === 0 && (
-              <span className="absolute bottom-0 inset-x-0 bg-primary/90 text-primary-foreground text-[8px] font-semibold text-center py-0.5 leading-none">
+              <span className="absolute bottom-0 inset-x-0 bg-primary/90 text-primary-foreground text-xs font-semibold text-center py-0.5 leading-none">
                 Principal
               </span>
             )}

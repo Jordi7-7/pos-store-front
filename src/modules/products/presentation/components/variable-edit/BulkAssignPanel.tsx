@@ -47,7 +47,7 @@ export const BulkAssignPanel: React.FC<BulkAssignPanelProps> = ({ onApply }) => 
             <CardContent className="p-4 sm:p-5">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
-                  <FieldLabel className="text-[10px] text-neutral font-bold uppercase tracking-wider">
+ <FieldLabel className="text-xs text-neutral font-bold ">
                     P. Compra
                   </FieldLabel>
                   <Input
@@ -60,7 +60,7 @@ export const BulkAssignPanel: React.FC<BulkAssignPanelProps> = ({ onApply }) => 
                   />
                 </div>
                 <div className="space-y-1">
-                  <FieldLabel className="text-[10px] text-neutral font-bold uppercase tracking-wider">
+ <FieldLabel className="text-xs text-neutral font-bold ">
                     P. Venta
                   </FieldLabel>
                   <Input
@@ -73,7 +73,7 @@ export const BulkAssignPanel: React.FC<BulkAssignPanelProps> = ({ onApply }) => 
                   />
                 </div>
                 <div className="space-y-1">
-                  <FieldLabel className="text-[10px] text-neutral font-bold uppercase tracking-wider">
+ <FieldLabel className="text-xs text-neutral font-bold ">
                     P. Mayoreo (Opc.)
                   </FieldLabel>
                   <Input

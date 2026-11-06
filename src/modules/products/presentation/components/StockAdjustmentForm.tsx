@@ -77,7 +77,7 @@ export const StockAdjustmentForm: React.FC<StockAdjustmentFormProps> = ({
               {variant.attributes.map((av, idx) => (
                 <span
                   key={`${av.name}-${idx}`}
-                  className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-primary/10 text-primary border border-primary/20"
+                  className="text-xs px-1.5 py-0.5 rounded font-medium bg-primary/10 text-primary border border-primary/20"
                 >
                   {av.value}
                 </span>
@@ -115,7 +115,7 @@ export const StockAdjustmentForm: React.FC<StockAdjustmentFormProps> = ({
         </button>
       </div>
 
-      <label className="block text-[11px] font-bold uppercase tracking-wider">
+ <label className="block text-xs font-bold ">
         Cantidad
         <input
           type="number"
@@ -128,7 +128,7 @@ export const StockAdjustmentForm: React.FC<StockAdjustmentFormProps> = ({
         />
       </label>
 
-      <label className="block text-[11px] font-bold uppercase tracking-wider">
+ <label className="block text-xs font-bold ">
         Comentario
         <textarea
           disabled={isAllBranches}

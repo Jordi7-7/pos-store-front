@@ -67,7 +67,7 @@ test('producto variable: editar el padre, cambiar el precio de una variante y a�
     await expect(page.getByText(`E2E Talla ${stamp}: M`)).toBeVisible();
 
     // Añadir una variante nueva (talla L): el diálogo solo ofrece los atributos que ya usa el producto
-    await page.getByRole('button', { name: /Nueva Variante/ }).click();
+    await page.getByRole('button', { name: /Nueva variante/i }).click();
     const dialog = page.getByRole('dialog').filter({ hasText: 'Agregar Nueva Variante' });
     await dialog.locator('select').selectOption({ label: 'L' });
     await dialog.getByPlaceholder('Ej. CAM-AZU-XL').fill(`${baseSku}-L`);

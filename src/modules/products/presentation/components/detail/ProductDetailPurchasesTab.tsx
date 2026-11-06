@@ -53,7 +53,7 @@ export const ProductDetailPurchasesTab: React.FC<ProductDetailPurchasesTabProps>
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left border-collapse">
               <thead>
-                <tr className="border-b border-border bg-muted/40 text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+ <tr className="border-b border-border bg-muted/40 text-xs font-bold text-muted-foreground ">
                   <th className="px-4 py-3">Factura / Orden</th>
                   <th className="px-4 py-3">Fecha Compra</th>
                   <th className="px-4 py-3">Proveedor</th>

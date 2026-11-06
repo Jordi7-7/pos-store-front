@@ -89,21 +89,21 @@ export const ProductRow: React.FC<ProductRowProps> = ({ product, branchId, isExp
     {/* SKU */}
     <TableCell className="py-2.5">
       <div className="flex flex-col gap-1 items-start">
-        <span className="font-mono text-[11px] text-primary font-bold">
+        <span className="font-mono text-xs text-primary font-bold">
           {sku}
         </span>
         {isVariable ? (
           <Badge
             variant="outline"
             onClick={toggleExpand}
-            className="text-[9px] px-1.5 py-0 h-4 font-semibold bg-primary/10 text-primary border-primary/30 cursor-pointer hover:bg-primary/20"
+            className="text-xs px-1.5 py-0 h-4 font-semibold bg-primary/10 text-primary border-primary/30 cursor-pointer hover:bg-primary/20"
           >
             {product.totalVariants} vars
           </Badge>
         ) : (
           <Badge
             variant="outline"
-            className="text-[9px] px-1.5 py-0 h-4 font-normal bg-muted/50 text-muted-foreground border-border"
+            className="text-xs px-1.5 py-0 h-4 font-normal bg-muted/50 text-muted-foreground border-border"
           >
             Simple
           </Badge>
@@ -117,19 +117,19 @@ export const ProductRow: React.FC<ProductRowProps> = ({ product, branchId, isExp
         {product.name}
       </div>
       {product.categoryName && (
-        <div className="text-[10px] text-primary/80 font-medium mt-0.5">
+        <div className="text-xs text-primary/80 font-medium mt-0.5">
           {product.categoryName}
         </div>
       )}
       {product.description && (
-        <div className="text-[10px] text-muted-foreground truncate max-w-[200px] mt-0.5" title={product.description}>
+        <div className="text-xs text-muted-foreground truncate max-w-[200px] mt-0.5" title={product.description}>
           {product.description}
         </div>
       )}
     </TableCell>
 
     {/* Barcode */}
-    <TableCell className="py-2.5 font-mono text-[11px] text-muted-foreground">
+    <TableCell className="hidden py-2.5 font-mono text-xs text-muted-foreground lg:table-cell">
       {barcode}
     </TableCell>
 
@@ -144,7 +144,7 @@ export const ProductRow: React.FC<ProductRowProps> = ({ product, branchId, isExp
     </TableCell>
 
     {/* Wholesale Price */}
-    <TableCell className="py-2.5 text-right font-mono text-xs font-semibold text-foreground">
+    <TableCell className="hidden py-2.5 text-right font-mono text-xs font-semibold text-foreground xl:table-cell">
       {isVariable ? product.wholesalePriceRangeFormatted : (defaultVariant?.wholesalePriceFormatted || '—')}
     </TableCell>
 
@@ -157,14 +157,14 @@ export const ProductRow: React.FC<ProductRowProps> = ({ product, branchId, isExp
         >
           <Badge
             variant="outline"
-            className="font-bold font-mono text-[10px] border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 gap-1 cursor-pointer hover:bg-amber-500/20 transition-colors"
+            className="font-bold font-mono text-xs border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 gap-1 cursor-pointer hover:bg-amber-500/20 transition-colors"
             onClick={toggleExpand}
           >
             <AlertTriangle className="w-2.5 h-2.5 text-amber-500 shrink-0" />
             <span>{currentStock} pzs</span>
           </Badge>
           <span 
-            className="text-[9px] font-mono text-amber-600 dark:text-amber-400 font-semibold cursor-pointer hover:underline"
+            className="text-xs font-mono text-amber-600 dark:text-amber-400 font-semibold cursor-pointer hover:underline"
             onClick={toggleExpand}
           >
             +{positiveStock} / {negativeStock}
@@ -173,7 +173,7 @@ export const ProductRow: React.FC<ProductRowProps> = ({ product, branchId, isExp
       ) : (
         <Badge
           variant={currentStock > 0 ? 'secondary' : currentStock < 0 ? 'destructive' : 'outline'}
-          className={`font-bold font-mono text-[10px] ${
+          className={`font-bold font-mono text-xs ${
             currentStock === 0 ? 'text-muted-foreground border-border bg-muted/40' : ''
           }`}
         >

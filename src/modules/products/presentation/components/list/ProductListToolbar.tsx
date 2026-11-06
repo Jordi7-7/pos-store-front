@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Barcode, Layers, Package, PackageCheck, Search } from 'lucide-react';
+import { Barcode, Layers, Package, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ProductType } from '../../../domain/enums';
@@ -34,7 +34,7 @@ export const ProductListToolbar: React.FC<ProductListToolbarProps> = ({ search, 
   };
 
   return (
-  <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+  <div className="flex flex-wrap items-center gap-2 w-full">
     {/* Botón de impresión masiva cuando hay seleccionados */}
     {canPrint && selectedCount > 0 && (
       <Button
@@ -50,7 +50,7 @@ export const ProductListToolbar: React.FC<ProductListToolbarProps> = ({ search, 
 
     {/* Filtro por tipo de producto (Todos / Simples / Con Variantes) */}
     {onProductTypeChange && (
-      <div className="flex items-center bg-muted/60 p-1 rounded-xl border border-border/80">
+      <div className="flex h-9 items-center rounded-lg border border-border-card bg-muted/60 p-0.5">
         <button
           type="button"
           onClick={() => onProductTypeChange(undefined)}
@@ -89,24 +89,18 @@ export const ProductListToolbar: React.FC<ProductListToolbarProps> = ({ search, 
       </div>
     )}
 
-    {/* Filtro ocultar sin existencias */}
+    {/* Solo con existencias: casilla compacta, no un botón grande */}
     {onInStockOnlyChange && (
-      <button
-        type="button"
-        onClick={() => onInStockOnlyChange(!inStockOnly)}
-        className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border font-semibold transition-all cursor-pointer h-9 shrink-0 ${
-          inStockOnly
-            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 shadow-2xs font-bold'
-            : 'bg-muted/60 text-muted-foreground border-border/80 hover:text-foreground hover:bg-muted'
-        }`}
-        title={inStockOnly ? 'Filtro activo: Ocultando productos sin existencias' : 'Hacer clic para mostrar solo productos con stock'}
+      <label
+        className="inline-flex h-9 cursor-pointer select-none items-center gap-2 rounded-lg border border-border-card bg-card px-3 text-[13px] font-medium text-secondary transition-colors hover:bg-muted/50 has-[:checked]:border-primary/40 has-[:checked]:bg-muted/40"
+        title="Ocultar los productos sin existencias"
       >
-        <PackageCheck className={`w-3.5 h-3.5 ${inStockOnly ? 'text-emerald-500' : 'text-muted-foreground'}`} />
-        <span>Solo con stock</span>
-      </button>
+        <input type="checkbox" checked={Boolean(inStockOnly)} onChange={(e) => onInStockOnlyChange(e.target.checked)} className="h-4 w-4 cursor-pointer accent-primary" />
+        Solo con stock
+      </label>
     )}
 
-    <form onSubmit={handleSearchSubmit} className="flex gap-2 flex-1 md:w-80">
+    <form onSubmit={handleSearchSubmit} className="flex gap-2 flex-1 min-w-[260px]">
       <div className="relative flex-1">
         <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
         <Input

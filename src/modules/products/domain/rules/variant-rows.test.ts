@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProductVariantEntity } from '../entities/product.entity';
-import { applyBulkPrices, mergeEditableRows, toEditableRow, toVariantUpdate, validateRowsForSave, type EditableVariantRow } from './variant-rows';
+import { applyBulkPrices, mergeEditableRows, toEditableRow, toVariantUpdate, validateRowsForSave, type EditableVariantRow, normalizeSkuInput, splitVariantSku } from './variant-rows';
 
 const row = (overrides: Partial<EditableVariantRow> = {}): EditableVariantRow => ({
   id: 'v1', sku: 'A-1', barcode: '', purchasePrice: 50, salePrice: 100, wholesalePrice: null, combinationText: 'Talla: S', hasChanged: false, ...overrides,
@@ -36,5 +36,26 @@ describe('filas de variantes del editor', () => {
     expect(toVariantUpdate(row({ sku: ' A-1 ', salePrice: '150', barcode: ' ', images: [{ id: 'i', url: 'u' }] }))).toEqual({
       sku: 'A-1', barcode: undefined, purchasePrice: 50, salePrice: 150, wholesalePrice: null, imageIds: ['i'],
     });
+  });
+});
+
+describe('SKU de una variante en el editor', () => {
+  it('normaliza lo que se escribe', () => {
+    expect(normalizeSkuInput('ab 1_c-d!')).toBe('AB1_C-D');
+  });
+
+  it('separa el prefijo del SKU base y el sufijo editable', () => {
+    expect(splitVariantSku('HM-1', 'HM', 'HM')).toEqual({ prefix: 'HM', suffix: '1' });
+    expect(splitVariantSku('HM-A-2', 'HM', 'HM')).toEqual({ prefix: 'HM', suffix: 'A-2' });
+  });
+
+  it('si el SKU base cambió en la ficha, quita el prefijo viejo y propone el nuevo', () => {
+    expect(splitVariantSku('OLD-3', 'NEW', 'OLD')).toEqual({ prefix: 'NEW', suffix: '3' });
+  });
+
+  it('sin SKU base no hay prefijo; con un SKU ajeno toma lo que va tras el primer guion', () => {
+    expect(splitVariantSku('X-9', '', '')).toEqual({ prefix: '', suffix: 'X-9' });
+    expect(splitVariantSku('ZZ-5', 'HM', 'HM')).toEqual({ prefix: 'HM', suffix: '5' });
+    expect(splitVariantSku('SINGUION', 'HM', 'HM')).toEqual({ prefix: 'HM', suffix: 'SINGUION' });
   });
 });

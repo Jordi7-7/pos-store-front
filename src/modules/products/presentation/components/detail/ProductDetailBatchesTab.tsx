@@ -57,7 +57,7 @@ export const ProductDetailBatchesTab: React.FC<ProductDetailBatchesTabProps> = (
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left border-collapse">
               <thead>
-                <tr className="border-b border-border bg-muted/40 text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+ <tr className="border-b border-border bg-muted/40 text-xs font-bold text-muted-foreground ">
                   <th className="px-4 py-3">Lote / Referencia</th>
                   <th className="px-4 py-3">Sucursal</th>
                   <th className="px-4 py-3">Fecha Ingreso</th>
@@ -79,7 +79,7 @@ export const ProductDetailBatchesTab: React.FC<ProductDetailBatchesTabProps> = (
                     <tr key={batch.id} className="hover:bg-muted/20 transition-colors">
                       <td className="px-4 py-3 font-medium">
                         <div className="font-mono font-bold text-primary">{batch.batchCode}</div>
-                        <div className="text-[10.5px] text-muted-foreground">{batch.originName}</div>
+                        <div className="text-xs text-muted-foreground">{batch.originName}</div>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">{batch.branchName}</td>
                       <td className="px-4 py-3 text-muted-foreground font-mono">

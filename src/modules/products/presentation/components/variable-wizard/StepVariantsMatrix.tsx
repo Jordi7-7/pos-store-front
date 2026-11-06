@@ -99,7 +99,7 @@ export const StepVariantsMatrix: React.FC<StepVariantsMatrixProps> = ({
         <CardContent className="p-4 sm:p-5">
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             <div className="space-y-1">
-              <FieldLabel className="text-[10px] text-neutral font-bold uppercase tracking-wider">
+ <FieldLabel className="text-xs text-neutral font-bold ">
                 Prefijo SKU
               </FieldLabel>
               <Input
@@ -110,7 +110,7 @@ export const StepVariantsMatrix: React.FC<StepVariantsMatrixProps> = ({
               />
             </div>
             <div className="space-y-1">
-              <FieldLabel className="text-[10px] text-neutral font-bold uppercase tracking-wider flex items-center gap-1">
+ <FieldLabel className="text-xs text-neutral font-bold flex items-center gap-1">
                 <DollarSign className="w-3 h-3 text-neutral" />
                 P. Compra
               </FieldLabel>
@@ -124,7 +124,7 @@ export const StepVariantsMatrix: React.FC<StepVariantsMatrixProps> = ({
               />
             </div>
             <div className="space-y-1">
-              <FieldLabel className="text-[10px] text-neutral font-bold uppercase tracking-wider flex items-center gap-1">
+ <FieldLabel className="text-xs text-neutral font-bold flex items-center gap-1">
                 <DollarSign className="w-3 h-3 text-neutral" />
                 P. Venta
               </FieldLabel>
@@ -138,7 +138,7 @@ export const StepVariantsMatrix: React.FC<StepVariantsMatrixProps> = ({
               />
             </div>
             <div className="space-y-1">
-              <FieldLabel className="text-[10px] text-neutral font-bold uppercase tracking-wider">
+ <FieldLabel className="text-xs text-neutral font-bold ">
                 P. Mayoreo (Opc.)
               </FieldLabel>
               <Input
@@ -151,7 +151,7 @@ export const StepVariantsMatrix: React.FC<StepVariantsMatrixProps> = ({
               />
             </div>
             <div className="space-y-1">
-              <FieldLabel className="text-[10px] text-neutral font-bold uppercase tracking-wider flex items-center gap-1">
+ <FieldLabel className="text-xs text-neutral font-bold flex items-center gap-1">
                 <PackageCheck className="w-3 h-3 text-neutral" />
                 Stock Inicial
               </FieldLabel>
@@ -177,7 +177,7 @@ export const StepVariantsMatrix: React.FC<StepVariantsMatrixProps> = ({
                 <CardTitle className="text-sm sm:text-base font-bold text-secondary">
                   3. Matriz de Variantes Generadas
                 </CardTitle>
-                <Badge variant="outline" className="text-[11px] font-mono font-bold bg-background">
+                <Badge variant="outline" className="text-xs font-mono font-bold bg-background">
                   {variants.length} variantes
                 </Badge>
               </div>
@@ -202,7 +202,7 @@ export const StepVariantsMatrix: React.FC<StepVariantsMatrixProps> = ({
           <div className="overflow-x-auto max-h-[460px] overflow-y-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead className="sticky top-0 z-10">
-                <tr className="border-b border-border bg-muted/90 backdrop-blur-xs text-neutral font-semibold text-[11px] uppercase tracking-wider">
+ <tr className="border-b border-border bg-muted/90 backdrop-blur-xs text-neutral font-semibold text-xs ">
                   <th className="py-2.5 px-2 font-bold text-center w-12">Foto</th>
                   <th className="py-2.5 px-3 font-bold min-w-[140px]">Variante / Atributos</th>
                   <th className="py-2.5 px-2.5 font-bold min-w-[130px]">SKU <span className="text-destructive">*</span></th>
@@ -249,7 +249,7 @@ export const StepVariantsMatrix: React.FC<StepVariantsMatrixProps> = ({
                           <Badge
                             key={idx}
                             variant="secondary"
-                            className="text-[10px] font-medium bg-background border border-border/80 px-2 py-0.5 shadow-2xs"
+                            className="text-xs font-medium bg-background border border-border/80 px-2 py-0.5 shadow-2xs"
                           >
                             <Tag className="w-2.5 h-2.5 text-primary mr-1 opacity-70" />
                             <span className="text-neutral mr-1">{c.attributeName}:</span>

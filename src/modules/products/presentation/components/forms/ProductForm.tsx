@@ -84,7 +84,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             control={form.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={`${formId}-sku`} className="text-[11px] font-bold uppercase tracking-wider">
+ <FieldLabel htmlFor={`${formId}-sku`} className="text-xs font-bold ">
                   Código SKU <span className="text-destructive">*</span>
                 </FieldLabel>
                 <div className="relative">
@@ -108,7 +108,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             control={form.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={`${formId}-barcode`} className="text-[11px] font-bold uppercase tracking-wider">
+ <FieldLabel htmlFor={`${formId}-barcode`} className="text-xs font-bold ">
                   Código de Barras Proveedor
                 </FieldLabel>
                 <div className="relative">
@@ -132,7 +132,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             control={form.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={`${formId}-name`} className="text-[11px] font-bold uppercase tracking-wider">
+ <FieldLabel htmlFor={`${formId}-name`} className="text-xs font-bold ">
                   Nombre del Producto <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Input
@@ -158,7 +158,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             control={form.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={`${formId}-description`} className="text-[11px] font-bold uppercase tracking-wider">Descripción</FieldLabel>
+ <FieldLabel htmlFor={`${formId}-description`} className="text-xs font-bold ">Descripción</FieldLabel>
                 <Textarea
                   {...field}
                   id={`${formId}-description`}
@@ -189,7 +189,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             control={form.control}
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor={`${formId}-stock`} className="text-[11px] font-bold uppercase tracking-wider">
+ <FieldLabel htmlFor={`${formId}-stock`} className="text-xs font-bold ">
                   {isEdit ? 'Stock' : 'Stock Inicial'} <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Input

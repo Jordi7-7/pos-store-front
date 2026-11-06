@@ -13,7 +13,7 @@ export const PriceFields: React.FC<{ control: Control<ProductFormValues>; formId
       control={control}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
-          <FieldLabel htmlFor={`${formId}-purchase-price`} className="text-[11px] font-bold uppercase tracking-wider truncate">
+ <FieldLabel htmlFor={`${formId}-purchase-price`} className="text-xs font-bold truncate">
             Compra (<CurrencySymbol />) <span className="text-destructive">*</span>
           </FieldLabel>
           <Input
@@ -36,7 +36,7 @@ export const PriceFields: React.FC<{ control: Control<ProductFormValues>; formId
       control={control}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
-          <FieldLabel htmlFor={`${formId}-sale-price`} className="text-[11px] font-bold uppercase tracking-wider truncate">
+ <FieldLabel htmlFor={`${formId}-sale-price`} className="text-xs font-bold truncate">
             Venta (<CurrencySymbol />) <span className="text-destructive">*</span>
           </FieldLabel>
           <Input
@@ -59,7 +59,7 @@ export const PriceFields: React.FC<{ control: Control<ProductFormValues>; formId
       control={control}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
-          <FieldLabel htmlFor={`${formId}-wholesale-price`} className="text-[11px] font-bold uppercase tracking-wider truncate">
+ <FieldLabel htmlFor={`${formId}-wholesale-price`} className="text-xs font-bold truncate">
             Precio Mayoreo (<CurrencySymbol />)
           </FieldLabel>
           <Input

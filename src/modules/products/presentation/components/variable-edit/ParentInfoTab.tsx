@@ -44,7 +44,7 @@ export const ParentInfoTab: React.FC<ParentInfoTabProps> = ({ control, categorie
   return (
           <Card className="border-border shadow-xs bg-card">
             <CardHeader className="pb-3 border-b border-border/50 bg-muted/15">
-              <CardTitle className="text-xs font-bold text-secondary uppercase tracking-wider flex items-center gap-2">
+ <CardTitle className="text-xs font-bold text-secondary flex items-center gap-2">
                 <Package className="w-3.5 h-3.5 text-primary" />
                 Datos del Producto Padre
               </CardTitle>
@@ -60,7 +60,7 @@ export const ParentInfoTab: React.FC<ParentInfoTabProps> = ({ control, categorie
                   control={control}
                   render={({ field }) => (
                     <Field className="md:col-span-1">
-                      <FieldLabel className="text-[11px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel className="text-xs font-bold text-secondary">
                         Nombre del Producto <span className="text-destructive">*</span>
                       </FieldLabel>
                       <Input {...field} placeholder="Ej. Playera Oversize" className="text-xs h-9 bg-background" />
@@ -74,7 +74,7 @@ export const ParentInfoTab: React.FC<ParentInfoTabProps> = ({ control, categorie
                   control={control}
                   render={({ field }) => (
                     <Field>
-                      <FieldLabel className="text-[11px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel className="text-xs font-bold text-secondary">
                         SKU Base / Modelo
                       </FieldLabel>
                       <Input
@@ -94,13 +94,13 @@ export const ParentInfoTab: React.FC<ParentInfoTabProps> = ({ control, categorie
                   render={({ field }) => (
                     <Field>
                       <div className="flex items-center justify-between">
-                        <FieldLabel className="text-[11px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel className="text-xs font-bold text-secondary">
                           Categoría
                         </FieldLabel>
                         <button
                           type="button"
                           onClick={() => setIsCreatingCategoryInline(!isCreatingCategoryInline)}
-                          className="text-[11px] text-primary hover:underline font-semibold cursor-pointer"
+                          className="text-xs text-primary hover:underline font-semibold cursor-pointer"
                         >
                           {isCreatingCategoryInline ? 'Cancelar' : '+ Nueva'}
                         </button>
@@ -149,7 +149,7 @@ export const ParentInfoTab: React.FC<ParentInfoTabProps> = ({ control, categorie
                 control={control}
                 render={({ field }) => (
                   <Field>
-                    <FieldLabel className="text-[11px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel className="text-xs font-bold text-secondary">
                       Descripción
                     </FieldLabel>
                     <Textarea
@@ -166,10 +166,10 @@ export const ParentInfoTab: React.FC<ParentInfoTabProps> = ({ control, categorie
               <div className="space-y-2 pt-4 border-t border-border">
                 <div className="flex items-center justify-between">
                   <div>
-                    <FieldLabel className="text-[11px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel className="text-xs font-bold text-secondary">
                       Fotografías Principales
                     </FieldLabel>
-                    <p className="text-[11px] text-neutral">
+                    <p className="text-xs text-neutral">
                       Fotografías compartidas asociadas a la ficha padre del producto.
                     </p>
                   </div>
@@ -217,7 +217,7 @@ export const ParentInfoTab: React.FC<ParentInfoTabProps> = ({ control, categorie
                   </div>
                 ) : (
                   <div className="p-5 rounded-xl border border-dashed border-border bg-muted/20 text-center">
-                    <p className="text-[11px] text-neutral italic">Sin fotografías adjuntas al producto.</p>
+                    <p className="text-xs text-neutral italic">Sin fotografías adjuntas al producto.</p>
                   </div>
                 )}
               </div>

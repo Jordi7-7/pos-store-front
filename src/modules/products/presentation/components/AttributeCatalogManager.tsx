@@ -158,7 +158,7 @@ export const AttributeCatalogManager: React.FC = () => {
                           {attr.name}
                         </CardTitle>
                       </div>
-                      <Badge variant="secondary" className="text-[10px] font-mono">
+                      <Badge variant="secondary" className="text-xs font-mono">
                         {vals.length} valores
                       </Badge>
                     </div>
@@ -177,7 +177,7 @@ export const AttributeCatalogManager: React.FC = () => {
                         </span>
                       ))}
                       {vals.length === 0 && (
-                        <span className="text-[11px] text-neutral italic p-1">
+                        <span className="text-xs text-neutral italic p-1">
                           Sin valores aún. Agrega uno abajo.
                         </span>
                       )}
@@ -224,7 +224,7 @@ export const AttributeCatalogManager: React.FC = () => {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold text-secondary flex items-center gap-2">
+            <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
               <TagIcon className="w-4 h-4 text-primary" />
               Nuevo Atributo Global
             </DialogTitle>
@@ -235,7 +235,7 @@ export const AttributeCatalogManager: React.FC = () => {
 
           <form onSubmit={handleCreateAttribute} className="space-y-4 py-2">
             <Field>
-              <FieldLabel htmlFor="new-attr-input" className="text-[11px] font-bold uppercase tracking-wider text-secondary">
+ <FieldLabel htmlFor="new-attr-input" className="text-xs font-bold text-secondary">
                 Nombre del Atributo <span className="text-destructive">*</span>
               </FieldLabel>
               <Input

@@ -220,49 +220,25 @@ export const MediaView: React.FC<MediaViewProps> = ({
                   <div key={img.id} className="bg-bg-dark border border-border-card rounded-xl overflow-hidden shadow-sm flex flex-col justify-between group transition-all duration-200 hover:border-primary/40 hover:shadow-md">
                     <div className="aspect-square relative overflow-hidden bg-slate-100 dark:bg-bg-dark">
                       <img src={img.url} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" alt={img.description || 'galería'} />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col justify-end p-2 transition-all">
-                        <span className="text-[10px] text-white font-mono truncate mb-1">
-                          {img.url.split('/').pop()}
-                        </span>
+                      <div className="absolute right-2 top-2 flex gap-1.5 opacity-100 transition-opacity focus-within:opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                        <a href={img.url} target="_blank" rel="noopener noreferrer" title="Abrir imagen original" aria-label="Abrir imagen original" className="flex size-8 items-center justify-center rounded-lg bg-white/90 text-secondary shadow-xs transition-colors hover:bg-white">
+                          <Link2 className="h-4 w-4" />
+                        </a>
+                        <button
+                          onClick={() => handleDelete(img.id)}
+                          disabled={isDeleting || deletingId === img.id}
+                          className="flex size-8 cursor-pointer items-center justify-center rounded-lg bg-white/90 text-rose-600 shadow-xs transition-colors hover:bg-white disabled:opacity-40"
+                          title="Eliminar imagen"
+                          aria-label="Eliminar imagen"
+                        >
+                          {deletingId === img.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        </button>
                       </div>
                     </div>
-                    <div className="p-3 border-t border-border-card bg-bg-card flex flex-col gap-1.5">
-                      {img.description ? (
-                        <p className="text-[11px] text-secondary font-medium line-clamp-2" title={img.description}>
-                          {img.description}
-                        </p>
-                      ) : (
-                        <p className="text-[10px] text-neutral italic">Sin descripción</p>
-                      )}
-                      
-                      <div className="flex items-center justify-between pt-1 border-t border-border-card/50">
-                        <span className="text-[9px] text-neutral font-mono">ID: {img.id.substring(0, 8)}...</span>
-                        
-                        <div className="flex items-center gap-2">
-                          <a 
-                            href={img.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-[9px] text-primary font-semibold hover:underline flex items-center gap-0.5"
-                          >
-                            <Link2 className="w-3 h-3" />
-                            Original
-                          </a>
-                          
-                          <button
-                            onClick={() => handleDelete(img.id)}
-                            disabled={isDeleting || deletingId === img.id}
-                            className="text-red-500 hover:text-red-600 disabled:text-neutral/40 p-1 rounded transition-colors"
-                            title="Eliminar imagen"
-                          >
-                            {deletingId === img.id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
+                    <div className="border-t border-border-card bg-bg-card p-2.5">
+                      <p className={`line-clamp-2 min-h-8 text-xs ${img.description ? 'font-medium text-secondary' : 'italic text-muted-foreground'}`} title={img.description || undefined}>
+                        {img.description || 'Sin descripción'}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -283,7 +259,7 @@ export const MediaView: React.FC<MediaViewProps> = ({
         <div className="w-full md:w-80 bg-bg-card border border-border-card rounded-2xl p-6 shadow-sm self-start h-auto">
           <div className="border-b border-border-card pb-4 mb-5">
             <h3 className="text-sm font-bold text-secondary">Subir Nueva Imagen</h3>
-            <p className="text-xs text-neutral">Carga fotos directamente a Cloudflare R2 con metadatos.</p>
+            <p className="text-xs text-neutral">Sube fotos a la galería de tu tienda.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -315,7 +291,7 @@ export const MediaView: React.FC<MediaViewProps> = ({
                 <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black/10">
                   <img src={previewUrl} className="w-full h-full object-contain" alt="Vista previa" />
                   <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity">
-                    <span className="text-[10px] text-white font-semibold">Cambiar imagen</span>
+                    <span className="text-xs text-white font-semibold">Cambiar imagen</span>
                   </div>
                 </div>
               ) : (
@@ -326,14 +302,14 @@ export const MediaView: React.FC<MediaViewProps> = ({
                   <div className="text-xs text-neutral">
                     <span className="text-primary font-semibold">Haz click para buscar</span> o arrastra tu imagen aquí
                   </div>
-                  <div className="text-[10px] text-neutral/80">Formatos recomendados: PNG, JPG, WEBP</div>
+                  <div className="text-xs text-neutral/80">Formatos recomendados: PNG, JPG, WEBP</div>
                 </div>
               )}
             </div>
 
             {/* Description Form Field */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-neutral uppercase tracking-wider flex items-center gap-1.5">
+ <label className="text-xs font-bold text-neutral flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5" />
                 Descripción de la imagen
               </label>

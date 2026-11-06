@@ -58,7 +58,7 @@ export const WizardProgressBar: React.FC<WizardProgressBarProps> = ({
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 mb-0.5">
                     <span
-                      className={`text-[10px] font-bold uppercase tracking-wider font-mono px-1.5 py-0.2 rounded ${
+ className={`text-xs font-bold font-mono px-1.5 py-0.2 rounded ${
                         isCurrent
                           ? 'bg-primary/15 text-primary'
                           : isCompleted
@@ -86,7 +86,7 @@ export const WizardProgressBar: React.FC<WizardProgressBarProps> = ({
                   >
                     {step.title}
                   </h4>
-                  <p className="hidden sm:block text-[11px] text-neutral/80 truncate max-w-[180px]">
+                  <p className="hidden sm:block text-xs text-neutral/80 truncate max-w-[180px]">
                     {step.description}
                   </p>
                 </div>

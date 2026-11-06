@@ -70,11 +70,11 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
   return (
     <Card className="border border-border/80 shadow-xs">
       <CardHeader>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <div>
             <div className="flex items-center gap-2">
               <CardTitle className="text-sm font-bold">Catálogo de Productos ({meta.total})</CardTitle>
-              <Badge variant="outline" className={`text-[10px] font-semibold gap-1 ${
+              <Badge variant="outline" className={`text-xs font-semibold gap-1 ${
                 isAll 
                   ? 'text-amber-400 border-amber-500/30 bg-amber-500/5' 
                   : 'text-primary border-primary/30 bg-primary/5'

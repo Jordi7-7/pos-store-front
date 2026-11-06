@@ -3,6 +3,7 @@ import { useProductList } from '../../hooks/useProductList';
 import { useCategories } from '../../hooks/useCategories';
 import { ProductListTab } from '../ProductListTab';
 import { ProductType } from '../../../domain/enums';
+import { PageHeader } from '@/shared/presentation/components/PageHeader';
 
 export interface ProductsListViewProps {
   selectedBranchId: string;
@@ -29,12 +30,7 @@ export const ProductsListView: React.FC<ProductsListViewProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div>
-          <h3 className="text-sm font-bold text-secondary">Catálogo General de Productos</h3>
-          <p className="text-xs text-neutral mt-0.5">Gestiona tus artículos, precios, stock y capas de costo por sucursales.</p>
-        </div>
-      </div>
+      <PageHeader title="Productos" description="Gestiona tus artículos, precios, existencias y capas de costo por sucursal." />
 
       <ProductListTab
         products={products}

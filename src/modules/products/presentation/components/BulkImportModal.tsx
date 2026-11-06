@@ -206,7 +206,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-4xl w-full bg-card border border-border rounded-2xl shadow-2xl p-6 text-foreground">
         <DialogHeader className="border-b border-border pb-3">
-          <DialogTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
+ <DialogTitle className="text-base font-semibold flex items-center gap-2">
             <FileSpreadsheet className="w-5 h-5 text-primary" />
             <span>Creación Masiva de Productos (Excel)</span>
           </DialogTitle>
@@ -216,11 +216,11 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
           /* Step 1: Upload File & Instructions */
           <div className="space-y-6 py-4">
             <div className="bg-muted/30 border border-border rounded-xl p-4 space-y-3">
-              <h5 className="text-xs font-bold uppercase tracking-wide text-secondary flex items-center gap-1.5">
+ <h5 className="text-xs font-bold text-secondary flex items-center gap-1.5">
                 <FileDown className="w-4 h-4 text-primary" />
                 <span>Descarga la Plantilla Oficial</span>
               </h5>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 Utiliza nuestra plantilla de Excel estructurada para asegurar la correcta carga de tus productos. Las columnas disponibles son: <strong className="text-secondary">SKU, Nombre, Codigo, Precio Compra, Precio Venta, Precio Mayoreo, Existencias</strong> (admite existencias positivas, en cero o saldos negativos).
               </p>
               <button
@@ -235,7 +235,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
 
             {/* Sucursal Destino para existencias iniciales */}
             <div className="max-w-md space-y-1.5">
-              <label className="block text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+ <label className="block text-xs font-bold text-muted-foreground">
                 Sucursal para Cargar Existencias Iniciales <span className="text-destructive">*</span>
               </label>
               <select
@@ -251,7 +251,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
                 ))}
               </select>
               {!selectedBranchId && (
-                <p className="text-[11px] text-amber-400 font-medium">
+                <p className="text-xs text-amber-400 font-medium">
                   ⚠️ Debes seleccionar una sucursal para poder subir y cargar el archivo de Excel.
                 </p>
               )}
@@ -287,7 +287,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
                 <p className="text-xs font-bold text-secondary">
                   {!selectedBranchId ? 'Selecciona una sucursal para habilitar la carga' : 'Sube o arrastra tu archivo de Excel aquí'}
                 </p>
-                <p className="text-[10px] text-muted-foreground">Soporta formatos estándar .xlsx o .xls</p>
+                <p className="text-xs text-muted-foreground">Soporta formatos estándar .xlsx o .xls</p>
               </div>
             </div>
           </div>
@@ -298,7 +298,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
               <div className="flex items-center gap-2">
                 <FileSpreadsheet className="w-4 h-4 text-primary" />
                 <span className="text-xs font-mono font-bold text-secondary truncate max-w-[200px]">{fileName}</span>
-                <span className="text-[10px] text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-md font-mono">
+                <span className="text-xs text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-md font-mono">
                   {parsedData.length} productos
                 </span>
               </div>
@@ -325,7 +325,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
                     <AlertTriangle className="w-4.5 h-4.5 text-rose-400 shrink-0" />
                     <div>
                       <p className="font-semibold">Límite excedido o error de validación</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">{globalError}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{globalError}</p>
                     </div>
                   </div>
                 ) : errorCount > 0 ? (
@@ -333,7 +333,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
                     <AlertTriangle className="w-4.5 h-4.5 text-rose-400 shrink-0" />
                     <div>
                       <p className="font-semibold">El archivo contiene {errorCount} fila(s) con errores.</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Corrige el archivo de Excel y súbelo de nuevo para poder continuar con la importación masiva.</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Corrige el archivo de Excel y súbelo de nuevo para poder continuar con la importación masiva.</p>
                     </div>
                   </div>
                 ) : isValidated ? (
@@ -341,7 +341,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
                     <CheckCircle2 className="w-4.5 h-4.5 text-emerald-500 shrink-0" />
                     <div>
                       <p className="font-semibold">¡Validación exitosa!</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Todos los SKUs son nuevos y la información tiene la estructura correcta para ser cargada.</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Todos los SKUs son nuevos y la información tiene la estructura correcta para ser cargada.</p>
                     </div>
                   </div>
                 ) : null}

@@ -32,7 +32,7 @@ export const ProductDetailInfoTab: React.FC<ProductDetailInfoTabProps> = ({
     <div className="space-y-5">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="rounded-xl border border-border bg-card p-3.5 shadow-2xs">
-          <span className="text-[10px] uppercase font-bold text-muted-foreground block tracking-wider">
+ <span className="text-xs font-bold text-muted-foreground block ">
             Categoría
           </span>
           <strong className="text-sm mt-0.5 block truncate" title={categoryName}>
@@ -40,19 +40,19 @@ export const ProductDetailInfoTab: React.FC<ProductDetailInfoTabProps> = ({
           </strong>
         </div>
         <div className="rounded-xl border border-border bg-card p-3.5 shadow-2xs">
-          <span className="text-[10px] uppercase font-bold text-muted-foreground block tracking-wider">
+ <span className="text-xs font-bold text-muted-foreground block ">
             Variantes
           </span>
           <strong className="text-sm mt-0.5 block">{variants.length}</strong>
         </div>
         <div className="rounded-xl border border-border bg-card p-3.5 shadow-2xs">
-          <span className="text-[10px] uppercase font-bold text-muted-foreground block tracking-wider">
+ <span className="text-xs font-bold text-muted-foreground block ">
             Stock sucursal
           </span>
           <strong className="text-sm mt-0.5 block text-primary">{totalStockSucursal} pzs</strong>
         </div>
         <div className="rounded-xl border border-border bg-card p-3.5 shadow-2xs">
-          <span className="text-[10px] uppercase font-bold text-muted-foreground block tracking-wider">
+ <span className="text-xs font-bold text-muted-foreground block ">
             SKU principal
           </span>
           <strong className="text-sm font-mono mt-0.5 block">
@@ -64,7 +64,7 @@ export const ProductDetailInfoTab: React.FC<ProductDetailInfoTabProps> = ({
       </div>
 
       <div className="rounded-xl border border-border overflow-hidden bg-card shadow-2xs">
-        <div className="px-4 py-3 bg-muted/30 border-b border-border text-xs font-bold uppercase tracking-wider text-muted-foreground">
+ <div className="px-4 py-3 bg-muted/30 border-b border-border text-xs font-bold text-muted-foreground">
           Variantes y Precios
         </div>
         <div className="divide-y divide-border">
@@ -96,7 +96,7 @@ export const ProductDetailInfoTab: React.FC<ProductDetailInfoTabProps> = ({
                         {variant.attributes.map((av, idx) => (
                           <span
                             key={`${av.name}-${idx}`}
-                            className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                            className={`text-xs px-1.5 py-0.5 rounded font-medium ${
                               isSelected ? 'bg-primary text-white font-bold' : 'bg-primary/10 text-primary'
                             }`}
                           >
@@ -106,13 +106,13 @@ export const ProductDetailInfoTab: React.FC<ProductDetailInfoTabProps> = ({
                       </div>
                     )}
                     {isSelected && (
-                      <span className="text-[9.5px] uppercase font-bold text-primary bg-primary/15 px-1.5 py-0.5 rounded">
+ <span className="text-xs font-bold text-primary bg-primary/15 px-1.5 py-0.5 rounded">
                         Seleccionada
                       </span>
                     )}
                   </div>
                   {variant.barcode && (
-                    <span className="text-[10px] font-mono text-muted-foreground">
+                    <span className="text-xs font-mono text-muted-foreground">
                       Cod: {variant.barcode}
                     </span>
                   )}

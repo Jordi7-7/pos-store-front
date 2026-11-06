@@ -86,3 +86,19 @@ export const toVariantUpdate = (row: EditableVariantRow): VariantUpdate => ({
   wholesalePrice: row.wholesalePrice !== null && row.wholesalePrice !== undefined ? Number(row.wholesalePrice) : null,
   imageIds: row.images ? row.images.map((image) => image.id) : row.imageIds || [],
 });
+
+/** Un SKU escrito por la persona: mayúsculas y solo letras, números, `_` y `-`. */
+export const normalizeSkuInput = (text: string): string => text.toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+
+/**
+ * Parte el SKU de una variante en el prefijo del SKU base (el escrito ahora en la ficha o, si no, el guardado) y el sufijo
+ * que se edita. Si el SKU no empieza por el prefijo se toma lo que haya tras el primer guion.
+ */
+export function splitVariantSku(sku: string, currentBaseSku: string, savedBaseSku: string): { prefix: string; suffix: string } {
+  const prefix = currentBaseSku.trim() || savedBaseSku.trim();
+  if (!prefix) return { prefix: '', suffix: sku };
+  if (sku.startsWith(`${prefix}-`)) return { prefix, suffix: sku.slice(prefix.length + 1) };
+  if (savedBaseSku && sku.startsWith(`${savedBaseSku}-`)) return { prefix, suffix: sku.slice(savedBaseSku.length + 1) };
+  if (sku.includes('-')) return { prefix, suffix: sku.split('-').slice(1).join('-') };
+  return { prefix, suffix: sku };
+}

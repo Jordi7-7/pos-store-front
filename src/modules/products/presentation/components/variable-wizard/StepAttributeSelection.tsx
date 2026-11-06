@@ -85,7 +85,7 @@ export const StepAttributeSelection: React.FC<StepAttributeSelectionProps> = ({
                 2. Selección de Atributos y Opciones
               </CardTitle>
               {estimatedCombinations > 0 && (
-                <Badge className="bg-primary/15 text-primary border-primary/30 hover:bg-primary/20 text-[11px] font-mono font-bold">
+                <Badge className="bg-primary/15 text-primary border-primary/30 hover:bg-primary/20 text-xs font-mono font-bold">
                   {estimatedCombinations} variante(s) resultante(s)
                 </Badge>
               )}
@@ -125,11 +125,11 @@ export const StepAttributeSelection: React.FC<StepAttributeSelectionProps> = ({
         {/* Combinations formula preview bar */}
         {activeAttributesWithSelections.length > 0 && (
           <div className="mt-3 pt-3 border-t border-border/40 flex flex-wrap items-center gap-2 text-xs text-secondary font-medium">
-            <span className="text-[11px] uppercase tracking-wider text-neutral font-bold flex items-center gap-1">
+ <span className="text-xs text-neutral font-bold flex items-center gap-1">
               <Layers className="w-3.5 h-3.5 text-primary" />
               Cálculo:
             </span>
-            <div className="flex items-center flex-wrap gap-1.5 font-mono text-[11px]">
+            <div className="flex items-center flex-wrap gap-1.5 font-mono text-xs">
               {activeAttributesWithSelections.map((attr, idx) => {
                 const count = selectedAttributeValues[attr.id]?.length || 0;
                 return (
@@ -155,7 +155,7 @@ export const StepAttributeSelection: React.FC<StepAttributeSelectionProps> = ({
         {isCreatingAttrInline && (
           <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="flex-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-primary mb-1 block">
+ <span className="text-xs font-bold text-primary mb-1 block">
                 Nuevo Tipo de Atributo Global
               </span>
               <Input
@@ -226,11 +226,11 @@ export const StepAttributeSelection: React.FC<StepAttributeSelectionProps> = ({
                     </div>
 
                     {hasSelection ? (
-                      <Badge className="bg-primary text-primary-foreground text-[10px] font-mono font-bold shadow-2xs">
+                      <Badge className="bg-primary text-primary-foreground text-xs font-mono font-bold shadow-2xs">
                         {selectedVals.length} seleccionado(s)
                       </Badge>
                     ) : (
-                      <span className="text-[10px] text-neutral font-medium">
+                      <span className="text-xs text-neutral font-medium">
                         Ninguno marcado
                       </span>
                     )}
@@ -257,7 +257,7 @@ export const StepAttributeSelection: React.FC<StepAttributeSelectionProps> = ({
                       );
                     })}
                     {(attr.values || []).length === 0 && (
-                      <span className="text-[11px] text-neutral italic px-1">
+                      <span className="text-xs text-neutral italic px-1">
                         Sin valores. Agrega opciones abajo.
                       </span>
                     )}
