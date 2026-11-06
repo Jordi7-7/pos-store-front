@@ -1,38 +1,30 @@
 import React, { useState } from 'react';
-import { Package, Edit, Search, Barcode, CheckSquare, Square, Layers, ChevronDown, ChevronRight, PackageCheck, AlertTriangle } from 'lucide-react';
-import { ProductType } from '../../domain/enums';
-import type { ProductVM as ProductEntity } from '../view-models/product.vm';
-import { ProductEditDrawer } from './ProductEditDrawer';
-import { ProductDetailModal } from './ProductDetailModal';
-import { ProductVariableEditModal } from './ProductVariableEditModal';
-import { BarcodePrintModal, type BarcodeLabelItem } from './barcode-printer/BarcodePrintModal';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Package } from 'lucide-react';
+import { APP_PERMISSIONS } from '@/constants/permissions';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { PaginationControls } from '../../../../shared/presentation/components/PaginationControls';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { PaginationControls } from '@/shared/presentation/components/PaginationControls';
+import { ProductType } from '../../domain/enums';
+import { isVariableProduct, labelLinesFor } from '../../domain/rules/product-stock';
+import { useProductSelection } from '../hooks/useProductSelection';
+import type { ProductVM } from '../view-models/product.vm';
+import { BarcodePrintModal, type BarcodeLabelItem } from './barcode-printer/BarcodePrintModal';
+import { ProductsTable } from './list/ProductsTable';
+import { ProductListToolbar } from './list/ProductListToolbar';
+import { ProductDetailModal } from './ProductDetailModal';
+import { ProductEditDrawer } from './ProductEditDrawer';
+import { ProductVariableEditModal } from './ProductVariableEditModal';
 
 interface ProductListTabProps {
-  products: ProductEntity[];
+  products: ProductVM[];
   isLoading: boolean;
   categories: any[];
   uploadedImages?: any[];
   selectedBranchId: string;
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
+  meta: { total: number; page: number; limit: number; totalPages: number };
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
   search: string;
@@ -43,182 +35,35 @@ interface ProductListTabProps {
   onInStockOnlyChange?: (inStockOnly: boolean) => void;
 }
 
-import { usePermissions } from '@/hooks/usePermissions';
-import { APP_PERMISSIONS } from '@/constants/permissions';
-
+/**
+ * Lista de productos: junta la barra, la tabla y los diálogos (detalle, edición, etiquetas). La selección
+ * para imprimir vive en `useProductSelection`, las reglas de existencias y etiquetas en `domain/rules/product-stock`.
+ */
 export const ProductListTab: React.FC<ProductListTabProps> = ({
-  products,
-  isLoading,
-  categories,
-  uploadedImages,
-  selectedBranchId,
-  meta,
-  onPageChange,
-  onLimitChange,
-  search,
-  onSearchChange,
-  productType,
-  onProductTypeChange,
-  inStockOnly,
-  onInStockOnlyChange,
+  products, isLoading, categories, uploadedImages, selectedBranchId, meta, onPageChange, onLimitChange,
+  search, onSearchChange, productType, onProductTypeChange, inStockOnly, onInStockOnlyChange,
 }) => {
   const { can } = usePermissions();
   const canEdit = can(APP_PERMISSIONS.PRODUCTS_EDIT);
   const canPrintBarcodes = can(APP_PERMISSIONS.PRODUCTS_PRINT_BARCODES);
+  const selection = useProductSelection();
 
-  const [selectedProductToEdit, setSelectedProductToEdit] = useState<any | null>(null);
-  const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
-  const [selectedVariableProductId, setSelectedVariableProductId] = useState<string | null>(null);
-  const [isVariableEditModalOpen, setIsVariableEditModalOpen] = useState(false);
-  const [searchInput, setSearchInput] = useState(search);
-  const [selectedProduct, setSelectedProduct] = useState<ProductEntity | null>(null);
+  const [simpleToEdit, setSimpleToEdit] = useState<ProductVM | null>(null);
+  const [variableToEditId, setVariableToEditId] = useState<string | null>(null);
+  const [detailProduct, setDetailProduct] = useState<ProductVM | null>(null);
+  const [labelQueue, setLabelQueue] = useState<BarcodeLabelItem[]>([]);
+  const [isLabelModalOpen, setIsLabelModalOpen] = useState(false);
 
-  // Estado para selección masiva de etiquetas: Guardar Map<productId, ProductEntity> para persistir entre búsquedas y páginas
-  const [selectedProductsMap, setSelectedProductsMap] = useState<Map<string, ProductEntity>>(new Map());
-  const [barcodeModalOpen, setBarcodeModalOpen] = useState(false);
-  const [barcodeQueue, setBarcodeQueue] = useState<BarcodeLabelItem[]>([]);
-  const [expandedProductIds, setExpandedProductIds] = useState<Set<string>>(new Set());
-
-  const toggleExpandProduct = (productId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setExpandedProductIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(productId)) {
-        next.delete(productId);
-      } else {
-        next.add(productId);
-      }
-      return next;
-    });
-  };
-
-  const handleOpenEditDrawer = (product: any) => {
+  const openEditor = (product: ProductVM) => {
     if (!canEdit) return;
-
-    // Check if product is variable (via explicit type column or fallback to attribute values/variants)
-    const isVariableProduct = product.type === ProductType.VARIABLE || Boolean(
-      (product.variants && product.variants.length > 1) ||
-      (product.variants?.[0]?.attributeValues && product.variants[0].attributeValues.length > 0)
-    );
-
-    if (isVariableProduct) {
-      setSelectedVariableProductId(product.id);
-      setIsVariableEditModalOpen(true);
-    } else {
-      setSelectedProductToEdit(product);
-      setIsEditDrawerOpen(true);
-    }
+    if (isVariableProduct(product)) setVariableToEditId(product.id);
+    else setSimpleToEdit(product);
   };
 
-  const handleCloseEditDrawer = () => {
-    setIsEditDrawerOpen(false);
-    setSelectedProductToEdit(null);
+  const openLabels = (toPrint: ProductVM[]) => {
+    setLabelQueue(labelLinesFor(toPrint));
+    setIsLabelModalOpen(true);
   };
-
-  const handleCloseVariableEditModal = () => {
-    setIsVariableEditModalOpen(false);
-    setSelectedVariableProductId(null);
-  };
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSearchChange(searchInput.trim());
-    onPageChange(1);
-  };
-
-  const handleClearSearch = () => {
-    setSearchInput('');
-    onSearchChange('');
-    onPageChange(1);
-  };
-
-  // Toggle selección de un producto: Guarda el objeto completo
-  const toggleSelectProduct = (product: ProductEntity, event: React.MouseEvent) => {
-    event.stopPropagation();
-    setSelectedProductsMap((prev) => {
-      const next = new Map(prev);
-      if (next.has(product.id)) {
-        next.delete(product.id);
-      } else {
-        next.set(product.id, product);
-      }
-      return next;
-    });
-  };
-
-  // Toggle seleccionar todos los visibles en la página actual
-  const toggleSelectAllPage = () => {
-    const allCurrentPageSelected = products.length > 0 && products.every((p) => selectedProductsMap.has(p.id));
-    setSelectedProductsMap((prev) => {
-      const next = new Map(prev);
-      if (allCurrentPageSelected) {
-        products.forEach((p) => next.delete(p.id));
-      } else {
-        products.forEach((p) => next.set(p.id, p));
-      }
-      return next;
-    });
-  };
-
-  // Abrir modal de impresión con todos los productos seleccionados acumulados
-  const handleOpenMassPrint = () => {
-    const selectedProds = Array.from(selectedProductsMap.values());
-    const itemsToPrint: BarcodeLabelItem[] = [];
-
-    selectedProds.forEach((prod) => {
-      const variants = prod.variants && prod.variants.length > 0 ? prod.variants : [];
-      if (variants.length > 0) {
-        variants.forEach((v: any) => {
-          itemsToPrint.push({
-            sku: v.sku || 'SIN-SKU',
-            name: prod.name,
-            price: Number(v.salePrice || 0),
-            quantity: 1,
-          });
-        });
-      } else {
-        itemsToPrint.push({
-          sku: 'SIN-SKU',
-          name: prod.name,
-          price: 0,
-          quantity: 1,
-        });
-      }
-    });
-
-    setBarcodeQueue(itemsToPrint);
-    setBarcodeModalOpen(true);
-  };
-
-  // Imprimir un solo producto desde el botón de la fila
-  const handlePrintSingleProduct = (product: ProductEntity, event: React.MouseEvent) => {
-    event.stopPropagation();
-    const variants = product.variants && product.variants.length > 0 ? product.variants : [];
-    const itemsToPrint: BarcodeLabelItem[] = [];
-
-    if (variants.length > 0) {
-      variants.forEach((v: any) => {
-        itemsToPrint.push({
-          sku: v.sku || 'SIN-SKU',
-          name: product.name,
-          price: Number(v.salePrice || 0),
-          quantity: 1,
-        });
-      });
-    } else {
-      itemsToPrint.push({
-        sku: 'SIN-SKU',
-        name: product.name,
-        price: 0,
-        quantity: 1,
-      });
-    }
-
-    setBarcodeQueue(itemsToPrint);
-    setBarcodeModalOpen(true);
-  };
-
-  const isAllSelected = products.length > 0 && products.every((p) => selectedProductsMap.has(p.id));
 
   const isAll = !selectedBranchId;
 
@@ -244,103 +89,18 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
             </CardDescription>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-            {/* Botón de impresión masiva cuando hay seleccionados */}
-            {canPrintBarcodes && selectedProductsMap.size > 0 && (
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleOpenMassPrint}
-                className="text-xs h-9 gap-1.5 font-bold bg-primary text-white shadow-sm cursor-pointer animate-fade-in"
-              >
-                <Barcode className="w-4 h-4" />
-                Imprimir Etiquetas ({selectedProductsMap.size})
-              </Button>
-            )}
-
-            {/* Filtro por tipo de producto (Todos / Simples / Con Variantes) */}
-            {onProductTypeChange && (
-              <div className="flex items-center bg-muted/60 p-1 rounded-xl border border-border/80">
-                <button
-                  type="button"
-                  onClick={() => onProductTypeChange(undefined)}
-                  className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
-                    productType === undefined
-                      ? 'bg-background text-foreground shadow-2xs'
-                      : 'text-neutral hover:text-foreground'
-                  }`}
-                >
-                  Todos
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onProductTypeChange(ProductType.SIMPLE)}
-                  className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    productType === ProductType.SIMPLE
-                      ? 'bg-background text-foreground shadow-2xs'
-                      : 'text-neutral hover:text-foreground'
-                  }`}
-                >
-                  <Package className="w-3.5 h-3.5 text-neutral" />
-                  <span>Simples</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onProductTypeChange(ProductType.VARIABLE)}
-                  className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                    productType === ProductType.VARIABLE
-                      ? 'bg-background text-primary shadow-2xs font-bold'
-                      : 'text-neutral hover:text-foreground'
-                  }`}
-                >
-                  <Layers className="w-3.5 h-3.5 text-primary" />
-                  <span>Con Variantes</span>
-                </button>
-              </div>
-            )}
-
-            {/* Filtro ocultar sin existencias */}
-            {onInStockOnlyChange && (
-              <button
-                type="button"
-                onClick={() => onInStockOnlyChange(!inStockOnly)}
-                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-xl border font-semibold transition-all cursor-pointer h-9 shrink-0 ${
-                  inStockOnly
-                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 shadow-2xs font-bold'
-                    : 'bg-muted/60 text-muted-foreground border-border/80 hover:text-foreground hover:bg-muted'
-                }`}
-                title={inStockOnly ? 'Filtro activo: Ocultando productos sin existencias' : 'Hacer clic para mostrar solo productos con stock'}
-              >
-                <PackageCheck className={`w-3.5 h-3.5 ${inStockOnly ? 'text-emerald-500' : 'text-muted-foreground'}`} />
-                <span>Solo con stock</span>
-              </button>
-            )}
-
-            <form onSubmit={handleSearchSubmit} className="flex gap-2 flex-1 md:w-80">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Buscar por nombre, SKU o código de barras..."
-                  className="pl-9 pr-8 text-xs h-9"
-                />
-                {searchInput && (
-                  <button
-                    type="button"
-                    onClick={handleClearSearch}
-                    className="absolute right-3 top-2 text-xs text-muted-foreground hover:text-foreground font-bold"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-              <Button type="submit" size="sm" className="text-xs h-9">
-                Buscar
-              </Button>
-            </form>
-          </div>
+          <ProductListToolbar
+            search={search}
+            onSearchChange={onSearchChange}
+            onResetPage={() => onPageChange(1)}
+            productType={productType}
+            onProductTypeChange={onProductTypeChange}
+            inStockOnly={inStockOnly}
+            onInStockOnlyChange={onInStockOnlyChange}
+            canPrint={canPrintBarcodes}
+            selectedCount={selection.count}
+            onPrintSelected={() => openLabels(selection.selected)}
+          />
         </div>
       </CardHeader>
       <CardContent>
@@ -364,355 +124,52 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
             <Package className="w-10 h-10 text-muted-foreground opacity-40" />
             <p className="text-sm text-muted-foreground">No se encontraron productos en esta página.</p>
             {search && (
-              <Button variant="link" size="sm" onClick={handleClearSearch} className="text-xs">
+              <Button variant="link" size="sm" onClick={() => onSearchChange('')} className="text-xs">
                 Limpiar filtros de búsqueda
               </Button>
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  {/* Checkbox para seleccionar todos */}
-                  <TableHead className="w-[40px] px-3">
-                    <button
-                      type="button"
-                      onClick={toggleSelectAllPage}
-                      className="text-muted-foreground hover:text-foreground cursor-pointer flex items-center justify-center"
-                      title={isAllSelected ? 'Deseleccionar todos en esta página' : 'Seleccionar todos en esta página'}
-                    >
-                      {isAllSelected ? (
-                        <CheckSquare className="w-4 h-4 text-primary" />
-                      ) : (
-                        <Square className="w-4 h-4" />
-                      )}
-                    </button>
-                  </TableHead>
-                  <TableHead className="w-[60px]"></TableHead>
-                  <TableHead className="font-semibold text-xs">SKU</TableHead>
-                  <TableHead className="font-semibold text-xs">Producto</TableHead>
-                  <TableHead className="font-semibold text-xs">Cód. Barras</TableHead>
-                  <TableHead className="font-semibold text-xs text-right">Compra</TableHead>
-                  <TableHead className="font-semibold text-xs text-right">Venta</TableHead>
-                  <TableHead className="font-semibold text-xs text-right">Precio Mayoreo</TableHead>
-                  <TableHead className="font-semibold text-xs text-center">{isAll ? 'Stock Total' : 'Stock Sucursal'}</TableHead>
-                  <TableHead className="w-[80px] text-center">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((product) => {
-                  const isVariable = product.type === ProductType.VARIABLE;
-                  const defaultVariant = product.variants[0];
-                  const sku = product.baseSku || defaultVariant?.sku || 'N/A';
-                  const barcode = defaultVariant?.barcode || 'N/A';
-
-                  // Si se filtra por sucursal específica calculamos stock local, de lo contrario usamos totalStock ya calculado
-                  const currentStock = isAll
-                    ? product.totalStock
-                    : (product.variants?.reduce((total, v) => {
-                        const branchQty = v.stocks?.find((s) => s.branchId === selectedBranchId)?.quantity ?? 0;
-                        return total + branchQty;
-                      }, 0) ?? 0);
-
-                  // Desglose de existencias por variantes para detectar saldos mixtos (ej. unas con stock y otras en negativo)
-                  const variantStocks = isVariable
-                    ? (product.variants?.map((v: any) => {
-                        return isAll
-                          ? (v.stocks?.reduce((acc: number, s: any) => acc + Number(s.quantity || 0), 0) ?? 0)
-                          : (v.stocks?.find((s: any) => s.branchId === selectedBranchId)?.quantity ?? 0);
-                      }) ?? [])
-                    : [];
-
-                  const positiveStock = variantStocks.filter((q: number) => q > 0).reduce((a: number, b: number) => a + b, 0);
-                  const negativeStock = variantStocks.filter((q: number) => q < 0).reduce((a: number, b: number) => a + b, 0);
-                  const hasMixedStock = isVariable && positiveStock > 0 && negativeStock < 0;
-
-                  const isSelected = selectedProductsMap.has(product.id);
-
-                  return (
-                    <React.Fragment key={product.id}>
-                      <TableRow 
-                        onClick={() => setSelectedProduct(product)} 
-                        className={`hover:bg-muted/30 cursor-pointer transition-colors ${
-                          isSelected ? 'bg-primary/5' : ''
-                        }`}
-                      >
-                      {/* Checkbox individual */}
-                      <TableCell className="py-2.5 px-3" onClick={(e) => toggleSelectProduct(product, e)}>
-                        <button
-                          type="button"
-                          className="text-muted-foreground hover:text-foreground cursor-pointer flex items-center justify-center"
-                        >
-                          {isSelected ? (
-                            <CheckSquare className="w-4 h-4 text-primary" />
-                          ) : (
-                            <Square className="w-4 h-4" />
-                          )}
-                        </button>
-                      </TableCell>
-
-                      {/* Image Thumbnail with Expand Toggle for Variable Products */}
-                      <TableCell className="py-2.5">
-                        <div className="flex items-center gap-1.5">
-                          {isVariable ? (
-                            <button
-                              type="button"
-                              onClick={(e) => toggleExpandProduct(product.id, e)}
-                              className="w-5 h-5 rounded hover:bg-muted/80 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                              title={expandedProductIds.has(product.id) ? 'Ocultar variantes' : 'Ver variantes'}
-                            >
-                              {expandedProductIds.has(product.id) ? (
-                                <ChevronDown className="w-3.5 h-3.5 text-primary" />
-                              ) : (
-                                <ChevronRight className="w-3.5 h-3.5" />
-                              )}
-                            </button>
-                          ) : (
-                            <span className="w-5" />
-                          )}
-                          <div className="w-9 h-9 rounded-lg bg-muted border border-border flex items-center justify-center overflow-hidden shrink-0">
-                            {product.primaryImageUrl ? (
-                              <img src={product.primaryImageUrl} className="w-full h-full object-cover" alt={product.name} />
-                            ) : (
-                              <Package className="w-4 h-4 text-muted-foreground" />
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
-
-                      {/* SKU */}
-                      <TableCell className="py-2.5">
-                        <div className="flex flex-col gap-1 items-start">
-                          <span className="font-mono text-[11px] text-primary font-bold">
-                            {sku}
-                          </span>
-                          {isVariable ? (
-                            <Badge
-                              variant="outline"
-                              onClick={(e) => toggleExpandProduct(product.id, e)}
-                              className="text-[9px] px-1.5 py-0 h-4 font-semibold bg-primary/10 text-primary border-primary/30 cursor-pointer hover:bg-primary/20"
-                            >
-                              {product.totalVariants} vars
-                            </Badge>
-                          ) : (
-                            <Badge
-                              variant="outline"
-                              className="text-[9px] px-1.5 py-0 h-4 font-normal bg-muted/50 text-muted-foreground border-border"
-                            >
-                              Simple
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-
-                      {/* Product details */}
-                      <TableCell className="py-2.5">
-                        <div className="font-semibold text-xs text-foreground leading-tight truncate max-w-[200px]" title={product.name}>
-                          {product.name}
-                        </div>
-                        {product.categoryName && (
-                          <div className="text-[10px] text-primary/80 font-medium mt-0.5">
-                            {product.categoryName}
-                          </div>
-                        )}
-                        {product.description && (
-                          <div className="text-[10px] text-muted-foreground truncate max-w-[200px] mt-0.5" title={product.description}>
-                            {product.description}
-                          </div>
-                        )}
-                      </TableCell>
-
-                      {/* Barcode */}
-                      <TableCell className="py-2.5 font-mono text-[11px] text-muted-foreground">
-                        {barcode}
-                      </TableCell>
-
-                      {/* Purchase Price */}
-                      <TableCell className="py-2.5 text-right font-mono text-xs">
-                        {isVariable ? product.purchasePriceRangeFormatted : (defaultVariant?.purchasePriceFormatted || '—')}
-                      </TableCell>
-
-                      {/* Sale Price */}
-                      <TableCell className="py-2.5 text-right font-mono text-xs font-semibold text-foreground">
-                        {isVariable ? product.priceRangeFormatted : (defaultVariant?.salePriceFormatted || '—')}
-                      </TableCell>
-
-                      {/* Wholesale Price */}
-                      <TableCell className="py-2.5 text-right font-mono text-xs font-semibold text-foreground">
-                        {isVariable ? product.wholesalePriceRangeFormatted : (defaultVariant?.wholesalePriceFormatted || '—')}
-                      </TableCell>
-
-                      {/* Stock */}
-                      <TableCell className="py-2.5 text-center">
-                        {hasMixedStock ? (
-                          <div 
-                            className="flex flex-col items-center gap-0.5" 
-                            title={`Saldo neto: ${currentStock} pzs (${positiveStock} disponibles en algunas variantes, ${Math.abs(negativeStock)} en negativo)`}
-                          >
-                            <Badge
-                              variant="outline"
-                              className="font-bold font-mono text-[10px] border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 gap-1 cursor-pointer hover:bg-amber-500/20 transition-colors"
-                              onClick={(e) => toggleExpandProduct(product.id, e)}
-                            >
-                              <AlertTriangle className="w-2.5 h-2.5 text-amber-500 shrink-0" />
-                              <span>{currentStock} pzs</span>
-                            </Badge>
-                            <span 
-                              className="text-[9px] font-mono text-amber-600 dark:text-amber-400 font-semibold cursor-pointer hover:underline"
-                              onClick={(e) => toggleExpandProduct(product.id, e)}
-                            >
-                              +{positiveStock} / {negativeStock}
-                            </span>
-                          </div>
-                        ) : (
-                          <Badge
-                            variant={currentStock > 0 ? 'secondary' : currentStock < 0 ? 'destructive' : 'outline'}
-                            className={`font-bold font-mono text-[10px] ${
-                              currentStock === 0 ? 'text-muted-foreground border-border bg-muted/40' : ''
-                            }`}
-                          >
-                            {currentStock} pzs
-                          </Badge>
-                        )}
-                      </TableCell>
-
-                      {/* Actions */}
-                      <TableCell className="py-2.5 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          {/* Botón imprimir etiqueta individual */}
-                          {canPrintBarcodes && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(event) => handlePrintSingleProduct(product, event)}
-                              title="Imprimir Código de Barras"
-                              className="h-8 w-8 text-primary hover:bg-primary/10 cursor-pointer"
-                            >
-                              <Barcode className="w-4 h-4" />
-                            </Button>
-                          )}
-
-                          {canEdit && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(event) => { event.stopPropagation(); handleOpenEditDrawer(product); }}
-                              title="Editar Ficha de Producto"
-                              className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-
-                    {/* Sub-filas desplegables de variantes para productos variables */}
-                    {isVariable && expandedProductIds.has(product.id) && product.variants?.map((v: any, idx: number) => {
-                      const vStock = isAll
-                        ? (v.stocks?.reduce((acc: number, s: any) => acc + Number(s.quantity || 0), 0) ?? 0)
-                        : (v.stocks?.find((s: any) => s.branchId === selectedBranchId)?.quantity ?? 0);
-
-                      const varImgUrl = v.images?.[0]?.url;
-
-                      return (
-                        <TableRow
-                          key={`var-${v.id || idx}`}
-                          className="bg-muted/15 border-b border-border/40 hover:bg-muted/25 transition-colors"
-                        >
-                          <TableCell className="py-2 px-3"></TableCell>
-                          <TableCell className="py-2 pl-4">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-muted-foreground/60 text-xs">└─</span>
-                              {varImgUrl ? (
-                                <img src={varImgUrl} className="w-6 h-6 rounded object-cover border border-border" alt={v.sku} />
-                              ) : null}
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-2 font-mono text-[11px] text-foreground font-medium">
-                            {v.sku}
-                          </TableCell>
-                          <TableCell className="py-2">
-                            <div className="flex flex-wrap gap-1">
-                              {v.attributesLabel ? (
-                                <Badge
-                                  variant="outline"
-                                  className="text-[9px] px-1.5 py-0 h-4 font-normal bg-card text-foreground border-border/70 shadow-2xs"
-                                >
-                                  {v.attributesLabel}
-                                </Badge>
-                              ) : (
-                                <span className="text-[11px] text-muted-foreground">Variante #{idx + 1}</span>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-2 font-mono text-[10px] text-muted-foreground">
-                            {v.barcode || '—'}
-                          </TableCell>
-                          <TableCell className="py-2 text-right font-mono text-xs text-muted-foreground">
-                            {v.purchasePriceFormatted}
-                          </TableCell>
-                          <TableCell className="py-2 text-right font-mono text-xs font-semibold text-foreground">
-                            {v.salePriceFormatted}
-                          </TableCell>
-                          <TableCell className="py-2 text-right font-mono text-xs">
-                            {v.wholesalePriceFormatted}
-                          </TableCell>
-                          <TableCell className="py-2 text-center">
-                            <Badge
-                              variant={vStock > 0 ? 'secondary' : vStock < 0 ? 'destructive' : 'outline'}
-                              className={`font-mono text-[9px] px-1.5 py-0 h-4 ${
-                                vStock === 0 ? 'text-muted-foreground border-border bg-muted/40' : ''
-                              }`}
-                            >
-                              {vStock} pzs
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="py-2 text-center"></TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </React.Fragment>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+          <ProductsTable
+            products={products}
+            branchId={selectedBranchId}
+            isSelected={selection.isSelected}
+            allSelected={selection.allSelected(products)}
+            canEdit={canEdit}
+            canPrint={canPrintBarcodes}
+            onToggleAll={() => selection.togglePage(products)}
+            onToggleSelect={selection.toggle}
+            onOpen={setDetailProduct}
+            onPrint={(product) => openLabels([product])}
+            onEdit={openEditor}
+          />
         )}
 
       </CardContent>
 
       <ProductEditDrawer
-        product={selectedProductToEdit}
-        isOpen={isEditDrawerOpen}
-        onClose={handleCloseEditDrawer}
+        product={simpleToEdit}
+        isOpen={simpleToEdit !== null}
+        onClose={() => setSimpleToEdit(null)}
         categories={categories}
         uploadedImages={uploadedImages}
         selectedBranchId={selectedBranchId}
       />
       <ProductVariableEditModal
-        productId={selectedVariableProductId}
-        isOpen={isVariableEditModalOpen}
-        onClose={handleCloseVariableEditModal}
+        productId={variableToEditId}
+        isOpen={variableToEditId !== null}
+        onClose={() => setVariableToEditId(null)}
         selectedBranchId={selectedBranchId}
       />
       <ProductDetailModal
-        product={selectedProduct}
-        isOpen={!!selectedProduct}
-        onClose={() => setSelectedProduct(null)}
+        product={detailProduct}
+        isOpen={detailProduct !== null}
+        onClose={() => setDetailProduct(null)}
         categories={categories}
         uploadedImages={uploadedImages}
         selectedBranchId={selectedBranchId}
       />
-
-      {/* Modal de Impresión Térmica de Códigos de Barras */}
-      <BarcodePrintModal
-        isOpen={barcodeModalOpen}
-        onClose={() => setBarcodeModalOpen(false)}
-        items={barcodeQueue}
-        onUpdateItems={setBarcodeQueue}
-      />
+      <BarcodePrintModal isOpen={isLabelModalOpen} onClose={() => setIsLabelModalOpen(false)} items={labelQueue} onUpdateItems={setLabelQueue} />
     </Card>
   );
 };
