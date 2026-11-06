@@ -1,4 +1,4 @@
-import type { ActiveCashSession } from '@/modules/cash-sessions/domain/session-types';
+import type { ActiveCashSessionEntity } from '@/modules/cash-sessions/domain/entities/cash-session.entity';
 import React from 'react';
 import {
   Banknote,
@@ -44,7 +44,7 @@ interface POSPaymentPanelProps {
   onRemovePayment: (index: number) => void;
   onCompletePayment: () => void;
   isProcessing: boolean;
-  activeSession: ActiveCashSession | null;
+  activeSession: ActiveCashSessionEntity | null;
   paymentAmountInputRef: React.RefObject<HTMLInputElement | null>;
 }
 

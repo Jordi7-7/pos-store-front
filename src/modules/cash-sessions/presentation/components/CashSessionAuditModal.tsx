@@ -21,8 +21,8 @@ interface CashSessionAuditModalProps {
 /** Arqueo y auditoría de un turno de caja: cifras, movimientos y reimpresión de tickets. */
 export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({ sessionId, isOpen, onClose }) => {
   const publicTenant = useTenant();
-  const { details, rawDetails, isLoading } = useCashSessionDetailsQuery(sessionId);
-  const reprint = useAuditReprint(details, rawDetails);
+  const { details, entity, isLoading } = useCashSessionDetailsQuery(sessionId);
+  const reprint = useAuditReprint(details, entity);
   const [showFormulasGuide, setShowFormulasGuide] = useState(false);
 
   return (

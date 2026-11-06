@@ -1,5 +1,5 @@
-import { expectedCashBalance, summarizeCashSession } from './cash-closing';
-import type { CashSessionDetails } from './session-types';
+import { expectedCashBalance } from './cash-closing';
+import type { CashSessionDetailsEntity } from './entities/cash-session.entity';
 
 export interface ProductSummaryItem {
   sku: string;
@@ -23,18 +23,16 @@ export interface ClosingSummary {
   totalPieces: number;
 }
 
-/** Productos vendidos en el turno, agrupados por SKU. */
-export function summarizeProducts(sales: NonNullable<CashSessionDetails['sales']>): ProductSummaryItem[] {
+/** Productos vendidos en el turno, agrupados por SKU, con lo realmente cobrado por cada uno. */
+export function summarizeProducts(sales: CashSessionDetailsEntity['sales']): ProductSummaryItem[] {
   const bySku = new Map<string, ProductSummaryItem>();
   for (const sale of sales) {
-    for (const item of sale.items || []) {
-      const sku = item.variant?.sku || 'N/A';
-      const productName = item.variant?.product?.name || 'Producto';
-      const attributes = (item.variant?.attributeValues || []).map((av) => av.value).filter(Boolean).join(' · ');
-      const entry = bySku.get(sku) ?? { sku, name: attributes ? `${productName} (${attributes})` : productName, quantity: 0, total: 0 };
-      const quantity = Number(item.quantity || 0);
-      entry.quantity += quantity;
-      entry.total += (Number(item.price || 0) - Number(item.discountAmount || 0)) * quantity;
+    for (const item of sale.items) {
+      const sku = item.sku || 'N/A';
+      const attributes = item.attributeValues.join(' · ');
+      const entry = bySku.get(sku) ?? { sku, name: attributes ? `${item.productName} (${attributes})` : item.productName, quantity: 0, total: 0 };
+      entry.quantity += item.quantity;
+      entry.total += item.total;
       bySku.set(sku, entry);
     }
   }
@@ -42,33 +40,21 @@ export function summarizeProducts(sales: NonNullable<CashSessionDetails['sales']
 }
 
 /**
- * Cifras del cierre a partir del resumen que entrega el servidor (la fuente de verdad: coincide con
- * el corte Z). Solo si el servidor no envía alguna cifra se recalcula con las reglas del arqueo.
+ * Cifras del cierre a partir del resumen del servidor (la fuente de verdad: coincide con el corte Z).
+ * El efectivo esperado de un turno aún abierto se calcula con la regla del arqueo.
  */
-export function buildClosingSummary(details: CashSessionDetails | null, fallbackOpeningBalance = 0): ClosingSummary {
+export function buildClosingSummary(details: CashSessionDetailsEntity | null, fallbackOpeningBalance = 0): ClosingSummary {
   const sales = details?.sales ?? [];
-  const expenses = details?.expenses ?? [];
-  const refunds = details?.refunds ?? [];
   const kpis = details?.kpis;
   const session = details?.session;
 
-  const fallback = summarizeCashSession({
-    sales,
-    expenseAmounts: expenses.map((e) => e.amount),
-    refundAmounts: refunds.map((r) => r.totalRefunded),
-  });
-
-  const openingBalance = session?.openingBalance !== undefined ? Number(session.openingBalance) : Number(fallbackOpeningBalance || 0);
-  const cashSales = kpis?.cashSales !== undefined ? Number(kpis.cashSales) : fallback.cashSales;
-  const cardSales = kpis?.cardSales !== undefined ? Number(kpis.cardSales) : fallback.cardSales;
-  const expensesTotal = kpis?.totalExpenses !== undefined ? Number(kpis.totalExpenses) : fallback.totalExpenses;
-  const refundsTotal = kpis?.totalRefunds !== undefined ? Number(kpis.totalRefunds) : fallback.totalRefunds;
-  const netSales = kpis?.netSales !== undefined ? Number(kpis.netSales) : fallback.netSales;
-  const expectedCash =
-    session?.expectedBalance !== undefined && session.expectedBalance !== null
-      ? Number(session.expectedBalance)
-      : expectedCashBalance({ openingBalance, cashSales, expenses: expensesTotal, refunds: refundsTotal });
-  const salesCount = kpis?.salesCount !== undefined ? Number(kpis.salesCount) : sales.length;
+  const openingBalance = session?.openingBalance ?? fallbackOpeningBalance;
+  const cashSales = kpis?.cashSales ?? 0;
+  const cardSales = kpis?.cardSales ?? 0;
+  const expensesTotal = kpis?.totalExpenses ?? 0;
+  const refundsTotal = kpis?.totalRefunds ?? 0;
+  const netSales = kpis?.netSales ?? 0;
+  const salesCount = kpis?.salesCount ?? sales.length;
   const productsSummary = summarizeProducts(sales);
 
   return {
@@ -78,7 +64,7 @@ export function buildClosingSummary(details: CashSessionDetails | null, fallback
     expensesTotal,
     refundsTotal,
     netSales,
-    expectedCash,
+    expectedCash: session?.expectedBalance ?? expectedCashBalance({ openingBalance, cashSales, expenses: expensesTotal, refunds: refundsTotal }),
     salesCount,
     avgTicket: salesCount > 0 ? netSales / salesCount : 0,
     productsSummary,

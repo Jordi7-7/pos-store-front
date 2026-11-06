@@ -1,4 +1,4 @@
-import type { ActiveCashSession } from '@/modules/cash-sessions/domain/session-types';
+import type { ActiveCashSessionEntity } from '@/modules/cash-sessions/domain/entities/cash-session.entity';
 import React from 'react';
 import {
   ArrowLeftRight,
@@ -21,7 +21,7 @@ import { ExchangeItemsStep } from './exchange-return/ExchangeItemsStep';
 interface ExchangeReturnModalProps {
   isOpen: boolean;
   onClose: () => void;
-  activeSession: ActiveCashSession | null;
+  activeSession: ActiveCashSessionEntity | null;
   branchId: string;
   cashSessionId: string;
 }

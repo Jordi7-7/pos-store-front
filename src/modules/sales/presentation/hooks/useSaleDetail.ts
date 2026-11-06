@@ -2,9 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useFormatters } from '@/modules/auth/hooks/useFormatters';
 import { toSaleDetailVM, type SaleDetailVM } from '../view-models/sale.vm';
-import { salesService } from '../../infrastructure/sales.service';
-import type { SaleDetailDTO } from '../../infrastructure/dtos/sales.dto';
-import { toSaleDetailEntity } from '../../infrastructure/mappers/sale.mapper';
+import { salesRepository } from '../../infrastructure/dependencies';
 import type { SaleDetailEntity } from '../../domain/entities/sale.entity';
 import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
 
@@ -20,10 +18,9 @@ export const useSaleByInvoice = (invoiceNumber?: string, enabled = true): UseSal
   const isAuthenticated = useIsAuthenticated();
   const fmt = useFormatters();
 
-  const saleQuery = useQuery<SaleDetailDTO, Error, SaleDetailEntity>({
+  const saleQuery = useQuery<SaleDetailEntity, Error>({
     queryKey: ['sale-detail', tenantId, invoiceNumber],
-    queryFn: () => salesService.getSaleByInvoice(invoiceNumber!),
-    select: (data) => toSaleDetailEntity(data),
+    queryFn: () => salesRepository.getByInvoice(invoiceNumber!),
     enabled: enabled && isAuthenticated && !!tenantId && !!invoiceNumber,
   });
 
@@ -34,9 +31,6 @@ export const useSaleByInvoice = (invoiceNumber?: string, enabled = true): UseSal
     sale,
     isLoading: saleQuery.isLoading,
     isError: saleQuery.isError,
-    fetchSale: async (invoice: string): Promise<SaleDetailEntity> => {
-      const raw = await salesService.getSaleByInvoice(invoice);
-      return toSaleDetailEntity(raw);
-    },
+    fetchSale: (invoice: string): Promise<SaleDetailEntity> => salesRepository.getByInvoice(invoice),
   };
 };

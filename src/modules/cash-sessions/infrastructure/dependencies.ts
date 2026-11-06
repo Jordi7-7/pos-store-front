@@ -1,8 +1,6 @@
 import { CloseCashSession } from '../application/close-cash-session';
-import { cashSessionsService } from './cash-sessions.service';
+import { CashSessionsHttpRepository } from './cash-sessions.http-repository';
 
-/** Raíz de composición del módulo: enchufa el servicio HTTP al caso de uso. */
-export const closeCashSession = new CloseCashSession({
-  close: cashSessionsService.closeCashSession,
-  getDetails: cashSessionsService.getCashSessionDetails,
-});
+/** Raíz de composición del módulo: enchufa la implementación HTTP a los casos de uso. */
+export const cashSessionsRepository = new CashSessionsHttpRepository();
+export const closeCashSession = new CloseCashSession(cashSessionsRepository);

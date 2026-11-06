@@ -1,4 +1,4 @@
-import type { ActiveCashSession } from '@/modules/cash-sessions/domain/session-types';
+import type { ActiveCashSessionEntity } from '@/modules/cash-sessions/domain/entities/cash-session.entity';
 import {
   Wallet,
   ArrowRightLeft,
@@ -16,7 +16,7 @@ import { APP_PERMISSIONS } from '@/constants/permissions';
 interface POSHeaderProps {
   currentTime: string;
   shiftDuration: string;
-  activeSession: ActiveCashSession | null;
+  activeSession: ActiveCashSessionEntity | null;
   availableRegistersForUser: any[];
   onOpenApertura: () => void;
   onOpenEgreso: () => void;
@@ -85,7 +85,7 @@ export const POSHeader: React.FC<POSHeaderProps> = ({
             />
             <span className="font-bold">
               {activeSession
-                ? (activeSession.cashRegisterName || activeSession.cashRegister?.name || 'Caja')
+                ? (activeSession.cashRegisterName || 'Caja')
                 : 'Caja Cerrada'}
             </span>
           </div>

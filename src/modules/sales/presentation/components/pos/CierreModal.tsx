@@ -1,11 +1,9 @@
 import React from 'react';
 import { Loader2, Receipt, AlertTriangle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import type {
-  CashSessionHeader,
-  CashSessionDetails,
-  ClosingDetailsStatus,
-} from '@/modules/cash-sessions/domain/session-types';
+import type { ActiveCashSessionEntity } from '@/modules/cash-sessions/domain/entities/cash-session.entity';
+import type { CashSessionDetailsVM } from '@/modules/cash-sessions/presentation/view-models/cash-session.vm';
+import type { ClosingDetailsStatus } from '@/modules/cash-sessions/presentation/view-models/closing-details-status';
 import { buildClosingSummary } from '@/modules/cash-sessions/domain/closing-summary';
 import { cashDifference, parseCountedCash } from '@/modules/cash-sessions/domain/cash-closing';
 import { ClosingCashAudit } from './ClosingCashAudit';
@@ -20,8 +18,8 @@ interface CierreModalProps {
   setClosingBalance: (val: string) => void;
   onCloseSession: () => void;
   isClosing: boolean;
-  activeSession: CashSessionHeader | null;
-  sessionDetails?: CashSessionDetails | null;
+  activeSession: ActiveCashSessionEntity | null;
+  sessionDetails?: CashSessionDetailsVM | null;
   detailsStatus: ClosingDetailsStatus;
 }
 
@@ -38,7 +36,7 @@ export const CierreModal: React.FC<CierreModalProps> = ({
   detailsStatus,
 }) => {
   const isReady = detailsStatus === 'ready';
-  const summary = buildClosingSummary(sessionDetails ?? null, Number(activeSession?.openingBalance || 0));
+  const summary = buildClosingSummary(sessionDetails ?? null, activeSession?.openingBalance ?? 0);
   const countedCash = parseCountedCash(closingBalance);
   const difference = isReady && countedCash !== null ? cashDifference(countedCash, summary.expectedCash) : null;
 
@@ -53,14 +51,14 @@ export const CierreModal: React.FC<CierreModalProps> = ({
               <span>Cierre de Caja Registradora (Corte Z)</span>
             </DialogTitle>
             <div className="flex items-center gap-2">
-              {activeSession?.cashRegister?.name && (
+              {activeSession?.cashRegisterName && (
                 <span className="text-[10px] text-neutral bg-bg-dark border border-border-card px-2 py-0.5 rounded-lg font-medium">
-                  Caja: <strong className="text-secondary">{activeSession.cashRegister.name}</strong>
+                  Caja: <strong className="text-secondary">{activeSession.cashRegisterName}</strong>
                 </span>
               )}
-              {activeSession?.user?.name && (
+              {activeSession?.openedByName && (
                 <span className="text-[10px] text-neutral bg-bg-dark border border-border-card px-2 py-0.5 rounded-lg font-medium">
-                  Cajero: <strong className="text-secondary">{activeSession.user.name}</strong>
+                  Cajero: <strong className="text-secondary">{activeSession.openedByName}</strong>
                 </span>
               )}
             </div>

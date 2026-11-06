@@ -1,5 +1,4 @@
 import { PaymentMethod } from '../../domain/enums';
-export type { ProcessSaleInput } from '../../application/ports/sales.repository';
 
 export interface SaleItemDTO {
   variantId: string;
@@ -79,31 +78,3 @@ export interface SaleDetailDTO {
   payments: SalePaymentDTO[];
   refunds: SaleRefundDTO[];
 }
-
-export interface OpenCashSessionInput {
-  branchId: string;
-  cashRegisterId: string;
-  openingBalance: number;
-}
-
-export interface RegisterExpenseInput {
-  branchId: string;
-  cashSessionId?: string;
-  description: string;
-  amount: number;
-  category: string;
-}
-
-export interface RefundItemInput {
-  variantId: string;
-  quantity: number;
-}
-
-export interface ProcessRefundInput {
-  branchId: string;
-  saleId: string;
-  cashSessionId: string;
-  reason: string;
-  items: RefundItemInput[];
-}
-

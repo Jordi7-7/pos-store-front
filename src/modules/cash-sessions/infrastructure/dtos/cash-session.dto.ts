@@ -1,4 +1,4 @@
-import { CashSessionStatus } from './enums';
+import { CashSessionStatus } from '../../domain/enums';
 import { SaleStatus, PaymentMethod } from '@/modules/sales/domain/enums';
 
 export interface ProductAttributeValue {
@@ -172,8 +172,17 @@ export interface CashSessionDetails {
   refunds: SessionRefund[];
 }
 
-/** Turno de caja abierto del usuario, tal como lo devuelve el servidor. */
-export type ActiveCashSession = CashSessionHeader & { cashRegisterId?: string; cashRegisterName?: string };
-
-/** Estado de la carga del resumen de un turno: sin él no se muestran importes (nunca ceros inventados). */
-export type ClosingDetailsStatus = 'loading' | 'ready' | 'unavailable';
+/** Turno abierto: `GET /sales/cash-sessions/active` lo devuelve plano; `POST .../open` anidado. */
+export interface ActiveCashSessionDTO {
+  id: string;
+  status: CashSessionStatus;
+  branchId?: string;
+  cashRegisterId?: string;
+  cashRegisterName?: string;
+  openingBalance: number;
+  openedAt: string;
+  openedByName?: string;
+  branch?: { id?: string; name?: string };
+  cashRegister?: { id?: string; name?: string };
+  user?: { name?: string };
+}

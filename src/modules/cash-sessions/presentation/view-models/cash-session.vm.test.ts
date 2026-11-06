@@ -64,11 +64,11 @@ describe('view-model del turno', () => {
           id: 'v1', invoiceNumber: '001-001-000000001', createdAt: '2026-11-05T17:00:00Z', userName: 'Cajero', customerName: 'X', customerIdentity: '1',
           totalItems: 1, status: SaleStatus.PARTIALLY_REFUNDED, subtotal: 310, discountAmount: 0, itemsDiscountAmount: 0, globalDiscountAmount: 0, total: 310,
           paymentMethod: PaymentMethod.EFECTIVO, payments: [{ id: 'p', paymentMethod: 'EFECTIVO', amount: 310 }, { id: 'q', paymentMethod: 'TARJETA', amount: 0 }],
-          items: [{ id: 'i', variantId: 'v', sku: 'A', productName: 'Camisa', combinationText: 'Estándar', quantity: 1, price: 310, discountAmount: 0, total: 310 }],
+          items: [{ id: 'i', variantId: 'v', sku: 'A', productName: 'Camisa', combinationText: 'Estándar', attributeValues: [], quantity: 1, price: 310, subtotal: 310, discountAmount: 0, globalDiscountAmount: 0, total: 310 }],
         },
       ],
       expenses: [{ id: 'e', description: 'Hielo', amount: 20, createdAt: '2026-11-05T17:10:00Z', userName: 'Cajero', category: 'General' }],
-      refunds: [{ id: 'r', reason: 'x', totalRefunded: 310, createdAt: '2026-11-05T17:20:00Z', userName: 'Cajero', invoiceNumber: '001' }],
+      refunds: [{ id: 'r', reason: 'x', items: [], totalRefunded: 310, createdAt: '2026-11-05T17:20:00Z', userName: 'Cajero', invoiceNumber: '001' }],
     };
     const vm = toCashSessionDetailsVM(entity, mxn);
     expect(vm.kpis).toMatchObject({ totalExpensesFormatted: '-$20.00', totalRefundsFormatted: '-$310.00', expensesLabel: '1 salida', refundsLabel: '2 reembolsos' });

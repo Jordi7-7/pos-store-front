@@ -1,4 +1,4 @@
-import type { CashSessionDetails } from './session-types';
+import type { CashSessionDetailsEntity } from './entities/cash-session.entity';
 import { CashSessionStatus } from './enums';
 import { PaymentMethod } from '@/modules/sales/domain/enums';
 
@@ -38,132 +38,65 @@ export interface ClosingTicketData {
   status?: CashSessionStatus;
 }
 
-export function buildClosingTicketData(
-  details: CashSessionDetails
-): ClosingTicketData {
-  // 1. Agrupar productos vendidos
-  const productMap = new Map<
-    string,
-    { sku: string; name: string; quantity: number; subtotal: number; discount: number; total: number }
-  >();
+/** Datos del corte Z de un turno, a partir de su resumen. Solo reordena lo que el servidor calculó. */
+export function buildClosingTicketData(details: CashSessionDetailsEntity): ClosingTicketData {
+  const { session, kpis } = details;
 
-  (details.sales || []).forEach((sale) => {
-    (sale.items || []).forEach((item) => {
-      const sku = item.variant?.sku || 'N/A';
-      const name = item.variant?.product?.name || 'Producto';
-      const qty = Number(item.quantity || 0);
-      const lineGross =
-        item.subtotal !== undefined && Number(item.subtotal) > 0
-          ? Number(item.subtotal)
-          : Number(item.price || 0) * qty;
+  // 1. Productos vendidos agrupados por SKU
+  const productMap = new Map<string, { sku: string; name: string; quantity: number; subtotal: number; discount: number; total: number }>();
+  for (const sale of details.sales) {
+    for (const item of sale.items) {
+      const sku = item.sku || 'N/A';
+      const entry = productMap.get(sku) ?? { sku, name: item.productName, quantity: 0, subtotal: 0, discount: 0, total: 0 };
+      entry.quantity += item.quantity;
+      entry.subtotal += item.subtotal;
+      entry.discount += item.discountAmount + item.globalDiscountAmount;
+      entry.total += item.total;
+      productMap.set(sku, entry);
+    }
+  }
+  const productsList = [...productMap.values()];
 
-      const totalLineDiscount =
-        (item.discountAmount !== undefined && Number(item.discountAmount) > 0
-          ? Number(item.discountAmount)
-          : 0) +
-        (item.globalDiscountAmount !== undefined && Number(item.globalDiscountAmount) > 0
-          ? Number(item.globalDiscountAmount)
-          : 0);
-
-      const lineNet =
-        item.total !== undefined && Number(item.total) > 0
-          ? Number(item.total)
-          : Math.max(0, lineGross - totalLineDiscount);
-
-      const existing = productMap.get(sku);
-      if (existing) {
-        existing.quantity += qty;
-        existing.subtotal += lineGross;
-        existing.discount += totalLineDiscount;
-        existing.total += lineNet;
-      } else {
-        productMap.set(sku, {
-          sku,
-          name,
-          quantity: qty,
-          subtotal: lineGross,
-          discount: totalLineDiscount,
-          total: lineNet,
-        });
-      }
-    });
-  });
-  const productsList = Array.from(productMap.values());
-
-  // 2. Desglose de pagos
-  const paymentsBreakdown: { [method: string]: number } = {
-    [PaymentMethod.EFECTIVO]: Number(details.kpis?.cashSales || 0),
-    [PaymentMethod.TARJETA]: Number(details.kpis?.cardSales || 0),
-  };
-
-  // 3. Subtotales y Descuentos
-  const salesSubtotal = (details.sales || []).reduce((sum, s) => {
-    const itemGross = (s.items || []).reduce(
-      (isum, it) => isum + Number(it.price || 0) * Number(it.quantity || 0),
-      0
-    );
-    return sum + (s.subtotal !== undefined && s.subtotal > 0 ? Number(s.subtotal) : itemGross);
+  // 2. Subtotales y descuentos de las ventas
+  const salesSubtotal = details.sales.reduce((sum, sale) => {
+    const itemsGross = sale.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    return sum + (sale.subtotal > 0 ? sale.subtotal : itemsGross);
   }, 0);
-
-  const discountsTotal = (details.sales || []).reduce((sum, s) => {
-    return sum + Number(s.discountAmount || 0);
-  }, 0);
-
-  const refundsTotal = Number(details.kpis?.totalRefunds || 0);
-  const cashSales = Number(details.kpis?.cashSales || 0);
-  const cardSales = Number(details.kpis?.cardSales || 0);
-  const salesCount = Number(details.kpis?.salesCount || details.sales?.length || 0);
-  const totalPieces = productsList.reduce((acc, p) => acc + Number(p.quantity || 0), 0);
-  const cashRegisterName = details.session.cashRegister?.name || '';
-
-  const branchName = details.session.branch?.name || 'Sucursal General';
-  const branchAddress = details.session.branch?.address || '';
+  const discountsTotal = details.sales.reduce((sum, sale) => sum + sale.discountAmount, 0);
 
   return {
-    id: details.session.id,
-    openedAt: details.session.openedAt,
-    closedAt: details.session.closedAt || undefined,
-    openingBalance: Number(details.session.openingBalance || 0),
-    closingBalance: Number(details.session.closingBalance ?? details.session.expectedBalance ?? 0),
-    expectedBalance: Number(details.session.expectedBalance || 0),
-    salesTotal: Number(details.kpis?.netSales || 0),
+    id: session.id,
+    openedAt: session.openedAt,
+    closedAt: session.closedAt || undefined,
+    openingBalance: session.openingBalance,
+    closingBalance: session.closingBalance ?? session.expectedBalance ?? 0,
+    expectedBalance: session.expectedBalance ?? 0,
+    salesTotal: kpis.netSales,
     salesSubtotal: salesSubtotal > 0 ? salesSubtotal : undefined,
     discountsTotal: discountsTotal > 0 ? discountsTotal : undefined,
-    expensesTotal: Number(details.kpis?.totalExpenses || 0),
-    refundsTotal: refundsTotal > 0 ? refundsTotal : undefined,
-    cashSales,
-    cardSales,
-    salesCount,
-    totalPieces,
-    cashRegisterName,
-    expensesList: (details.expenses || []).map((e) => ({
-      description: e.description,
-      amount: Number(e.amount),
-      createdAt: e.createdAt,
-    })),
+    expensesTotal: kpis.totalExpenses,
+    refundsTotal: kpis.totalRefunds > 0 ? kpis.totalRefunds : undefined,
+    cashSales: kpis.cashSales,
+    cardSales: kpis.cardSales,
+    salesCount: kpis.salesCount || details.sales.length,
+    totalPieces: productsList.reduce((acc, product) => acc + product.quantity, 0),
+    cashRegisterName: session.cashRegisterName,
+    expensesList: details.expenses.map((expense) => ({ description: expense.description, amount: expense.amount, createdAt: expense.createdAt })),
     productsList,
-    paymentsBreakdown,
-    refundsList: (details.refunds || []).map((r) => ({
-      id: r.id,
-      reason: r.reason,
-      items: (r.items || []).map((it) => ({
-        name: it.variant?.product?.name || 'Producto',
-        sku: it.variant?.sku || 'N/A',
-        quantity: Number(it.quantity || 0),
-      })),
+    paymentsBreakdown: {
+      [PaymentMethod.EFECTIVO]: kpis.cashSales,
+      [PaymentMethod.TARJETA]: kpis.cardSales,
+    },
+    refundsList: details.refunds.map((refund) => ({ id: refund.id, reason: refund.reason, items: refund.items })),
+    salesList: details.sales.map((sale) => ({
+      invoiceNumber: sale.invoiceNumber,
+      createdAt: sale.createdAt,
+      total: sale.total,
+      paymentMethods: sale.payments.map((payment) => payment.paymentMethod || PaymentMethod.EFECTIVO),
     })),
-    salesList: (details.sales || []).map((s) => ({
-      invoiceNumber: s.invoiceNumber,
-      createdAt: s.createdAt,
-      total: Number(s.total),
-      paymentMethods: (s.payments || []).map((p) => p.paymentMethod || 'EFECTIVO'),
-    })),
-    userName: details.session.user?.name || 'Usuario',
-    branchName,
-    branchAddress,
-    status:
-      details.session.status === CashSessionStatus.CLOSED || !!details.session.closedAt
-        ? CashSessionStatus.CLOSED
-        : CashSessionStatus.OPEN,
+    userName: session.openedByName,
+    branchName: session.branchName,
+    branchAddress: session.branchAddress,
+    status: session.status === CashSessionStatus.CLOSED || !!session.closedAt ? CashSessionStatus.CLOSED : CashSessionStatus.OPEN,
   };
 }

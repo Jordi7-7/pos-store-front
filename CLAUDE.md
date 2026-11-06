@@ -23,6 +23,11 @@ Contexto y reglas para cualquier sesión de trabajo en la web. **Léelo entero a
 - **Offline** se prepara (repositorios como puertos, `clientRequestId` por intento de cobro) pero no se implementa todavía.
 - Stack fijado: TS 6.0.x, pnpm 11, Node 24, React 19, Vite 8.
 
+## Patrón por módulo (referencia: `sales`, `cash-sessions`, `cash-registers`)
+- **Datos:** la vista → hook (`presentation/hooks`) → **repositorio** (interfaz en `application/ports`, implementación `*HttpRepository` en `infrastructure`, que convierte DTO → entidad) o **caso de uso** (`application`) cuando hay reglas. Los hooks obtienen el repositorio/caso de uso de `infrastructure/dependencies.ts` (raíz de composición); **nunca** importan mappers, DTO ni clases HTTP (lo vigila `architecture.test.ts`).
+- **Entidades puras:** solo datos del negocio. Los textos de pantalla (importes con moneda, fechas con zona horaria, etiquetas) se construyen en **view-models** (`presentation/view-models`, funciones puras que reciben `useFormatters()`), nunca en la entidad ni en el mapper. Una regla impide campos `*Formatted`/`*Label` en `domain`.
+- Los módulos aún no migrados (`products`, `customers`, `purchases`, `reports`, `users`…) conservan `components/hooks/services` y mappers que formatean; se migran por etapas.
+
 ## Reglas del código
 - `domain` no importa `react`, `@tanstack/*`, `zustand`, `sonner`, `fetch`, ni nada de `infrastructure`/`presentation`. `application` no importa `infrastructure` ni `presentation`. Lo hace cumplir `src/architecture.test.ts` (reglas en `src/test/layer-rules.ts`; también vigila `infrastructure` → sin `presentation`, UI ni estado). Hallazgos pendientes: `docs/hallazgos-abiertos.md`.
 - La **lógica de negocio no vive en componentes ni en hooks de UI**: va en `domain/rules` (puras, con test) o en un caso de uso. `toast` solo en `presentation`.

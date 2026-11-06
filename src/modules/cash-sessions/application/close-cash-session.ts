@@ -1,5 +1,5 @@
 import { parseCountedCash } from '../domain/cash-closing';
-import type { CashSessionDetails } from '../domain/session-types';
+import type { CashSessionDetailsEntity } from '../domain/entities/cash-session.entity';
 import type { CashSessionsRepository } from './ports/cash-sessions.repository';
 
 export class CloseCashSessionError extends Error {
@@ -15,7 +15,7 @@ export interface CloseCashSessionResult {
    * Resumen real del turno ya cerrado (para el corte Z), o `null` si no se pudo leer. Nunca se
    * inventa: sin él no se imprime corte.
    */
-  details: CashSessionDetails | null;
+  details: CashSessionDetailsEntity | null;
 }
 
 /**
@@ -23,7 +23,7 @@ export interface CloseCashSessionResult {
  * quien calcula el esperado y la diferencia) y después intenta leer el resumen para el corte.
  */
 export class CloseCashSession {
-  constructor(private readonly repository: CashSessionsRepository) {}
+  constructor(private readonly repository: Pick<CashSessionsRepository, 'close' | 'getDetails'>) {}
 
   async execute(input: { sessionId: string; countedCash: string }): Promise<CloseCashSessionResult> {
     const counted = parseCountedCash(input.countedCash);

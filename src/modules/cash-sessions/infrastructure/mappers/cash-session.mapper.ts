@@ -1,4 +1,4 @@
-import type { CashSessionDetails, CashSessionHeader } from '../../domain/session-types';
+import type { ActiveCashSessionDTO, CashSessionDetails, CashSessionHeader } from '../dtos/cash-session.dto';
 import type {
   CashSessionDetailsEntity,
   CashSessionHeaderEntity,
@@ -6,6 +6,7 @@ import type {
   CashSessionSaleEntity,
   CashSessionExpenseEntity,
   CashSessionRefundEntity,
+  ActiveCashSessionEntity,
 } from '../../domain/entities/cash-session.entity';
 
 import { CashSessionStatus, CashSessionDifferenceStatus } from '../../domain/enums';
@@ -80,7 +81,9 @@ export const toCashSessionDetailsEntity = (
       const unitPrice = Number(item.price || 0);
       const qty = Number(item.quantity || 1);
       const discount = Number(item.discountAmount || 0);
-      const lineTotal = Number(item.total ?? (unitPrice * qty - discount));
+      const globalDiscount = Number(item.globalDiscountAmount || 0);
+      const gross = item.subtotal !== undefined && Number(item.subtotal) > 0 ? Number(item.subtotal) : unitPrice * qty;
+      const lineTotal = item.total !== undefined && Number(item.total) > 0 ? Number(item.total) : Math.max(0, gross - discount - globalDiscount);
 
       return {
         id: item.id,
@@ -88,9 +91,12 @@ export const toCashSessionDetailsEntity = (
         sku: item.variant?.sku || '',
         productName: item.variant?.product?.name || 'Producto',
         combinationText,
+        attributeValues: (item.variant?.attributeValues || []).map((av) => av.value).filter(Boolean),
         quantity: qty,
         price: unitPrice,
+        subtotal: gross,
         discountAmount: discount,
+        globalDiscountAmount: globalDiscount,
         total: lineTotal,
       };
     });
@@ -138,6 +144,11 @@ export const toCashSessionDetailsEntity = (
   const refundsEntities: CashSessionRefundEntity[] = (dto.refunds || []).map((ref) => ({
     id: ref.id,
     reason: ref.reason || 'Sin motivo especificado',
+    items: (ref.items || []).map((it) => ({
+      name: it.variant?.product?.name || 'Producto',
+      sku: it.variant?.sku || 'N/A',
+      quantity: Number(it.quantity || 0),
+    })),
     totalRefunded: Number(ref.totalRefunded || 0),
     createdAt: ref.createdAt,
     userName: ref.userName || ref.user?.name || 'Cajero',
@@ -152,3 +163,15 @@ export const toCashSessionDetailsEntity = (
     refunds: refundsEntities,
   };
 };
+
+/** Turno activo, venga plano (`/active`) o anidado (`/open`). */
+export const toActiveCashSessionEntity = (dto: ActiveCashSessionDTO): ActiveCashSessionEntity => ({
+  id: dto.id,
+  branchId: dto.branchId ?? dto.branch?.id,
+  cashRegisterId: dto.cashRegisterId ?? dto.cashRegister?.id,
+  cashRegisterName: dto.cashRegisterName ?? dto.cashRegister?.name,
+  openingBalance: Number(dto.openingBalance || 0),
+  openedAt: dto.openedAt,
+  status: dto.status === CashSessionStatus.CLOSED ? CashSessionStatus.CLOSED : CashSessionStatus.OPEN,
+  openedByName: dto.openedByName ?? dto.user?.name,
+});

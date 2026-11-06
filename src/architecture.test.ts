@@ -40,6 +40,35 @@ describe('el dominio no lleva texto de pantalla', () => {
   });
 });
 
+/**
+ * En los módulos ya migrados, la presentación habla con repositorios y casos de uso a través de la
+ * raíz de composición (`infrastructure/dependencies`): nunca importa mappers, DTO ni clases HTTP.
+ */
+const MIGRATED_MODULES = ['/modules/sales/', '/modules/cash-sessions/', '/modules/cash-registers/'];
+const INFRA_INTERNALS = /infrastructure\/(mappers|dtos|[\w-]+\.http-repository|[\w.-]+\.service)\b/;
+const ALLOWED_INFRA = /infrastructure\/printing\//; // la configuración de la impresora USB es específica del dispositivo
+
+describe('la presentación no usa los internos de infraestructura', () => {
+  it('sales, cash-sessions y cash-registers solo entran por infrastructure/dependencies', () => {
+    const offenders: string[] = [];
+    for (const [path, content] of Object.entries(production)) {
+      if (layerOf(path) !== 'presentation' || !MIGRATED_MODULES.some((m) => path.includes(m))) continue;
+      for (const specifier of importsOf(content)) {
+        if (INFRA_INTERNALS.test(specifier) && !ALLOWED_INFRA.test(specifier)) offenders.push(`${path}: ${specifier}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('la regla detecta un import prohibido y permite la raíz de composición', () => {
+    expect(INFRA_INTERNALS.test('../../infrastructure/mappers/sale.mapper')).toBe(true);
+    expect(INFRA_INTERNALS.test('../../infrastructure/dtos/sales.dto')).toBe(true);
+    expect(INFRA_INTERNALS.test('../../infrastructure/sales.http-repository')).toBe(true);
+    expect(INFRA_INTERNALS.test('../../infrastructure/sales.service')).toBe(true);
+    expect(INFRA_INTERNALS.test('../../infrastructure/dependencies')).toBe(false);
+  });
+});
+
 describe('las reglas detectan las violaciones (si no, la guarda no sirve)', () => {
   const v = (files: Record<string, string>) => findViolations(files);
 

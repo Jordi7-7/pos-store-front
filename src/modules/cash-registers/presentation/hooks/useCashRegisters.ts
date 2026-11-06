@@ -1,11 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  cashRegistersService,
-  type CashRegisterItem,
-  type MyCashRegisterItem,
-  type CreateCashRegisterInput,
-  type UpdateCashRegisterInput,
-} from '../../infrastructure/cash-registers.service';
+import { cashRegistersRepository } from '../../infrastructure/dependencies';
+import type { CreateCashRegisterInput, UpdateCashRegisterInput } from '../../application/ports/cash-registers.repository';
+import type { CashRegisterEntity, MyCashRegisterEntity } from '../../domain/cash-register.entity';
 import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
 import { toast } from 'sonner';
 
@@ -13,9 +9,9 @@ export const useMyCashRegisters = (branchId?: string) => {
   const tenantId = useTenantId();
   const isAuthenticated = useIsAuthenticated();
 
-  const query = useQuery<MyCashRegisterItem[]>({
+  const query = useQuery<MyCashRegisterEntity[]>({
     queryKey: ['my-cash-registers', tenantId, branchId || 'all'],
-    queryFn: () => cashRegistersService.getMyCashRegisters(branchId),
+    queryFn: () => cashRegistersRepository.listMine(branchId),
     enabled: isAuthenticated && !!tenantId,
   });
 
@@ -31,9 +27,9 @@ export const useCashRegisters = (branchId?: string) => {
   const tenantId = useTenantId();
   const isAuthenticated = useIsAuthenticated();
 
-  const query = useQuery<CashRegisterItem[]>({
+  const query = useQuery<CashRegisterEntity[]>({
     queryKey: ['cash-registers', tenantId, branchId || 'all'],
-    queryFn: () => cashRegistersService.getCashRegisters(branchId),
+    queryFn: () => cashRegistersRepository.list(branchId),
     enabled: isAuthenticated && !!tenantId,
   });
 
@@ -49,7 +45,7 @@ export const useCreateCashRegister = () => {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: (input: CreateCashRegisterInput) => cashRegistersService.createCashRegister(input),
+    mutationFn: (input: CreateCashRegisterInput) => cashRegistersRepository.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cash-registers'] });
       toast.success('Caja registradora creada correctamente');
@@ -70,7 +66,7 @@ export const useUpdateCashRegister = () => {
 
   const mutation = useMutation({
     mutationFn: ({ id, input }: { id: string; input: UpdateCashRegisterInput }) =>
-      cashRegistersService.updateCashRegister(id, input),
+      cashRegistersRepository.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cash-registers'] });
       toast.success('Caja registradora actualizada correctamente');
@@ -91,7 +87,7 @@ export const useAssignUsersToRegister = () => {
 
   const mutation = useMutation({
     mutationFn: ({ id, userIds }: { id: string; userIds: string[] }) =>
-      cashRegistersService.assignUsers(id, userIds),
+      cashRegistersRepository.assignUsers(id, userIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cash-registers'] });
       queryClient.invalidateQueries({ queryKey: ['users'] });

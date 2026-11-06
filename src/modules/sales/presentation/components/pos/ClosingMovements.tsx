@@ -1,24 +1,24 @@
 import React, { useState } from 'react';
 import { Layers } from 'lucide-react';
-import { formatMoney } from '@/modules/auth/hooks/useSession';
-import { useTimezone } from '@/modules/auth/hooks/useSession';
-import type { SessionExpense, SessionRefund, SessionSale } from '@/modules/cash-sessions/domain/session-types';
+import { useFormatters } from '@/modules/auth/hooks/useFormatters';
+import type { CashSessionExpenseVM, CashSessionRefundVM, CashSessionSaleVM } from '@/modules/cash-sessions/presentation/view-models/cash-session.vm';
+import { SaleStatus } from '@/modules/sales/domain/enums';
 import type { ProductSummaryItem } from '@/modules/cash-sessions/domain/closing-summary';
 
 type TabType = 'sales' | 'products' | 'expenses' | 'refunds';
 
 /** Desglose de ventas, artículos, gastos y devoluciones del turno, por pestañas. */
 interface ClosingMovementsProps {
-  sales: SessionSale[];
-  expenses: SessionExpense[];
-  refunds: SessionRefund[];
+  sales: CashSessionSaleVM[];
+  expenses: CashSessionExpenseVM[];
+  refunds: CashSessionRefundVM[];
   productsSummary: ProductSummaryItem[];
   salesCount: number;
 }
 
 export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activeSessionSales, expenses: activeSessionExpenses, refunds: activeSessionRefunds, productsSummary, salesCount }) => {
   const [activeTab, setActiveTab] = useState<TabType>('sales');
-  const timezone = useTimezone();
+  const fmt = useFormatters();
 
   return (
     <div className="border border-border-card rounded-xl bg-bg-dark/30 p-2.5 space-y-2">
@@ -88,20 +88,7 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
           ) : (
             <div className="space-y-1.5">
               {activeSessionSales.map((sale) => {
-                const timeStr = new Date(sale.createdAt).toLocaleTimeString(undefined, {
-                  timeZone: timezone,
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: false,
-                });
-
-                // Deduplicar métodos de pago (evita 'EFECTIVO/EFECTIVO')
-                const uniqueMethods = Array.from(
-                  new Set(
-                    (sale.payments || []).map((p) => p.paymentMethod).filter(Boolean)
-                  )
-                );
-                const methodsStr = uniqueMethods.length > 0 ? uniqueMethods.join('/') : sale.paymentMethod;
+                const methodsStr = Array.from(new Set(sale.payments.map((p) => p.paymentMethod).filter(Boolean))).join('/') || sale.paymentMethod;
 
                 return (
                   <div
@@ -109,19 +96,19 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
                     className="flex justify-between items-center text-[10.5px] border-b border-border-card/40 pb-1 last:border-b-0 last:pb-0 font-mono"
                   >
                     <div className="flex items-center gap-1.5 truncate max-w-[280px]">
-                      <span className="text-neutral">[{timeStr}]</span>
+                      <span className="text-neutral">[{sale.createdAtFormatted}]</span>
                       <span className="text-secondary font-semibold">{sale.invoiceNumber}</span>
                       <span className="text-[9px] px-1 py-0.2 rounded bg-bg-dark text-neutral border border-border-card">
                         {methodsStr}
                       </span>
-                      {sale.status === 'REFUNDED' && (
+                      {sale.status === SaleStatus.REFUNDED && (
                         <span className="text-[9px] px-1 rounded bg-rose-500/10 text-rose-500 font-sans font-bold">
                           Reembolsada
                         </span>
                       )}
                     </div>
                     <span className="font-bold text-secondary">
-                      {formatMoney(Number(sale.total || 0))}
+                      {sale.totalFormatted}
                     </span>
                   </div>
                 );
@@ -149,7 +136,7 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
                   </div>
                   <div className="flex items-center gap-3 shrink-0 font-mono">
                     <span className="text-neutral text-[10px]">x{prod.quantity}</span>
-                    <span className="font-bold text-secondary">{formatMoney(prod.total)}</span>
+                    <span className="font-bold text-secondary">{fmt.money(prod.total)}</span>
                   </div>
                 </div>
               ))}
@@ -166,23 +153,17 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
           ) : (
             <div className="space-y-1.5">
               {activeSessionExpenses.map((exp) => {
-                const timeStr = new Date(exp.createdAt).toLocaleTimeString(undefined, {
-                  timeZone: timezone,
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: false,
-                });
                 return (
                   <div
                     key={exp.id}
                     className="flex justify-between items-center text-[10.5px] border-b border-border-card/40 pb-1 last:border-b-0 last:pb-0 font-mono"
                   >
                     <div className="truncate max-w-[280px]">
-                      <span className="text-neutral mr-1.5">[{timeStr}]</span>
+                      <span className="text-neutral mr-1.5">[{exp.createdAtFormatted}]</span>
                       <span className="text-secondary font-sans">{exp.description}</span>
                     </div>
                     <span className="font-bold text-rose-500">
-                      -{formatMoney(Number(exp.amount || 0))}
+                      {exp.amountFormatted}
                     </span>
                   </div>
                 );
@@ -200,23 +181,17 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
           ) : (
             <div className="space-y-1.5">
               {activeSessionRefunds.map((refund) => {
-                const timeStr = new Date(refund.createdAt).toLocaleTimeString(undefined, {
-                  timeZone: timezone,
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: false,
-                });
                 return (
                   <div
                     key={refund.id}
                     className="flex justify-between items-center text-[10.5px] border-b border-border-card/40 pb-1 last:border-b-0 last:pb-0 font-mono"
                   >
                     <div className="truncate max-w-[280px]">
-                      <span className="text-neutral mr-1.5">[{timeStr}]</span>
+                      <span className="text-neutral mr-1.5">[{refund.createdAtFormatted}]</span>
                       <span className="text-secondary font-sans">{refund.reason || 'Devolución de prendas'}</span>
                     </div>
                     <span className="font-bold text-amber-600">
-                      -{formatMoney(Number(refund.totalRefunded || 0))}
+                      {refund.totalRefundedFormatted}
                     </span>
                   </div>
                 );

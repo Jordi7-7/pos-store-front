@@ -52,7 +52,7 @@ export interface CheckoutResult {
  */
 export class Checkout {
   constructor(
-    private readonly repository: SalesRepository,
+    private readonly repository: Pick<SalesRepository, 'processSale'>,
     private readonly attempts: CheckoutAttempt,
   ) {}
 

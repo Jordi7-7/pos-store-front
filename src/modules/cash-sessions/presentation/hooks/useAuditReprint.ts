@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import type { CashSessionDetails } from '../../domain/session-types';
+import type { CashSessionDetailsEntity } from '../../domain/entities/cash-session.entity';
 import type { CashSessionDetailsVM, CashSessionSaleVM } from '../view-models/cash-session.vm';
 import { buildClosingTicketData, type ClosingTicketData } from '../../domain/closing-ticket';
 import type { TicketSaleData } from '@/modules/sales/domain/ticket';
 
 /** Reimpresión desde la auditoría: ticket de una venta o corte Z del turno consultado. */
-export function useAuditReprint(details: CashSessionDetailsVM | null, rawDetails: CashSessionDetails | null) {
+export function useAuditReprint(details: CashSessionDetailsVM | null, entity: CashSessionDetailsEntity | null) {
   const [saleTicket, setSaleTicket] = useState<TicketSaleData | null>(null);
   const [closingTicket, setClosingTicket] = useState<ClosingTicketData | null>(null);
 
@@ -38,7 +38,7 @@ export function useAuditReprint(details: CashSessionDetailsVM | null, rawDetails
   };
 
   const printSession = () => {
-    if (rawDetails) setClosingTicket(buildClosingTicketData(rawDetails));
+    if (entity) setClosingTicket(buildClosingTicketData(entity));
   };
 
   return {

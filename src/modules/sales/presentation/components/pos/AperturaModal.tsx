@@ -6,14 +6,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { MyCashRegisterItem } from '@/modules/cash-registers/infrastructure/cash-registers.service';
+import type { MyCashRegisterEntity } from '@/modules/cash-registers/domain/cash-register.entity';
 
 interface AperturaModalProps {
   isOpen: boolean;
   onClose: () => void;
   openingBalance: string;
   setOpeningBalance: (val: string) => void;
-  availableRegisters: MyCashRegisterItem[];
+  availableRegisters: MyCashRegisterEntity[];
   selectedRegisterId: string;
   setSelectedRegisterId: (id: string) => void;
   isSingleAssigned: boolean;

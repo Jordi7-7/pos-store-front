@@ -11,13 +11,14 @@ import { ticketPrinter } from '../../../infrastructure/dependencies';
 import { useActiveCashSession, useCloseCashSession, useOpenCashSession } from '../useCashSession';
 import { useRegisterExpense } from '../useSalesMutations';
 import { useTicketFormat } from '../useTicketFormat';
-import type { ActiveCashSession, ClosingDetailsStatus } from '@/modules/cash-sessions/domain/session-types';
+import type { ActiveCashSessionEntity } from '@/modules/cash-sessions/domain/entities/cash-session.entity';
+import type { ClosingDetailsStatus } from '@/modules/cash-sessions/presentation/view-models/closing-details-status';
 
 const EXPENSE_CATEGORY = 'Servicios';
 
 interface Options {
-  externalActiveSession?: ActiveCashSession | null;
-  setExternalActiveSession?: (session: ActiveCashSession | null) => void;
+  externalActiveSession?: ActiveCashSessionEntity | null;
+  setExternalActiveSession?: (session: ActiveCashSessionEntity | null) => void;
 }
 
 /**
@@ -33,14 +34,14 @@ export function usePOSShift({ externalActiveSession, setExternalActiveSession }:
 
   // Sesión activa: la que llega por props o, si no, la que consulta el servidor
   const { activeSession: queryActiveCashSession } = useActiveCashSession(selectedBranchId || undefined);
-  const [internalSession, setInternalSession] = useState<ActiveCashSession | null>(null);
+  const [internalSession, setInternalSession] = useState<ActiveCashSessionEntity | null>(null);
   useEffect(() => {
     if (queryActiveCashSession !== undefined) setInternalSession(queryActiveCashSession && queryActiveCashSession.id ? queryActiveCashSession : null);
   }, [queryActiveCashSession]);
 
   const rawSession = externalActiveSession !== undefined ? externalActiveSession : internalSession;
   const activeSession = rawSession && rawSession.id ? rawSession : null;
-  const setActiveCashSession = (session: ActiveCashSession | null) => {
+  const setActiveCashSession = (session: ActiveCashSessionEntity | null) => {
     const valid = session && session.id ? session : null;
     setInternalSession(valid);
     setExternalActiveSession?.(valid);
@@ -65,7 +66,7 @@ export function usePOSShift({ externalActiveSession, setExternalActiveSession }:
   const [isPrinterConfigOpen, setIsPrinterConfigOpen] = useState(false);
 
   // El resumen del turno solo se pide cuando se abre el cierre o el historial
-  const { rawDetails: sessionDetails, isError: isSessionDetailsError } = useCashSessionDetailsQuery(activeSession?.id || null, {
+  const { details: sessionDetails, isError: isSessionDetailsError } = useCashSessionDetailsQuery(activeSession?.id || null, {
     enabled: isCierreModalOpen || isHistorialModalOpen,
   });
   const detailsStatus: ClosingDetailsStatus = sessionDetails ? 'ready' : isSessionDetailsError ? 'unavailable' : 'loading';

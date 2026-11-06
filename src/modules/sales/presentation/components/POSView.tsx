@@ -3,7 +3,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import { useTenant, useTimezone } from '@/modules/auth/hooks/useSession';
 import { CashSessionAuditModal } from '@/modules/cash-sessions/presentation/components/CashSessionAuditModal';
-import type { ActiveCashSession } from '@/modules/cash-sessions/domain/session-types';
+import type { ActiveCashSessionEntity } from '@/modules/cash-sessions/domain/entities/cash-session.entity';
 import { toast } from 'sonner';
 
 import { usePOSCart } from '../hooks/usePOSCart';
@@ -28,8 +28,8 @@ import { CierreModal } from './pos/CierreModal';
 import { ExchangeReturnModal } from './pos/ExchangeReturnModal';
 
 interface POSViewProps {
-  activeSession?: ActiveCashSession | null;
-  setActiveSession?: (session: ActiveCashSession | null) => void;
+  activeSession?: ActiveCashSessionEntity | null;
+  setActiveSession?: (session: ActiveCashSessionEntity | null) => void;
 }
 
 /** Contenedor del POS: junta turno, carrito, pagos y cobro (cada uno en su hook) y dibuja las piezas. */

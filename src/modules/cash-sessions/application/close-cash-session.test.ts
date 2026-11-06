@@ -1,12 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import { CloseCashSession, CloseCashSessionError } from './close-cash-session';
 import type { CashSessionsRepository } from './ports/cash-sessions.repository';
-import type { CashSessionDetails } from '../domain/session-types';
+import type { CashSessionDetailsEntity } from '../domain/entities/cash-session.entity';
 
-const details = { session: { id: 's1' } } as unknown as CashSessionDetails;
+const details = { session: { id: 's1' } } as unknown as CashSessionDetailsEntity;
 
-function setup(overrides: Partial<CashSessionsRepository> = {}) {
-  const repository: CashSessionsRepository = {
+type Port = Pick<CashSessionsRepository, 'close' | 'getDetails'>;
+
+function setup(overrides: Partial<Port> = {}) {
+  const repository: Port = {
     close: vi.fn(async () => undefined),
     getDetails: vi.fn(async () => details),
     ...overrides,

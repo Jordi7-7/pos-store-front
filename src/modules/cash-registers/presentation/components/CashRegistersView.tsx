@@ -30,7 +30,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
-import type { CashRegisterItem } from '../../infrastructure/cash-registers.service';
+import type { CashRegisterEntity } from '../../domain/cash-register.entity';
 import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 export const CashRegistersView: React.FC = () => {
@@ -59,19 +59,19 @@ export const CashRegistersView: React.FC = () => {
 
   // Modal Edit
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editingRegister, setEditingRegister] = useState<CashRegisterItem | null>(null);
+  const [editingRegister, setEditingRegister] = useState<CashRegisterEntity | null>(null);
   const [editName, setEditName] = useState('');
   const [editIsActive, setEditIsActive] = useState(true);
 
   // Modal Assign Users
   const [showAssignModal, setShowAssignModal] = useState(false);
-  const [assigningRegister, setAssigningRegister] = useState<CashRegisterItem | null>(null);
+  const [assigningRegister, setAssigningRegister] = useState<CashRegisterEntity | null>(null);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [assignUserSearch, setAssignUserSearch] = useState('');
 
   // Filtered registers
   const filteredRegisters = useMemo(() => {
-    return cashRegisters.filter((r: CashRegisterItem) => {
+    return cashRegisters.filter((r: CashRegisterEntity) => {
       const matchesSearch =
         r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.branchName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -109,7 +109,7 @@ export const CashRegistersView: React.FC = () => {
   };
 
   // Open Edit Modal
-  const handleOpenEdit = (reg: CashRegisterItem) => {
+  const handleOpenEdit = (reg: CashRegisterEntity) => {
     setEditingRegister(reg);
     setEditName(reg.name);
     setEditIsActive(reg.isActive);
@@ -138,7 +138,7 @@ export const CashRegistersView: React.FC = () => {
   };
 
   // Open Assign Users Modal
-  const handleOpenAssign = (reg: CashRegisterItem) => {
+  const handleOpenAssign = (reg: CashRegisterEntity) => {
     setAssigningRegister(reg);
     setSelectedUserIds(reg.assignedUserIds || []);
     setAssignUserSearch('');
@@ -257,7 +257,7 @@ export const CashRegistersView: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredRegisters.map((reg: CashRegisterItem) => {
+            {filteredRegisters.map((reg: CashRegisterEntity) => {
               const isTurnoAbierto = reg.isOpen;
               const assignedCount = (reg.assignedUserIds || []).length;
 

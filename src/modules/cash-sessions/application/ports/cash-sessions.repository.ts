@@ -1,7 +1,8 @@
-import type { CashSessionDetails } from '../../domain/session-types';
+import type { CashSessionDetailsEntity, CashSessionHeaderEntity } from '../../domain/entities/cash-session.entity';
 
-/** Puerto de salida: cerrar un turno y leer su resumen (la implementación va en `infrastructure`). */
+/** Puerto de salida: turnos de caja en el servidor (la implementación va en `infrastructure`). */
 export interface CashSessionsRepository {
+  list(branchId?: string): Promise<CashSessionHeaderEntity[]>;
+  getDetails(sessionId: string): Promise<CashSessionDetailsEntity>;
   close(sessionId: string, closingBalance: number): Promise<void>;
-  getDetails(sessionId: string): Promise<CashSessionDetails>;
 }

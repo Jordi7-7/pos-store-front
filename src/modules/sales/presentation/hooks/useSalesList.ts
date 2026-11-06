@@ -2,10 +2,8 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useFormatters } from '@/modules/auth/hooks/useFormatters';
 import { toSaleSummaryVM } from '../view-models/sale.vm';
-import { salesService } from '../../infrastructure/sales.service';
-import type { PaginatedSalesDTO } from '../../infrastructure/dtos/sales.dto';
-import { toSaleSummaryEntities } from '../../infrastructure/mappers/sale.mapper';
-import type { SaleSummaryEntity } from '../../domain/entities/sale.entity';
+import { salesRepository } from '../../infrastructure/dependencies';
+import type { SalesPage } from '../../application/ports/sales.repository';
 import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
 
 export interface UsePaginatedSalesParams {
@@ -21,13 +19,9 @@ export const usePaginatedSales = (params: UsePaginatedSalesParams) => {
   const isAuthenticated = useIsAuthenticated();
   const fmt = useFormatters();
 
-  const salesQuery = useQuery<PaginatedSalesDTO, Error, { items: SaleSummaryEntity[]; meta: PaginatedSalesDTO['meta'] }>({
+  const salesQuery = useQuery<SalesPage, Error>({
     queryKey: ['sales-paginated', tenantId, params.startDate, params.endDate, params.page, params.limit, params.branchId],
-    queryFn: () => salesService.getPaginatedSales(params),
-    select: (res) => ({
-      items: toSaleSummaryEntities(res.data),
-      meta: res.meta,
-    }),
+    queryFn: () => salesRepository.list(params),
     enabled: isAuthenticated && !!tenantId,
   });
 

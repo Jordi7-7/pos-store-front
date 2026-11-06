@@ -1,4 +1,6 @@
 import type { PaymentMethod } from '../../domain/enums';
+import type { SaleDetailEntity, SaleSummaryEntity } from '../../domain/entities/sale.entity';
+import type { ActiveCashSessionEntity } from '@/modules/cash-sessions/domain/entities/cash-session.entity';
 
 export interface ProcessSaleItem {
   variantId: string;
@@ -36,7 +38,51 @@ export interface SaleReceipt {
   createdAt?: string;
 }
 
-/** Puerto de salida: cómo se registra una venta en el servidor (la implementación va en `infrastructure`). */
+export interface OpenCashSessionInput {
+  branchId: string;
+  cashRegisterId: string;
+  openingBalance: number;
+}
+
+export interface RegisterExpenseInput {
+  branchId: string;
+  cashSessionId?: string;
+  description: string;
+  amount: number;
+  category: string;
+}
+
+export interface ProcessRefundInput {
+  branchId: string;
+  saleId: string;
+  cashSessionId: string;
+  reason: string;
+  items: Array<{ variantId: string; quantity: number }>;
+}
+
+export interface SalesQuery {
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+  branchId?: string;
+}
+
+export interface SalesPage {
+  items: SaleSummaryEntity[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
+/**
+ * Puerto de salida: ventas y turnos de caja en el servidor. La implementación (`infrastructure`)
+ * habla HTTP y devuelve entidades del dominio; los DTO no salen de ahí.
+ */
 export interface SalesRepository {
   processSale(input: ProcessSaleInput): Promise<SaleReceipt>;
+  list(query: SalesQuery): Promise<SalesPage>;
+  getByInvoice(invoiceNumber: string): Promise<SaleDetailEntity>;
+  openCashSession(input: OpenCashSessionInput): Promise<ActiveCashSessionEntity>;
+  getActiveCashSession(branchId?: string, cashRegisterId?: string): Promise<ActiveCashSessionEntity | null>;
+  registerExpense(input: RegisterExpenseInput): Promise<void>;
+  processRefund(input: ProcessRefundInput): Promise<void>;
 }

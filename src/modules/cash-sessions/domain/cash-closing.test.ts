@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cashDifference, classifyDifference, expectedCashBalance, parseCountedCash, summarizeCashSession } from './cash-closing';
+import { cashDifference, classifyDifference, expectedCashBalance, parseCountedCash } from './cash-closing';
 
 describe('arqueo (paridad con el backend)', () => {
   it('esperado = apertura + efectivo − gastos − devoluciones, sin errores de coma flotante', () => {
@@ -24,17 +24,5 @@ describe('arqueo (paridad con el backend)', () => {
     expect(parseCountedCash('100')).toBe(100);
     expect(parseCountedCash('100.50')).toBe(100.5);
     expect(parseCountedCash('0')).toBe(0);
-  });
-
-  it('totales de sesión: efectivo/tarjeta por pagos; sin pagos cuenta como efectivo; neto nunca bajo cero', () => {
-    const totals = summarizeCashSession({
-      sales: [
-        { total: 310, payments: [{ paymentMethod: 'EFECTIVO', amount: 100 }, { paymentMethod: 'TARJETA', amount: 210 }] },
-        { total: '50.00', payments: [] },
-      ],
-      expenseAmounts: [20],
-      refundAmounts: [400],
-    });
-    expect(totals).toEqual({ grossSales: 360, netSales: 0, cashSales: 150, cardSales: 210, totalExpenses: 20, totalRefunds: 400 });
   });
 });

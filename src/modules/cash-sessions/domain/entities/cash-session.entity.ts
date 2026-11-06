@@ -46,9 +46,15 @@ export interface CashSessionSaleItemEntity {
   sku: string;
   productName: string;
   combinationText: string;
+  /** Valores de atributos de la variante (talla, color…), en orden. */
+  attributeValues: string[];
   quantity: number;
   price: number;
+  /** Importe bruto de la línea (precio × cantidad). */
+  subtotal: number;
   discountAmount: number;
+  globalDiscountAmount: number;
+  /** Lo que se cobró por la línea (neto, tras el descuento global). */
   total: number;
 }
 
@@ -86,9 +92,16 @@ export interface CashSessionExpenseEntity {
   category: string;
 }
 
+export interface CashSessionRefundItemEntity {
+  name: string;
+  sku: string;
+  quantity: number;
+}
+
 export interface CashSessionRefundEntity {
   id: string;
   reason: string;
+  items: CashSessionRefundItemEntity[];
   totalRefunded: number;
   createdAt: string;
   userName: string;
@@ -101,4 +114,16 @@ export interface CashSessionDetailsEntity {
   sales: CashSessionSaleEntity[];
   expenses: CashSessionExpenseEntity[];
   refunds: CashSessionRefundEntity[];
+}
+
+/** Turno abierto del usuario en una sucursal: lo que el POS necesita para vender. */
+export interface ActiveCashSessionEntity {
+  id: string;
+  branchId?: string;
+  cashRegisterId?: string;
+  cashRegisterName?: string;
+  openingBalance: number;
+  openedAt: string;
+  status: CashSessionStatus;
+  openedByName?: string;
 }

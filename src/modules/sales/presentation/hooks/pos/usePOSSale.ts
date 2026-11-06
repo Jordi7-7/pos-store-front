@@ -6,7 +6,7 @@ import { formatMoney, useTenant } from '@/modules/auth/hooks/useSession';
 import { useFormatters } from '@/modules/auth/hooks/useFormatters';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 import { getErrorMessage } from '@/shared/presentation/error-messages';
-import type { ActiveCashSession } from '@/modules/cash-sessions/domain/session-types';
+import type { ActiveCashSessionEntity } from '@/modules/cash-sessions/domain/entities/cash-session.entity';
 import { CheckoutError } from '../../../application/checkout';
 import type { CartItem } from '../../../domain/cart-item';
 import { PaymentMethod } from '../../../domain/enums';
@@ -26,7 +26,7 @@ interface Options {
   branchId: string | null;
   branchName: string;
   branchAddress: string;
-  activeSession: ActiveCashSession | null;
+  activeSession: ActiveCashSessionEntity | null;
   customers: Customer[];
   selectedCustomerId: string;
   cart: CartItem[];
