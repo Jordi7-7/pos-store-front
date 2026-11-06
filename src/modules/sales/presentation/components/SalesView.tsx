@@ -10,7 +10,7 @@ import { toTicketSaleData, SALE_STATUS_BADGE } from '../view-models/sale.vm';
 import { useFormatters } from '@/modules/auth/presentation/hooks/useFormatters';
 import { useTenant } from '@/modules/auth/presentation/hooks/useSession';
 import { useLayoutContext } from '@/providers/LayoutContext';
-import { ProductPagination } from '@/modules/products/components/ProductPagination';
+import { PaginationControls } from '@/shared/presentation/components/PaginationControls';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Field } from '@/components/ui/field';
@@ -104,7 +104,7 @@ export const SalesView: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <ProductPagination meta={meta} onPageChange={setPage} onLimitChange={(nextLimit) => { setLimit(nextLimit); setPage(1); }} />
+          <PaginationControls meta={meta} onPageChange={setPage} onLimitChange={(nextLimit) => { setLimit(nextLimit); setPage(1); }} />
           {isLoading ? (
             <div className="py-16 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
           ) : sales.length === 0 ? (

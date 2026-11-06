@@ -8,6 +8,6 @@ export * from './ProductDetailModal';
 export * from './ProductEditDrawer';
 export * from './ProductVariableEditModal';
 export * from './StockAdjustmentForm';
-export * from './ProductPagination';
+export * from '../../../shared/presentation/components/PaginationControls';
 export * from './BulkImportModal';
 export * from './detail';

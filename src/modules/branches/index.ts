@@ -1,3 +1,4 @@
-export * from './services/branches.service';
-export * from './hooks/useBranches';
-export * from './components/BranchesManagementTab';
+// API pública del módulo.
+export type { Branch } from './domain/branch.entity';
+export * from './presentation/hooks/useBranches';
+export * from './presentation/components/BranchesManagementTab';

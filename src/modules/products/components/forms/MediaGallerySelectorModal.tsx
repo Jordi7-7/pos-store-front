@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Search, X, Check, Loader2, ImageIcon } from 'lucide-react';
-import { useMediaUpload } from '@/modules/media/hooks/useMedia';
-import type { RegisteredImage } from '@/modules/media/services/media.service';
-import { ProductPagination } from '@/modules/products/components/ProductPagination';
+import { useMediaUpload } from '@/modules/media/presentation/hooks/useMedia';
+import type { RegisteredImage } from '@/modules/media';
+import { PaginationControls } from '@/shared/presentation/components/PaginationControls';
 
 interface MediaGallerySelectorModalProps {
   open: boolean;
@@ -153,7 +153,7 @@ export const MediaGallerySelectorModal: React.FC<MediaGallerySelectorModalProps>
         {/* Footer with pagination */}
         <div className="px-6 py-3 border-t border-border bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <div className="w-full sm:w-auto">
-            <ProductPagination
+            <PaginationControls
               meta={meta}
               onPageChange={setPage}
               onLimitChange={(newLimit) => {

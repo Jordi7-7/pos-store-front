@@ -3,7 +3,7 @@ import { apiClient } from '@/lib/apiClient';
 import { Globe, DollarSign, Clock, Building, Save, AlertCircle, Loader2, Link2, Image as ImageIcon, UploadCloud, Upload, Trash2, Palette, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthStore } from '../../auth/presentation/stores/useAuthStore';
-import { mediaService } from '@/modules/media/services/media.service';
+import { useFileUpload } from '@/modules/media';
 import { getSavedTheme, saveTheme, DEFAULT_THEME, type TenantThemeColors } from '@/lib/themeManager';
 import { BranchesManagementTab } from '@/modules/branches';
 
@@ -69,6 +69,7 @@ export const TenantSettings: React.FC = () => {
   const [timezone, setTimezone] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploadFile } = useFileUpload();
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [activeTab, setActiveTab] = useState<'general' | 'branches'>('general');
 
@@ -139,8 +140,7 @@ export const TenantSettings: React.FC = () => {
 
     try {
       setIsUploadingLogo(true);
-      const { uploadUrl, fileUrl } = await mediaService.getPresignedUrl(file.name, file.type);
-      await mediaService.uploadToR2(uploadUrl, file);
+      const fileUrl = await uploadFile(file);
       setLogoUrl(fileUrl);
       toast.success('Logotipo subido al bucket exitosamente');
     } catch (err: any) {

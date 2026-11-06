@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { VariantBatchEntity } from '../../entities';
 import { BatchStatus } from '../../enums';
 import { useVariantBatches } from '../../hooks';
-import { ProductPagination } from '../ProductPagination';
+import { PaginationControls } from '../../../../shared/presentation/components/PaginationControls';
 import { Badge } from '@/components/ui/badge';
 import { Boxes, Loader2 } from 'lucide-react';
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
@@ -28,7 +28,7 @@ export const ProductDetailBatchesTab: React.FC<ProductDetailBatchesTabProps> = (
 
   return (
     <div className="space-y-4">
-      <ProductPagination
+      <PaginationControls
         meta={meta}
         onPageChange={setPage}
         onLimitChange={(nextLimit) => {

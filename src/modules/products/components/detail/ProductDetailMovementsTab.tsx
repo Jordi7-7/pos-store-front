@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { InventoryMovementEntity } from '../../entities';
 import { InventoryMovementType } from '../../enums';
 import { useInventoryMovementsByVariant } from '../../hooks';
-import { ProductPagination } from '../ProductPagination';
+import { PaginationControls } from '../../../../shared/presentation/components/PaginationControls';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardList, Loader2 } from 'lucide-react';
 
@@ -29,7 +29,7 @@ export const ProductDetailMovementsTab: React.FC<ProductDetailMovementsTabProps>
 
   return (
     <div className="space-y-4">
-      <ProductPagination
+      <PaginationControls
         meta={meta}
         onPageChange={setPage}
         onLimitChange={(nextLimit) => {

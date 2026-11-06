@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/table';
 import { useBatches } from '../hooks';
 import { BatchStatus } from '../enums';
-import { ProductPagination } from './ProductPagination';
+import { PaginationControls } from '../../../shared/presentation/components/PaginationControls';
 
 interface ProductBatchesTabProps {
   selectedBranchId: string;
@@ -450,7 +450,7 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
         {/* Pagination */}
         {!loading && lots.length > 0 && (
           <div className="mt-4 pt-3 border-t border-border-card">
-            <ProductPagination
+            <PaginationControls
               meta={meta}
               onPageChange={setPage}
               onLimitChange={(l) => { setLimit(l); setPage(1); }}

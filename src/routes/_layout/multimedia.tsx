@@ -1,7 +1,7 @@
 import { guardRoute } from '@/modules/auth/presentation/hooks/route-guard';
 import { useState, useEffect } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
-import { MediaView } from '@/modules/media/components/MediaView';
+import { MediaView } from '@/modules/media/presentation/components/MediaView';
 import { useMediaUpload } from '@/modules/media';
 import { toast } from 'sonner';
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { ProductHistoryPurchaseDTO } from '../../types';
 import { useVariantPurchases } from '../../hooks';
-import { ProductPagination } from '../ProductPagination';
+import { PaginationControls } from '../../../../shared/presentation/components/PaginationControls';
 import { Badge } from '@/components/ui/badge';
 import { Truck, Loader2 } from 'lucide-react';
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
@@ -27,7 +27,7 @@ export const ProductDetailPurchasesTab: React.FC<ProductDetailPurchasesTabProps>
 
   return (
     <div className="space-y-4">
-      <ProductPagination
+      <PaginationControls
         meta={meta}
         onPageChange={setPage}
         onLimitChange={(nextLimit) => {

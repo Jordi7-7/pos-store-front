@@ -44,13 +44,13 @@ describe('el dominio no lleva texto de pantalla', () => {
  * En los módulos ya migrados, la presentación habla con repositorios y casos de uso a través de la
  * raíz de composición (`infrastructure/dependencies`): nunca importa mappers, DTO ni clases HTTP.
  */
-const MIGRATED_MODULES = ['/modules/sales/', '/modules/cash-sessions/', '/modules/cash-registers/', '/modules/printing/', '/modules/auth/'];
+const MIGRATED_MODULES = ['/modules/sales/', '/modules/cash-sessions/', '/modules/cash-registers/', '/modules/printing/', '/modules/auth/', '/modules/branches/', '/modules/customers/', '/modules/media/'];
 const INFRA_INTERNALS = /infrastructure\/(mappers|dtos|[\w-]+\.http-repository|[\w.-]+\.service)\b/;
 /** `printing` es un módulo de dispositivo: sus pantallas de vista previa y configuración usan su propia infraestructura (generador ESC/POS, impresora USB). */
 const DEVICE_MODULES = ['/modules/printing/'];
 
 describe('la presentación no usa los internos de infraestructura', () => {
-  it('sales, cash-sessions, cash-registers, printing y auth solo entran por infrastructure/dependencies', () => {
+  it('los módulos migrados solo entran por infrastructure/dependencies', () => {
     const offenders: string[] = [];
     for (const [path, content] of Object.entries(production)) {
       if (layerOf(path) !== 'presentation' || !MIGRATED_MODULES.some((m) => path.includes(m))) continue;
@@ -78,13 +78,16 @@ describe('la presentación no usa los internos de infraestructura', () => {
  */
 const ALLOWED_DEPENDENCIES: Record<string, string[]> = {
   auth: [],
+  branches: ['auth'],
+  customers: ['auth'],
+  media: ['auth'],
   printing: ['auth'],
   'cash-sessions': ['auth', 'printing'],
   'cash-registers': ['auth', 'branches', 'users'],
   sales: ['auth', 'branches', 'cash-registers', 'cash-sessions', 'customers', 'printing', 'products'],
 };
-/** Ciclos que ya existían en módulos sin migrar. La lista solo puede encogerse. */
-const KNOWN_LEGACY_CYCLES = [['media', 'products']];
+/** Ciclos heredados de módulos sin migrar. La lista solo puede encogerse (hoy no queda ninguno). */
+const KNOWN_LEGACY_CYCLES: string[][] = [];
 
 describe('dependencias entre módulos', () => {
   const graph = moduleDependencies(production);

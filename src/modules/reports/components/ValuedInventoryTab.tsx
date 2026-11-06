@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useTimezone } from '../../auth/presentation/hooks/useSession';
 import { useValuedInventoryReport } from '../hooks/useReports';
-import { ProductPagination } from '@/modules/products/components/ProductPagination';
+import { PaginationControls } from '@/shared/presentation/components/PaginationControls';
 import { 
   reportsService 
 } from '../services/reports.service';
@@ -357,7 +357,7 @@ export const ValuedInventoryTab: React.FC<ValuedInventoryTabProps> = ({ selected
                 </TableFooter>
               </Table>
             </div>
-            <ProductPagination 
+            <PaginationControls 
               meta={meta} 
               onPageChange={setPage} 
               onLimitChange={(newLimit) => {

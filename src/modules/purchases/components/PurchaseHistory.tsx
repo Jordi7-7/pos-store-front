@@ -16,7 +16,7 @@ import type { Supplier } from '../types';
 import type { PurchaseEntity } from '../entities';
 import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { ProductPagination } from '@/modules/products/components/ProductPagination';
+import { PaginationControls } from '@/shared/presentation/components/PaginationControls';
 import { format } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { Calendar } from '@/components/ui/calendar';
@@ -203,7 +203,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
           </div>
         </CardHeader>
         <CardContent className="p-6">
-          <ProductPagination
+          <PaginationControls
             meta={meta}
             onPageChange={setPage}
             onLimitChange={(nextLimit) => {
@@ -376,7 +376,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
           })}
           {purchases.length > 0 && (
             <div className="pt-4">
-              <ProductPagination
+              <PaginationControls
                 meta={meta}
                 onPageChange={setPage}
                 onLimitChange={(nextLimit) => {

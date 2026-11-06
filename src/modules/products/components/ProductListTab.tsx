@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ProductPagination } from './ProductPagination';
+import { PaginationControls } from '../../../shared/presentation/components/PaginationControls';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -344,7 +344,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        <ProductPagination meta={meta} onPageChange={onPageChange} onLimitChange={onLimitChange} />
+        <PaginationControls meta={meta} onPageChange={onPageChange} onLimitChange={onLimitChange} />
 
         {isLoading ? (
           <div className="space-y-2.5 py-4">

@@ -1,7 +1,7 @@
-export * from './enums';
-export * from './types';
-export * from './entities';
-export * from './mappers';
-export * from './services';
-export * from './hooks';
-export * from './components';
+// API pública del módulo.
+export type { CustomerEntity } from './domain/customer.entity';
+export { DEFAULT_CUSTOMER } from './domain/customer.entity';
+export type { CustomerVM } from './presentation/view-models/customer.vm';
+export * from './presentation/hooks/useCustomerList';
+export * from './presentation/hooks/useCustomerMutations';
+export * from './presentation/components/CustomersView';
