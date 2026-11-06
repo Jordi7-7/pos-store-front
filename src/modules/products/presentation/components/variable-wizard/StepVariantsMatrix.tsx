@@ -16,19 +16,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FieldLabel } from '@/components/ui/field';
 import { Badge } from '@/components/ui/badge';
+import type { WizardVariantRow } from '../../../domain/rules/variable-wizard';
 
-export interface VariantRowData {
-  id: string;
-  sku: string;
-  barcode: string;
-  purchasePrice: number;
-  salePrice: number;
-  wholesalePrice: number | null;
-  initialStock: number;
-  combination: { attributeId: string; attributeName: string; valueId: string; valueName: string }[];
-  images?: { id: string; url: string; description?: string }[];
-  imageIds?: string[];
-}
+export type VariantRowData = WizardVariantRow;
 
 interface StepVariantsMatrixProps {
   variants: VariantRowData[];
