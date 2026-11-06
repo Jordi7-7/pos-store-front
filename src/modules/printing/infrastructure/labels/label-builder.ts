@@ -1,105 +1,7 @@
-import type { BarcodeLabelItem } from '../presentation/components/barcode-printer/types';
-
-export type LabelProtocol = 'TSPL' | 'ZPL';
-
-export interface LabelDimensions {
-  widthMm: number;    // Ancho en milímetros (ej: 50)
-  heightMm: number;   // Alto en milímetros (ej: 30)
-  gapMm: number;      // Separación entre etiquetas (ej: 2)
-  dpi?: number;       // Resolución típica: 203 DPI (8 dots/mm)
-}
-
-export const DEFAULT_LABEL_DIMENSIONS: LabelDimensions = {
-  widthMm: 50,
-  heightMm: 30,
-  gapMm: 2,
-  dpi: 203,
-};
-
-export interface LabelPreset {
-  id: string;
-  name: string;
-  widthMm: number;
-  heightMm: number;
-  gapMm: number;
-  category: 'Comercio / Ropa' | 'Joyería / Farmacia' | 'Cajas / Almacén' | 'Envíos / Logística';
-  description: string;
-}
-
-export const ZEBRA_LABEL_PRESETS: LabelPreset[] = [
-  {
-    id: '50x30',
-    name: '50 × 30 mm (Estándar Comercio)',
-    widthMm: 50,
-    heightMm: 30,
-    gapMm: 2,
-    category: 'Comercio / Ropa',
-    description: 'El tamaño más popular para tiendas de ropa, calzado y retail.',
-  },
-  {
-    id: '50x25',
-    name: '50 × 25 mm (2" × 1")',
-    widthMm: 50,
-    heightMm: 25,
-    gapMm: 2,
-    category: 'Joyería / Farmacia',
-    description: 'Ideal para farmacias, cosméticos, perfumerías y productos pequeños.',
-  },
-  {
-    id: '40x30',
-    name: '40 × 30 mm (Compacta)',
-    widthMm: 40,
-    heightMm: 30,
-    gapMm: 2,
-    category: 'Comercio / Ropa',
-    description: 'Etiquetas compactas para accesorios, bisutería y papelería.',
-  },
-  {
-    id: '38x25',
-    name: '38 × 25 mm (1.5" × 1")',
-    widthMm: 38,
-    heightMm: 25,
-    gapMm: 2,
-    category: 'Joyería / Farmacia',
-    description: 'Etiqueta pequeña para códigos de barra compactos.',
-  },
-  {
-    id: '60x40',
-    name: '60 × 40 mm (Mediana)',
-    widthMm: 60,
-    heightMm: 40,
-    gapMm: 2,
-    category: 'Cajas / Almacén',
-    description: 'Etiqueta amplia para cajas medianas, calzado y repuestos.',
-  },
-  {
-    id: '80x50',
-    name: '80 × 50 mm (Almacén)',
-    widthMm: 80,
-    heightMm: 50,
-    gapMm: 3,
-    category: 'Cajas / Almacén',
-    description: 'Para bultos, pallets pequeños y cajas de inventario.',
-  },
-  {
-    id: '100x50',
-    name: '100 × 50 mm (4" × 2")',
-    widthMm: 100,
-    heightMm: 50,
-    gapMm: 3,
-    category: 'Cajas / Almacén',
-    description: 'Etiqueta ancha industrial Zebra para distribución.',
-  },
-  {
-    id: '100x150',
-    name: '100 × 150 mm (4" × 6" Courier)',
-    widthMm: 100,
-    heightMm: 150,
-    gapMm: 3,
-    category: 'Envíos / Logística',
-    description: 'Medida estándar mundial de guías de paquetería y logística.',
-  },
-];
+import type { TicketFormat } from '../../domain/entities/ticket';
+import type { LabelDimensions, LabelItem, LabelProtocol } from '../../domain/entities/label';
+import { DEFAULT_LABEL_DIMENSIONS } from '../../domain/entities/label';
+import { labelPriceText } from '../../domain/rules/label-price';
 
 /**
  * Normaliza cadenas de texto para impresoras térmicas de etiquetas:
@@ -119,8 +21,9 @@ function normalizeText(text: string): string {
  * Genera el paquete de comandos en formato TSPL (compatible con Xprinter, TSC, Rongta, HPRT, Godex).
  */
 export function buildTsplLabelCommands(
-  items: BarcodeLabelItem[],
+  items: LabelItem[],
   storeName: string,
+  format: TicketFormat,
   dimensions: LabelDimensions = DEFAULT_LABEL_DIMENSIONS
 ): Uint8Array {
   const dpi = dimensions.dpi || 203;
@@ -135,10 +38,7 @@ export function buildTsplLabelCommands(
     const qty = Math.max(1, Number(item.quantity) || 1);
     const cleanSku = (item.sku || '').trim().replace(/["\\]/g, '');
     const cleanName = normalizeText(item.name || '').toUpperCase();
-    const formattedPrice = Math.floor(item.price) === item.price 
-      ? item.price.toString() 
-      : item.price.toFixed(2);
-    const priceText = `PRECIO $ ${formattedPrice}`;
+    const priceText = labelPriceText(item.price, format);
 
     // Configuración inicial de etiqueta y sensor de GAP
     tspl += `SIZE ${dimensions.widthMm} mm, ${dimensions.heightMm} mm\r\n`;
@@ -191,8 +91,9 @@ export function buildTsplLabelCommands(
  * Genera el paquete de comandos en formato ZPL (Zebra Programming Language).
  */
 export function buildZplLabelCommands(
-  items: BarcodeLabelItem[],
+  items: LabelItem[],
   storeName: string,
+  format: TicketFormat,
   dimensions: LabelDimensions = DEFAULT_LABEL_DIMENSIONS
 ): Uint8Array {
   const dpi = dimensions.dpi || 203;
@@ -208,10 +109,7 @@ export function buildZplLabelCommands(
     const qty = Math.max(1, Number(item.quantity) || 1);
     const cleanSku = (item.sku || '').trim().replace(/["\\]/g, '');
     const cleanName = normalizeText(item.name || '').toUpperCase();
-    const formattedPrice = Math.floor(item.price) === item.price 
-      ? item.price.toString() 
-      : item.price.toFixed(2);
-    const priceText = `PRECIO $ ${formattedPrice}`;
+    const priceText = labelPriceText(item.price, format);
 
     const narrow = cleanSku.length > 12 ? 1 : 2;
     const approxBarcodeWidth = (cleanSku.length * 11 + 35) * narrow;
@@ -247,9 +145,10 @@ export function buildZplLabelCommands(
  */
 export function buildTestLabelCommands(
   protocol: LabelProtocol = 'TSPL',
+  format: TicketFormat,
   dimensions: LabelDimensions = DEFAULT_LABEL_DIMENSIONS
 ): Uint8Array {
-  const dummyItem: BarcodeLabelItem = {
+  const dummyItem: LabelItem = {
     sku: 'TEST-123456',
     name: 'ETIQUETA DE PRUEBA POS',
     price: 9.99,
@@ -257,7 +156,7 @@ export function buildTestLabelCommands(
   };
 
   if (protocol === 'ZPL') {
-    return buildZplLabelCommands([dummyItem], 'AURA POS STORE', dimensions);
+    return buildZplLabelCommands([dummyItem], 'AURA POS STORE', format, dimensions);
   }
-  return buildTsplLabelCommands([dummyItem], 'AURA POS STORE', dimensions);
+  return buildTsplLabelCommands([dummyItem], 'AURA POS STORE', format, dimensions);
 }

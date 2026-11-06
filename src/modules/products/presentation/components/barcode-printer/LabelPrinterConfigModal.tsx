@@ -12,11 +12,10 @@ import { toast } from 'sonner';
 import {
   labelPrinterService,
   type LabelPrinterConfig,
-} from '../../../services/label-printer.service';
-import {
-  ZEBRA_LABEL_PRESETS,
-  type LabelPreset,
-} from '../../../services/label-builder';
+} from '../../../../printing/infrastructure/printers/label-printer.service';
+import { ZEBRA_LABEL_PRESETS } from '@/modules/printing/domain/rules/label-presets';
+import { useTicketFormat } from '@/modules/printing/presentation/hooks/useTicketFormat';
+import type { LabelPreset } from '@/modules/printing/domain/entities/label';
 
 interface LabelPrinterConfigModalProps {
   isOpen: boolean;
@@ -33,6 +32,7 @@ export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = (
   const [isConfigured, setIsConfigured] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  const ticketFormat = useTicketFormat();
   const [config, setConfig] = useState<LabelPrinterConfig>(labelPrinterService.getConfig());
 
   useEffect(() => {
@@ -70,7 +70,7 @@ export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = (
   const handleTestPrint = async () => {
     try {
       setIsTesting(true);
-      await labelPrinterService.printTestLabel();
+      await labelPrinterService.printTestLabel(ticketFormat);
       toast.success('¡Etiqueta de prueba enviada al puerto serie!');
     } catch (err: any) {
       if (err.message === 'NO_PRINTER_CONFIGURED') {

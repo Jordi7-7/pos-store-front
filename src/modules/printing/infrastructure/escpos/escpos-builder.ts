@@ -1,6 +1,6 @@
 import { numeroALetras } from 'numero-a-letras-es';
 import type { ClosingTicketData, TicketFormat, TicketSaleData } from '../../domain/entities/ticket';
-import { ticketMoney } from './ticket-money';
+import { ticketMoney } from '../../domain/rules/ticket-money';
 import { PaymentMethod } from '@/shared/domain/enums/payments';
 
 export type PaperWidth = '58mm' | '80mm';

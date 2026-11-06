@@ -1,5 +1,5 @@
 import { formatMoneyAmount } from '@/shared/domain/rules/format-money';
-import type { TicketFormat } from '../../domain/entities/ticket';
+import type { TicketFormat } from '../entities/ticket';
 
 /** La tabla de caracteres de la impresora (CP850) no tiene todos los símbolos de moneda. */
 const PRINTABLE = /^[\u0020-\u00FF]*$/;

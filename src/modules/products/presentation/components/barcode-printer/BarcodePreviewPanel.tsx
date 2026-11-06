@@ -2,7 +2,7 @@ import React from 'react';
 import { Sliders, Store, Eye, Tag } from 'lucide-react';
 import { BarcodeLabel } from './BarcodeLabel';
 import type { BarcodeLabelItem } from './types';
-import { ZEBRA_LABEL_PRESETS } from '../../../services/label-builder';
+import { ZEBRA_LABEL_PRESETS } from '@/modules/printing/domain/rules/label-presets';
 
 interface BarcodePreviewPanelProps {
   storeName: string;

@@ -1,7 +1,9 @@
 import React from 'react';
 import JsBarcode from 'jsbarcode';
 import type { BarcodeLabelItem } from './types';
-import { labelPrinterService } from '../../../services/label-printer.service';
+import type { TicketFormat } from '@/modules/printing/domain/entities/ticket';
+import { labelPriceText } from '@/modules/printing/domain/rules/label-price';
+import { labelPrinterService } from '../../../../printing/infrastructure/printers/label-printer.service';
 
 interface ThermalPrintOutputProps {
   items?: BarcodeLabelItem[];
@@ -18,6 +20,7 @@ interface ThermalPrintOutputProps {
 export const renderLabelToPng203Dpi = (
   item: BarcodeLabelItem,
   storeName: string,
+  format: TicketFormat,
   widthMm: number = 50,
   heightMm: number = 30
 ): string => {
@@ -135,8 +138,7 @@ export const renderLabelToPng203Dpi = (
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  const formattedPrice = Math.floor(item.price) === item.price ? item.price : item.price.toFixed(2);
-  ctx.fillText(`PRECIO $ ${formattedPrice}`, widthDots / 2, priceY);
+  ctx.fillText(labelPriceText(item.price, format), widthDots / 2, priceY);
 
   return canvas.toDataURL('image/png');
 };
@@ -148,6 +150,7 @@ export const renderLabelToPng203Dpi = (
 export const printThermalLabels = (
   items: BarcodeLabelItem[],
   storeName: string,
+  format: TicketFormat,
   dimensions?: { widthMm: number; heightMm: number }
 ) => {
   if (!items || items.length === 0) return;
@@ -182,10 +185,10 @@ export const printThermalLabels = (
   const imageCache = new Map<string, string>();
   const labelsHtml = flatItems
     .map((item, index) => {
-      const cacheKey = `${item.sku}_${item.name}_${item.price}_${widthMm}_${heightMm}_${storeName}`;
+      const cacheKey = `${item.sku}_${item.name}_${item.price}_${widthMm}_${heightMm}_${storeName}_${format.currencyCode}_${format.locale}`;
       let dataUrl = imageCache.get(cacheKey);
       if (!dataUrl) {
-        dataUrl = renderLabelToPng203Dpi(item, storeName, widthMm, heightMm);
+        dataUrl = renderLabelToPng203Dpi(item, storeName, format, widthMm, heightMm);
         imageCache.set(cacheKey, dataUrl);
       }
       const isLast = index === flatItems.length - 1;

@@ -8,7 +8,8 @@ import type { BarcodeLabelItem } from './types';
 import { BarcodeQueueList } from './BarcodeQueueList';
 import { BarcodePreviewPanel } from './BarcodePreviewPanel';
 import { ThermalPrintOutput, printThermalLabels } from './ThermalPrintOutput';
-import { labelPrinterService } from '../../../services/label-printer.service';
+import { useTicketFormat } from '@/modules/printing/presentation/hooks/useTicketFormat';
+import { labelPrinterService } from '../../../../printing/infrastructure/printers/label-printer.service';
 import { LabelPrinterConfigModal } from './LabelPrinterConfigModal';
 
 export type { BarcodeLabelItem } from './types';
@@ -29,6 +30,7 @@ export const BarcodePrintModal: React.FC<BarcodePrintModalProps> = ({
   const publicTenant = useTenant();
   const defaultStoreName = publicTenant?.name ? publicTenant.name.toUpperCase() : 'LEIZA STORE';
   
+  const ticketFormat = useTicketFormat();
   const [storeName, setStoreName] = useState(defaultStoreName);
   const [previewIndex, setPreviewIndex] = useState(0);
 
@@ -91,7 +93,7 @@ export const BarcodePrintModal: React.FC<BarcodePrintModalProps> = ({
   const executeDirectPrint = async () => {
     try {
       setIsDirectPrinting(true);
-      await labelPrinterService.printLabels(items, storeName);
+      await labelPrinterService.printLabels(items, storeName, ticketFormat);
       toast.success(`¡${totalLabelsCount} etiqueta(s) enviadas a la impresora térmica!`);
     } catch (err: any) {
       if (err.message === 'NO_PRINTER_CONFIGURED') {
@@ -120,7 +122,7 @@ export const BarcodePrintModal: React.FC<BarcodePrintModalProps> = ({
 
   // Impresión de respaldo por el diálogo estándar del sistema
   const handleBrowserFallbackPrint = () => {
-    printThermalLabels(items, storeName, {
+    printThermalLabels(items, storeName, ticketFormat, {
       widthMm: config.widthMm,
       heightMm: config.heightMm,
     });

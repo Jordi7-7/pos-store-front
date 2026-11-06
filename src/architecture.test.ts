@@ -125,7 +125,7 @@ const MODULE_LAYOUT = new RegExp(
       'index\\.ts',
       'domain/(entities|enums|rules)/[^/]+',
       'application/(ports|use-cases|errors)/[^/]+',
-      'infrastructure/(repositories|dtos|mappers|escpos|printers)/[^/]+',
+      'infrastructure/(repositories|dtos|mappers|escpos|labels|printers)/[^/]+',
       'infrastructure/dependencies\\.ts',
       'presentation/(components|hooks|stores|view-models)/.+',
     ].join('|') +

@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { renderLabelToPng203Dpi } from './ThermalPrintOutput';
+import { useTicketFormat } from '@/modules/printing/presentation/hooks/useTicketFormat';
 
 interface BarcodeLabelProps {
   storeName?: string;
@@ -18,15 +19,17 @@ export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({
   widthMm = 50,
   heightMm = 30,
 }) => {
+  const format = useTicketFormat();
   // Genera en vivo la imagen fija a 203 DPI para que la vista previa sea exactamente 1:1 con la física
   const pngDataUrl = useMemo(() => {
     return renderLabelToPng203Dpi(
       { sku, name, price, quantity: 1 },
       storeName,
+      format,
       widthMm,
       heightMm
     );
-  }, [sku, name, price, storeName, widthMm, heightMm]);
+  }, [sku, name, price, storeName, format, widthMm, heightMm]);
 
   return (
     <div

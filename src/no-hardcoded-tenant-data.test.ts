@@ -14,8 +14,6 @@ const sources = import.meta.glob(['/src/**/*.ts', '/src/**/*.tsx'], {
 
 // Se excluyen los tests, el catálogo shadcn (no es nuestro) y el árbol de rutas generado.
 const IGNORED = ['/components/ui/', '/routeTree.gen.ts', '.test.ts', '.test.tsx'];
-// Las etiquetas de código de barras aún imprimen con su propio formato (módulo `products`, Etapa 4).
-const PRINTING = ['label-builder.ts'];
 
 const files = Object.entries(sources).filter(([path]) => !IGNORED.some((part) => path.includes(part)));
 
@@ -34,7 +32,6 @@ describe('datos de la tienda sin valores fijos', () => {
 
   it.each(FORBIDDEN)('ningún archivo usa $name', ({ pattern }) => {
     const offenders = files
-      .filter(([path]) => !PRINTING.some((p) => path.endsWith(p)))
       .filter(([, content]) => pattern.test(content))
       .map(([path]) => path);
     expect(offenders).toEqual([]);

@@ -1,12 +1,7 @@
-import type { BarcodeLabelItem } from '../presentation/components/barcode-printer/types';
-import {
-  buildTsplLabelCommands,
-  buildZplLabelCommands,
-  buildTestLabelCommands,
-  type LabelProtocol,
-  type LabelDimensions,
-  DEFAULT_LABEL_DIMENSIONS,
-} from './label-builder';
+import type { LabelPrinter } from '../../application/ports/label-printer';
+import { DEFAULT_LABEL_DIMENSIONS, type LabelDimensions, type LabelItem, type LabelProtocol } from '../../domain/entities/label';
+import type { TicketFormat } from '../../domain/entities/ticket';
+import { buildTsplLabelCommands, buildZplLabelCommands, buildTestLabelCommands } from '../labels/label-builder';
 
 export interface LabelPrinterConfig {
   widthMm: number;
@@ -26,7 +21,7 @@ const DEFAULT_LABEL_CONFIG: LabelPrinterConfig = {
 
 const STORAGE_KEY = 'aura_label_printer_config';
 
-class LabelPrinterService {
+class LabelPrinterService implements LabelPrinter {
   private activePort: any = null;
 
   /** Comprueba si el navegador actual soporta Web Serial API */
@@ -126,7 +121,7 @@ class LabelPrinterService {
   }
 
   /** Imprime un lote de etiquetas directamente por USB */
-  async printLabels(items: BarcodeLabelItem[], storeName: string): Promise<boolean> {
+  async printLabels(items: LabelItem[], storeName: string, format: TicketFormat): Promise<boolean> {
     if (!items || items.length === 0) return false;
 
     const config = this.getConfig();
@@ -138,9 +133,9 @@ class LabelPrinterService {
 
     let bytes: Uint8Array;
     if (config.protocol === 'ZPL') {
-      bytes = buildZplLabelCommands(items, storeName, dimensions);
+      bytes = buildZplLabelCommands(items, storeName, format, dimensions);
     } else {
-      bytes = buildTsplLabelCommands(items, storeName, dimensions);
+      bytes = buildTsplLabelCommands(items, storeName, format, dimensions);
     }
 
     await this.sendRawBytes(bytes);
@@ -148,7 +143,7 @@ class LabelPrinterService {
   }
 
   /** Imprime una etiqueta de prueba */
-  async printTestLabel(): Promise<boolean> {
+  async printTestLabel(format: TicketFormat): Promise<boolean> {
     const config = this.getConfig();
     const dimensions: LabelDimensions = {
       widthMm: config.widthMm,
@@ -156,7 +151,7 @@ class LabelPrinterService {
       gapMm: config.gapMm,
     };
 
-    const bytes = buildTestLabelCommands(config.protocol, dimensions);
+    const bytes = buildTestLabelCommands(config.protocol, format, dimensions);
     await this.sendRawBytes(bytes);
     return true;
   }
