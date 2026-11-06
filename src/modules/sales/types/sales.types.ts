@@ -80,6 +80,8 @@ export interface SaleDetailDTO {
 }
 
 export interface ProcessSaleInput {
+  /** Clave de idempotencia por intento de cobro (8–64 caracteres): un reintento no duplica la venta. */
+  clientRequestId?: string;
   branchId: string;
   cashSessionId: string;
   customerId?: string;

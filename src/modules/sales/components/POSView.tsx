@@ -12,7 +12,6 @@ import {
 import { useCustomerList } from '@/modules/customers';
 import { useCashSessionDetailsQuery } from '../../cash-sessions/hooks/useCashSessions';
 import { PaymentMethod } from '../enums';
-import { CashSessionStatus } from '@/modules/cash-sessions/enums';
 import { useAuthStore } from '../../auth/hooks/useAuthStore';
 import { useWorkspaceStore } from '@/shared/presentation/stores/workspace.store';
 import { useTenant, useTimezone } from '../../auth/hooks/useSession';
@@ -41,6 +40,7 @@ import { CashSessionAuditModal } from '../../cash-sessions/components/CashSessio
 import { useFetchCashSessionDetails } from '@/modules/cash-sessions/hooks';
 import { buildClosingTicketData } from '../../cash-sessions/utils/buildClosingTicketData';
 import { ExchangeReturnModal } from './pos/ExchangeReturnModal';
+import { CheckoutAttempt, checkoutFingerprint } from '../domain/checkout-attempt';
 import { usePOSHotkeys } from '../hooks/usePOSHotkeys';
 import { formatSaleDateTime } from '../mappers/sale.mapper';
 import { formatMoney } from '@/modules/auth/hooks/useSession';
@@ -100,7 +100,7 @@ export const POSView: React.FC<POSViewProps> = ({
 
   // Lazy-fetch session details only when Cierre or Historial modal is open
   const isSessionDetailsNeeded = isCierreModalOpen || isHistorialModalOpen;
-  const { rawDetails: rawSessionDetails } = useCashSessionDetailsQuery(activeSession?.id || null, {
+  const { rawDetails: rawSessionDetails, isError: isSessionDetailsError } = useCashSessionDetailsQuery(activeSession?.id || null, {
     enabled: isSessionDetailsNeeded,
   });
 
@@ -111,6 +111,7 @@ export const POSView: React.FC<POSViewProps> = ({
   const { closeSession, isClosing } = useCloseCashSession();
   const { registerExpense: apiRegisterExpense, isRegistering } = useRegisterExpense();
   const { processSale, isProcessing } = useProcessSale();
+  const checkoutAttempt = useRef(new CheckoutAttempt(() => crypto.randomUUID()));
   const { fetchDetails: fetchCashSessionDetails } = useFetchCashSessionDetails();
 
   // Session Balance & Expense Form fields
@@ -286,39 +287,22 @@ export const POSView: React.FC<POSViewProps> = ({
         closingBalance: parsedClosing,
       });
 
-      let closingDataToUse: any = null;
+      // El corte Z solo se imprime con datos reales del servidor: si no se pueden leer, no se inventan.
+      let closingDataToUse: ReturnType<typeof buildClosingTicketData> | null = null;
       try {
-        const closedDetails = await fetchCashSessionDetails(closingSessionId);
-        const dataToPrint = buildClosingTicketData(closedDetails);
-        setClosingSessionToPrint(dataToPrint);
-        closingDataToUse = dataToPrint;
+        closingDataToUse = buildClosingTicketData(await fetchCashSessionDetails(closingSessionId));
       } catch (detailsErr) {
         console.error('Error fetching closing session details for ticket:', detailsErr);
-        const fallbackData = {
-          id: closingSessionId,
-          openedAt: activeSession.openedAt,
-          closedAt: new Date().toISOString(),
-          openingBalance: Number(activeSession.openingBalance || 0),
-          closingBalance: parsedClosing,
-          expectedBalance: parsedClosing,
-          salesTotal: 0,
-          expensesTotal: 0,
-          expensesList: [],
-          productsList: [],
-          paymentsBreakdown: {},
-          refundsList: [],
-          salesList: [],
-          userName: currentUser?.name || 'Vendedor',
-          branchName: selectedBranch?.name || selectedBranchName,
-          branchAddress: selectedBranch?.address || '',
-          status: CashSessionStatus.CLOSED,
-        };
-        setClosingSessionToPrint(fallbackData);
-        closingDataToUse = fallbackData;
       }
 
       setActiveSession(null);
       setIsCierreModalOpen(false);
+
+      if (!closingDataToUse) {
+        toast.warning('Caja cerrada. No se pudo cargar el resumen para imprimir el corte; un administrador puede reimprimirlo desde el historial de cajas.');
+        return;
+      }
+      setClosingSessionToPrint(closingDataToUse);
 
       const isPrinterConfigured = await thermalPrinterService.isConfigured();
       if (isPrinterConfigured) {
@@ -327,11 +311,9 @@ export const POSView: React.FC<POSViewProps> = ({
           toast.success('¡Sesión de caja cerrada y corte impreso en ticket!');
         } catch (printErr: any) {
           console.error('Error al imprimir corte directo:', printErr);
-          setClosingSessionToPrint(closingDataToUse);
           setIsClosingTicketOpen(true);
         }
       } else {
-        setClosingSessionToPrint(closingDataToUse);
         setIsClosingTicketOpen(true);
       }
     } catch (err: any) {
@@ -396,6 +378,7 @@ export const POSView: React.FC<POSViewProps> = ({
   };
 
   const handleCompletePayment = async () => {
+    if (isProcessing) return; // doble clic: ya hay un cobro en curso
     const branch = selectedBranchId;
     if (!branch) {
       toast.warning('Por favor selecciona una sucursal.');
@@ -442,7 +425,7 @@ export const POSView: React.FC<POSViewProps> = ({
     try {
       const hasGlobalDiscount = (globalDiscountAmount || 0) > 0;
 
-      const res = await processSale({
+      const saleInput = {
         branchId: branch,
         cashSessionId: activeSession.id,
         customerId: selectedCustomerId || undefined,
@@ -462,7 +445,14 @@ export const POSView: React.FC<POSViewProps> = ({
           };
         }),
         payments: normalizedPayments,
+      };
+      // Misma venta reintentada = misma clave: el servidor devuelve la venta ya creada en vez de duplicarla.
+      const res = await processSale({
+        ...saleInput,
+        clientRequestId: checkoutAttempt.current.idFor(checkoutFingerprint(saleInput)),
       });
+      checkoutAttempt.current.complete();
+
 
       const change = amountPaid - cartTotal;
       if (change > 0) {
@@ -698,6 +688,7 @@ export const POSView: React.FC<POSViewProps> = ({
           isClosing={isClosing}
           activeSession={activeSession}
           sessionDetails={rawSessionDetails}
+          detailsStatus={rawSessionDetails ? 'ready' : isSessionDetailsError ? 'unavailable' : 'loading'}
           activeSessionSales={rawSessionDetails?.sales || []}
           activeSessionExpenses={rawSessionDetails?.expenses || []}
           activeSessionRefunds={rawSessionDetails?.refunds || []}

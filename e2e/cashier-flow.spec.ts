@@ -92,12 +92,16 @@ test.describe('turno completo del cajero', () => {
     expect(created.total).toBe(310);
     await expect(page.getByText(/001-001-\d{9}/).first()).toBeVisible(); // ticket con folio
 
-    // Hoy la web no envía clientRequestId (el backend lo admite y protege contra duplicados).
+    // La web envía un clientRequestId por intento de cobro (el backend lo usa contra duplicados).
     const body = (await saleRequest).postDataJSON() as { clientRequestId?: string };
-    test.info().annotations.push({
-      type: 'clientRequestId en POST /sales',
-      description: body.clientRequestId ? 'enviado' : 'NO enviado (pendiente: Etapa 3)',
-    });
+    expect(body.clientRequestId).toMatch(/^[0-9a-f-]{36}$/);
+
+    // Reintento con la MISMA clave y el mismo contenido: el backend devuelve la venta ya creada.
+    const pin = await request.post(`${API_URL}/auth/pin-login`, { data: { pin: cashier.pin, tenantSlug: creds.slug } });
+    const { accessToken } = (await pin.json()) as { accessToken: string };
+    const replay = await request.post(`${API_URL}/sales`, { headers: { Authorization: `Bearer ${accessToken}` }, data: body });
+    expect(replay.status()).toBe(201);
+    expect(((await replay.json()) as SaleResponse).id).toBe(created.id);
     await page.keyboard.press('Escape');
 
     // 3. Devolver (la propietaria, por API: el cajero no tiene la acción en pantalla)
@@ -112,6 +116,13 @@ test.describe('turno completo del cajero', () => {
 
     // 4. Cerrar turno: fondo 100 + cobros 310 − devolución 310 = 100 en el cajón
     await page.getByRole('button', { name: /Cerrar Caja/ }).click();
+    // El resumen del turno o se muestra con importes reales, o se avisa de que no está disponible: nunca ceros inventados.
+    const unavailable = page.getByText(/No se pudo cargar el resumen del turno/);
+    const expected = page.getByText('(=) Efectivo Esperado:');
+    await expect(unavailable.or(expected)).toBeVisible();
+    if (await expected.isVisible()) {
+      await expect(page.getByText(/\$?\s?100[.,]00/).first()).toBeVisible(); // 100 + 310 − 310
+    }
     await page.getByPlaceholder(/Ingresa el dinero físico/).fill(String(OPENING));
     const closed = page.waitForResponse((r) => /\/sales\/cash-sessions\/[^/]+\/close$/.test(r.url()) && r.request().method() === 'POST');
     await page.getByRole('button', { name: /Cerrar Caja y Emitir Corte Z/ }).click();

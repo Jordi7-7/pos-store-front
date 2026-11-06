@@ -21,7 +21,7 @@ export const useCashSessionsList = (branchId?: string) => {
 export const useCashSessionDetailsQuery = (sessionId: string | null, options?: { enabled?: boolean }) => {
   const isEnabled = options?.enabled !== undefined ? Boolean(options.enabled && sessionId) : !!sessionId;
 
-  const { data: queryResult, isLoading } = useQuery<CashSessionDetails | null, Error, { entity: CashSessionDetailsEntity | null; raw: CashSessionDetails | null }>({
+  const { data: queryResult, isLoading, isError } = useQuery<CashSessionDetails | null, Error, { entity: CashSessionDetailsEntity | null; raw: CashSessionDetails | null }>({
     queryKey: ['cash-session-details', sessionId],
     queryFn: () => {
       if (!sessionId) return Promise.resolve(null);
@@ -38,6 +38,7 @@ export const useCashSessionDetailsQuery = (sessionId: string | null, options?: {
     details: queryResult?.entity ?? null,
     rawDetails: queryResult?.raw ?? null,
     isLoading,
+    isError,
   };
 };
 

@@ -25,6 +25,16 @@ import type {
   SessionRefund,
 } from '@/modules/cash-sessions/types/cash-sessions.types';
 import { formatMoney } from '@/modules/auth/hooks/useSession';
+import {
+  cashDifference,
+  classifyDifference,
+  expectedCashBalance,
+  parseCountedCash,
+  summarizeCashSession,
+} from '@/modules/cash-sessions/domain/cash-closing';
+
+/** Estado de la carga del resumen del turno: sin él no se muestran importes (nunca ceros inventados). */
+export type ClosingDetailsStatus = 'loading' | 'ready' | 'unavailable';
 
 interface CierreModalProps {
   isOpen: boolean;
@@ -35,6 +45,7 @@ interface CierreModalProps {
   isClosing: boolean;
   activeSession: CashSessionHeader | null;
   sessionDetails?: CashSessionDetails | null;
+  detailsStatus: ClosingDetailsStatus;
   activeSessionSales: SessionSale[];
   activeSessionExpenses: SessionExpense[];
   activeSessionRefunds: SessionRefund[];
@@ -58,6 +69,7 @@ export const CierreModal: React.FC<CierreModalProps> = ({
   isClosing,
   activeSession,
   sessionDetails,
+  detailsStatus,
   activeSessionSales,
   activeSessionExpenses,
   activeSessionRefunds,
@@ -105,37 +117,17 @@ export const CierreModal: React.FC<CierreModalProps> = ({
     ? Number(sessionDetails.session.openingBalance)
     : Number(activeSession?.openingBalance || 0);
 
-  const fallbackCashSales = useMemo(() => {
-    let cash = 0;
-    activeSessionSales.forEach((s) => {
-      const saleTotal = Number(s.total || 0);
-      const payments = s.payments || [];
-      if (!payments.length) {
-        if (s.paymentMethod !== 'TARJETA') cash += saleTotal;
-      } else {
-        payments.forEach((p) => {
-          if (p.paymentMethod === 'EFECTIVO') cash += Number(p.amount || 0);
-        });
-      }
-    });
-    return cash;
-  }, [activeSessionSales]);
-
-  const fallbackCardSales = useMemo(() => {
-    let card = 0;
-    activeSessionSales.forEach((s) => {
-      const saleTotal = Number(s.total || 0);
-      const payments = s.payments || [];
-      if (!payments.length) {
-        if (s.paymentMethod === 'TARJETA') card += saleTotal;
-      } else {
-        payments.forEach((p) => {
-          if (p.paymentMethod === 'TARJETA') card += Number(p.amount || 0);
-        });
-      }
-    });
-    return card;
-  }, [activeSessionSales]);
+  const fallbackTotals = useMemo(
+    () =>
+      summarizeCashSession({
+        sales: activeSessionSales,
+        expenseAmounts: activeSessionExpenses.map((e) => e.amount),
+        refundAmounts: activeSessionRefunds.map((r) => r.totalRefunded),
+      }),
+    [activeSessionSales, activeSessionExpenses, activeSessionRefunds],
+  );
+  const fallbackCashSales = fallbackTotals.cashSales;
+  const fallbackCardSales = fallbackTotals.cardSales;
 
   const cashSales = sessionDetails?.kpis?.cashSales !== undefined
     ? Number(sessionDetails.kpis.cashSales)
@@ -159,7 +151,7 @@ export const CierreModal: React.FC<CierreModalProps> = ({
 
   const expectedCashInDrawer = sessionDetails?.session?.expectedBalance !== undefined && sessionDetails?.session?.expectedBalance !== null
     ? Number(sessionDetails.session.expectedBalance)
-    : (openingBalance + cashSales - expensesTotal - refundsTotal);
+    : expectedCashBalance({ openingBalance, cashSales, expenses: expensesTotal, refunds: refundsTotal });
 
   const salesCount = sessionDetails?.kpis?.salesCount !== undefined
     ? Number(sessionDetails.kpis.salesCount)
@@ -167,14 +159,14 @@ export const CierreModal: React.FC<CierreModalProps> = ({
 
   const avgTicket = salesCount > 0 ? netSales / salesCount : 0;
 
-  // 3. Diferencia y cuadre en tiempo real
-  const difference = closingBalance !== ''
-    ? Math.round((Number(closingBalance) - expectedCashInDrawer) * 100) / 100
-    : null;
-
-  const isExact = difference !== null && Math.abs(difference) < 0.01;
-  const isSurplus = difference !== null && difference > 0.009;
-  const isShortage = difference !== null && difference < -0.009;
+  // 3. Diferencia y cuadre en tiempo real (solo con el resumen del turno cargado)
+  const isReady = detailsStatus === 'ready';
+  const countedCash = parseCountedCash(closingBalance);
+  const difference = isReady && countedCash !== null ? cashDifference(countedCash, expectedCashInDrawer) : null;
+  const differenceKind = difference === null ? null : classifyDifference(difference);
+  const isExact = differenceKind === 'EXACT';
+  const isSurplus = differenceKind === 'SURPLUS';
+  const isShortage = differenceKind === 'SHORTAGE';
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
@@ -204,6 +196,22 @@ export const CierreModal: React.FC<CierreModalProps> = ({
         {/* Contenedor desplazable */}
         <div className="flex-1 overflow-y-auto pr-1 space-y-3.5 py-3 min-h-0 text-xs">
           
+          {!isReady && (
+            <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-amber-600">
+              {detailsStatus === 'loading' ? (
+                <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin" />
+              ) : (
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              )}
+              <p className="text-[11px] font-medium leading-snug">
+                {detailsStatus === 'loading'
+                  ? 'Cargando el resumen del turno…'
+                  : 'No se pudo cargar el resumen del turno (efectivo esperado y movimientos). Puedes cerrar la caja contando el efectivo; el sistema calculará la diferencia. Si falla siempre, pide a un administrador el permiso para consultar sesiones de caja.'}
+              </p>
+            </div>
+          )}
+
+          {isReady && (<>
           {/* Bloques principales sincronizados 1:1 con el Ticket Térmico de Cierre */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             
@@ -510,6 +518,8 @@ export const CierreModal: React.FC<CierreModalProps> = ({
 
             </div>
           </div>
+
+          </>)}
 
           {/* Formulario de Conteo de Efectivo Físico y Cuadre */}
           <div className="space-y-2 pt-1">
