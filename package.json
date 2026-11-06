@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "oxlint --max-warnings 224",
+    "lint": "oxlint --max-warnings 222",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "test": "vitest run",

@@ -10,11 +10,9 @@ import type {
   SaleItemRow,
   NewExchangeItem,
 } from '../components/pos/exchange-return/exchange-return.types';
-import {
-  getNetUnitPrice,
-  formatMoney,
-} from '../components/pos/exchange-return/exchange-return.types';
-import { roundMoney } from '@/shared/domain/money';
+import { formatMoney } from '../components/pos/exchange-return/exchange-return.types';
+import { computeLineDiscount } from '../../domain/rules/cart-rules';
+import { exchangeDifference, newItemsTotal, returnTotal } from '../../domain/rules/exchange-rules';
 
 interface UseExchangeReturnProps {
   branchId: string;
@@ -103,11 +101,8 @@ export function useExchangeReturn({
     (foundSale?.items?.length > 0 &&
       foundSale.items.every((item: SaleItemRow) => item.refundableQty === 0));
 
-  const totalToReturn = selectedReturnItems.reduce(
-    (acc: number, item: SaleItemRow) =>
-      acc + getNetUnitPrice(item) * (returnQtyMap[item.variantId] ?? 0),
-    0,
-  );
+  // Lo que se devuelve es lo que el cliente pagó por la línea (misma regla que el servidor)
+  const totalToReturn = returnTotal(selectedReturnItems, returnQtyMap);
 
   // Scan new items
   const handleScanKeyPress = useCallback(
@@ -172,56 +167,26 @@ export function useExchangeReturn({
     setNewItems((prev) => prev.filter((x) => x.variantId !== variantId));
   }, []);
 
-  const handleUpdateNewItemDiscount = useCallback(
-    (variantId: string, type: DiscountType, inputVal: number) => {
-      setNewItems((prev) =>
-        prev.map((item) => {
-          if (item.variantId !== variantId) return item;
+  const handleUpdateNewItemDiscount = useCallback((variantId: string, type: DiscountType, inputVal: number) => {
+    const target = newItems.find((item) => item.variantId === variantId);
+    if (!target) return;
 
-          let val = roundMoney(inputVal);
-          if (isNaN(val) || val < 0) val = 0;
+    const result = computeLineDiscount(target.price, type, inputVal);
+    if (result.clamped === 'MAX_PERCENT') toast.warning('El descuento por producto no puede superar el 100%');
+    if (result.clamped === 'ABOVE_PRICE') {
+      toast.warning(`El precio de venta no puede superar el precio original (${formatMoney(target.price)})`);
+    }
+    setNewItems((prev) =>
+      prev.map((item) =>
+        item.variantId === variantId
+          ? { ...item, discountType: result.discountType, discountRate: result.discountRate, discountAmount: result.discountAmount }
+          : item,
+      ),
+    );
+  }, [newItems]);
 
-          let calculatedAmount = 0;
-          let displayRate = val;
-
-          if (type === DiscountType.PERCENTAGE) {
-            if (val > 100) {
-              val = 100;
-              displayRate = 100;
-              toast.warning('El descuento por producto no puede superar el 100%');
-            }
-            calculatedAmount = roundMoney((item.price * val) / 100);
-          } else {
-            if (val > item.price) {
-              val = item.price;
-              displayRate = item.price;
-              toast.warning(
-                `El precio de venta no puede superar el precio original (${formatMoney(item.price)})`,
-              );
-            }
-            calculatedAmount = roundMoney(item.price - val);
-          }
-          calculatedAmount = Math.max(0, Math.min(item.price, calculatedAmount));
-
-          return {
-            ...item,
-            discountType: type,
-            discountRate: displayRate,
-            discountAmount: calculatedAmount,
-          };
-        }),
-      );
-    },
-    [],
-  );
-
-  const totalNewItems = newItems.reduce((acc, x) => {
-    const unitDiscount = Number(x.discountAmount || 0);
-    const lineTotal = Math.max(0, (x.price - unitDiscount) * x.quantity);
-    return acc + lineTotal;
-  }, 0);
-
-  const exchangeDiff = roundMoney(totalNewItems - totalToReturn);
+  const totalNewItems = newItemsTotal(newItems);
+  const exchangeDiff = exchangeDifference(totalNewItems, totalToReturn);
 
   // Confirm Refund
   const handleConfirmRefund = useCallback(async () => {

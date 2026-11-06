@@ -1,5 +1,5 @@
 import { CashSessionStatus, CashSessionDifferenceStatus } from '../enums';
-import { SaleStatus } from '@/modules/sales/domain/enums';
+import { PaymentMethod, SaleStatus } from '@/modules/sales/domain/enums';
 
 export interface CashSessionHeaderEntity {
   id: string;
@@ -95,7 +95,7 @@ export interface CashSessionSaleEntity {
   globalDiscountAmount: number;
   total: number;
   totalFormatted: string;
-  paymentMethod: string;
+  paymentMethod: PaymentMethod;
   paymentMethodsLabel: string;
   payments: CashSessionSalePaymentEntity[];
   items: CashSessionSaleItemEntity[];
