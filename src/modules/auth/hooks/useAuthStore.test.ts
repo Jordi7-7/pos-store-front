@@ -1,24 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/shared/infrastructure/http/api-error';
-import type { ProfileResponse } from '../services/auth.service';
+import type { ProfileDTO } from '../infrastructure/dtos/auth.dto';
+import { toSessionTenant, toSessionUser } from '../infrastructure/mappers/session.mapper';
 import type { SessionTenant, SessionUser } from '../domain/session';
 
-const getProfile = vi.fn();
-const loginRequest = vi.fn();
-const pinLoginRequest = vi.fn();
-vi.mock('../services/auth.service', () => ({
-  authService: {
+const { getProfile, loginRequest, pinLoginRequest } = vi.hoisted(() => ({ getProfile: vi.fn(), loginRequest: vi.fn(), pinLoginRequest: vi.fn() }));
+// El repositorio es falso; el caso de uso SignIn y el store son los reales.
+vi.mock('../infrastructure/dependencies', async () => {
+  const { SignIn } = await import('../application/sign-in');
+  const authRepository = {
     getProfile: (...args: unknown[]) => getProfile(...args),
     login: (...args: unknown[]) => loginRequest(...args),
     pinLogin: (...args: unknown[]) => pinLoginRequest(...args),
-    logout: vi.fn(async () => ({ message: 'ok' })),
-  },
-}));
+    logout: vi.fn(async () => undefined),
+    refresh: vi.fn(),
+    getPublicTenant: vi.fn(),
+  };
+  return { authRepository, signIn: new SignIn(authRepository) };
+});
 
 const { useAuthStore, selectIsAuthenticated } = await import('./useAuthStore');
 const { useWorkspaceStore } = await import('@/shared/presentation/stores/workspace.store');
 
-const profile: ProfileResponse = {
+const profile: ProfileDTO = {
   id: 'u1',
   name: 'Cajero',
   username: 'cajero',
@@ -38,6 +42,9 @@ const profile: ProfileResponse = {
     timezone: 'America/Mexico_City',
   },
 };
+
+/** Lo que devuelve el repositorio: la conversión (y su error si faltan datos de la tienda) ocurre al pedirlo. */
+const fromDto = (dto: ProfileDTO) => ({ user: toSessionUser(dto), tenant: toSessionTenant(dto.tenant) });
 
 const user: SessionUser = {
   id: 'u1',
@@ -80,7 +87,7 @@ describe('autenticación derivada', () => {
 
 describe('useAuthStore.fetchProfile', () => {
   it('con éxito guarda usuario y tienda (zona horaria y moneda salen de la tienda)', async () => {
-    getProfile.mockResolvedValueOnce(profile);
+    getProfile.mockImplementationOnce(async () => fromDto(profile));
     await expect(useAuthStore.getState().fetchProfile()).resolves.toBe(true);
     const state = useAuthStore.getState();
     expect(state.tenant?.timezone).toBe('America/Mexico_City');
@@ -92,7 +99,7 @@ describe('useAuthStore.fetchProfile', () => {
   });
 
   it('si la tienda no trae un dato obligatorio NO se inventa: falla y no toca la sesión', async () => {
-    getProfile.mockResolvedValueOnce({ ...profile, tenant: { ...profile.tenant, timezone: '' } });
+    getProfile.mockImplementationOnce(async () => fromDto({ ...profile, tenant: { ...profile.tenant, timezone: '' } }));
     await expect(useAuthStore.getState().fetchProfile()).resolves.toBe(false);
     expect(useAuthStore.getState().tenant?.timezone).toBe('America/Mexico_City');
     expect(useAuthStore.getState().accessToken).toBe('tok');
@@ -138,7 +145,7 @@ describe('permisos', () => {
 describe('sucursal y caja seleccionadas viven fuera de la sesión', () => {
   it('una selección que el perfil ya no permite se descarta al cargarlo', async () => {
     useWorkspaceStore.setState({ selectedBranchId: 'otra-sucursal', selectedCashRegisterId: 'otra-caja' });
-    getProfile.mockResolvedValueOnce({
+    getProfile.mockImplementationOnce(async () => fromDto({
       ...profile,
       branches: [
         { id: 'b1', name: 'Leiza' },
@@ -148,14 +155,14 @@ describe('sucursal y caja seleccionadas viven fuera de la sesión', () => {
         { id: 'c1', name: 'Caja 1', code: 1, branchId: 'b1' },
         { id: 'c2', name: 'Caja 2', code: 2, branchId: 'b1' },
       ],
-    });
+    }));
     await useAuthStore.getState().fetchProfile();
     expect(useWorkspaceStore.getState()).toMatchObject({ selectedBranchId: null, selectedCashRegisterId: null });
   });
 
   it('una selección válida se conserva', async () => {
     useWorkspaceStore.setState({ selectedBranchId: 'b2', selectedCashRegisterId: 'c3' });
-    getProfile.mockResolvedValueOnce({
+    getProfile.mockImplementationOnce(async () => fromDto({
       ...profile,
       branches: [
         { id: 'b1', name: 'Leiza' },
@@ -166,7 +173,7 @@ describe('sucursal y caja seleccionadas viven fuera de la sesión', () => {
         { id: 'c3', name: 'Caja de la casa', code: 1, branchId: 'b2' },
         { id: 'c4', name: 'Caja 4', code: 2, branchId: 'b2' },
       ],
-    });
+    }));
     await useAuthStore.getState().fetchProfile();
     expect(useWorkspaceStore.getState()).toMatchObject({ selectedBranchId: 'b2', selectedCashRegisterId: 'c3' });
   });
@@ -182,7 +189,7 @@ describe('cambio de formato de la tienda', () => {
   it('si cambia la moneda, la caché de datos ya formateados se descarta', async () => {
     const { queryClient } = await import('@/providers/QueryProvider');
     const clear = vi.spyOn(queryClient, 'clear');
-    getProfile.mockResolvedValueOnce({ ...profile, tenant: { ...profile.tenant, currencyCode: 'USD' } });
+    getProfile.mockImplementationOnce(async () => fromDto({ ...profile, tenant: { ...profile.tenant, currencyCode: 'USD' } }));
     await useAuthStore.getState().fetchProfile();
     expect(clear).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().tenant?.currencyCode).toBe('USD');
@@ -192,7 +199,7 @@ describe('cambio de formato de la tienda', () => {
   it('si el formato no cambia (p. ej. solo el nombre), la caché se conserva', async () => {
     const { queryClient } = await import('@/providers/QueryProvider');
     const clear = vi.spyOn(queryClient, 'clear');
-    getProfile.mockResolvedValueOnce({ ...profile, tenant: { ...profile.tenant, name: 'Otro nombre' } });
+    getProfile.mockImplementationOnce(async () => fromDto({ ...profile, tenant: { ...profile.tenant, name: 'Otro nombre' } }));
     await useAuthStore.getState().fetchProfile();
     expect(clear).not.toHaveBeenCalled();
     clear.mockRestore();
@@ -206,7 +213,7 @@ describe('iniciar sesión: el motivo del fallo llega a la pantalla', () => {
 
   it('con credenciales correctas guarda la sesión', async () => {
     loginRequest.mockResolvedValueOnce({ accessToken: 'a', refreshToken: 'r' });
-    getProfile.mockResolvedValueOnce(profile);
+    getProfile.mockImplementationOnce(async () => fromDto(profile));
     expect(await useAuthStore.getState().login('admin', 'x', 'tienda')).toEqual({ ok: true });
     expect(useAuthStore.getState()).toMatchObject({ accessToken: 'a', refreshToken: 'r' });
   });

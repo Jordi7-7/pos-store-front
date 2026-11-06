@@ -1,5 +1,5 @@
-import type { ProfileResponse, PublicTenantResponse } from '../services/auth.service';
-import type { SessionTenant, SessionUser } from '../domain/session';
+import type { ProfileDTO, PublicTenantDTO } from '../dtos/auth.dto';
+import type { SessionTenant, SessionUser } from '../../domain/session';
 
 /** El backend no mandó un dato de la tienda que la aplicación necesita (no se inventa uno). */
 export class IncompleteTenantError extends Error {
@@ -11,7 +11,7 @@ export class IncompleteTenantError extends Error {
 
 const REQUIRED_TENANT_FIELDS = ['id', 'name', 'slug', 'country', 'currencyCode', 'currencySymbol', 'timezone'] as const;
 
-export function toSessionTenant(dto: PublicTenantResponse | ProfileResponse['tenant']): SessionTenant {
+export function toSessionTenant(dto: PublicTenantDTO | ProfileDTO['tenant']): SessionTenant {
   for (const field of REQUIRED_TENANT_FIELDS) {
     const value = dto[field];
     if (typeof value !== 'string' || !value.trim()) throw new IncompleteTenantError(field);
@@ -29,7 +29,7 @@ export function toSessionTenant(dto: PublicTenantResponse | ProfileResponse['ten
   };
 }
 
-export function toSessionUser(profile: ProfileResponse): SessionUser {
+export function toSessionUser(profile: ProfileDTO): SessionUser {
   const isOwner = Boolean(profile.isOwner);
   return {
     id: profile.id,

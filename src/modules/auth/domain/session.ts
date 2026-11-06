@@ -49,6 +49,19 @@ export interface SessionTenant {
   timezone: string;
 }
 
+/** Tokens de acceso y renovación que entrega el servidor. */
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+/** Lo que identifica una sesión abierta: tokens, usuario y tienda (y nada más). */
+export interface Session {
+  tokens: AuthTokens;
+  user: SessionUser;
+  tenant: SessionTenant;
+}
+
 /**
  * Clave de lo que condiciona cómo se MUESTRAN los datos (moneda, idioma de formato, zona horaria).
  * Si cambia, la pantalla se vuelve a pintar y la caché de datos ya formateados se descarta.

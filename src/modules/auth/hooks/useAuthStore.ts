@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { authService } from '../services/auth.service';
+import { authRepository, signIn } from '../infrastructure/dependencies';
+import { ProfileUnavailableError } from '../application/sign-in';
+import type { SignInCredentials } from '../application/ports/auth.repository';
 import { queryClient } from '@/providers/QueryProvider';
 import { CLIENT_ERROR_CODES, isApiError } from '@/shared/infrastructure/http/api-error';
 import { getErrorMessage } from '@/shared/presentation/error-messages';
@@ -10,8 +12,8 @@ import {
   hasPermission,
   tenantFormatKey,
   type SessionTenant,
+  type SessionUser,
 } from '../domain/session';
-import { toSessionTenant, toSessionUser } from '../mappers/session.mapper';
 import type { LoginResult } from '../domain/login-result';
 import { PROFILE_UNAVAILABLE } from '../domain/login-result';
 import { AUTH_STORAGE_VERSION, migratePersistedAuth, type PersistedAuth } from './auth-persistence';
@@ -54,21 +56,27 @@ let inFlightProfilePromise: Promise<boolean> | null = null;
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => {
-      /** Pide los tokens, carga el perfil y devuelve el motivo exacto si algo falla. */
-      const startSession = async (request: () => Promise<{ accessToken?: string; refreshToken?: string }>): Promise<LoginResult> => {
+      /**
+       * Guarda el usuario y la tienda del perfil, y mantiene coherente lo que depende de ellos:
+       * la selección de sucursal/caja y la caché de datos si cambió moneda, país o zona horaria.
+       */
+      const applyProfile = (user: SessionUser, tenant: SessionTenant, extra: Partial<PersistedAuth> = {}) => {
+        const previousFormat = tenantFormatKey(get().tenant);
+        set({ ...extra, user, tenant });
+        useWorkspaceStore.getState().reconcile(user);
+        // Los datos en caché ya vienen formateados con la configuración anterior: se descartan.
+        if (previousFormat && previousFormat !== tenantFormatKey(tenant)) queryClient.clear();
+      };
+
+      /** Inicia sesión con el caso de uso y devuelve el motivo exacto si falla (por `code`, no por texto). */
+      const startSession = async (credentials: SignInCredentials): Promise<LoginResult> => {
         try {
-          const response = await request();
-          if (!response?.accessToken) {
-            return { ok: false, code: PROFILE_UNAVAILABLE, message: getErrorMessage(null, FALLBACK_LOGIN_ERROR) };
-          }
-          set({ accessToken: response.accessToken, refreshToken: response.refreshToken ?? null });
-          if (!(await get().fetchProfile())) {
-            get().logout();
-            return { ok: false, code: PROFILE_UNAVAILABLE, message: 'No se pudo cargar tu perfil. Inténtalo de nuevo.' };
-          }
+          const session = await signIn.execute(credentials);
+          applyProfile(session.user, session.tenant, { accessToken: session.tokens.accessToken, refreshToken: session.tokens.refreshToken });
           return { ok: true };
         } catch (error) {
           console.error('Error al iniciar sesión:', error);
+          if (error instanceof ProfileUnavailableError) return { ok: false, code: PROFILE_UNAVAILABLE, message: error.message };
           const code = isApiError(error) ? error.code : CLIENT_ERROR_CODES.UNKNOWN_ERROR;
           return { ok: false, code, message: getErrorMessage(error, FALLBACK_LOGIN_ERROR) };
         }
@@ -108,7 +116,7 @@ export const useAuthStore = create<AuthState>()(
 
         set({ isLoadingTenant: true, tenantError: null });
         try {
-          const tenant = toSessionTenant(await authService.getPublicTenantBySlug(cleanSlug));
+          const tenant = await authRepository.getPublicTenant(cleanSlug);
           set({ tenant, isLoadingTenant: false, tenantError: null });
           return true;
         } catch (err) {
@@ -125,13 +133,13 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (identifier, password, slugOverride) => {
         const tenantSlug = slugOverride || get().tenant?.slug || undefined;
-        return startSession(() => authService.login({ email: identifier, password, tenantSlug }));
+        return startSession({ kind: 'password', identifier, password, tenantSlug });
       },
 
       // Login directo del cajero por PIN (solo necesita el identificador de la tienda).
       pinLogin: async (pin, slugOverride) => {
         const tenantSlug = slugOverride || get().tenant?.slug || '';
-        return startSession(() => authService.pinLogin({ pin, tenantSlug }));
+        return startSession({ kind: 'pin', pin, tenantSlug });
       },
 
       logout: () => {
@@ -139,7 +147,7 @@ export const useAuthStore = create<AuthState>()(
 
         // Avisar al backend para que revoque la sesión en Redis.
         if (accessToken) {
-          authService.logout(accessToken).catch(() => {});
+          authRepository.logout(accessToken).catch(() => {});
         }
 
         // La tienda se conserva a propósito: la pantalla de login la usa.
@@ -165,17 +173,8 @@ export const useAuthStore = create<AuthState>()(
         inFlightProfilePromise = (async () => {
           if (!get().accessToken) return false;
           try {
-            const profile = await authService.getProfile();
-            const user = toSessionUser(profile);
-            const tenant = toSessionTenant(profile.tenant);
-            const previousFormat = tenantFormatKey(get().tenant);
-            set({ user, tenant });
-            useWorkspaceStore.getState().reconcile(user);
-            // Cambió la moneda, el país o la zona horaria: los datos guardados en caché ya vienen
-            // formateados con la configuración anterior; se descartan para volver a pedirlos.
-            if (previousFormat && previousFormat !== tenantFormatKey(tenant)) {
-              queryClient.clear();
-            }
+            const { user, tenant } = await authRepository.getProfile();
+            applyProfile(user, tenant);
             return true;
           } catch (error) {
             console.error('Error al obtener el perfil:', error);
@@ -197,13 +196,8 @@ export const useAuthStore = create<AuthState>()(
         const { refreshToken } = get();
         if (!refreshToken) return false;
         try {
-          const response = await authService.refresh(refreshToken);
-          if (!response?.accessToken) return false;
-          set({
-            accessToken: response.accessToken,
-            refreshToken: response.refreshToken || refreshToken,
-            isSessionExpiredModalOpen: false,
-          });
+          const tokens = await authRepository.refresh(refreshToken);
+          set({ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, isSessionExpiredModalOpen: false });
           // Mantener permisos y datos de la tienda sincronizados con el servidor.
           get().fetchProfile().catch(() => {});
           return true;
