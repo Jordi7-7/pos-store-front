@@ -30,7 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { getErrorMessage } from '@/shared/presentation/error-messages';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 
 // ---------------------------------------------------------------------------
 // Props

@@ -1,7 +1,7 @@
 import type { ClosingTicketData } from '@/modules/printing/domain/entities/ticket';
 import type { CashSessionDetailsEntity } from '../entities/cash-session.entity';
 import { CashSessionStatus } from '../enums';
-import { PaymentMethod } from '@/shared/domain/payments';
+import { PaymentMethod } from '@/shared/domain/enums/payments';
 
 /** Datos del corte Z de un turno, a partir de su resumen. Solo reordena lo que el servidor calculó. */
 export function buildClosingTicketData(details: CashSessionDetailsEntity): ClosingTicketData {

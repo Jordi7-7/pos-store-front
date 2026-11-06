@@ -1,5 +1,5 @@
 import { CashSessionStatus } from '../../domain/enums';
-import { SaleStatus, PaymentMethod } from '@/shared/domain/payments';
+import { SaleStatus, PaymentMethod } from '@/shared/domain/enums/payments';
 
 export interface ProductAttributeValue {
   id?: string;

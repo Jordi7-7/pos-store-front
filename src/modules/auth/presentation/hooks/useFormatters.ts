@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { createFormatters, type Formatters } from '@/shared/presentation/formatters';
-import { localeForCountry } from '@/shared/domain/format-money';
+import { createFormatters, type Formatters } from '@/shared/presentation/formatting/formatters';
+import { localeForCountry } from '@/shared/domain/rules/format-money';
 import { MissingTenantDataError, useTenant } from './useSession';
 
 /**

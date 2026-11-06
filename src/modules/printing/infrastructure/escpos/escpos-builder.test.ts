@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PaymentMethod } from '@/shared/domain/payments';
+import { PaymentMethod } from '@/shared/domain/enums/payments';
 import type { ClosingTicketData, TicketSaleData } from '../../domain/entities/ticket';
 import { buildClosingReceiptBytes, buildSaleReceiptBytes } from './escpos-builder';
 

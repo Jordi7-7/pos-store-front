@@ -1,4 +1,4 @@
-import { formatMoneyAmount } from '@/shared/domain/format-money';
+import { formatMoneyAmount } from '@/shared/domain/rules/format-money';
 import type { TicketFormat } from '../../domain/entities/ticket';
 
 /** La tabla de caracteres de la impresora (CP850) no tiene todos los símbolos de moneda. */

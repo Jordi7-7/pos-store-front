@@ -1,4 +1,4 @@
-import { parseMoneyInput } from '@/shared/domain/money-input';
+import { parseMoneyInput } from '@/shared/domain/rules/money-input';
 import type { ActiveCashSessionEntity } from '../../domain/entities/cash-session.entity';
 import { CashSessionError } from '../errors/cash-session-error';
 import type { CashSessionsRepository } from '../ports/cash-sessions.repository';

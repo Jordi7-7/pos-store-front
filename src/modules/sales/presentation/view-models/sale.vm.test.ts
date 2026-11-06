@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createFormatters } from '@/shared/presentation/formatters';
+import { createFormatters } from '@/shared/presentation/formatting/formatters';
 import { PaymentMethod, SaleStatus } from '../../domain/enums';
 import type { SaleDetailEntity } from '../../domain/entities/sale.entity';
 import { SALE_STATUS_BADGE, toSaleDetailVM, toSaleSummaryVM, toTicketSaleData } from './sale.vm';

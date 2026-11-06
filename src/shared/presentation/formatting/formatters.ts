@@ -1,4 +1,4 @@
-import { formatMoneyAmount } from '@/shared/domain/format-money';
+import { formatMoneyAmount } from '@/shared/domain/rules/format-money';
 
 /** Lo que condiciona cómo se muestran importes y fechas: sale siempre de la tienda, nunca de valores fijos. */
 export interface FormatContext {

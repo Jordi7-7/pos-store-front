@@ -161,6 +161,27 @@ describe('jerarquía de carpetas de los módulos migrados', () => {
   });
 });
 
+/** El núcleo compartido sigue la misma lógica que un módulo, con sus propias carpetas. */
+const SHARED_LAYOUT =
+  /^\/src\/shared\/(domain\/(value-objects|enums|rules)\/[^/]+|infrastructure\/http\/[^/]+|presentation\/(components|stores|formatting)\/[^/]+)$/;
+
+describe('jerarquía de carpetas del núcleo compartido', () => {
+  const shared = Object.keys(sources).filter((path) => path.startsWith('/src/shared/'));
+
+  it('hay archivos que revisar (la regla no pasa en vacío)', () => {
+    expect(shared.length).toBeGreaterThan(15);
+  });
+
+  it('todo archivo de shared está en la carpeta que corresponde a su función', () => {
+    expect(shared.filter((path) => !SHARED_LAYOUT.test(path))).toEqual([]);
+  });
+
+  it('la regla detecta un archivo suelto', () => {
+    expect(SHARED_LAYOUT.test('/src/shared/domain/money.ts')).toBe(false);
+    expect(SHARED_LAYOUT.test('/src/shared/domain/value-objects/money.ts')).toBe(true);
+  });
+});
+
 describe('las reglas detectan las violaciones (si no, la guarda no sirve)', () => {
   const v = (files: Record<string, string>) => findViolations(files);
 

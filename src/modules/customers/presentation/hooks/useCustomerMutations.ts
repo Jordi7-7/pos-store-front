@@ -3,7 +3,7 @@ import { customersRepository } from '../../infrastructure/dependencies';
 import { CUSTOMERS_QUERY_KEY } from './useCustomerList';
 import type { CustomerInput } from '../../application/ports/customers.repository';
 import { toast } from 'sonner';
-import { getErrorMessage } from '@/shared/presentation/error-messages';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 
 export const useCustomerMutations = () => {
   const queryClient = useQueryClient();

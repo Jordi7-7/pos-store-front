@@ -1,4 +1,4 @@
-import type { Formatters } from '@/shared/presentation/formatters';
+import type { Formatters } from '@/shared/presentation/formatting/formatters';
 import { PaymentMethod, SaleStatus } from '../../domain/enums';
 import type {
   SaleDetailEntity,

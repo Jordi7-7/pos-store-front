@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Money } from '@/shared/domain/money';
+import { Money } from '@/shared/domain/value-objects/money';
 import { allocatePayments, changeDue, paymentsCoverTotal, priceSale, remainingToPay, SalePricingError, type SaleLineAmounts } from './sale-pricing';
 
 // Paridad con pos-store/src/modules/sales/domain/services/sale-pricing.spec.ts: mismos casos, mismos resultados.

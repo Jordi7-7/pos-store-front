@@ -1,4 +1,4 @@
-import { Money } from '@/shared/domain/money';
+import { Money } from '@/shared/domain/value-objects/money';
 
 /**
  * Importes de una devolución o cambio, con paridad con el backend

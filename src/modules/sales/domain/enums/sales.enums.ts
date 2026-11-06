@@ -1,4 +1,4 @@
-export { PaymentMethod, SaleStatus } from '@/shared/domain/payments';
+export { PaymentMethod, SaleStatus } from '@/shared/domain/enums/payments';
 
 /** Cómo se calcula un descuento: porcentaje sobre el precio, o precio final fijado (monto). */
 export enum DiscountType {

@@ -1,4 +1,4 @@
-import { Money } from './money';
+import { Money } from '../value-objects/money';
 
 /**
  * Importes escritos por el usuario en un campo de texto. Devuelven `null` si no son un importe

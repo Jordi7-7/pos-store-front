@@ -10,7 +10,7 @@ import type {
 } from '../../domain/entities/cash-session.entity';
 
 import { CashSessionStatus, CashSessionDifferenceStatus } from '../../domain/enums';
-import { SaleStatus } from '@/shared/domain/payments';
+import { SaleStatus } from '@/shared/domain/enums/payments';
 
 /** Por debajo de esta diferencia (en la moneda de la tienda) el cuadre se considera exacto. */
 const EXACT_TOLERANCE = 0.05;

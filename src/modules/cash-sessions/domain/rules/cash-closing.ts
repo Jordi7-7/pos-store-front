@@ -1,5 +1,5 @@
-import { Money } from '@/shared/domain/money';
-import { parseMoneyInput } from '@/shared/domain/money-input';
+import { Money } from '@/shared/domain/value-objects/money';
+import { parseMoneyInput } from '@/shared/domain/rules/money-input';
 
 /**
  * Arqueo de caja: reglas puras con paridad con el backend

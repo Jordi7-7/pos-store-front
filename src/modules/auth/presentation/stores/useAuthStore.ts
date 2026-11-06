@@ -5,7 +5,7 @@ import { ProfileUnavailableError } from '../../application/use-cases/sign-in';
 import type { SignInCredentials } from '../../application/ports/auth.repository';
 import { queryClient } from '@/providers/QueryProvider';
 import { CLIENT_ERROR_CODES, isApiError } from '@/shared/infrastructure/http/api-error';
-import { getErrorMessage } from '@/shared/presentation/error-messages';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 import { useWorkspaceStore } from '@/shared/presentation/stores/workspace.store';
 import {
   hasAnyPermission,

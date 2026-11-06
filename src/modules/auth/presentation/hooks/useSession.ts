@@ -1,6 +1,6 @@
 import { selectIsAuthenticated, useAuthStore } from '../stores/useAuthStore';
 import { branchIdsOf, roleLabel, tenantFormatKey, type SessionTenant, type SessionUser } from '../../domain/entities/session';
-import { formatMoneyAmount, localeForCountry } from '@/shared/domain/format-money';
+import { formatMoneyAmount, localeForCountry } from '@/shared/domain/rules/format-money';
 
 /**
  * Lectura de la sesión mediante selectores: cada componente se suscribe solo al dato que usa

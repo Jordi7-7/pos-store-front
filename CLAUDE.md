@@ -46,6 +46,8 @@ modules/<módulo>/
 │   └── view-models/        entidad → textos de pantalla (moneda, fechas, etiquetas)
 └── index.ts                API pública del módulo
 ```
+El núcleo compartido (`src/shared/`) sigue la misma lógica: `domain/{value-objects,enums,rules}` (`Money`, `PaymentMethod`, formato de importes, validación de entradas), `infrastructure/http` (`HttpClient`, `ApiError`) y `presentation/{components,stores,formatting}` (formateadores de la tienda, catálogo `code → mensaje`, paginación).
+
 Regla de lectura: **domain no conoce a nadie; application solo conoce a domain; infrastructure implementa lo que application pide; presentation usa application a través de `dependencies.ts`.** `printing` añade `infrastructure/escpos/` y `infrastructure/printers/` (generador ESC/POS e impresora USB).
 
 ## Patrón por módulo (referencia: `sales`, `cash-sessions`, `cash-registers`, `printing`, `auth`, `branches`, `customers`, `media`)

@@ -1,4 +1,4 @@
-import { Money } from '@/shared/domain/money';
+import { Money } from '@/shared/domain/value-objects/money';
 
 /**
  * Cálculo de una venta con paridad con el backend

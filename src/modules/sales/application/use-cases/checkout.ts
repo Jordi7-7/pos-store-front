@@ -1,5 +1,5 @@
 import { DiscountType } from '@/modules/sales/domain/enums';
-import { Money } from '@/shared/domain/money';
+import { Money } from '@/shared/domain/value-objects/money';
 import { CheckoutAttempt, checkoutFingerprint } from '../../domain/rules/checkout-attempt';
 import { allocatePayments, changeDue, paymentsCoverTotal, priceSale, remainingToPay } from '../../domain/rules/sale-pricing';
 import type { ProcessSaleInput, SaleReceipt, SalesRepository } from '../ports/sales.repository';

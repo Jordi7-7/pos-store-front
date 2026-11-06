@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PaymentMethod, SaleStatus } from '@/shared/domain/payments';
+import { PaymentMethod, SaleStatus } from '@/shared/domain/enums/payments';
 import { CashSessionDifferenceStatus, CashSessionStatus } from '../enums';
 import type { CashSessionDetailsEntity, CashSessionSaleEntity } from '../entities/cash-session.entity';
 import { buildClosingSummary } from './closing-summary';

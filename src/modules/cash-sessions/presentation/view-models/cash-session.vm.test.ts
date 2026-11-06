@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createFormatters } from '@/shared/presentation/formatters';
-import { PaymentMethod, SaleStatus } from '@/shared/domain/payments';
+import { createFormatters } from '@/shared/presentation/formatting/formatters';
+import { PaymentMethod, SaleStatus } from '@/shared/domain/enums/payments';
 import { CashSessionDifferenceStatus, CashSessionStatus } from '../../domain/enums';
 import type { CashSessionDetailsEntity, CashSessionHeaderEntity } from '../../domain/entities/cash-session.entity';
 import { toCashSessionDetailsVM, toCashSessionHeaderVM } from './cash-session.vm';

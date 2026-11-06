@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { roundMoney } from '@/shared/domain/money';
+import { roundMoney } from '@/shared/domain/value-objects/money';
 import { PaymentMethod } from '../../../domain/enums';
 import { remainingToPay } from '../../../domain/rules/sale-pricing';
 

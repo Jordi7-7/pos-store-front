@@ -6,7 +6,7 @@ import { CashSessionError } from '@/modules/cash-sessions/application/errors/cas
 import { buildClosingTicketData } from '@/modules/cash-sessions/domain/rules/closing-ticket';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import { useWorkspaceStore } from '@/shared/presentation/stores/workspace.store';
-import { getErrorMessage } from '@/shared/presentation/error-messages';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 import { ticketPrinter } from '@/modules/printing/infrastructure/dependencies';
 import { useActiveCashSession, useCloseCashSession, useOpenCashSession, useRegisterExpense } from '@/modules/cash-sessions/presentation/hooks/useCashSession';
 import { useTicketFormat } from '../../../../printing/presentation/hooks/useTicketFormat';

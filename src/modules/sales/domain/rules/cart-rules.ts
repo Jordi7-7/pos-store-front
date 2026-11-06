@@ -1,5 +1,5 @@
 import { DiscountType } from '@/modules/sales/domain/enums';
-import { Money } from '@/shared/domain/money';
+import { Money } from '@/shared/domain/value-objects/money';
 
 /**
  * Reglas puras del carrito (sin React ni avisos): todo el dinero pasa por `Money`, igual que en el

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createFormatters } from '@/shared/presentation/formatters';
+import { createFormatters } from '@/shared/presentation/formatting/formatters';
 import { getCustomerInitials, toCustomerVM } from './customer.vm';
 
 describe('getCustomerInitials', () => {

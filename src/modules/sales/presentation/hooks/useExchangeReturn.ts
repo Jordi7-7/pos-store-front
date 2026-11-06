@@ -3,7 +3,7 @@ import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useSaleByInvoice } from './useSaleDetail';
 import { useExchangeProducts, useRefundSale } from './useSalesMutations';
-import { getErrorMessage } from '@/shared/presentation/error-messages';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 import { ExchangeError } from '../../application/use-cases/exchange-products';
 import { RefundSaleError } from '../../application/use-cases/refund-sale';
 import type { SaleDetailEntity } from '../../domain/entities/sale.entity';

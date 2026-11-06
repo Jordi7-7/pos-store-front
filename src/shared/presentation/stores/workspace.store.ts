@@ -5,7 +5,7 @@ import {
   reconcileWorkspace,
   type Workspace,
   type WorkspaceAccess,
-} from '@/shared/domain/workspace';
+} from '@/shared/domain/rules/workspace';
 
 interface WorkspaceState extends Workspace {
   setSelectedBranchId: (branchId: string | null) => void;

@@ -1,4 +1,4 @@
-import type { Formatters } from '@/shared/presentation/formatters';
+import type { Formatters } from '@/shared/presentation/formatting/formatters';
 import type { CustomerEntity } from '../../domain/entities/customer.entity';
 
 /** Cliente con los textos listos para mostrar (iniciales del avatar y fecha de alta en la zona de la tienda). */
