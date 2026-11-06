@@ -1,11 +1,11 @@
 import React from 'react';
 import { History, Lock, Unlock, User, Clock, Calendar, Printer, HelpCircle } from 'lucide-react';
-import type { CashSessionDetailsEntity } from '../../../domain/entities';
+import type { CashSessionDetailsVM } from '../../view-models/cash-session.vm';
 import { Button } from '@/components/ui/button';
 
 /** Cabecera de la auditoría: estado, caja, acciones de impresión y datos de apertura/cierre. */
 interface AuditHeaderProps {
-  details: CashSessionDetailsEntity;
+  details: CashSessionDetailsVM;
   showFormulasGuide: boolean;
   onToggleFormulasGuide: () => void;
   onPrintSessionTicket: () => void;

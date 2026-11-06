@@ -1,11 +1,11 @@
 import React from 'react';
 import { ShoppingBag, TrendingDown, RotateCcw, Coins, Receipt, DollarSign, Info } from 'lucide-react';
-import type { CashSessionDetailsEntity } from '../../../domain/entities';
+import type { CashSessionDetailsVM } from '../../view-models/cash-session.vm';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 /** Cifras principales del turno: apertura, ventas, gastos, devoluciones, esperado y arqueo. */
 interface AuditKpisProps {
-  details: CashSessionDetailsEntity;
+  details: CashSessionDetailsVM;
 }
 
 export const AuditKpis: React.FC<AuditKpisProps> = ({ details }) => {

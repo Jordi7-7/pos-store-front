@@ -10,7 +10,7 @@ import {
   Printer,
 } from 'lucide-react';
 import { useCashSessionsList, useFetchCashSessionDetails } from '../hooks/useCashSessions';
-import type { CashSessionHeaderEntity } from '../../domain/entities';
+import type { CashSessionHeaderVM } from '../view-models/cash-session.vm';
 import { CashSessionStatus, CashSessionDifferenceStatus } from '../../domain/enums';
 import { useTenant } from '../../../auth/hooks/useSession';
 import { useLayoutContext } from '@/providers/LayoutContext';
@@ -65,8 +65,8 @@ export const CashSessionsHistoryView: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Filtered sessions
-  const filteredSessions = useMemo<CashSessionHeaderEntity[]>(() => {
-    return sessions.filter((s: CashSessionHeaderEntity) => {
+  const filteredSessions = useMemo<CashSessionHeaderVM[]>(() => {
+    return sessions.filter((s: CashSessionHeaderVM) => {
       const regName = s.cashRegisterName || '';
       const regCode = s.cashRegisterCode || '';
       return (
@@ -152,7 +152,7 @@ export const CashSessionsHistoryView: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredSessions.map((s: CashSessionHeaderEntity) => (
+                {filteredSessions.map((s: CashSessionHeaderVM) => (
                   <TableRow key={s.id} className="border-b border-border/60 last:border-0 hover:bg-muted/30 transition-colors">
                     {/* Avatar / Number badge */}
                     <TableCell className="py-2.5 pl-4 pr-1">

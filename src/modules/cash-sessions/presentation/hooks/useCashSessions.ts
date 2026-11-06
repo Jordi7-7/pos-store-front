@@ -1,15 +1,20 @@
+import { useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useFormatters } from '@/modules/auth/hooks/useFormatters';
 import { cashSessionsService } from '../../infrastructure/cash-sessions.service';
 import type { CashSessionHeader, CashSessionDetails } from '../../domain/session-types';
 import type { CashSessionDetailsEntity, CashSessionHeaderEntity } from '../../domain/entities';
 import { toCashSessionDetailsEntity, toCashSessionHeaderEntities } from '../../infrastructure/mappers';
+import { toCashSessionDetailsVM, toCashSessionHeaderVM } from '../view-models/cash-session.vm';
 
 export const useCashSessionsList = (branchId?: string) => {
-  const { data: sessions = [], isLoading, refetch } = useQuery<CashSessionHeader[], Error, CashSessionHeaderEntity[]>({
+  const fmt = useFormatters();
+  const { data: entities, isLoading, refetch } = useQuery<CashSessionHeader[], Error, CashSessionHeaderEntity[]>({
     queryKey: ['cash-sessions', branchId],
     queryFn: () => cashSessionsService.getCashSessions(branchId),
     select: (data) => toCashSessionHeaderEntities(data),
   });
+  const sessions = useMemo(() => (entities ?? []).map((entity) => toCashSessionHeaderVM(entity, fmt)), [entities, fmt]);
 
   return {
     sessions,
@@ -34,8 +39,12 @@ export const useCashSessionDetailsQuery = (sessionId: string | null, options?: {
     enabled: isEnabled,
   });
 
+  const fmt = useFormatters();
+  const entity = queryResult?.entity ?? null;
+  const details = useMemo(() => (entity ? toCashSessionDetailsVM(entity, fmt) : null), [entity, fmt]);
+
   return {
-    details: queryResult?.entity ?? null,
+    details,
     rawDetails: queryResult?.raw ?? null,
     isLoading,
     isError,

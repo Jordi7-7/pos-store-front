@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { roundMoney } from '@/shared/domain/money';
 import { formatMoney, useTenant } from '@/modules/auth/hooks/useSession';
+import { useFormatters } from '@/modules/auth/hooks/useFormatters';
 import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
 import { getErrorMessage } from '@/shared/presentation/error-messages';
 import type { ActiveCashSession } from '@/modules/cash-sessions/domain/session-types';
@@ -10,7 +11,6 @@ import { CheckoutError } from '../../../application/checkout';
 import type { CartItem } from '../../../domain/cart-item';
 import { PaymentMethod } from '../../../domain/enums';
 import type { TicketSaleData } from '../../../domain/ticket';
-import { formatSaleDateTime } from '../../../infrastructure/mappers/sale.mapper';
 import { ticketPrinter } from '../../../infrastructure/dependencies';
 import { useProcessSale } from '../useSalesMutations';
 import { useTicketFormat } from '../useTicketFormat';
@@ -47,6 +47,7 @@ export function usePOSSale(options: Options) {
   const currentUser = useAuthStore((state) => state.user);
   const tenant = useTenant();
   const ticketFormat = useTicketFormat();
+  const fmt = useFormatters();
 
   const [lastCompletedSale, setLastCompletedSale] = useState<TicketSaleData | null>(null);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
@@ -84,7 +85,7 @@ export function usePOSSale(options: Options) {
       const customer = customers.find((c) => c.id === selectedCustomerId);
       const ticket: TicketSaleData = {
         invoiceNumber: receipt.invoiceNumber,
-        createdAt: formatSaleDateTime(receipt.createdAt || new Date()),
+        createdAt: fmt.dateTime(receipt.createdAt || new Date()),
         branchName: options.branchName,
         branchAddress: options.branchAddress,
         clientName: customer?.name || 'Consumidor Final',

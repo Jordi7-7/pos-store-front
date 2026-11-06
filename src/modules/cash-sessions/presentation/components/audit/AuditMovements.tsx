@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { ShoppingBag, TrendingDown, RotateCcw, User, Printer } from 'lucide-react';
-import type { CashSessionDetailsEntity, CashSessionExpenseEntity, CashSessionRefundEntity, CashSessionSaleEntity } from '../../../domain/entities';
+import type { CashSessionDetailsVM, CashSessionExpenseVM, CashSessionRefundVM, CashSessionSaleVM } from '../../view-models/cash-session.vm';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SaleStatus } from '@/modules/sales/domain/enums';
 
 /** Ventas, gastos y devoluciones del turno, por pestañas. */
 interface AuditMovementsProps {
-  details: CashSessionDetailsEntity;
-  onPrintSale: (sale: CashSessionSaleEntity) => void;
+  details: CashSessionDetailsVM;
+  onPrintSale: (sale: CashSessionSaleVM) => void;
 }
 
 export const AuditMovements: React.FC<AuditMovementsProps> = ({ details, onPrintSale }) => {
@@ -76,7 +76,7 @@ export const AuditMovements: React.FC<AuditMovementsProps> = ({ details, onPrint
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {details.sales.map((sale: CashSessionSaleEntity) => (
+                {details.sales.map((sale: CashSessionSaleVM) => (
                   <TableRow
                     key={sale.id}
                     className="text-xs hover:bg-muted/10 transition-colors"
@@ -148,7 +148,7 @@ export const AuditMovements: React.FC<AuditMovementsProps> = ({ details, onPrint
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {details.expenses.map((exp: CashSessionExpenseEntity) => (
+                {details.expenses.map((exp: CashSessionExpenseVM) => (
                   <TableRow
                     key={exp.id}
                     className="text-xs hover:bg-muted/10 transition-colors"
@@ -198,7 +198,7 @@ export const AuditMovements: React.FC<AuditMovementsProps> = ({ details, onPrint
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {details.refunds.map((ref: CashSessionRefundEntity) => (
+                {details.refunds.map((ref: CashSessionRefundVM) => (
                   <TableRow
                     key={ref.id}
                     className="text-xs hover:bg-muted/10 transition-colors"

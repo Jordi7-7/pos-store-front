@@ -6,8 +6,9 @@ import { usePaginatedSales } from '../hooks/useSalesList';
 import { SaleDetailModal } from './SaleDetailModal';
 import { ThermalTicketModal, type TicketSaleData } from './pos/ThermalTicketModal';
 import { useSaleByInvoice } from '../hooks/useSaleDetail';
-import { toTicketSaleData } from '../../infrastructure/mappers/sale.mapper';
-import { useTenant, useTimezone } from '@/modules/auth/hooks/useSession';
+import { toTicketSaleData, SALE_STATUS_BADGE } from '../view-models/sale.vm';
+import { useFormatters } from '@/modules/auth/hooks/useFormatters';
+import { useTenant } from '@/modules/auth/hooks/useSession';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import { ProductPagination } from '@/modules/products/components/ProductPagination';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +16,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { Field } from '@/components/ui/field';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { formatMoney } from '@/modules/auth/hooks/useSession';
 
 export const SalesView: React.FC = () => {
   const { selectedBranchId } = useLayoutContext();
@@ -32,7 +32,7 @@ export const SalesView: React.FC = () => {
 
   const { fetchSale } = useSaleByInvoice();
   const publicTenant = useTenant();
-  const timezone = useTimezone();
+  const fmt = useFormatters();
   const startDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined;
   const endDate = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined;
   const isAllBranches = !selectedBranchId;
@@ -55,7 +55,7 @@ export const SalesView: React.FC = () => {
       setPrintingInvoice(invoiceNumber);
       const detail = await fetchSale(invoiceNumber);
       if (detail) {
-        setTicketSaleData(toTicketSaleData(detail));
+        setTicketSaleData(toTicketSaleData(detail, fmt));
         setIsTicketModalOpen(true);
       }
     } catch (err) {
@@ -124,36 +124,30 @@ export const SalesView: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {sales.map((sale: any) => (
+                  {sales.map((sale) => (
                     <tr
                       key={sale.id}
                       onClick={() => sale.invoiceNumber && setSelectedInvoice(sale.invoiceNumber)}
                       className="border-b border-border/60 last:border-0 hover:bg-muted/30 cursor-pointer"
                     >
-                      <td className="p-3 font-mono font-semibold text-primary">{sale.invoiceNumber || 'S/Ref'}</td>
+                      <td className="p-3 font-mono font-semibold text-primary">{sale.invoiceNumber}</td>
                       <td className="p-3 text-muted-foreground">
                         <span className="inline-flex items-center gap-1">
                           <CalendarIcon className="w-3.5 h-3.5" />
-                          {new Date(sale.createdAt).toLocaleString(undefined, { timeZone: timezone })}
+                          {sale.dateFormatted}
                         </span>
                       </td>
                       {isAllBranches && (
                         <td className="p-3 font-medium text-foreground">
                           <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-muted border border-border">
-                            {sale.branch?.name || 'Principal'}
+                            {sale.branchName}
                           </span>
                         </td>
                       )}
-                      <td className="p-3">{sale.customer?.name || 'Consumidor Final'}</td>
-                      <td className="p-3 text-right font-mono font-bold">{formatMoney(Number(sale.total || 0))}</td>
+                      <td className="p-3">{sale.customerName}</td>
+                      <td className="p-3 text-right font-mono font-bold">{sale.totalFormatted}</td>
                       <td className="p-3">
-                        {sale.status === 'REFUNDED' ? (
-                          <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 text-[10px] font-semibold border border-rose-200">Devuelta</span>
-                        ) : sale.status === 'PARTIALLY_REFUNDED' ? (
-                          <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-semibold border border-amber-200">Parcialmente devuelta</span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-semibold border border-emerald-200">Completada</span>
-                        )}
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${SALE_STATUS_BADGE[sale.status].className}`}>{SALE_STATUS_BADGE[sale.status].label}</span>
                       </td>
                       <td className="p-3 text-right">
                         <Button

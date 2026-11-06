@@ -6,9 +6,8 @@ import { Loader2, Receipt, RotateCcw, Printer } from 'lucide-react';
 import { useSaleByInvoice } from '../hooks/useSaleDetail';
 import { ThermalTicketModal } from './pos/ThermalTicketModal';
 import { useTenant } from '@/modules/auth/hooks/useSession';
-import { toTicketSaleData } from '../../infrastructure/mappers/sale.mapper';
-import type { SaleDetailItemEntity, SaleRefundItemEntity } from '../../domain/entities/sale.entity';
-import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { toTicketSaleData, type SaleDetailItemVM, type SaleRefundItemVM } from '../view-models/sale.vm';
+import { useFormatters } from '@/modules/auth/hooks/useFormatters';
 
 interface SaleDetailModalProps {
   invoiceNumber?: string;
@@ -16,14 +15,13 @@ interface SaleDetailModalProps {
   onClose: () => void;
 }
 
-const money = (value: number) => formatMoney(Number(value || 0));
-
 export const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ invoiceNumber, isOpen, onClose }) => {
   const { sale, isLoading, isError } = useSaleByInvoice(invoiceNumber, isOpen);
   const publicTenant = useTenant();
+  const fmt = useFormatters();
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
 
-  const saleDataForTicket = useMemo(() => (sale ? toTicketSaleData(sale) : null), [sale]);
+  const saleDataForTicket = useMemo(() => (sale ? toTicketSaleData(sale, fmt) : null), [sale, fmt]);
 
   return (
     <>
@@ -66,7 +64,7 @@ export const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ invoiceNumber,
                     <table className="w-full text-left text-xs">
                       <thead className="bg-muted/50"><tr><th className="p-3">Producto</th><th className="p-3">SKU</th><th className="p-3 text-right">Cantidad</th><th className="p-3 text-right">Precio venta</th><th className="p-3 text-right">Descuento</th><th className="p-3 text-right">Total</th></tr></thead>
                       <tbody>
-                        {sale.items.map((item: SaleDetailItemEntity) => {
+                        {sale.items.map((item: SaleDetailItemVM) => {
                           const isFullyRefunded = item.refundedQty >= item.quantity;
                           const isPartiallyRefunded = item.refundedQty > 0 && !isFullyRefunded;
                           return <tr key={item.saleItemId} className={`border-t border-border/60 ${isFullyRefunded ? 'bg-rose-500/5' : isPartiallyRefunded ? 'bg-amber-500/5' : ''}`}>
@@ -74,7 +72,7 @@ export const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ invoiceNumber,
                             <td className="p-3 font-mono text-primary">{item.sku || 'S/SKU'}</td>
                             <td className="p-3 text-right font-mono">{item.quantity}</td>
                             <td className="p-3 text-right font-mono">{item.priceFormatted}</td>
-                            <td className="p-3 text-right font-mono">-{money(item.discountAmount)}</td>
+                            <td className="p-3 text-right font-mono">-{fmt.money(item.discountAmount)}</td>
                             <td className="p-3 text-right font-mono font-bold">{item.lineTotalFormatted}</td>
                           </tr>;
                         })}
@@ -88,7 +86,7 @@ export const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ invoiceNumber,
                   <section className="rounded-xl border border-border p-4"><h3 className="mb-3 text-xs font-bold uppercase tracking-wider">Resumen</h3><div className="space-y-2 text-xs"><div className="flex justify-between"><span>Subtotal</span><strong>{sale.subtotalFormatted}</strong></div><div className="flex justify-between text-emerald-600"><span>Descuento</span><strong>-{sale.discountAmountFormatted}</strong></div><div className="flex justify-between border-t border-border pt-2 text-sm"><span>Total</span><strong>{sale.totalFormatted}</strong></div></div></section>
                 </div>
 
-                {sale.refunds.length > 0 && <section className="space-y-3"><h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-600"><RotateCcw className="h-4 w-4" />Historial de devoluciones</h3>{sale.refunds.map((refund) => <div key={refund.id} className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4"><div className="flex justify-between text-xs"><strong>{refund.dateFormatted}</strong><strong>{refund.totalRefundedFormatted}</strong></div><p className="mt-1 text-xs text-muted-foreground">{refund.reason}</p><div className="mt-3 space-y-1">{refund.items.map((item: SaleRefundItemEntity) => <div key={item.id} className="flex justify-between text-[11px]"><span>{item.productName} · {item.sku} x{item.quantity}</span><span className="font-mono">{item.priceRefundedFormatted}</span></div>)}</div></div>)}</section>}
+                {sale.refunds.length > 0 && <section className="space-y-3"><h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-600"><RotateCcw className="h-4 w-4" />Historial de devoluciones</h3>{sale.refunds.map((refund) => <div key={refund.id} className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4"><div className="flex justify-between text-xs"><strong>{refund.dateFormatted}</strong><strong>{refund.totalRefundedFormatted}</strong></div><p className="mt-1 text-xs text-muted-foreground">{refund.reason}</p><div className="mt-3 space-y-1">{refund.items.map((item: SaleRefundItemVM) => <div key={item.id} className="flex justify-between text-[11px]"><span>{item.productName} · {item.sku} x{item.quantity}</span><span className="font-mono">{item.priceRefundedFormatted}</span></div>)}</div></div>)}</section>}
               </div>
             )}
           </div>

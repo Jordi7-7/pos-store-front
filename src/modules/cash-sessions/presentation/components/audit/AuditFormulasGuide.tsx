@@ -1,10 +1,10 @@
 import React from 'react';
 import { ShoppingBag, Coins, Info } from 'lucide-react';
-import type { CashSessionDetailsEntity } from '../../../domain/entities';
+import type { CashSessionDetailsVM } from '../../view-models/cash-session.vm';
 
 /** Explicación de cómo se calcula cada cifra de la sesión. */
 interface AuditFormulasGuideProps {
-  details: CashSessionDetailsEntity;
+  details: CashSessionDetailsVM;
   onClose: () => void;
 }
 

@@ -21,6 +21,25 @@ describe('arquitectura: dependencias solo hacia adentro', () => {
   });
 });
 
+/** Textos ya formateados para pantalla: son del view-model, no de la entidad. */
+const PRESENTATION_FIELD = /\b\w+(Formatted|Label)\??\s*:\s*string\b/;
+
+describe('el dominio no lleva texto de pantalla', () => {
+  it('ninguna entidad de domain tiene campos *Formatted ni *Label (van en presentation/view-models)', () => {
+    const offenders = Object.entries(production)
+      .filter(([path]) => layerOf(path) === 'domain')
+      .filter(([, content]) => PRESENTATION_FIELD.test(content))
+      .map(([path]) => path);
+    expect(offenders).toEqual([]);
+  });
+
+  it('la regla detecta el campo prohibido', () => {
+    expect(PRESENTATION_FIELD.test('  totalFormatted: string;')).toBe(true);
+    expect(PRESENTATION_FIELD.test('  statusLabel?: string;')).toBe(true);
+    expect(PRESENTATION_FIELD.test('  total: number;')).toBe(false);
+  });
+});
+
 describe('las reglas detectan las violaciones (si no, la guarda no sirve)', () => {
   const v = (files: Record<string, string>) => findViolations(files);
 

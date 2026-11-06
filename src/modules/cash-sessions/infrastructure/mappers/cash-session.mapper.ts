@@ -8,121 +8,41 @@ import type {
   CashSessionRefundEntity,
 } from '../../domain/entities/cash-session.entity';
 
-import { formatMoney, getTenantLocale, getTenantTimezone } from '../../../auth/hooks/useSession';
 import { CashSessionStatus, CashSessionDifferenceStatus } from '../../domain/enums';
 import { SaleStatus } from '@/modules/sales/domain/enums';
 
-const formatDate = (dateString?: string | null): string => {
-  if (!dateString) return '';
-  const tz = getTenantTimezone();
-  try {
-    return new Date(dateString).toLocaleDateString(getTenantLocale(), {
-      timeZone: tz,
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
-  } catch {
-    return '';
-  }
-};
+/** Por debajo de esta diferencia (en la moneda de la tienda) el cuadre se considera exacto. */
+const EXACT_TOLERANCE = 0.05;
 
-const formatTime = (dateString?: string | null): string => {
-  if (!dateString) return '';
-  const tz = getTenantTimezone();
-  try {
-    return new Date(dateString).toLocaleTimeString(getTenantLocale(), {
-      timeZone: tz,
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return '';
-  }
-};
-
-const calculateDuration = (openedAt?: string | null, closedAt?: string | null): string => {
-  if (!openedAt) return '0m';
-  const start = new Date(openedAt).getTime();
-  const end = closedAt ? new Date(closedAt).getTime() : Date.now();
-  if (isNaN(start) || isNaN(end) || end < start) return '0m';
-  const diffMinutes = Math.floor((end - start) / (1000 * 60));
-  const hours = Math.floor(diffMinutes / 60);
-  const minutes = diffMinutes % 60;
-  if (hours === 0) return `${minutes}m`;
-  return `${hours}h ${minutes}m`;
-};
-
-export const toCashSessionHeaderEntity = (
-  dto: CashSessionHeader
-): CashSessionHeaderEntity => {
+export const toCashSessionHeaderEntity = (dto: CashSessionHeader): CashSessionHeaderEntity => {
   const isClosed = dto.status === CashSessionStatus.CLOSED;
-  const diff = dto.difference !== null && dto.difference !== undefined
-    ? Number(dto.difference)
-    : null;
+  const difference = dto.difference !== null && dto.difference !== undefined ? Number(dto.difference) : null;
 
-  let differenceStatus: CashSessionDifferenceStatus = CashSessionDifferenceStatus.PENDING;
-  let differenceStatusText = 'En turno';
-
+  let differenceStatus = CashSessionDifferenceStatus.PENDING;
   if (isClosed) {
-    if (diff !== null) {
-      if (Math.abs(diff) < 0.05) {
-        differenceStatus = CashSessionDifferenceStatus.EXACT;
-        differenceStatusText = 'Exacto ($0.00)';
-      } else if (diff > 0) {
-        differenceStatus = CashSessionDifferenceStatus.SURPLUS;
-        differenceStatusText = `Sobran +${formatMoney(diff)}`;
-      } else {
-        differenceStatus = CashSessionDifferenceStatus.SHORTAGE;
-        differenceStatusText = `Faltan -${formatMoney(Math.abs(diff))}`;
-      }
-    } else {
-      differenceStatus = CashSessionDifferenceStatus.EXACT;
-      differenceStatusText = 'Exacto ($0.00)';
-    }
+    if (difference === null || Math.abs(difference) < EXACT_TOLERANCE) differenceStatus = CashSessionDifferenceStatus.EXACT;
+    else differenceStatus = difference > 0 ? CashSessionDifferenceStatus.SURPLUS : CashSessionDifferenceStatus.SHORTAGE;
   }
-
-  const dateFormatted = formatDate(dto.openedAt);
-  const openTimeFormatted = formatTime(dto.openedAt);
-  const closeTimeFormatted = dto.closedAt ? formatTime(dto.closedAt) : 'En curso';
-  const timeRangeFormatted = dto.closedAt
-    ? `${openTimeFormatted} — ${closeTimeFormatted}`
-    : `Desde ${openTimeFormatted} (En curso)`;
-
-  const totalSales = Number(dto.totalSales || 0);
 
   return {
     id: dto.id,
     branchId: dto.branchId,
     userId: dto.userId,
     openingBalance: Number(dto.openingBalance || 0),
-    openingBalanceFormatted: formatMoney(dto.openingBalance),
     closingBalance: dto.closingBalance !== null ? Number(dto.closingBalance) : null,
-    closingBalanceFormatted: formatMoney(dto.closingBalance),
     expectedBalance: dto.expectedBalance !== null ? Number(dto.expectedBalance) : null,
-    expectedBalanceFormatted: formatMoney(dto.expectedBalance),
-    difference: diff,
-    differenceFormatted: diff !== null ? formatMoney(Math.abs(diff)) : '$0.00',
+    difference,
     differenceStatus,
-    differenceStatusText,
-    status: dto.status === CashSessionStatus.CLOSED ? CashSessionStatus.CLOSED : CashSessionStatus.OPEN,
+    status: isClosed ? CashSessionStatus.CLOSED : CashSessionStatus.OPEN,
     isClosed,
     openedAt: dto.openedAt,
-    openedAtFormatted: formatTime(dto.openedAt),
     closedAt: dto.closedAt,
-    closedAtFormatted: dto.closedAt ? formatTime(dto.closedAt) : 'Sesión activa',
-    dateFormatted,
-    openTimeFormatted,
-    closeTimeFormatted,
-    timeRangeFormatted,
-    durationFormatted: calculateDuration(dto.openedAt, dto.closedAt),
     openedByName: dto.user?.name || 'No registrado',
     branchName: dto.branch?.name || 'Sucursal General',
     branchAddress: dto.branch?.address || '',
     cashRegisterName: dto.cashRegister?.name || 'Caja Registradora',
     cashRegisterCode: dto.cashRegister?.code ? String(dto.cashRegister.code) : '1',
-    totalSales,
-    totalSalesFormatted: formatMoney(totalSales),
+    totalSales: Number(dto.totalSales || 0),
   };
 };
 
@@ -137,33 +57,20 @@ export const toCashSessionDetailsEntity = (
 
   const kpisEntity: SessionKPIsEntity = {
     grossSales: Number(dto.kpis.grossSales || 0),
-    grossSalesFormatted: formatMoney(dto.kpis.grossSales),
     netSales: Number(dto.kpis.netSales || 0),
-    netSalesFormatted: formatMoney(dto.kpis.netSales),
     cashSales: Number(dto.kpis.cashSales || 0),
-    cashSalesFormatted: formatMoney(dto.kpis.cashSales),
     cardSales: Number(dto.kpis.cardSales || 0),
-    cardSalesFormatted: formatMoney(dto.kpis.cardSales),
     totalExpenses: Number(dto.kpis.totalExpenses || 0),
-    totalExpensesFormatted: `-${formatMoney(dto.kpis.totalExpenses)}`,
     totalRefunds: Number(dto.kpis.totalRefunds || 0),
-    totalRefundsFormatted: `-${formatMoney(dto.kpis.totalRefunds)}`,
     salesCount: Number(dto.kpis.salesCount || 0),
     expensesCount: Number(dto.kpis.expensesCount || 0),
     refundsCount: Number(dto.kpis.refundsCount || 0),
-    expensesLabel: `${dto.kpis.expensesCount} ${dto.kpis.expensesCount === 1 ? 'salida' : 'salidas'}`,
-    refundsLabel: `${dto.kpis.refundsCount} ${dto.kpis.refundsCount === 1 ? 'reembolso' : 'reembolsos'}`,
   };
 
   const salesEntities: CashSessionSaleEntity[] = (dto.sales || []).map((sale) => {
     const saleStatus: SaleStatus = Object.values(SaleStatus).includes(sale.status as SaleStatus)
       ? (sale.status as SaleStatus)
       : SaleStatus.COMPLETED;
-
-    let statusLabel = 'Completada';
-    if (saleStatus === SaleStatus.PARTIALLY_REFUNDED) statusLabel = 'Dev. Parcial';
-    else if (saleStatus === SaleStatus.REFUNDED) statusLabel = 'Reembolsada';
-    else if (saleStatus === SaleStatus.CANCELLED) statusLabel = 'Cancelada';
 
     const items = (sale.items || []).map((item) => {
       const combinationText = item.variant?.attributeValues && item.variant.attributeValues.length > 0
@@ -183,10 +90,8 @@ export const toCashSessionDetailsEntity = (
         combinationText,
         quantity: qty,
         price: unitPrice,
-        priceFormatted: formatMoney(unitPrice),
         discountAmount: discount,
         total: lineTotal,
-        totalFormatted: formatMoney(lineTotal),
       };
     });
 
@@ -196,13 +101,7 @@ export const toCashSessionDetailsEntity = (
       id: p.id || `payment-${idx}`,
       paymentMethod: p.paymentMethod,
       amount: Number(p.amount || 0),
-      amountFormatted: formatMoney(p.amount),
     }));
-
-    const paymentMethodsLabel =
-      payments.map((p) => p.paymentMethod).join('/') ||
-      sale.paymentMethod ||
-      'EFECTIVO';
 
     const subtotal = Number(sale.subtotal || 0);
     const discountAmount = Number(sale.discountAmount || 0);
@@ -211,23 +110,17 @@ export const toCashSessionDetailsEntity = (
       id: sale.id,
       invoiceNumber: sale.invoiceNumber || 'Sin Folio',
       createdAt: sale.createdAt,
-      createdAtFormatted: formatTime(sale.createdAt),
       userName: sale.userName || sale.user?.name || 'Cajero',
       customerName: sale.customerName || sale.customer?.name || 'CONSUMIDOR FINAL',
       customerIdentity: sale.customer?.identityNumber || '9999999999',
       totalItems: totalQty,
       status: saleStatus,
-      statusLabel,
       subtotal,
-      subtotalFormatted: formatMoney(subtotal),
       discountAmount,
-      discountAmountFormatted: formatMoney(discountAmount),
       itemsDiscountAmount: Number(sale.itemsDiscountAmount || 0),
       globalDiscountAmount: Number(sale.globalDiscountAmount || 0),
       total: Number(sale.total || 0),
-      totalFormatted: formatMoney(sale.total),
       paymentMethod: sale.payments?.[0]?.paymentMethod || sale.paymentMethod || 'EFECTIVO',
-      paymentMethodsLabel,
       payments,
       items,
     };
@@ -237,9 +130,7 @@ export const toCashSessionDetailsEntity = (
     id: exp.id,
     description: exp.description || 'Gasto no especificado',
     amount: Number(exp.amount || 0),
-    amountFormatted: `-${formatMoney(exp.amount)}`,
     createdAt: exp.createdAt,
-    createdAtFormatted: formatTime(exp.createdAt),
     userName: exp.userName || 'Cajero',
     category: exp.category || 'General',
   }));
@@ -248,9 +139,7 @@ export const toCashSessionDetailsEntity = (
     id: ref.id,
     reason: ref.reason || 'Sin motivo especificado',
     totalRefunded: Number(ref.totalRefunded || 0),
-    totalRefundedFormatted: `-${formatMoney(ref.totalRefunded)}`,
     createdAt: ref.createdAt,
-    createdAtFormatted: formatTime(ref.createdAt),
     userName: ref.userName || ref.user?.name || 'Cajero',
     invoiceNumber: ref.sale?.invoiceNumber || 'Sin Folio',
   }));
