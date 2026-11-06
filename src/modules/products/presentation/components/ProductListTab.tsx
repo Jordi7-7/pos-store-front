@@ -17,12 +17,12 @@ import { ProductListToolbar } from './list/ProductListToolbar';
 import { ProductDetailModal } from './ProductDetailModal';
 import { ProductEditDrawer } from './ProductEditDrawer';
 import { ProductVariableEditModal } from './ProductVariableEditModal';
+import type { CategoryEntity } from '../../domain/entities/catalog.entity';
 
 interface ProductListTabProps {
   products: ProductVM[];
   isLoading: boolean;
-  categories: any[];
-  uploadedImages?: any[];
+  categories: CategoryEntity[];
   selectedBranchId: string;
   meta: { total: number; page: number; limit: number; totalPages: number };
   onPageChange: (page: number) => void;
@@ -40,7 +40,7 @@ interface ProductListTabProps {
  * para imprimir vive en `useProductSelection`, las reglas de existencias y etiquetas en `domain/rules/product-stock`.
  */
 export const ProductListTab: React.FC<ProductListTabProps> = ({
-  products, isLoading, categories, uploadedImages, selectedBranchId, meta, onPageChange, onLimitChange,
+  products, isLoading, categories, selectedBranchId, meta, onPageChange, onLimitChange,
   search, onSearchChange, productType, onProductTypeChange, inStockOnly, onInStockOnlyChange,
 }) => {
   const { can } = usePermissions();
@@ -152,7 +152,6 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
         isOpen={simpleToEdit !== null}
         onClose={() => setSimpleToEdit(null)}
         categories={categories}
-        uploadedImages={uploadedImages}
         selectedBranchId={selectedBranchId}
       />
       <ProductVariableEditModal
@@ -166,7 +165,6 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
         isOpen={detailProduct !== null}
         onClose={() => setDetailProduct(null)}
         categories={categories}
-        uploadedImages={uploadedImages}
         selectedBranchId={selectedBranchId}
       />
       <BarcodePrintModal isOpen={isLabelModalOpen} onClose={() => setIsLabelModalOpen(false)} items={labelQueue} onUpdateItems={setLabelQueue} />

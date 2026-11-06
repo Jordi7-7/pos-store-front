@@ -141,18 +141,12 @@ export const ImageUploadModal: React.FC<ImageUploadModalProps> = ({
       return;
     }
     try {
-      let saved: any;
-      if (uploadFile) {
-        saved = await uploadImage({
-          file: uploadFile,
-          description: uploadDesc.trim() || 'Imagen rápida de producto',
-        });
-      } else if (uploadUrl) {
-        saved = await uploadImageByUrl({
-          url: uploadUrl,
-          description: uploadDesc.trim() || 'Imagen rápida por URL',
-        });
-      }
+      const saved = uploadFile
+        ? await uploadImage({ file: uploadFile, description: uploadDesc.trim() || 'Imagen rápida de producto' })
+        : uploadUrl
+          ? await uploadImageByUrl({ url: uploadUrl, description: uploadDesc.trim() || 'Imagen rápida por URL' })
+          : null;
+      if (!saved) return;
       onImageSaved(saved.id);
       handleClose();
       toast.success('¡Nueva imagen asociada con éxito!');

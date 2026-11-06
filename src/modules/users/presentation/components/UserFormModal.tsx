@@ -139,7 +139,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
         toast.success('Usuario registrado con éxito.');
       }
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       toast.error(getErrorMessage(err, `Error al ${isEditing ? 'actualizar' : 'crear'} usuario.`));
     }
   };

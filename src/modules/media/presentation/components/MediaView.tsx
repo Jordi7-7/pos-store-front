@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Image as ImageIcon, FileText, Loader2, Link2, Trash2, Search, X } from 'lucide-react';
 import { PaginationControls } from '@/shared/presentation/components/PaginationControls';
+import type { RegisteredImage } from '../../domain/entities/media.entity';
 
 interface MediaViewProps {
-  uploadedImages: any[];
+  uploadedImages: RegisteredImage[];
   isUploading: boolean;
   isDeleting: boolean;
   isLoading: boolean;

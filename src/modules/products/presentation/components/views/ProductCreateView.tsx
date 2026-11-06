@@ -9,13 +9,11 @@ import { APP_PERMISSIONS } from '@/constants/permissions';
 
 export interface ProductCreateViewProps {
   selectedBranchId: string;
-  uploadedImages?: any[];
   onSuccess?: () => void;
 }
 
 export const ProductCreateView: React.FC<ProductCreateViewProps> = ({
   selectedBranchId,
-  uploadedImages,
   onSuccess,
 }) => {
   const { can } = usePermissions();
@@ -58,7 +56,6 @@ export const ProductCreateView: React.FC<ProductCreateViewProps> = ({
 
       <ProductCreateTab
         categories={categories}
-        uploadedImages={uploadedImages}
         selectedBranchId={selectedBranchId}
         createSimpleProduct={createSimpleProduct}
         onSuccess={onSuccess || (() => {})}

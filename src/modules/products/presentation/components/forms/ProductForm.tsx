@@ -22,18 +22,11 @@ interface Category {
   name: string;
 }
 
-interface UploadedImage {
-  id: string;
-  url: string;
-  description: string;
-}
-
 export interface ProductFormProps {
   form: UseFormReturn<ProductFormValues>;
   formId: string;
   onSubmit: (data: ProductFormValues) => Promise<void>;
   categories: Category[];
-  uploadedImages?: UploadedImage[];
   selectedImages: { id: string; url: string; description?: string }[];
   onRemoveImage: (id: string) => void;
   onOpenGalleryModal: () => void;

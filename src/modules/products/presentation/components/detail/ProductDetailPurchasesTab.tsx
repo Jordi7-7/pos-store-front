@@ -65,7 +65,7 @@ export const ProductDetailPurchasesTab: React.FC<ProductDetailPurchasesTabProps>
               <tbody className="divide-y divide-border">
                 {purchases.map((purchase: ProductHistoryPurchaseDTO) => {
                   const matchingItem = purchase.items?.find(
-                    (it: any) => it.variant?.id === activeVariantId || it.variantId === activeVariantId
+                    (it) => it.variant?.id === activeVariantId
                   ) || purchase.items?.[0];
                   const purchaseQty = matchingItem ? Number(matchingItem.quantity) : 1;
                   const unitCost = matchingItem ? Number(matchingItem.unitPrice) : 0;

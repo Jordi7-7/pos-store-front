@@ -46,7 +46,7 @@ function MediaRoute() {
       const res = await uploadImage(params);
       toast.success('¡Imagen subida con éxito!');
       return res;
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       toast.error('Error en la subida multimedia.');
       throw err;
@@ -58,7 +58,7 @@ function MediaRoute() {
       const res = await uploadImageByUrl(params);
       toast.success('¡Imagen de internet descargada y registrada con éxito!');
       return res;
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       toast.error(getErrorMessage(err, 'Error al procesar la imagen externa.'));
       throw err;
@@ -70,7 +70,7 @@ function MediaRoute() {
       const res = await deleteImage(id);
       toast.success('Imagen eliminada de la galería.');
       return res;
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       toast.error(getErrorMessage(err, 'Error al eliminar la imagen.'));
       throw err;

@@ -116,7 +116,7 @@ export const AttributesTab: React.FC = () => {
                   {/* Values list */}
                   <div className="flex flex-wrap gap-1.5">
                     {attr.values && attr.values.length > 0 ? (
-                      attr.values.map((v: any) => (
+                      attr.values.map((v) => (
                         <Badge key={v.id} variant="outline" className="text-xs">
                           {v.value}
                         </Badge>

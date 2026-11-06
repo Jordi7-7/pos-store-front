@@ -23,7 +23,7 @@ export type VariantRowData = WizardVariantRow;
 interface StepVariantsMatrixProps {
   variants: VariantRowData[];
   baseSkuPrefix?: string;
-  onUpdateVariantField: (id: string, field: keyof VariantRowData, value: any) => void;
+  onUpdateVariantField: (id: string, field: keyof VariantRowData, value: WizardVariantRow[keyof WizardVariantRow]) => void;
   onRemoveVariantRow: (id: string) => void;
   onClearVariants: () => void;
   onOpenVariantGallery?: (variantId: string) => void;

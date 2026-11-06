@@ -50,7 +50,7 @@ export function useCreateRole() {
       queryClient.invalidateQueries({ queryKey: ['roles', tenantId] });
       toast.success(`Rol "${newRole.name}" creado con éxito.`);
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       toast.error(getErrorMessage(err, 'Error al crear el rol.'));
     },
   });
@@ -72,7 +72,7 @@ export function useUpdateRole() {
       queryClient.invalidateQueries({ queryKey: ['roles', tenantId] });
       toast.success(`Rol "${updatedRole.name}" actualizado.`);
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       toast.error(getErrorMessage(err, 'Error al actualizar el rol.'));
     },
   });
@@ -93,7 +93,7 @@ export function useDeleteRole() {
       queryClient.invalidateQueries({ queryKey: ['roles', tenantId] });
       toast.success(res.message || 'Rol eliminado.');
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       toast.error(getErrorMessage(err, 'Error al eliminar el rol.'));
     },
   });

@@ -4,15 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import type { AttributeEntity, AttributeValueEntity } from '../../../domain/entities/catalog.entity';
 
 interface StepAttributeSelectionProps {
-  attributes: any[];
+  attributes: AttributeEntity[];
   isLoadingAttributes: boolean;
   selectedAttributeValues: Record<string, string[]>;
   onToggleValue: (attrId: string, valId: string) => void;
-  createAttribute: (name: string) => Promise<any>;
+  createAttribute: (name: string) => Promise<AttributeEntity>;
   isCreatingAttribute: boolean;
-  createAttributeValue: (payload: { attributeId: string; value: string }) => Promise<any>;
+  createAttributeValue: (payload: { attributeId: string; value: string }) => Promise<AttributeValueEntity>;
   isCreatingValue: boolean;
   onNavigateToAttributes?: () => void;
   onBack: () => void;
@@ -237,7 +238,7 @@ export const StepAttributeSelection: React.FC<StepAttributeSelectionProps> = ({
 
                   {/* Chips of values */}
                   <div className="flex flex-wrap gap-1.5 min-h-[36px] items-center p-2 rounded-lg bg-muted/20 border border-border/40">
-                    {(attr.values || []).map((val: any) => {
+                    {(attr.values || []).map((val) => {
                       const isChecked = selectedVals.includes(val.id);
                       return (
                         <button

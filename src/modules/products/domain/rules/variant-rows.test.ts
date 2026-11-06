@@ -8,7 +8,7 @@ const row = (overrides: Partial<EditableVariantRow> = {}): EditableVariantRow =>
 
 describe('filas de variantes del editor', () => {
   it('una variante del servidor se convierte en fila con su combinación (o "Variante" si no tiene atributos)', () => {
-    const variant = { id: 'v', sku: 'A-1', barcode: '', purchasePrice: 50, salePrice: 100, wholesalePrice: 80, images: [{ id: 'i', url: 'u' }], attributes: [{ name: 'Talla', value: 'M' }, { name: 'Color', value: 'Rojo' }], stocks: [], totalStock: 0, primaryImageUrl: '' } as ProductVariantEntity;
+    const variant = { id: 'v', sku: 'A-1', barcode: '', purchasePrice: 50, salePrice: 100, wholesalePrice: 80, images: [{ id: 'i', url: 'u' }], attributes: [{ name: 'Talla', value: 'M' }, { name: 'Color', value: 'Rojo' }], stocks: [], tags: [], totalStock: 0, primaryImageUrl: '' } as ProductVariantEntity;
     expect(toEditableRow(variant)).toMatchObject({ combinationText: 'Talla: M · Color: Rojo', wholesalePrice: 80, imageIds: ['i'], hasChanged: false });
     expect(toEditableRow({ ...variant, attributes: [] }).combinationText).toBe('Variante');
   });

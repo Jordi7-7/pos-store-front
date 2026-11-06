@@ -47,6 +47,7 @@ export const toProductVariantEntity = (dto: ProductVariantDTO): ProductVariantEn
     primaryImageUrl: images[0]?.url || '',
     attributes,
     stocks,
+    tags: (dto.tags || []).map((tag) => ({ id: tag.id, name: tag.name })),
     totalStock,
   };
 };

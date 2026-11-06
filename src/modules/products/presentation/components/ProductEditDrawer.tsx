@@ -16,6 +16,7 @@ import { AlertTriangle, Loader2, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useCategories } from '../hooks/useCategories';
+import { useProductDetail } from '../hooks/useProductDetail';
 import { useProductMutations } from '../hooks';
 import { useTags } from '../hooks/useTags';
 import { productFormSchema, type ProductFormValues } from './forms/product-form.schema';
@@ -31,16 +32,17 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
+import type { CategoryEntity } from '../../domain/entities/catalog.entity';
+import type { ProductVM } from '../view-models/product.vm';
 
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 interface ProductEditDrawerProps {
-  product: any;
+  product: ProductVM | null;
   isOpen: boolean;
   onClose: () => void;
-  categories: any[];
-  uploadedImages?: any[];
+  categories: CategoryEntity[];
   selectedBranchId: string;
 }
 
@@ -91,9 +93,10 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
   // ── Populate form when product prop changes ──────────────────────────────
   useEffect(() => {
     if (!product) return;
-    const sv = product.variants?.[0] ?? {};
+    const sv = product.variants[0];
+    if (!sv) return;
     const stockQty =
-      sv.stocks?.find((s: { branchId: string; quantity: number }) => s.branchId === selectedBranchId)?.quantity ?? 0;
+      sv.stocks.find((s) => s.branchId === selectedBranchId)?.quantity ?? 0;
 
     form.reset({
       name: product.name ?? '',
@@ -115,14 +118,27 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
         : [];
 
     setSelectedImages(
-      initialImages.map((img: any) => ({
+      initialImages.map((img) => ({
         id: img.id,
         url: img.url || '',
         description: img.description || '',
       }))
     );
-    setSelectedTagIds(sv.tags?.map((t: { id: string }) => t.id) ?? []);
   }, [product, selectedBranchId, form]);
+
+  // Las etiquetas no vienen en el listado: se leen del detalle. Hasta que lleguen no se tocan al guardar,
+  // para no dejar la variante sin etiquetas por un editor que aún no las conocía.
+  const { product: detail } = useProductDetail(product?.id, isOpen && product !== null);
+  const [tagsLoaded, setTagsLoaded] = useState(false);
+  useEffect(() => {
+    setTagsLoaded(false);
+  }, [product?.id]);
+  useEffect(() => {
+    const loaded = detail?.variants[0];
+    if (!loaded || detail?.id !== product?.id) return;
+    setSelectedTagIds(loaded.tags.map((t) => t.id));
+    setTagsLoaded(true);
+  }, [detail, product?.id]);
 
   const handleToggleImage = (image: { id: string; url: string; description?: string }) => {
     setSelectedImages((prev) =>
@@ -159,14 +175,15 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
       setNewCategoryName('');
       setIsCreatingCategoryInline(false);
       toast.success('¡Categoría creada e incorporada al producto!');
-    } catch (e: any) {
+    } catch (e) {
       toast.error(getErrorMessage(e, 'Error al crear la categoría.'));
     }
   };
 
   // ── Submit ───────────────────────────────────────────────────────────────
   const onSubmit = async (data: ProductFormValues) => {
-    const sv = product?.variants?.[0] ?? {};
+    if (!product) return;
+    const sv = product.variants[0];
     try {
       await updateSimpleProduct({
         id: product.id,
@@ -183,7 +200,7 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
         },
       });
       // Sync tags on variant
-      if (sv.id) {
+      if (sv?.id && tagsLoaded) {
         await updateVariantTags({ variantId: sv.id, tagIds: selectedTagIds });
       }
       toast.success('¡Producto actualizado con éxito!');

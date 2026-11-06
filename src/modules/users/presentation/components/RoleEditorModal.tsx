@@ -67,7 +67,7 @@ export const RoleEditorModal: React.FC<RoleEditorModalProps> = ({
     const allSelected = modulePerms.every((code) => selectedPermissions.includes(code));
 
     if (allSelected) {
-      setSelectedPermissions((prev) => prev.filter((p) => !modulePerms.includes(p as any)));
+      setSelectedPermissions((prev) => prev.filter((p) => !modulePerms.some((code) => code === p)));
     } else {
       setSelectedPermissions((prev) => Array.from(new Set([...prev, ...modulePerms])));
     }

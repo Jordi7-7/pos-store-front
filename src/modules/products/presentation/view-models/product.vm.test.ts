@@ -9,7 +9,7 @@ const eur = createFormatters({ currencyCode: 'EUR', locale: 'es-ES', timezone: '
 
 const variant = (overrides: Partial<ProductVariantEntity> = {}): ProductVariantEntity => ({
   id: 'v', sku: 'A', barcode: '1', purchasePrice: 50, salePrice: 100, wholesalePrice: 80, images: [], primaryImageUrl: '',
-  attributes: [{ name: 'Talla', value: 'M' }, { name: 'Color', value: 'Rojo' }], stocks: [], totalStock: 0, ...overrides,
+  attributes: [{ name: 'Talla', value: 'M' }, { name: 'Color', value: 'Rojo' }], stocks: [], tags: [], totalStock: 0, ...overrides,
 });
 const product = (variants: ProductVariantEntity[]): ProductEntity => ({
   id: 'p', name: 'Camisa', description: '', type: ProductType.VARIABLE, baseSku: 'CAM', categoryId: null, categoryName: 'Ropa',

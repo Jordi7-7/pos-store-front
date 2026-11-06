@@ -6,12 +6,10 @@ import { ProductType } from '../../../domain/enums';
 
 export interface ProductsListViewProps {
   selectedBranchId: string;
-  uploadedImages?: any[];
 }
 
 export const ProductsListView: React.FC<ProductsListViewProps> = ({
   selectedBranchId,
-  uploadedImages,
 }) => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -42,7 +40,6 @@ export const ProductsListView: React.FC<ProductsListViewProps> = ({
         products={products}
         isLoading={isLoadingProducts}
         categories={categories}
-        uploadedImages={uploadedImages}
         selectedBranchId={selectedBranchId}
         meta={meta}
         onPageChange={setPage}

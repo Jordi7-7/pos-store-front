@@ -35,7 +35,7 @@ export const SupplierForm: React.FC = () => {
       setSupEmail('');
       setSupPhone('');
       setSupAddress('');
-    } catch (err: any) {
+    } catch (err) {
       toast.error(getErrorMessage(err, 'Error al registrar el proveedor.'));
     }
   };
@@ -146,7 +146,7 @@ export const SupplierForm: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto pr-1">
-              {suppliers.map((sup: any) => (
+              {suppliers.map((sup) => (
                 <div key={sup.id} className="p-4 bg-bg-dark border border-border-card hover:border-primary/30 rounded-2xl text-secondary space-y-2.5 transition-all shadow-sm">
                   <div className="flex justify-between items-start gap-2 border-b border-border-card/50 pb-1.5">
                     <span className="text-xs font-bold block truncate max-w-[170px]">{sup.name}</span>

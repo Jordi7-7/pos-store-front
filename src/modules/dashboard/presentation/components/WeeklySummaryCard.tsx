@@ -7,6 +7,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  type TooltipContentProps,
 } from 'recharts';
 import { TrendingUp, TrendingDown, Calendar } from 'lucide-react';
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
@@ -30,9 +31,9 @@ export const WeeklySummaryCard: React.FC<WeeklySummaryCardProps> = ({ data }) =>
 
   const formattedWeekTotal = formatMoney(data?.totalWeek);
 
-  const customTooltip = ({ active, payload, label }: any) => {
+  const customTooltip = ({ active, payload, label }: TooltipContentProps) => {
     if (active && payload && payload.length) {
-      const val = payload[0].value;
+      const val = Number(payload[0]?.value ?? 0);
       const formatted = formatMoney(val);
 
       return (

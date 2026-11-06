@@ -97,7 +97,7 @@ export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranch
       const startStr = dateRange?.from ? format(dateRange.from, 'dd/MM/yyyy') : '';
       const endStr = dateRange?.to ? format(dateRange.to, 'dd/MM/yyyy') : startStr;
 
-      const rows: any[][] = [
+      const rows: Array<Array<string | number>> = [
         [currentTenant?.name || 'NEGOCIO'],
         ['Reporte de Ventas de Productos'],
         [`Período: ${startStr} al ${endStr}`],

@@ -22,15 +22,17 @@ import { MediaGallerySelectorModal } from './forms/MediaGallerySelectorModal';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
+import type { CategoryEntity } from '../../domain/entities/catalog.entity';
+import type { CreateSimpleProductInput } from '../../application/ports/products.repository';
+import type { ProductEntity } from '../../domain/entities/product.entity';
 
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 interface ProductCreateTabProps {
-  categories: any[];
-  uploadedImages?: any[];
+  categories: CategoryEntity[];
   selectedBranchId: string;
-  createSimpleProduct: (input: any) => Promise<any>;
+  createSimpleProduct: (input: CreateSimpleProductInput) => Promise<ProductEntity>;
   onSuccess: () => void;
 }
 
@@ -101,7 +103,7 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
       setNewCategoryName('');
       setIsCreatingCategoryInline(false);
       toast.success('¡Categoría creada e incorporada al producto!');
-    } catch (e: any) {
+    } catch (e) {
       toast.error(getErrorMessage(e, 'Error al crear la categoría.'));
     }
   };
@@ -136,7 +138,7 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
       setSelectedImages([]);
       setSelectedTagIds([]);
       onSuccess();
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       toast.error(getErrorMessage(err, 'Error al registrar el producto en el servidor.'));
     }

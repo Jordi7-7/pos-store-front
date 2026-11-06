@@ -53,7 +53,7 @@ export const AttributeCatalogManager: React.FC = () => {
       setNewAttrName('');
       setIsModalOpen(false);
       toast.success(`Atributo "${created.name}" creado con éxito.`);
-    } catch (err: any) {
+    } catch (err) {
       toast.error(getErrorMessage(err, 'Error al crear el atributo.'));
     }
   };
@@ -66,7 +66,7 @@ export const AttributeCatalogManager: React.FC = () => {
       const created = await createAttributeValue({ attributeId, value: valText });
       setNewValueMap((prev) => ({ ...prev, [attributeId]: '' }));
       toast.success(`Valor "${created.value}" agregado al catálogo.`);
-    } catch (err: any) {
+    } catch (err) {
       toast.error(getErrorMessage(err, 'Error al agregar el valor.'));
     }
   };

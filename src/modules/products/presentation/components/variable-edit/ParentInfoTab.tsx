@@ -131,7 +131,7 @@ export const ParentInfoTab: React.FC<ParentInfoTabProps> = ({ control, categorie
                           className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-xs text-foreground shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
                         >
                           <option value="">Sin categoría asignada</option>
-                          {categories.map((c: any) => (
+                          {categories.map((c) => (
                             <option key={c.id} value={c.id}>
                               {c.name}
                             </option>

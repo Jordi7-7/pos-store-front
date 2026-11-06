@@ -20,6 +20,8 @@ export interface ProductVariantEntity {
   /** Valores de atributo de la variante (talla, color…), con los ids del atributo y del valor cuando el servidor los envía. */
   attributes: Array<{ name: string; value: string; attributeId?: string; valueId?: string }>;
   stocks: Array<{ branchId: string; branchName: string; quantity: number }>;
+  /** Etiquetas de la variante (por ejemplo "Oferta"). */
+  tags: Array<{ id: string; name: string }>;
   totalStock: number;
 }
 

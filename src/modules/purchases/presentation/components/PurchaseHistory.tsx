@@ -85,7 +85,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
     try {
       await cancelPurchase(id);
       toast.success('Ingreso anulado correctamente. El stock ha sido revertido.');
-    } catch (err: any) {
+    } catch (err) {
       toast.error(getErrorMessage(err, 'No se pudo anular el ingreso.'));
     }
   };

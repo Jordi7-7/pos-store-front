@@ -10,6 +10,7 @@ import {
   ProductDetailMovementsTab,
 } from './detail';
 import { Badge } from '@/components/ui/badge';
+import type { CategoryEntity } from '../../domain/entities/catalog.entity';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -46,8 +47,7 @@ export interface ProductDetailModalProps {
   product: ProductVM | null;
   isOpen: boolean;
   onClose: () => void;
-  categories?: any[];
-  uploadedImages?: any[];
+  categories?: CategoryEntity[];
   selectedBranchId: string;
 }
 
@@ -56,7 +56,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   isOpen,
   onClose,
   categories = [],
-  uploadedImages = [],
   selectedBranchId,
 }) => {
   const { can } = usePermissions();
@@ -79,7 +78,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
   useEffect(() => {
     if (variants.length > 0) {
-      const exists = variants.some((v: any) => v.id === selectedVariantId);
+      const exists = variants.some((v) => v.id === selectedVariantId);
       if (!exists && variants[0]?.id) {
         setSelectedVariantId(variants[0].id);
       }
@@ -95,48 +94,18 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   }, [isOpen, productId]);
 
   const activeVariantId = selectedVariantId || variants[0]?.id || '';
-  const activeVariant = variants.find((v: any) => v.id === activeVariantId) || variants[0];
+  const activeVariant = variants.find((v) => v.id === activeVariantId) || variants[0];
   const effectiveBranchId = selectedBranchId || undefined;
 
+  /** Fotos para el visor: primero las de la variante activa y luego las del producto, sin repetir. */
   const allImages = useMemo(() => {
     if (!detailProduct) return [];
-    const map = new Map<string, { id: string; url: string }>();
-
-    if (activeVariant?.images && activeVariant.images.length > 0) {
-      activeVariant.images.forEach((img: any) => {
-        if (img?.id) map.set(img.id, { id: img.id, url: img.url || '' });
-      });
+    const byId = new Map<string, { id: string; url: string }>();
+    for (const img of [...(activeVariant?.images ?? []), ...detailProduct.images]) {
+      if (img.id && !byId.has(img.id)) byId.set(img.id, { id: img.id, url: img.url || '' });
     }
-
-    if ((detailProduct as any).images) {
-      (detailProduct as any).images.forEach((img: any) => {
-        if (img?.id && !map.has(img.id)) map.set(img.id, { id: img.id, url: img.url || '' });
-      });
-    }
-
-    if (uploadedImages && uploadedImages.length > 0) {
-      if ((detailProduct as any).imageIds) {
-        (detailProduct as any).imageIds.forEach((id: string) => {
-          if (!map.has(id)) {
-            const found = uploadedImages.find((item: any) => item.id === id);
-            if (found) map.set(id, { id, url: found.url });
-          }
-        });
-      }
-      variants.forEach((variant: any) => {
-        if (variant.imageIds) {
-          variant.imageIds.forEach((id: string) => {
-            if (!map.has(id)) {
-              const found = uploadedImages.find((item: any) => item.id === id);
-              if (found) map.set(id, { id, url: found.url });
-            }
-          });
-        }
-      });
-    }
-
-    return Array.from(map.values()).filter((img) => Boolean(img.url));
-  }, [detailProduct, variants, activeVariant, uploadedImages]);
+    return Array.from(byId.values()).filter((img) => Boolean(img.url));
+  }, [detailProduct, activeVariant]);
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
@@ -156,7 +125,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     if (!detailProduct) return 'General';
     if (detailProduct.categoryName) return detailProduct.categoryName;
     if (detailProduct.categoryId && categories) {
-      const found = categories.find((c: any) => c.id === detailProduct.categoryId);
+      const found = categories.find((c) => c.id === detailProduct.categoryId);
       if (found) return found.name;
     }
     return 'General';

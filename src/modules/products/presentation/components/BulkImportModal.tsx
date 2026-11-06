@@ -120,7 +120,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
           return;
         }
 
-        const rawJson: any[] = XLSX.utils.sheet_to_json(ws);
+        const rawJson = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws);
 
         // Map rows using strictly the official template headers
         const normalized = rawJson.map((row) => {

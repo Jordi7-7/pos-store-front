@@ -88,7 +88,7 @@ export const PrinterConfigModal: React.FC<PrinterConfigModalProps> = ({
     toast.info('Impresora desvinculada.');
   };
 
-  const handleConfigChange = (key: keyof PrinterConfig, value: any) => {
+  const handleConfigChange = <K extends keyof PrinterConfig>(key: K, value: PrinterConfig[K]) => {
     const updated = thermalPrinterService.saveConfig({ [key]: value });
     setConfig(updated);
   };

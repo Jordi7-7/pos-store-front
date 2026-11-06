@@ -25,3 +25,14 @@ describe('atributos de una variante (el backend los manda de dos formas)', () =>
     expect(toProductEntity(product({})).variants[0]?.attributes).toEqual([]);
   });
 });
+
+describe('etiquetas de una variante', () => {
+  it('se conservan (defecto: se descartaban y el editor guardaba la variante sin ninguna etiqueta)', () => {
+    const variant = toProductEntity(product({ tags: [{ id: 't1', name: 'Oferta', extra: 'x' }] })).variants[0];
+    expect(variant?.tags).toEqual([{ id: 't1', name: 'Oferta' }]);
+  });
+
+  it('sin etiquetas queda una lista vacía', () => {
+    expect(toProductEntity(product({})).variants[0]?.tags).toEqual([]);
+  });
+});

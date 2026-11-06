@@ -23,7 +23,7 @@ export const useBranches = () => {
       queryClient.invalidateQueries({ queryKey: ['branches', tenantId] });
       toast.success('Sucursal creada exitosamente.');
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       toast.error(getErrorMessage(err, 'Error al crear la sucursal.'));
     },
   });
@@ -35,7 +35,7 @@ export const useBranches = () => {
       queryClient.invalidateQueries({ queryKey: ['branches', tenantId] });
       toast.success('Sucursal actualizada exitosamente.');
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       toast.error(getErrorMessage(err, 'Error al actualizar la sucursal.'));
     },
   });

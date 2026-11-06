@@ -55,7 +55,7 @@ export const CashSessionsHistoryView: React.FC = () => {
 
       setSessionClosingDataToPrint(sessionTicketData);
       setIsClosingTicketModalOpen(true);
-    } catch (err: any) {
+    } catch (err) {
       toast.error(getErrorMessage(err, 'Error al obtener detalles para imprimir el ticket'));
     } finally {
       setPrintingSessionId(null);

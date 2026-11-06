@@ -90,7 +90,7 @@ export const TenantSettings: React.FC = () => {
       const fileUrl = await uploadFile(file);
       setLogoUrl(fileUrl);
       toast.success('Logotipo subido al bucket exitosamente');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error subiendo logo:', err);
       toast.error('Error al subir el logotipo al bucket');
     } finally {

@@ -65,7 +65,7 @@ export const ProductDetailSalesTab: React.FC<ProductDetailSalesTabProps> = ({
               <tbody className="divide-y divide-border">
                 {sales.map((sale: ProductHistorySaleDTO) => {
                   const matchingItem = sale.items?.find(
-                    (it: any) => it.variant?.id === activeVariantId || it.variantId === activeVariantId
+                    (it) => it.variant?.id === activeVariantId
                   ) || sale.items?.[0];
                   const soldQty = matchingItem ? Number(matchingItem.quantity) : 1;
                   const soldPrice = matchingItem ? Number(matchingItem.price) : Number(sale.total);

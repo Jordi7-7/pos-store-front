@@ -96,7 +96,7 @@ export const UsersView: React.FC = () => {
         input: { isActive: newStatus },
       });
       toast.success(`Usuario ${newStatus ? 'habilitado' : 'deshabilitado'} exitosamente.`);
-    } catch (err: any) {
+    } catch (err) {
       toast.error(getErrorMessage(err, 'Error al cambiar estado.'));
     }
   };
@@ -108,7 +108,7 @@ export const UsersView: React.FC = () => {
       setRevealedPin(res.pin);
       setPinTargetUser(user);
       setShowPinModal(true);
-    } catch (err: any) {
+    } catch (err) {
       toast.error(getErrorMessage(err, 'Error al generar PIN.'));
     }
   };

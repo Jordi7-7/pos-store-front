@@ -51,7 +51,7 @@ export const useCreateCashRegister = () => {
       queryClient.invalidateQueries({ queryKey: ['cash-registers'] });
       toast.success('Caja registradora creada correctamente');
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       toast.error(getErrorMessage(err, 'Error al crear la caja registradora'));
     },
   });
@@ -72,7 +72,7 @@ export const useUpdateCashRegister = () => {
       queryClient.invalidateQueries({ queryKey: ['cash-registers'] });
       toast.success('Caja registradora actualizada correctamente');
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       toast.error(getErrorMessage(err, 'Error al actualizar la caja registradora'));
     },
   });
@@ -94,7 +94,7 @@ export const useAssignUsersToRegister = () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('Usuarios asignados correctamente a la caja');
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       toast.error(getErrorMessage(err, 'Error al asignar usuarios a la caja'));
     },
   });

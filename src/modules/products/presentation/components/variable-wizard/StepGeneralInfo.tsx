@@ -14,6 +14,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from '@/components/ui/combobox';
+import type { CategoryEntity } from '../../../domain/entities/catalog.entity';
 
 export interface VariableProductHeaderValues {
   name: string;
@@ -25,8 +26,8 @@ export interface VariableProductHeaderValues {
 interface StepGeneralInfoProps {
   control: Control<VariableProductHeaderValues>;
   errors: FieldErrors<VariableProductHeaderValues>;
-  categories: any[];
-  createCategory: (name: string) => Promise<any>;
+  categories: CategoryEntity[];
+  createCategory: (name: string) => Promise<CategoryEntity>;
   isCreatingCategory: boolean;
   selectedImages: { id: string; url: string; description?: string }[];
   onRemoveImage: (id: string) => void;
@@ -148,7 +149,7 @@ export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
               name="categoryId"
               control={control}
               render={({ field }) => {
-                const selectedCategory = categories.find((cat: any) => cat.id === field.value);
+                const selectedCategory = categories.find((cat) => cat.id === field.value);
                 const displayValue = selectedCategory ? selectedCategory.name : '';
 
                 return (
@@ -173,7 +174,7 @@ export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
                             <ComboboxEmpty>No se encontraron categorías.</ComboboxEmpty>
                             <ComboboxList>
                               <ComboboxItem value="none">Ninguna (Opcional)</ComboboxItem>
-                              {categories.map((cat: any) => (
+                              {categories.map((cat) => (
                                 <ComboboxItem key={cat.id} value={cat.id}>
                                   {cat.name}
                                 </ComboboxItem>

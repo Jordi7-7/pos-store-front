@@ -47,7 +47,7 @@ export const StockAdjustmentForm: React.FC<StockAdjustmentFormProps> = ({
       toast.success('Ajuste de inventario registrado.');
       setQuantity('1');
       setComment('');
-    } catch (error: any) {
+    } catch (error) {
       toast.error(getErrorMessage(error, 'No se pudo registrar el ajuste.'));
     }
   };

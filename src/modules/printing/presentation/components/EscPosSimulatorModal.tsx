@@ -33,7 +33,8 @@ import {
   type PaperWidth,
 } from '../../infrastructure/escpos/escpos-builder';
 import { useTenant } from '@/modules/auth/presentation/hooks/useSession';
-import type { TicketSaleData } from '../../domain/entities/ticket';
+import type { ClosingTicketData, TicketSaleData } from '../../domain/entities/ticket';
+import { PaymentMethod } from '@/shared/domain/enums/payments';
 
 interface EscPosSimulatorModalProps {
   isOpen: boolean;
@@ -43,7 +44,7 @@ interface EscPosSimulatorModalProps {
   /** Datos de venta opcionales para generar los bytes en vivo */
   saleData?: TicketSaleData | null;
   /** Datos de cierre de caja opcionales para generar los bytes en vivo */
-  closingData?: any;
+  closingData?: ClosingTicketData | null;
   tenantRuc?: string;
   defaultPaperWidth?: PaperWidth;
 }
@@ -57,7 +58,7 @@ const SAMPLE_SALE_DATA: TicketSaleData = {
   clientName: 'Juan Carlos Perez Gomez',
   clientIdentity: '0928374651',
   userName: 'Cajero 1',
-  paymentMethod: 'CASH' as any,
+  paymentMethod: PaymentMethod.EFECTIVO,
   subtotal: 185.0,
   discountAmount: 15.0,
   total: 170.0,
@@ -80,7 +81,7 @@ const SAMPLE_SALE_DATA: TicketSaleData = {
 };
 
 // Datos de cierre de caja de ejemplo para simulación
-const SAMPLE_CLOSING_DATA = {
+const SAMPLE_CLOSING_DATA: ClosingTicketData = {
   id: 'c8f49a21-9981-42cb-b1b0-128471923011',
   branchName: 'Aura Store Centro',
   userName: 'Cajero Principal',
@@ -100,6 +101,10 @@ const SAMPLE_CLOSING_DATA = {
     { description: 'Pago de limpieza', amount: 25.0, createdAt: new Date().toISOString() },
     { description: 'Compra de bolsas', amount: 15.0, createdAt: new Date().toISOString() },
   ],
+  productsList: [],
+  refundsList: [],
+  salesList: [],
+  isClosed: true,
 };
 
 export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
