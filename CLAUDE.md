@@ -63,6 +63,9 @@ Regla de lectura: **domain no conoce a nadie; application solo conoce a domain; 
 - Un componente que muestra datos propios llama a su propio hook de lectura (React Query deduplica). Si recibe más de ~8 props, se agrupan o se divide.
 - Las reglas (fusionar filas, validar SKU, proponer la variante nueva) son funciones puras de `domain/rules` con test; los hooks solo las orquestan.
 
+## Interfaz
+Todas las pantallas siguen `docs/diseno-interfaz.md` (tipografía, `PageHeader`, `SearchInput`, tablas, menú). No uses tamaños de letra sueltos ni títulos propios en las tarjetas.
+
 ## Reglas del código
 - `domain` no importa `react`, `@tanstack/*`, `zustand`, `sonner`, `fetch`, ni nada de `infrastructure`/`presentation`. `application` no importa `infrastructure` ni `presentation`. Lo hace cumplir `src/architecture.test.ts` (reglas en `src/test/layer-rules.ts`; también vigila `infrastructure` → sin `presentation`, UI ni estado). Hallazgos pendientes: `docs/hallazgos-abiertos.md`.
 - La **lógica de negocio no vive en componentes ni en hooks de UI**: va en `domain/rules` (puras, con test) o en un caso de uso. `toast` solo en `presentation`.
