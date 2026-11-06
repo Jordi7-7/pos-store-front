@@ -3,12 +3,19 @@ import { toast } from 'sonner';
 import type { CartItem } from '../types/pos.types';
 import { ProductType } from '@/modules/products/enums';
 import { formatMoney } from '@/modules/auth/hooks/useSession';
-import { roundMoney } from '@/shared/domain/money';
+import {
+  clampGlobalDiscount,
+  computeCartTotals,
+  computeLineDiscount,
+  hasWholesalePrice,
+  withWholesale,
+  type DiscountType,
+} from '../domain/rules/cart-rules';
 
 export function usePOSCart() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isGlobalWholesale, setIsGlobalWholesale] = useState<boolean>(false);
-  const [globalDiscountType] = useState<'PERCENTAGE' | 'AMOUNT'>('PERCENTAGE');
+  const [globalDiscountType] = useState<DiscountType>('PERCENTAGE');
   const [globalDiscountRate, setGlobalDiscountRate] = useState<number>(0);
 
   const addVariantToCart = (product: any, variant: any, maxStock: number) => {
@@ -102,80 +109,29 @@ export function usePOSCart() {
     setGlobalDiscountRate(0);
   };
 
-  const updateItemDiscount = (
-    cartItemId: string,
-    type: 'PERCENTAGE' | 'AMOUNT',
-    inputVal: number,
-  ) => {
+  const updateItemDiscount = (cartItemId: string, type: DiscountType, inputVal: number) => {
+    const target = cart.find((item) => item.cartItemId === cartItemId);
+    if (!target) return;
+
+    const result = computeLineDiscount(target.price, type, inputVal);
+    if (result.clamped === 'MAX_PERCENT') toast.warning('El descuento por producto no puede superar el 100%');
+    if (result.clamped === 'ABOVE_PRICE') {
+      toast.warning(`El precio de venta no puede superar el precio original del producto (${formatMoney(target.price)})`);
+    }
+
     setCart((prevCart) =>
-      prevCart.map((item) => {
-        if (item.cartItemId !== cartItemId) return item;
-
-        let val = roundMoney(inputVal);
-        if (isNaN(val) || val < 0) {
-          val = 0;
-        }
-
-        let calculatedAmount = 0;
-        let displayRate = val;
-
-        if (type === 'PERCENTAGE') {
-          if (val > 100) {
-            val = 100;
-            displayRate = 100;
-            toast.warning('El descuento por producto no puede superar el 100%');
-          }
-          calculatedAmount = roundMoney((item.price * val) / 100);
-        } else {
-          if (val > item.price) {
-            val = item.price;
-            displayRate = item.price;
-            toast.warning(
-              `El precio de venta no puede superar el precio original del producto (${formatMoney(item.price)})`,
-            );
-          }
-          calculatedAmount = roundMoney(item.price - val);
-        }
-        calculatedAmount = Math.max(0, Math.min(item.price, calculatedAmount));
-
-        return {
-          ...item,
-          discountType: type,
-          discountRate: displayRate,
-          discountAmount: calculatedAmount,
-        };
-      }),
+      prevCart.map((item) =>
+        item.cartItemId === cartItemId
+          ? { ...item, discountType: result.discountType, discountRate: result.discountRate, discountAmount: result.discountAmount }
+          : item,
+      ),
     );
   };
 
   const toggleGlobalWholesale = () => {
     const nextMode = !isGlobalWholesale;
     setIsGlobalWholesale(nextMode);
-
-    setCart((prevCart) =>
-      prevCart.map((item) => {
-        const hasWholesale =
-          item.wholesalePrice !== null &&
-          item.wholesalePrice !== undefined &&
-          Number(item.wholesalePrice) > 0;
-        const shouldUseWholesale = nextMode && hasWholesale;
-        const newPrice = shouldUseWholesale ? Number(item.wholesalePrice) : item.unitSalePrice;
-
-        let newDiscountAmount = 0;
-        if (item.discountType === 'PERCENTAGE') {
-          newDiscountAmount = roundMoney((newPrice * (item.discountRate || 0)) / 100);
-        } else if (item.discountType === 'AMOUNT' && (item.discountAmount || 0) > 0) {
-          newDiscountAmount = Math.max(0, roundMoney(newPrice - (item.discountRate || 0)));
-        }
-
-        return {
-          ...item,
-          isWholesale: shouldUseWholesale,
-          price: newPrice,
-          discountAmount: newDiscountAmount,
-        };
-      }),
-    );
+    setCart((prevCart) => prevCart.map((item) => withWholesale(item, nextMode)));
 
     if (nextMode) {
       toast.success('Precio mayoreo aplicado al carrito.');
@@ -185,84 +141,31 @@ export function usePOSCart() {
   };
 
   const toggleItemWholesale = (cartItemId: string) => {
+    const target = cart.find((item) => item.cartItemId === cartItemId);
+    if (!target) return;
+    if (!hasWholesalePrice(target)) {
+      toast.warning('Este producto no tiene precio mayoreo configurado.');
+      return;
+    }
     setCart((prevCart) =>
-      prevCart.map((item) => {
-        if (item.cartItemId !== cartItemId) return item;
-
-        const hasWholesale =
-          item.wholesalePrice !== null &&
-          item.wholesalePrice !== undefined &&
-          Number(item.wholesalePrice) > 0;
-        if (!hasWholesale) {
-          toast.warning('Este producto no tiene precio mayoreo configurado.');
-          return item;
-        }
-
-        const nextWholesale = !item.isWholesale;
-        const newPrice = nextWholesale ? Number(item.wholesalePrice) : item.unitSalePrice;
-
-        let newDiscountAmount = 0;
-        if (item.discountType === 'PERCENTAGE') {
-          newDiscountAmount = roundMoney((newPrice * (item.discountRate || 0)) / 100);
-        } else if (item.discountType === 'AMOUNT' && (item.discountAmount || 0) > 0) {
-          newDiscountAmount = Math.max(0, roundMoney(newPrice - (item.discountRate || 0)));
-        }
-
-        return {
-          ...item,
-          isWholesale: nextWholesale,
-          price: newPrice,
-          discountAmount: newDiscountAmount,
-        };
-      }),
+      prevCart.map((item) => (item.cartItemId === cartItemId ? withWholesale(item, !item.isWholesale) : item)),
     );
   };
 
-  const grossSubtotal = useMemo(() => {
-    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  }, [cart]);
-
-  const totalItemDiscounts = useMemo(() => {
-    return cart.reduce((sum, item) => sum + (item.discountAmount || 0) * item.quantity, 0);
-  }, [cart]);
-
-  const netSubtotal = useMemo(() => {
-    return roundMoney(grossSubtotal - totalItemDiscounts);
-  }, [grossSubtotal, totalItemDiscounts]);
+  const totals = useMemo(
+    () => computeCartTotals(cart, globalDiscountType, globalDiscountRate),
+    [cart, globalDiscountType, globalDiscountRate],
+  );
+  const { grossSubtotal, totalItemDiscounts, netSubtotal, globalDiscountAmount, total: cartTotal } = totals;
 
   const setGlobalDiscountRateSafe = (rate: number) => {
-    let finalRate = Number(rate.toFixed(2));
-    if (isNaN(finalRate) || finalRate < 0) {
-      finalRate = 0;
+    const result = clampGlobalDiscount(globalDiscountType, rate, netSubtotal);
+    if (result.clamped === 'MAX_PERCENT') toast.warning('El descuento global no puede superar el 100%');
+    if (result.clamped === 'ABOVE_SUBTOTAL') {
+      toast.warning(`El descuento global no puede superar el subtotal neto (${formatMoney(netSubtotal)})`);
     }
-
-    if (globalDiscountType === 'PERCENTAGE') {
-      if (finalRate > 100) {
-        finalRate = 100;
-        toast.warning('El descuento global no puede superar el 100%');
-      }
-    } else {
-      if (finalRate > netSubtotal) {
-        finalRate = netSubtotal;
-        toast.warning(`El descuento global no puede superar el subtotal neto (${formatMoney(netSubtotal)})`);
-      }
-    }
-    setGlobalDiscountRate(finalRate);
+    setGlobalDiscountRate(result.rate);
   };
-
-  const globalDiscountAmount = useMemo(() => {
-    let amount = 0;
-    if (globalDiscountType === 'PERCENTAGE') {
-      amount = roundMoney((netSubtotal * globalDiscountRate) / 100);
-    } else {
-      amount = globalDiscountRate;
-    }
-    return Math.min(netSubtotal, amount);
-  }, [netSubtotal, globalDiscountType, globalDiscountRate]);
-
-  const cartTotal = useMemo(() => {
-    return roundMoney(netSubtotal - globalDiscountAmount);
-  }, [netSubtotal, globalDiscountAmount]);
 
   const totalItemsCount = useMemo(() => {
     return cart.reduce((sum, item) => sum + item.quantity, 0);

@@ -40,6 +40,7 @@ import { CashSessionAuditModal } from '../../cash-sessions/components/CashSessio
 import { useFetchCashSessionDetails } from '@/modules/cash-sessions/hooks';
 import { buildClosingTicketData } from '../../cash-sessions/utils/buildClosingTicketData';
 import { ExchangeReturnModal } from './pos/ExchangeReturnModal';
+import { allocatePayments, changeDue, paymentsCoverTotal, remainingToPay } from '../domain/rules/sale-pricing';
 import { CheckoutAttempt, checkoutFingerprint } from '../domain/checkout-attempt';
 import { usePOSHotkeys } from '../hooks/usePOSHotkeys';
 import { formatSaleDateTime } from '../mappers/sale.mapper';
@@ -349,13 +350,9 @@ export const POSView: React.FC<POSViewProps> = ({
     }
   };
 
-  const amountPaid = useMemo(() => {
-    return roundMoney(addedPayments.reduce((sum, p) => sum + p.amount, 0));
-  }, [addedPayments]);
-
-  const remaining = useMemo(() => {
-    return Math.max(0, roundMoney(cartTotal - amountPaid));
-  }, [cartTotal, amountPaid]);
+  const paymentAmounts = useMemo(() => addedPayments.map((p) => p.amount), [addedPayments]);
+  const amountPaid = useMemo(() => roundMoney(paymentAmounts.reduce((sum, amount) => sum + amount, 0)), [paymentAmounts]);
+  const remaining = useMemo(() => remainingToPay(cartTotal, paymentAmounts), [cartTotal, paymentAmounts]);
 
   const handleAddPayment = () => {
     const targetAmt = parseFloat(customAmountText);
@@ -394,33 +391,13 @@ export const POSView: React.FC<POSViewProps> = ({
       return;
     }
 
-    if (amountPaid < cartTotal) {
+    if (!paymentsCoverTotal(cartTotal, paymentAmounts)) {
       toast.warning(`Falta cubrir ${formatMoney(remaining)} del total para poder procesar la venta.`);
       return;
     }
 
-    let remainingBudget = cartTotal;
-    const normalizedPayments: { paymentMethod: PaymentMethod; amount: number; referenceNumber?: string }[] = [];
-
-    for (const p of addedPayments) {
-      if (p.paymentMethod !== PaymentMethod.EFECTIVO && remainingBudget > 0) {
-        const allowed = Math.min(p.amount, remainingBudget);
-        if (allowed > 0) {
-          normalizedPayments.push({ ...p, amount: roundMoney(allowed) });
-          remainingBudget = roundMoney(remainingBudget - allowed);
-        }
-      }
-    }
-
-    for (const p of addedPayments) {
-      if (p.paymentMethod === PaymentMethod.EFECTIVO && remainingBudget > 0) {
-        const allowed = Math.min(p.amount, remainingBudget);
-        if (allowed > 0) {
-          normalizedPayments.push({ ...p, amount: roundMoney(allowed) });
-          remainingBudget = roundMoney(remainingBudget - allowed);
-        }
-      }
-    }
+    // Lo que excede el total es vuelto, no ingreso: se recorta del efectivo (misma regla que el servidor).
+    const normalizedPayments = allocatePayments(cartTotal, addedPayments);
 
     try {
       const hasGlobalDiscount = (globalDiscountAmount || 0) > 0;
@@ -454,7 +431,7 @@ export const POSView: React.FC<POSViewProps> = ({
       checkoutAttempt.current.complete();
 
 
-      const change = amountPaid - cartTotal;
+      const change = changeDue(cartTotal, paymentAmounts);
       if (change > 0) {
         toast.info(`Cambio a entregar al cliente: ${formatMoney(change)}`, { duration: 8000 });
       }
