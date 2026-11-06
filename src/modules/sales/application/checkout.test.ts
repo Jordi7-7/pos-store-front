@@ -1,3 +1,4 @@
+import { DiscountType } from '@/modules/sales/domain/enums';
 import { describe, expect, it, vi } from 'vitest';
 import { PaymentMethod } from '../domain/enums';
 import { CheckoutAttempt } from '../domain/checkout-attempt';
@@ -36,14 +37,14 @@ describe('Checkout', () => {
     const { checkout, processSale } = setup();
     await checkout.execute(
       command({
-        lines: [{ variantId: 'v1', quantity: 3, price: 10, discountType: 'PERCENTAGE', discountRate: 10, discountAmount: 1 }],
-        globalDiscount: { type: 'PERCENTAGE', rate: 10, amount: 2.7 },
+        lines: [{ variantId: 'v1', quantity: 3, price: 10, discountType: DiscountType.PERCENTAGE, discountRate: 10, discountAmount: 1 }],
+        globalDiscount: { type: DiscountType.PERCENTAGE, rate: 10, amount: 2.7 },
         payments: [{ paymentMethod: PaymentMethod.EFECTIVO, amount: 24.3 }],
       }),
     );
     const sent = processSale.mock.calls[0]?.[0];
-    expect(sent).toMatchObject({ discountType: 'PERCENTAGE', discountRate: 10, discountAmount: 2.7 });
-    expect(sent?.items[0]).toMatchObject({ discountAmount: 3, discountType: 'PERCENTAGE' });
+    expect(sent).toMatchObject({ discountType: DiscountType.PERCENTAGE, discountRate: 10, discountAmount: 2.7 });
+    expect(sent?.items[0]).toMatchObject({ discountAmount: 3, discountType: DiscountType.PERCENTAGE });
   });
 
   it('rechaza un carrito vacío y pagos que no cubren el total, indicando lo que falta', async () => {

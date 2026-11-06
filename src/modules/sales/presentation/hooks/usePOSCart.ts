@@ -1,3 +1,4 @@
+import { DiscountType } from '@/modules/sales/domain/enums';
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import type { CartItem } from '../../domain/cart-item';
@@ -9,13 +10,12 @@ import {
   computeLineDiscount,
   hasWholesalePrice,
   withWholesale,
-  type DiscountType,
 } from '../../domain/rules/cart-rules';
 
 export function usePOSCart() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isGlobalWholesale, setIsGlobalWholesale] = useState<boolean>(false);
-  const [globalDiscountType] = useState<DiscountType>('PERCENTAGE');
+  const [globalDiscountType] = useState<DiscountType>(DiscountType.PERCENTAGE);
   const [globalDiscountRate, setGlobalDiscountRate] = useState<number>(0);
 
   const addVariantToCart = (product: any, variant: any, maxStock: number) => {
@@ -63,7 +63,7 @@ export function usePOSCart() {
         quantity: 1,
         imageUrl,
         maxStock,
-        discountType: 'PERCENTAGE',
+        discountType: DiscountType.PERCENTAGE,
         discountRate: 0,
         discountAmount: 0,
       },

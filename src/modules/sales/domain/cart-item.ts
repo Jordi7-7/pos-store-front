@@ -1,3 +1,4 @@
+import { DiscountType } from '@/modules/sales/domain/enums';
 export interface CartItem {
   cartItemId: string;
   variantId: string;
@@ -12,7 +13,7 @@ export interface CartItem {
   quantity: number;
   imageUrl?: string;
   maxStock: number;
-  discountType?: 'PERCENTAGE' | 'AMOUNT';
+  discountType?: DiscountType;
   discountRate?: number;
   discountAmount?: number;
 }

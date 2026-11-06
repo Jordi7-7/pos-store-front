@@ -1,3 +1,4 @@
+import { DiscountType } from '@/modules/sales/domain/enums';
 import { Money } from '@/shared/domain/money';
 
 /**
@@ -6,7 +7,6 @@ import { Money } from '@/shared/domain/money';
  * los decide la capa de presentación a partir del resultado.
  */
 
-export type DiscountType = 'PERCENTAGE' | 'AMOUNT';
 
 export interface PricedCartLine {
   price: number;
@@ -44,7 +44,7 @@ export function computeLineDiscount(price: number, type: DiscountType, input: nu
 
   let clamped: LineDiscountResult['clamped'] = null;
   let amount: number;
-  if (type === 'PERCENTAGE') {
+  if (type === DiscountType.PERCENTAGE) {
     if (value > 100) {
       value = 100;
       clamped = 'MAX_PERCENT';
@@ -62,10 +62,10 @@ export function computeLineDiscount(price: number, type: DiscountType, input: nu
 
 /** Descuento por unidad que corresponde a un precio nuevo, conservando el tipo de descuento de la línea. */
 export function discountForPrice(line: Pick<PricedCartLine, 'discountType' | 'discountRate' | 'discountAmount'>, newPrice: number): number {
-  if (line.discountType === 'PERCENTAGE') {
+  if (line.discountType === DiscountType.PERCENTAGE) {
     return Money.of(newPrice).fraction(line.discountRate || 0, 100).toNumber();
   }
-  if (line.discountType === 'AMOUNT' && (line.discountAmount || 0) > 0) {
+  if (line.discountType === DiscountType.AMOUNT && (line.discountAmount || 0) > 0) {
     const discount = Money.of(newPrice).minus(Money.of(line.discountRate || 0));
     return discount.isNegative() ? 0 : discount.toNumber();
   }
@@ -88,8 +88,8 @@ export interface GlobalDiscountResult {
 export function clampGlobalDiscount(type: DiscountType, rate: number, netSubtotal: number): GlobalDiscountResult {
   let value = Number.isFinite(rate) ? money(rate) : 0;
   if (value < 0) value = 0;
-  if (type === 'PERCENTAGE' && value > 100) return { rate: 100, clamped: 'MAX_PERCENT' };
-  if (type === 'AMOUNT' && value > netSubtotal) return { rate: netSubtotal, clamped: 'ABOVE_SUBTOTAL' };
+  if (type === DiscountType.PERCENTAGE && value > 100) return { rate: 100, clamped: 'MAX_PERCENT' };
+  if (type === DiscountType.AMOUNT && value > netSubtotal) return { rate: netSubtotal, clamped: 'ABOVE_SUBTOTAL' };
   return { rate: value, clamped: null };
 }
 
@@ -110,7 +110,7 @@ export function computeCartTotals(
   const itemDiscounts = Money.sum(lines.map((line) => Money.ofLine(line.discountAmount || 0, line.quantity)));
   const net = gross.minus(itemDiscounts);
 
-  const requested = globalType === 'PERCENTAGE' ? net.fraction(globalRate, 100) : Money.of(globalRate);
+  const requested = globalType === DiscountType.PERCENTAGE ? net.fraction(globalRate, 100) : Money.of(globalRate);
   const global = requested.greaterThan(net) ? net : requested;
 
   return {

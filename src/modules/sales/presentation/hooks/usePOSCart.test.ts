@@ -1,3 +1,4 @@
+import { DiscountType } from '@/modules/sales/domain/enums';
 import { act, renderHook } from '@testing-library/react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePOSCart } from './usePOSCart';
@@ -137,16 +138,16 @@ describe('usePOSCart (caracterización de la lógica de dinero del POS)', () => 
       const { result } = setup();
       const id = addLine(result);
 
-      act(() => result.current.updateItemDiscount(id, 'PERCENTAGE', 10));
+      act(() => result.current.updateItemDiscount(id, DiscountType.PERCENTAGE, 10));
 
-      expect(result.current.cart[0]).toMatchObject({ discountType: 'PERCENTAGE', discountRate: 10, discountAmount: 2 });
+      expect(result.current.cart[0]).toMatchObject({ discountType: DiscountType.PERCENTAGE, discountRate: 10, discountAmount: 2 });
     });
 
     it('porcentaje: se limita a 100% y avisa', () => {
       const { result } = setup();
       const id = addLine(result);
 
-      act(() => result.current.updateItemDiscount(id, 'PERCENTAGE', 150));
+      act(() => result.current.updateItemDiscount(id, DiscountType.PERCENTAGE, 150));
 
       expect(result.current.cart[0]).toMatchObject({ discountRate: 100, discountAmount: 20 });
       expect(toast.warning).toHaveBeenCalledWith(expect.stringContaining('100%'));
@@ -156,16 +157,16 @@ describe('usePOSCart (caracterización de la lógica de dinero del POS)', () => 
       const { result } = setup();
       const id = addLine(result);
 
-      act(() => result.current.updateItemDiscount(id, 'AMOUNT', 15));
+      act(() => result.current.updateItemDiscount(id, DiscountType.AMOUNT, 15));
 
-      expect(result.current.cart[0]).toMatchObject({ discountType: 'AMOUNT', discountRate: 15, discountAmount: 5 });
+      expect(result.current.cart[0]).toMatchObject({ discountType: DiscountType.AMOUNT, discountRate: 15, discountAmount: 5 });
     });
 
     it('importe: el precio final no puede superar el original (se limita a 20 → descuento 0)', () => {
       const { result } = setup();
       const id = addLine(result);
 
-      act(() => result.current.updateItemDiscount(id, 'AMOUNT', 99));
+      act(() => result.current.updateItemDiscount(id, DiscountType.AMOUNT, 99));
 
       expect(result.current.cart[0]).toMatchObject({ discountRate: 20, discountAmount: 0 });
       expect(toast.warning).toHaveBeenCalled();
@@ -175,7 +176,7 @@ describe('usePOSCart (caracterización de la lógica de dinero del POS)', () => 
       const { result } = setup();
       const id = addLine(result);
 
-      act(() => result.current.updateItemDiscount(id, 'PERCENTAGE', -5));
+      act(() => result.current.updateItemDiscount(id, DiscountType.PERCENTAGE, -5));
 
       expect(lineAt(result, 0).discountAmount).toBe(0);
     });
@@ -200,7 +201,7 @@ describe('usePOSCart (caracterización de la lógica de dinero del POS)', () => 
     it('cambiar a mayoreo recalcula el descuento porcentual sobre el nuevo precio', () => {
       const { result } = setup();
       const id = addLine(result);
-      act(() => result.current.updateItemDiscount(id, 'PERCENTAGE', 10)); // 2 sobre 20
+      act(() => result.current.updateItemDiscount(id, DiscountType.PERCENTAGE, 10)); // 2 sobre 20
 
       act(() => result.current.toggleItemWholesale(id));
 
@@ -225,7 +226,7 @@ describe('usePOSCart (caracterización de la lógica de dinero del POS)', () => 
       const a = addLine(hook.result, variant({ id: 'v1', salePrice: 20 }));
       addLine(hook.result, variant({ id: 'v2', sku: 'B', salePrice: 10 }));
       act(() => hook.result.current.updateCartQty(a, 1));
-      act(() => hook.result.current.updateItemDiscount(a, 'PERCENTAGE', 10));
+      act(() => hook.result.current.updateItemDiscount(a, DiscountType.PERCENTAGE, 10));
       return hook;
     }
 

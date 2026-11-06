@@ -1,3 +1,4 @@
+import { DiscountType } from '@/modules/sales/domain/enums';
 import React from 'react';
 import {
   Barcode,
@@ -25,7 +26,7 @@ interface ExchangeItemsStepProps {
   scanRef: React.RefObject<HTMLInputElement | null>;
   onAdjustNewItemQty: (variantId: string, delta: number) => void;
   onRemoveNewItem: (variantId: string) => void;
-  onUpdateNewItemDiscount: (variantId: string, type: 'PERCENTAGE' | 'AMOUNT', inputVal: number) => void;
+  onUpdateNewItemDiscount: (variantId: string, type: DiscountType, inputVal: number) => void;
   totalNewItems: number;
   exchangeDiff: number;
   reason: string;
@@ -102,7 +103,7 @@ export const ExchangeItemsStep: React.FC<ExchangeItemsStepProps> = ({
         {newItems.length > 0 && (
           <div className="flex flex-col gap-1.5">
             {newItems.map((item) => {
-              const discountType = item.discountType || 'PERCENTAGE';
+              const discountType = item.discountType || DiscountType.PERCENTAGE;
               const discountRate = item.discountRate || 0;
               const unitDiscount = item.discountAmount || 0;
               const lineTotal = Math.max(0, (item.price - unitDiscount) * item.quantity);
@@ -130,19 +131,19 @@ export const ExchangeItemsStep: React.FC<ExchangeItemsStepProps> = ({
                   {/* Discount pill */}
                   <div
                     className="flex items-center bg-background/80 border border-border rounded-lg h-7 px-1 shadow-xs shrink-0"
-                    title={discountType === 'PERCENTAGE' ? 'Descuento (%)' : 'Precio Especial ($)'}
+                    title={discountType === DiscountType.PERCENTAGE ? 'Descuento (%)' : 'Precio Especial ($)'}
                   >
                     <button
                       type="button"
                       onClick={() => {
-                        const nextType = discountType === 'PERCENTAGE' ? 'AMOUNT' : 'PERCENTAGE';
-                        const nextVal = nextType === 'AMOUNT' ? item.price : 0;
+                        const nextType = discountType === DiscountType.PERCENTAGE ? DiscountType.AMOUNT : DiscountType.PERCENTAGE;
+                        const nextVal = nextType === DiscountType.AMOUNT ? item.price : 0;
                         onUpdateNewItemDiscount(item.variantId, nextType, nextVal);
                       }}
                       className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
-                      title={discountType === 'PERCENTAGE' ? 'Cambiar a Precio Fijo ($)' : 'Cambiar a Porcentaje (%)'}
+                      title={discountType === DiscountType.PERCENTAGE ? 'Cambiar a Precio Fijo ($)' : 'Cambiar a Porcentaje (%)'}
                     >
-                      {discountType === 'PERCENTAGE' ? (
+                      {discountType === DiscountType.PERCENTAGE ? (
                         <Percent className="w-2.5 h-2.5 text-blue-400 font-bold" />
                       ) : (
                         <DollarSign className="w-2.5 h-2.5 text-emerald-400 font-bold" />
@@ -152,7 +153,7 @@ export const ExchangeItemsStep: React.FC<ExchangeItemsStepProps> = ({
                       type="number"
                       placeholder="0"
                       min="0"
-                      step={discountType === 'PERCENTAGE' ? '1' : '0.01'}
+                      step={discountType === DiscountType.PERCENTAGE ? '1' : '0.01'}
                       value={discountRate === 0 ? '' : discountRate}
                       onChange={(e) => {
                         const val = Math.max(0, parseFloat(e.target.value) || 0);

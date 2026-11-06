@@ -1,3 +1,4 @@
+import { DiscountType } from '@/modules/sales/domain/enums';
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
 import { useSaleByInvoice } from './useSaleDetail';
@@ -172,7 +173,7 @@ export function useExchangeReturn({
   }, []);
 
   const handleUpdateNewItemDiscount = useCallback(
-    (variantId: string, type: 'PERCENTAGE' | 'AMOUNT', inputVal: number) => {
+    (variantId: string, type: DiscountType, inputVal: number) => {
       setNewItems((prev) =>
         prev.map((item) => {
           if (item.variantId !== variantId) return item;
@@ -183,7 +184,7 @@ export function useExchangeReturn({
           let calculatedAmount = 0;
           let displayRate = val;
 
-          if (type === 'PERCENTAGE') {
+          if (type === DiscountType.PERCENTAGE) {
             if (val > 100) {
               val = 100;
               displayRate = 100;

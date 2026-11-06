@@ -1,3 +1,4 @@
+import { DiscountType } from '@/modules/sales/domain/enums';
 export type ModalStep = 'search' | 'select-items' | 'choose-mode' | 'exchange' | 'confirm-refund';
 
 export interface SaleItemRow {
@@ -23,7 +24,7 @@ export interface NewExchangeItem {
   quantity: number;
   price: number;  // salePrice from POS endpoint
   cost: number;
-  discountType?: 'PERCENTAGE' | 'AMOUNT';
+  discountType?: DiscountType;
   discountRate?: number;
   discountAmount?: number; // unit discount amount
 }

@@ -1,3 +1,4 @@
+import { DiscountType } from '@/modules/sales/domain/enums';
 import React from 'react';
 import {
   ShoppingCart,
@@ -23,7 +24,7 @@ interface POSCartListProps {
   onUpdateCartQty: (cartItemId: string, delta: number) => void;
   onUpdateItemDiscount: (
     cartItemId: string,
-    type: 'PERCENTAGE' | 'AMOUNT',
+    type: DiscountType,
     inputVal: number,
   ) => void;
   onRemoveFromCart: (cartItemId: string) => void;
@@ -98,7 +99,7 @@ export const POSCartList: React.FC<POSCartListProps> = ({
       ) : (
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
           {cart.map((item) => {
-            const currentItemDiscountType = item.discountType || 'PERCENTAGE';
+            const currentItemDiscountType = item.discountType || DiscountType.PERCENTAGE;
             const currentItemDiscountRate = item.discountRate || 0;
             const currentItemDiscountAmount = item.discountAmount || 0;
             const lineTotal = (item.price - currentItemDiscountAmount) * item.quantity;
@@ -246,7 +247,7 @@ export const POSCartList: React.FC<POSCartListProps> = ({
                   <div
                     className="flex items-center bg-bg-card border border-border-card/70 rounded-lg h-7 px-1 shadow-xs"
                     title={
-                      currentItemDiscountType === 'PERCENTAGE'
+                      currentItemDiscountType === DiscountType.PERCENTAGE
                         ? 'Descuento (%)'
                         : 'Precio Especial ($)'
                     }
@@ -255,18 +256,18 @@ export const POSCartList: React.FC<POSCartListProps> = ({
                       type="button"
                       onClick={() => {
                         const nextType =
-                          currentItemDiscountType === 'PERCENTAGE' ? 'AMOUNT' : 'PERCENTAGE';
-                        const nextValue = nextType === 'AMOUNT' ? item.price : 0;
+                          currentItemDiscountType === DiscountType.PERCENTAGE ? DiscountType.AMOUNT : DiscountType.PERCENTAGE;
+                        const nextValue = nextType === DiscountType.AMOUNT ? item.price : 0;
                         onUpdateItemDiscount(item.cartItemId, nextType, nextValue);
                       }}
                       className="w-5 h-5 rounded flex items-center justify-center text-neutral hover:text-secondary hover:bg-bg-dark transition-colors cursor-pointer shrink-0"
                       title={
-                        currentItemDiscountType === 'PERCENTAGE'
+                        currentItemDiscountType === DiscountType.PERCENTAGE
                           ? 'Cambiar a Precio Fijo ($)'
                           : 'Cambiar a Porcentaje (%)'
                       }
                     >
-                      {currentItemDiscountType === 'PERCENTAGE' ? (
+                      {currentItemDiscountType === DiscountType.PERCENTAGE ? (
                         <Percent className="w-2.5 h-2.5 text-blue-400 font-bold" />
                       ) : (
                         <DollarSign className="w-2.5 h-2.5 text-emerald-400 font-bold" />
@@ -276,7 +277,7 @@ export const POSCartList: React.FC<POSCartListProps> = ({
                       type="number"
                       placeholder="0"
                       min="0"
-                      step={currentItemDiscountType === 'PERCENTAGE' ? '1' : '0.01'}
+                      step={currentItemDiscountType === DiscountType.PERCENTAGE ? '1' : '0.01'}
                       value={
                         currentItemDiscountRate === 0 ? '' : currentItemDiscountRate
                       }

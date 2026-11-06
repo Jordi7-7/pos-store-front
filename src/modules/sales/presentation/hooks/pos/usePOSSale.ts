@@ -1,3 +1,4 @@
+import { DiscountType } from '@/modules/sales/domain/enums';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { roundMoney } from '@/shared/domain/money';
@@ -8,7 +9,6 @@ import type { ActiveCashSession } from '@/modules/cash-sessions/domain/session-t
 import { CheckoutError } from '../../../application/checkout';
 import type { CartItem } from '../../../domain/cart-item';
 import { PaymentMethod } from '../../../domain/enums';
-import type { DiscountType } from '../../../domain/rules/cart-rules';
 import type { TicketSaleData } from '../../../domain/ticket';
 import { formatSaleDateTime } from '../../../infrastructure/mappers/sale.mapper';
 import { thermalPrinterService } from '../../../infrastructure/printing/thermal-printer.service';

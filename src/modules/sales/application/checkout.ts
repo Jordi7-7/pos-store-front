@@ -1,7 +1,7 @@
+import { DiscountType } from '@/modules/sales/domain/enums';
 import { Money } from '@/shared/domain/money';
 import { CheckoutAttempt, checkoutFingerprint } from '../domain/checkout-attempt';
 import { allocatePayments, changeDue, paymentsCoverTotal, priceSale, remainingToPay } from '../domain/rules/sale-pricing';
-import type { DiscountType } from '../domain/rules/cart-rules';
 import type { ProcessSaleInput, SaleReceipt, SalesRepository } from './ports/sales.repository';
 
 export interface CheckoutLine {
