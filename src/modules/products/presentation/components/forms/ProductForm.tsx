@@ -23,7 +23,7 @@ import {
   FieldError,
   FieldLabel,
 } from '@/components/ui/field';
-import type { ProductFormValues } from '../../../schemas/product.schema';
+import type { ProductFormValues } from './product-form.schema';
 import type { TagEntity as Tag } from '../../../domain/entities/catalog.entity';
 
 interface Category {

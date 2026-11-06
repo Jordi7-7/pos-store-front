@@ -18,7 +18,7 @@ import { toast } from 'sonner';
 import { useCategories } from '../hooks/useCategories';
 import { useProductMutations } from '../hooks';
 import { useTags } from '../hooks/useTags';
-import { productFormSchema, type ProductFormValues } from '../../schemas/product.schema';
+import { productFormSchema, type ProductFormValues } from './forms/product-form.schema';
 import { ProductForm } from './forms/ProductForm';
 import { ImageUploadModal } from './forms/ImageUploadModal';
 import { MediaGallerySelectorModal } from './forms/MediaGallerySelectorModal';
