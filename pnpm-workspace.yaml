@@ -1,2 +1,6 @@
 allowBuilds:
   esbuild: true
+# Versiones corregidas de dependencias transitivas con avisos de seguridad (ver docs/auditoria-web.md)
+overrides:
+  fast-uri: '>=3.1.9'
+  seroval: '>=1.6.11'
