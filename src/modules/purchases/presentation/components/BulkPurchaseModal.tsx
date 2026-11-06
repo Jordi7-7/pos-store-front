@@ -1,8 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { downloadPurchasesTemplate } from '@/lib/excelTemplates';
 import { BulkImportPreviewTable } from '@/components/BulkImportPreviewTable';
-import { useSuppliers, usePurchaseImport } from '../hooks';
-import type { Supplier, BulkPurchaseItemInput } from '../types';
+import { useSuppliers } from '../hooks/useSuppliers';
+import { usePurchaseImport } from '../hooks/usePurchaseImport';
+import type { SupplierEntity } from '../../domain/entities/supplier.entity';
+import type { BulkPurchaseItemInput } from '../../application/ports/purchases.repository';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import {
   Dialog,
@@ -49,7 +51,7 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
   React.useEffect(() => {
     if (!selectedSupplierId && suppliers.length > 0) {
       const generic = suppliers.find(
-        (s: Supplier) =>
+        (s: SupplierEntity) =>
           s.identityNumber?.toUpperCase() === 'GENERICO' ||
           s.name?.toUpperCase().includes('GENERICO')
       );
@@ -278,7 +280,7 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
                     className="text-xs shadow-none h-9 bg-muted/40 border-border rounded-xl"
                     showTrigger
                     value={(() => {
-                      const s = suppliers.find((sup: Supplier) => sup.id === selectedSupplierId);
+                      const s = suppliers.find((sup: SupplierEntity) => sup.id === selectedSupplierId);
                       return s ? `${s.name} (${s.identityNumber})` : '';
                     })()}
                   />
@@ -287,7 +289,7 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
                       No se encontraron proveedores.
                     </ComboboxEmpty>
                     <ComboboxList className="p-1">
-                      {suppliers.map((sup: Supplier) => (
+                      {suppliers.map((sup: SupplierEntity) => (
                         <ComboboxItem key={sup.id} value={sup.id} className="text-xs py-1.5 cursor-pointer">
                           <div className="flex flex-col">
                             <span className="font-semibold text-foreground">{sup.name}</span>

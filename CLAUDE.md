@@ -50,11 +50,11 @@ El núcleo compartido (`src/shared/`) sigue la misma lógica: `domain/{value-obj
 
 Regla de lectura: **domain no conoce a nadie; application solo conoce a domain; infrastructure implementa lo que application pide; presentation usa application a través de `dependencies.ts`.** `printing` añade `infrastructure/escpos/` y `infrastructure/printers/` (generador ESC/POS e impresora USB).
 
-## Patrón por módulo (referencia: `sales`, `cash-sessions`, `cash-registers`, `printing`, `auth`, `branches`, `customers`, `media`, `products`)
+## Patrón por módulo (referencia: `sales`, `cash-sessions`, `cash-registers`, `printing`, `auth`, `branches`, `customers`, `media`, `products`, `users`, `reports`, `dashboard`, `purchases`)
 - **Datos:** la vista → hook (`presentation/hooks`) → **repositorio** (interfaz en `application/ports`, implementación `*HttpRepository` en `infrastructure`, que convierte DTO → entidad) o **caso de uso** (`application`) cuando hay reglas. Los hooks obtienen el repositorio/caso de uso de `infrastructure/dependencies.ts` (raíz de composición); **nunca** importan mappers, DTO ni clases HTTP (lo vigila `architecture.test.ts`).
 - **Entidades puras:** solo datos del negocio. Los textos de pantalla (importes con moneda, fechas con zona horaria, etiquetas) se construyen en **view-models** (`presentation/view-models`, funciones puras que reciben `useFormatters()`), nunca en la entidad ni en el mapper. Una regla impide campos `*Formatted`/`*Label` en `domain`.
 - **Dirección entre módulos** (vigilada): `printing` (tickets, etiquetas, impresoras) no depende de ventas, turnos ni productos; `cash-sessions` depende de `printing`, nunca de `sales`; `products` usa `printing` y `media`; `sales` usa a todos. El vocabulario común (`PaymentMethod`, `SaleStatus`) vive en `shared/domain/payments.ts`. No se permiten ciclos entre módulos (el heredado `media ↔ products` desapareció al mover la paginación a `shared`).
-- Los módulos aún no migrados (`purchases`, `reports`, `users`, `dashboard`) conservan `components/hooks/services` y mappers que formatean; se migran por etapas.
+- **Todos los módulos están migrados** al patrón de capas (lo vigila `architecture.test.ts`). Queda trocear componentes grandes y completar el catálogo `code → mensaje`.
 
 ## Dónde viven los hooks de un componente complejo
 - El estado **compartido** entre varias piezas vive en un hook del contenedor y baja por props (en el POS: carrito, pagos y cobro; en el editor de producto variable: formulario del padre y filas de variantes).

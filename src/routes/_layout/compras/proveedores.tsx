@@ -1,6 +1,6 @@
 import { guardRoute } from '@/modules/auth/presentation/hooks/route-guard';
 import { createFileRoute } from '@tanstack/react-router';
-import { SuppliersView } from '@/modules/purchases/components/SuppliersView';
+import { SuppliersView } from '@/modules/purchases/presentation/components/SuppliersView';
 
 export const Route = createFileRoute('/_layout/compras/proveedores')({
   beforeLoad: () => guardRoute('/compras/proveedores'),

@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useRegisterPurchase, useSuppliers } from '../hooks';
+import { useRegisterPurchase } from '../hooks/usePurchaseOrders';
+import { useSuppliers } from '../hooks/useSuppliers';
 import { useVariantSearch } from '@/modules/products/presentation/hooks';
-import type { Supplier } from '../types';
+import type { SupplierEntity } from '../../domain/entities/supplier.entity';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import { ClipboardList, Loader2, Plus, FileSpreadsheet, Building, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -25,7 +26,7 @@ import {
   TableFooter
 } from "@/components/ui/table";
 import { PurchaseFormRow } from './PurchaseFormRow';
-import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
+import { useFormatters } from '@/modules/auth/presentation/hooks/useFormatters';
 
 interface PurchaseItemInput {
   variantId: string;
@@ -42,6 +43,7 @@ interface PurchaseFormProps {
 }
 
 export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
+  const fmt = useFormatters();
   const { selectedBranchId, selectedBranchName } = useLayoutContext();
   const { suppliers } = useSuppliers();
   const { registerPurchase, isRegistering } = useRegisterPurchase();
@@ -56,7 +58,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
   useEffect(() => {
     if (!selectedSupplierId && suppliers.length > 0) {
       const generic = suppliers.find(
-        (s: Supplier) =>
+        (s: SupplierEntity) =>
           s.identityNumber?.toUpperCase() === 'GENERICO' ||
           s.name?.toUpperCase().includes('GENERICO')
       );
@@ -349,7 +351,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
                 className="text-xs shadow-none h-9 bg-muted/30 border-border rounded-xl"
                 showTrigger
                 value={(() => {
-                  const s = suppliers.find((sup: Supplier) => sup.id === selectedSupplierId);
+                  const s = suppliers.find((sup: SupplierEntity) => sup.id === selectedSupplierId);
                   return s ? `${s.name} (${s.identityNumber})` : '';
                 })()}
               />
@@ -358,7 +360,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
                   No se encontraron proveedores.
                 </ComboboxEmpty>
                 <ComboboxList className="p-1">
-                  {suppliers.map((sup: Supplier) => (
+                  {suppliers.map((sup: SupplierEntity) => (
                     <ComboboxItem key={sup.id} value={sup.id} className="text-xs py-1.5 cursor-pointer">
                       <div className="flex flex-col">
                         <span className="font-semibold text-foreground">{sup.name}</span>
@@ -414,7 +416,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
             <TableFooter className="bg-muted/20 border-t border-border">
               <TableRow>
                 <TableCell colSpan={4} className="text-right text-xs font-bold text-muted-foreground">Total de Ingreso:</TableCell>
-                <TableCell className="text-right text-sm font-extrabold text-primary font-mono">{formatMoney(totalCostOfPurchase)}</TableCell>
+                <TableCell className="text-right text-sm font-extrabold text-primary font-mono">{fmt.money(totalCostOfPurchase)}</TableCell>
                 <TableCell />
               </TableRow>
             </TableFooter>

@@ -5,23 +5,18 @@ export interface PurchaseItemEntity {
   productName: string;
   quantity: number;
   purchasePrice: number;
-  formattedPurchasePrice: string;
   unitCost: number;
-  formattedUnitCost: string;
   subtotal: number;
-  formattedSubtotal: string;
 }
 
 export interface PurchaseEntity {
   id: string;
   invoiceNumber: string;
+  /** Fecha ISO tal como la envía el servidor; se formatea en el view-model. */
   createdAt: string;
-  formattedDate: string;
   status: string;
-  statusLabel: string;
-  statusBadgeVariant: 'success' | 'destructive' | 'secondary' | 'outline';
   totalAmount: number;
-  formattedTotalAmount: string;
+  /** Solo si está completada y no se ha vendido ninguna unidad. */
   isCancellable: boolean;
   supplierName: string;
   supplierIdentity: string;

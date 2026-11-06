@@ -1,8 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { purchasesService } from '../services/purchases.service';
-import type { CreateSupplierInput, UpdateSupplierInput, Supplier } from '../types/purchases.types';
-import { toSupplierEntities } from '../mappers';
-import type { SupplierEntity } from '../entities';
+import { suppliersRepository } from '../../infrastructure/dependencies';
+import type { CreateSupplierInput, UpdateSupplierInput } from '../../application/ports/suppliers.repository';
+import type { SupplierEntity } from '../../domain/entities/supplier.entity';
 import { useIsAuthenticated, useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 
 export const useSuppliers = (options?: { enabled?: boolean }): {
@@ -14,10 +13,9 @@ export const useSuppliers = (options?: { enabled?: boolean }): {
   const tenantId = useTenantId();
   const isAuthenticated = useIsAuthenticated();
 
-  const suppliersQuery = useQuery<Supplier[], Error, SupplierEntity[]>({
+  const suppliersQuery = useQuery<SupplierEntity[], Error>({
     queryKey: ['suppliers', tenantId],
-    queryFn: () => purchasesService.getSuppliers(),
-    select: (data) => toSupplierEntities(data),
+    queryFn: () => suppliersRepository.list(),
     enabled: (options?.enabled ?? true) && isAuthenticated && !!tenantId,
   });
 
@@ -33,50 +31,40 @@ export const useCreateSupplier = () => {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();
 
-  const createSupplierMutation = useMutation({
-    mutationFn: (input: CreateSupplierInput) => purchasesService.createSupplier(input),
+  const mutation = useMutation({
+    mutationFn: (input: CreateSupplierInput) => suppliersRepository.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['suppliers', tenantId] });
     },
   });
 
-  return {
-    createSupplier: createSupplierMutation.mutateAsync,
-    isCreating: createSupplierMutation.isPending,
-  };
+  return { createSupplier: mutation.mutateAsync, isCreating: mutation.isPending };
 };
 
 export const useUpdateSupplier = () => {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();
 
-  const updateSupplierMutation = useMutation({
-    mutationFn: ({ id, input }: { id: string; input: UpdateSupplierInput }) =>
-      purchasesService.updateSupplier(id, input),
+  const mutation = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateSupplierInput }) => suppliersRepository.update(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['suppliers', tenantId] });
     },
   });
 
-  return {
-    updateSupplier: updateSupplierMutation.mutateAsync,
-    isUpdating: updateSupplierMutation.isPending,
-  };
+  return { updateSupplier: mutation.mutateAsync, isUpdating: mutation.isPending };
 };
 
 export const useDeleteSupplier = () => {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();
 
-  const deleteSupplierMutation = useMutation({
-    mutationFn: (id: string) => purchasesService.deleteSupplier(id),
+  const mutation = useMutation({
+    mutationFn: (id: string) => suppliersRepository.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['suppliers', tenantId] });
     },
   });
 
-  return {
-    deleteSupplier: deleteSupplierMutation.mutateAsync,
-    isDeleting: deleteSupplierMutation.isPending,
-  };
+  return { deleteSupplier: mutation.mutateAsync, isDeleting: mutation.isPending };
 };

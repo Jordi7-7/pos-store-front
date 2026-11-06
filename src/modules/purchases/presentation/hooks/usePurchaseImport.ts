@@ -1,16 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { purchasesService } from '../services/purchases.service';
-import type {
-  ValidateImportPurchasesItemInput,
-  ValidateImportPurchasesResult,
-  BulkImportPurchasesInput,
-  Purchase,
-} from '../types';
+import { purchasesRepository } from '../../infrastructure/dependencies';
+import type { BulkImportInput, ImportValidation, ImportValidationItem } from '../../application/ports/purchases.repository';
+import type { PurchaseEntity } from '../../domain/entities/purchase.entity';
 
 export interface UsePurchaseImportOptions {
-  onValidateSuccess?: (data: ValidateImportPurchasesResult) => void;
+  onValidateSuccess?: (data: ImportValidation) => void;
   onValidateError?: (error: Error) => void;
-  onImportSuccess?: (result: Purchase) => void;
+  onImportSuccess?: (result: PurchaseEntity) => void;
   onImportError?: (error: Error) => void;
 }
 
@@ -18,8 +14,8 @@ export const usePurchaseImport = (options?: UsePurchaseImportOptions) => {
   const queryClient = useQueryClient();
 
   const validateMutation = useMutation({
-    mutationFn: (items: ValidateImportPurchasesItemInput[]) =>
-      purchasesService.validateImport(items),
+    mutationFn: (items: ImportValidationItem[]) =>
+      purchasesRepository.validateImport(items),
     onSuccess: (data) => {
       options?.onValidateSuccess?.(data);
     },
@@ -29,8 +25,8 @@ export const usePurchaseImport = (options?: UsePurchaseImportOptions) => {
   });
 
   const importMutation = useMutation({
-    mutationFn: (input: BulkImportPurchasesInput) =>
-      purchasesService.importPurchases(input),
+    mutationFn: (input: BulkImportInput) =>
+      purchasesRepository.import(input),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['purchases'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });

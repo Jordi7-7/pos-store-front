@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { usePurchases, useCancelPurchase, useSuppliers } from '../hooks';
-import { useTimezone } from '../../auth/presentation/hooks/useSession';
+import { usePurchases, useCancelPurchase } from '../hooks/usePurchaseOrders';
+import { useSuppliers } from '../hooks/useSuppliers';
 import {
   ClipboardList,
   Calendar as CalendarIcon,
@@ -12,8 +12,8 @@ import {
   AlertTriangle,
   RotateCcw,
 } from 'lucide-react';
-import type { Supplier } from '../types';
-import type { PurchaseEntity } from '../entities';
+import type { SupplierEntity } from '../../domain/entities/supplier.entity';
+import type { PurchaseVM } from '../view-models/purchase.vm';
 import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { PaginationControls } from '@/shared/presentation/components/PaginationControls';
@@ -31,7 +31,6 @@ import {
   ComboboxItem,
   ComboboxEmpty,
 } from '@/components/ui/combobox';
-import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 interface PurchaseHistoryProps {
   selectedBranchId?: string;
@@ -39,7 +38,6 @@ interface PurchaseHistoryProps {
 
 export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranchId }) => {
   const isAll = !selectedBranchId;
-  const timezone = useTimezone();
 
   // Date Range Defaults: Start of month to today
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -162,7 +160,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                     className="text-xs shadow-none h-9 bg-bg-dark border-border-card rounded-xl"
                     showTrigger
                     value={(() => {
-                      const s = suppliers.find((sup: Supplier) => sup.id === selectedSupplierId);
+                      const s = suppliers.find((sup: SupplierEntity) => sup.id === selectedSupplierId);
                       return s ? s.name : '';
                     })()}
                   />
@@ -174,7 +172,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                       <ComboboxItem value="" className="text-xs py-1.5 cursor-pointer font-semibold text-primary">
                         Todos los Proveedores
                       </ComboboxItem>
-                      {suppliers.map((sup: Supplier) => (
+                      {suppliers.map((sup: SupplierEntity) => (
                         <ComboboxItem key={sup.id} value={sup.id} className="text-xs py-1.5 cursor-pointer">
                           <div className="flex flex-col">
                             <span className="font-semibold text-foreground">{sup.name}</span>
@@ -223,7 +221,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
         </div>
       ) : (
         <div className="space-y-4">
-          {purchases.map((pur: PurchaseEntity) => {
+          {purchases.map((pur: PurchaseVM) => {
             const isCancellingThis = isCancelling && cancellingId === pur.id;
             const isConfirming = confirmingId === pur.id;
             const isCancelled = pur.status === 'CANCELLED';
@@ -241,7 +239,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-card/60 pb-2.5">
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="text-xs font-mono font-bold text-primary">
-                      {pur.invoiceNumber || 'S/Ref'}
+                      {pur.invoiceNumber}
                     </span>
                     {isAll && pur.branchName && (
                       <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">
@@ -250,7 +248,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                     )}
                     <span className="text-[10px] text-neutral flex items-center gap-1">
                       <CalendarIcon className="w-3.5 h-3.5" />
-                      {pur.formattedDate || new Date(pur.createdAt).toLocaleString(undefined, { timeZone: timezone })}
+                      {pur.dateFormatted}
                     </span>
                   </div>
 
@@ -269,7 +267,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                     )}
 
                     <span className="text-xs font-bold text-primary font-mono">
-                      Total: {pur.formattedTotalAmount || formatMoney(Number(pur.totalAmount || 0))}
+                      Total: {pur.totalFormatted}
                     </span>
 
                     {/* Cancel button or disabled indicator */}
@@ -364,7 +362,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
                         <div className="text-right">
                           <span className="font-bold block">x{item.quantity}</span>
                           <span className="text-[9.5px] text-neutral font-mono block">
-                            Costo U: {item.formattedUnitCost || formatMoney(Number(item.purchasePrice || item.unitCost || 0))}
+                            Costo U: {item.unitCostFormatted}
                           </span>
                         </div>
                       </div>

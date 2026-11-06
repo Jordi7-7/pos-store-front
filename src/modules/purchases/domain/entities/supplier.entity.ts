@@ -5,5 +5,4 @@ export interface SupplierEntity {
   email: string;
   phone: string;
   address: string;
-  displayText: string;
 }

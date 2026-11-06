@@ -12,8 +12,8 @@ import {
   Truck,
   Building
 } from 'lucide-react';
-import { useSuppliers, useCreateSupplier, useUpdateSupplier, useDeleteSupplier } from '../hooks';
-import type { SupplierEntity } from '../entities';
+import { useSuppliers, useCreateSupplier, useUpdateSupplier, useDeleteSupplier } from '../hooks/useSuppliers';
+import type { SupplierEntity } from '../../domain/entities/supplier.entity';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel } from '@/components/ui/field';
