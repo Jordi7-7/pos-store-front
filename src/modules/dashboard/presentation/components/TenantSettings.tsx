@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { apiClient } from '@/lib/apiClient';
 import { Globe, DollarSign, Clock, Building, Save, AlertCircle, Loader2, Link2, Image as ImageIcon, UploadCloud, Upload, Trash2, Palette, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuthStore } from '../../auth/presentation/stores/useAuthStore';
+import { useAuthStore } from '../../../auth/presentation/stores/useAuthStore';
 import { useFileUpload } from '@/modules/media';
+import { useTenantSettings } from '../hooks/useTenantSettings';
+import type { CountryOption, CurrencyOption, TimezoneOption } from '../../domain/entities/tenant-settings.entity';
 import { getSavedTheme, saveTheme, DEFAULT_THEME, type TenantThemeColors } from '@/lib/themeManager';
 import { BranchesManagementTab } from '@/modules/branches';
 
@@ -20,45 +21,8 @@ import {
   ComboboxItem,
 } from '@/components/ui/combobox';
 
-interface Country {
-  code: string;
-  name: string;
-}
-
-interface Currency {
-  code: string;
-  name: string;
-  symbol: string;
-}
-
-interface Timezone {
-  name: string;
-  utcOffsetStr: string;
-  countries: string[];
-}
-
-interface MetadataResponse {
-  countries: Country[];
-  currencies: Currency[];
-  timezones: Timezone[];
-}
-
-interface Tenant {
-  id: string;
-  name: string;
-  slug?: string;
-  logoUrl?: string | null;
-  ruc: string;
-  country: string;
-  currencyCode: string;
-  currencySymbol: string;
-  timezone: string;
-}
-
 export const TenantSettings: React.FC = () => {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [metadata, setMetadata] = useState<MetadataResponse | null>(null);
+  const { isLoading: loading, isSaving: saving, metadata, settings, save } = useTenantSettings();
   
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
@@ -89,34 +53,17 @@ export const TenantSettings: React.FC = () => {
     toast.success('Colores restaurados por defecto');
   };
 
-  // Fetch initial data
+  // Al llegar la configuración del servidor, se vuelca al formulario
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const [metaRes, tenantRes] = await Promise.all([
-          apiClient.request<MetadataResponse>('/tenants/metadata'),
-          apiClient.request<Tenant>('/tenants/current'),
-        ]);
-
-        setMetadata(metaRes);
-        setName(tenantRes.name);
-        setSlug(tenantRes.slug || '');
-        setLogoUrl(tenantRes.logoUrl || '');
-        setRuc(tenantRes.ruc);
-        setCountry(tenantRes.country);
-        setCurrencyCode(tenantRes.currencyCode);
-        setTimezone(tenantRes.timezone);
-      } catch (error) {
-        console.error('Error loading tenant settings:', error);
-        toast.error('Error al cargar la configuración del negocio');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
+    if (!settings) return;
+    setName(settings.name);
+    setSlug(settings.slug || '');
+    setLogoUrl(settings.logoUrl || '');
+    setRuc(settings.ruc);
+    setCountry(settings.country);
+    setCurrencyCode(settings.currencyCode);
+    setTimezone(settings.timezone);
+  }, [settings]);
 
   // Filter timezones dynamically by selected country
   const filteredTimezones = metadata?.timezones.filter((tz) => 
@@ -161,28 +108,7 @@ export const TenantSettings: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      setSaving(true);
-      await apiClient.request<Tenant>('/tenants/current', {
-        method: 'PUT',
-        body: JSON.stringify({
-          name,
-          slug: slug.trim().toLowerCase(),
-          logoUrl: logoUrl.trim() || undefined,
-          country,
-          currencyCode,
-          timezone,
-        }),
-      });
-      // Re-sincroniza la tienda de la sesión (nombre, slug, logo, país, moneda, zona horaria) con el servidor.
-      await useAuthStore.getState().fetchProfile();
-      toast.success('Configuración del negocio y logo actualizados con éxito');
-    } catch (error: any) {
-      console.error('Error updating tenant:', error);
-      toast.error(error.message || 'Error al guardar la configuración');
-    } finally {
-      setSaving(false);
-    }
+    await save({ name, slug, logoUrl, country, currencyCode, timezone });
   };
 
   if (loading) {
@@ -289,7 +215,7 @@ export const TenantSettings: React.FC = () => {
                         No se encontraron países.
                       </ComboboxEmpty>
                       <ComboboxList className="p-1">
-                        {(c: Country) => (
+                        {(c: CountryOption) => (
                           <ComboboxItem 
                             key={c.code} 
                             value={c.code}
@@ -324,7 +250,7 @@ export const TenantSettings: React.FC = () => {
                         No se encontraron monedas.
                       </ComboboxEmpty>
                       <ComboboxList className="p-1">
-                        {(curr: Currency) => (
+                        {(curr: CurrencyOption) => (
                           <ComboboxItem 
                             key={curr.code} 
                             value={curr.code}
@@ -450,7 +376,7 @@ export const TenantSettings: React.FC = () => {
                         No se encontraron zonas horarias.
                       </ComboboxEmpty>
                       <ComboboxList className="p-1">
-                        {(tz: Timezone) => (
+                        {(tz: TimezoneOption) => (
                           <ComboboxItem 
                             key={tz.name} 
                             value={tz.name}

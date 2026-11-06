@@ -1,3 +1,5 @@
+/** Métricas del panel: solo datos; los importes y porcentajes se escriben al mostrarlos. */
+
 export interface DashboardMetrics {
   today: {
     totalSales: number;
