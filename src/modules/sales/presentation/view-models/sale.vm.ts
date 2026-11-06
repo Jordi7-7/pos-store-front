@@ -62,6 +62,12 @@ export const SALE_STATUS_BADGE: Record<SaleStatus, { label: string; className: s
   [SaleStatus.CANCELLED]: { label: 'Cancelada', className: 'bg-zinc-100 text-zinc-800 border-zinc-200' },
 };
 
+/** Nombre en español de cada método de pago. */
+export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
+  [PaymentMethod.EFECTIVO]: 'Efectivo',
+  [PaymentMethod.TARJETA]: 'Tarjeta',
+};
+
 /** Datos del ticket de una venta (la fecha ya en el formato de la tienda). */
 export const toTicketSaleData = (sale: SaleDetailEntity, fmt: Formatters): TicketSaleData => ({
   invoiceNumber: sale.invoiceNumber,
