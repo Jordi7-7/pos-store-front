@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ShoppingBag, TrendingDown, RotateCcw, User, Printer } from 'lucide-react';
 import type { CashSessionDetailsVM, CashSessionExpenseVM, CashSessionRefundVM, CashSessionSaleVM } from '../../view-models/cash-session.vm';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { SaleStatus } from '@/modules/sales/domain/enums';
+import { SaleStatus } from '@/shared/domain/payments';
 
 /** Ventas, gastos y devoluciones del turno, por pestañas. */
 interface AuditMovementsProps {

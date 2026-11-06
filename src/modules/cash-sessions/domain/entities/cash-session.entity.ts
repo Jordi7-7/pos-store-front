@@ -1,5 +1,5 @@
 import { CashSessionStatus, CashSessionDifferenceStatus } from '../enums';
-import { PaymentMethod, SaleStatus } from '@/modules/sales/domain/enums';
+import { PaymentMethod, SaleStatus } from '@/shared/domain/payments';
 
 /**
  * Entidades del turno de caja: solo datos del negocio (números, fechas ISO, enums). Cómo se

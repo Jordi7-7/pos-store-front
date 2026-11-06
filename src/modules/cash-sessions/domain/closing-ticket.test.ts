@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PaymentMethod, SaleStatus } from '@/modules/sales/domain/enums';
+import { PaymentMethod, SaleStatus } from '@/shared/domain/payments';
 import { CashSessionDifferenceStatus, CashSessionStatus } from './enums';
 import type { CashSessionDetailsEntity } from './entities/cash-session.entity';
 import { buildClosingTicketData } from './closing-ticket';
@@ -28,7 +28,7 @@ describe('corte Z a partir del resumen del turno', () => {
   it('reordena las cifras del servidor sin recalcularlas', () => {
     expect(buildClosingTicketData(details)).toMatchObject({
       id: 's1', openingBalance: 100, closingBalance: 100, expectedBalance: 100, salesTotal: 0, expensesTotal: 20, refundsTotal: 310,
-      cashSales: 310, cardSales: 0, salesCount: 1, cashRegisterName: 'Caja 1', userName: 'Ana', branchName: 'Centro', branchAddress: 'Calle 1', status: CashSessionStatus.CLOSED,
+      cashSales: 310, cardSales: 0, salesCount: 1, cashRegisterName: 'Caja 1', userName: 'Ana', branchName: 'Centro', branchAddress: 'Calle 1', isClosed: true,
       paymentsBreakdown: { EFECTIVO: 310, TARJETA: 0 },
     });
   });
@@ -48,6 +48,6 @@ describe('corte Z a partir del resumen del turno', () => {
 
   it('un turno abierto se imprime como abierto y sin contado inventado: usa el esperado', () => {
     const open = { ...details, session: { ...details.session, status: CashSessionStatus.OPEN, isClosed: false, closedAt: null, closingBalance: null } };
-    expect(buildClosingTicketData(open)).toMatchObject({ status: CashSessionStatus.OPEN, closingBalance: 100, closedAt: undefined });
+    expect(buildClosingTicketData(open)).toMatchObject({ isClosed: false, closingBalance: 100, closedAt: undefined });
   });
 });

@@ -1,5 +1,5 @@
 import type { Formatters } from '@/shared/presentation/formatters';
-import { SaleStatus } from '@/modules/sales/domain/enums';
+import { SaleStatus } from '@/shared/domain/payments';
 import { CashSessionDifferenceStatus } from '../../domain/enums';
 import type {
   CashSessionDetailsEntity,

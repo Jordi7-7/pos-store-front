@@ -1,3 +1,4 @@
+import type { ClosingTicketData } from '../../../domain/ticket';
 import { useTicketFormat } from '../../hooks/useTicketFormat';
 import React, { useMemo, useState, useEffect } from 'react';
 import { Printer, Download, RefreshCw, Zap } from 'lucide-react';
@@ -10,7 +11,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { CashSessionStatus } from '@/modules/cash-sessions/domain/enums';
 import { useTenant } from '@/modules/auth/hooks/useSession';
 import { thermalPrinterService } from '../../../infrastructure/printing/thermal-printer.service';
 import { buildClosingReceiptBytes } from '../../../infrastructure/printing/escpos-builder';
@@ -24,41 +24,7 @@ import {
 export interface ThermalClosingTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
-  sessionData: {
-    id: string;
-    openedAt: string;
-    closedAt?: string;
-    openingBalance: number;
-    closingBalance: number;
-    expectedBalance: number;
-    salesTotal: number;
-    salesSubtotal?: number;
-    discountsTotal?: number;
-    expensesTotal: number;
-    refundsTotal?: number;
-    cashSales?: number;
-    cardSales?: number;
-    salesCount?: number;
-    totalPieces?: number;
-    cashRegisterName?: string;
-    expensesList: { description: string; amount: number; createdAt: string }[];
-    productsList: {
-      sku: string;
-      name: string;
-      quantity: number;
-      price?: number;
-      subtotal?: number;
-      discount?: number;
-      total: number;
-    }[];
-    paymentsBreakdown: { [method: string]: number };
-    refundsList: { id: string; reason: string; items: { name: string; sku: string; quantity: number }[] }[];
-    salesList: { invoiceNumber: string; createdAt: string; total: number; paymentMethods: string[] }[];
-    userName?: string;
-    branchName?: string;
-    branchAddress?: string;
-    status?: CashSessionStatus;
-  } | null;
+  sessionData: ClosingTicketData | null;
   tenantRuc?: string;
   tenantName?: string;
 }
@@ -130,9 +96,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
 
   if (!sessionData) return null;
 
-  const isSessionClosed = sessionData.status
-    ? sessionData.status === CashSessionStatus.CLOSED
-    : !!sessionData.closedAt;
+  const isSessionClosed = sessionData.isClosed || !!sessionData.closedAt;
 
   // Imprimir: USB directo o fallback de navegador con imagen limpia
   const handlePrint = async () => {

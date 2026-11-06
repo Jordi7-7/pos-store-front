@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CashSessionStatus } from '@/modules/cash-sessions/domain/enums';
-import type { ClosingTicketData } from '@/modules/cash-sessions/domain/closing-ticket';
-import { PaymentMethod } from '../../domain/enums';
-import type { TicketSaleData } from '../../domain/ticket';
+import { PaymentMethod } from '@/shared/domain/payments';
+import type { ClosingTicketData, TicketSaleData } from '../../domain/ticket';
 import { buildClosingReceiptBytes, buildSaleReceiptBytes } from './escpos-builder';
 
 /** Los comandos ESC/POS son bytes de control; el texto es ASCII/CP850, así que se lee como latin1. */
@@ -36,7 +34,7 @@ const closing: ClosingTicketData = {
   salesList: [],
   expensesList: [],
   productsList: [],
-  status: CashSessionStatus.CLOSED,
+  isClosed: true,
 };
 
 const build = (currencyCode: string, locale: string) =>

@@ -1,42 +1,7 @@
+import type { ClosingTicketData } from '@/modules/sales/domain/ticket';
 import type { CashSessionDetailsEntity } from './entities/cash-session.entity';
 import { CashSessionStatus } from './enums';
-import { PaymentMethod } from '@/modules/sales/domain/enums';
-
-export interface ClosingTicketData {
-  id: string;
-  openedAt: string;
-  closedAt?: string;
-  openingBalance: number;
-  closingBalance: number;
-  expectedBalance: number;
-  salesTotal: number;
-  salesSubtotal?: number;
-  discountsTotal?: number;
-  expensesTotal: number;
-  refundsTotal?: number;
-  cashSales?: number;
-  cardSales?: number;
-  salesCount?: number;
-  totalPieces?: number;
-  cashRegisterName?: string;
-  expensesList: { description: string; amount: number; createdAt: string }[];
-  productsList: {
-    sku: string;
-    name: string;
-    quantity: number;
-    price?: number;
-    subtotal?: number;
-    discount?: number;
-    total: number;
-  }[];
-  paymentsBreakdown: { [method: string]: number };
-  refundsList: { id: string; reason: string; items: { name: string; sku: string; quantity: number }[] }[];
-  salesList: { invoiceNumber: string; createdAt: string; total: number; paymentMethods: string[] }[];
-  userName?: string;
-  branchName?: string;
-  branchAddress?: string;
-  status?: CashSessionStatus;
-}
+import { PaymentMethod } from '@/shared/domain/payments';
 
 /** Datos del corte Z de un turno, a partir de su resumen. Solo reordena lo que el servidor calculó. */
 export function buildClosingTicketData(details: CashSessionDetailsEntity): ClosingTicketData {
@@ -97,6 +62,6 @@ export function buildClosingTicketData(details: CashSessionDetailsEntity): Closi
     userName: session.openedByName,
     branchName: session.branchName,
     branchAddress: session.branchAddress,
-    status: session.status === CashSessionStatus.CLOSED || !!session.closedAt ? CashSessionStatus.CLOSED : CashSessionStatus.OPEN,
+    isClosed: session.status === CashSessionStatus.CLOSED || !!session.closedAt,
   };
 }

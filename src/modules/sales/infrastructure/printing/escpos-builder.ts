@@ -1,9 +1,7 @@
 import { numeroALetras } from 'numero-a-letras-es';
-import type { TicketFormat, TicketSaleData } from '../../domain/ticket';
-import type { ClosingTicketData } from '@/modules/cash-sessions/domain/closing-ticket';
+import type { ClosingTicketData, TicketFormat, TicketSaleData } from '../../domain/ticket';
 import { ticketMoney } from './ticket-money';
-import { CashSessionStatus } from '@/modules/cash-sessions/domain/enums';
-import { PaymentMethod } from '../../domain/enums';
+import { PaymentMethod } from '@/shared/domain/payments';
 
 export type PaperWidth = '58mm' | '80mm';
 
@@ -403,7 +401,7 @@ export function buildClosingReceiptBytes(
   }
 
   // Determinar si es Corte Z (Cierre definitivo) o Corte X (Arqueo Parcial)
-  const isClosed = sessionData.status === CashSessionStatus.CLOSED || !!sessionData.closedAt;
+  const isClosed = sessionData.isClosed || !!sessionData.closedAt;
   builder
     .bold(true)
     .line(isClosed ? 'CORTE Z (CIERRE)' : 'CORTE X (ARQUEO)')

@@ -5,8 +5,7 @@ import {
   type PaperWidth,
 } from './escpos-builder';
 import type { TicketPrinter } from '../../application/ports/ticket-printer';
-import type { ClosingTicketData } from '@/modules/cash-sessions/domain/closing-ticket';
-import type { TicketFormat, TicketSaleData } from '../../domain/ticket';
+import type { ClosingTicketData, TicketFormat, TicketSaleData } from '../../domain/ticket';
 
 export interface PrinterConfig {
   paperWidth: PaperWidth;
