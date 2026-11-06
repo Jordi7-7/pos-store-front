@@ -6,7 +6,7 @@ import { toSessionTenant, toSessionUser } from '../mappers/session.mapper';
 
 const bearer = (accessToken: string): RequestInit => ({ headers: { Authorization: `Bearer ${accessToken}` } });
 
-const toTokens = (dto: AuthTokensDTO): AuthTokens => ({ accessToken: dto.accessToken, refreshToken: dto.refreshToken });
+const toTokens = (dto: AuthTokensDTO): AuthTokens => ({ accessToken: dto.accessToken });
 
 /** Autenticación por HTTP: convierte las respuestas (DTO) en entidades de sesión. */
 export class AuthHttpRepository implements AuthRepository {
@@ -15,7 +15,7 @@ export class AuthHttpRepository implements AuthRepository {
   }
 
   async login(credentials: Extract<SignInCredentials, { kind: 'password' }>): Promise<AuthTokens> {
-    const response = await apiClient.post<AuthTokensDTO>('/auth/login', {
+    const response = await apiClient.post<AuthTokensDTO>('/auth/web/login', {
       email: credentials.identifier,
       password: credentials.password,
       tenantSlug: credentials.tenantSlug,
@@ -24,7 +24,7 @@ export class AuthHttpRepository implements AuthRepository {
   }
 
   async pinLogin(credentials: Extract<SignInCredentials, { kind: 'pin' }>): Promise<AuthTokens> {
-    return toTokens(await apiClient.post<AuthTokensDTO>('/auth/pin-login', { pin: credentials.pin, tenantSlug: credentials.tenantSlug }));
+    return toTokens(await apiClient.post<AuthTokensDTO>('/auth/web/pin-login', { pin: credentials.pin, tenantSlug: credentials.tenantSlug }));
   }
 
   async getProfile(accessToken?: string): Promise<{ user: SessionUser; tenant: SessionTenant }> {
@@ -32,12 +32,11 @@ export class AuthHttpRepository implements AuthRepository {
     return { user: toSessionUser(profile), tenant: toSessionTenant(profile.tenant) };
   }
 
-  async refresh(refreshToken: string): Promise<AuthTokens> {
-    const response = await apiClient.post<AuthTokensDTO>('/auth/refresh', { refreshToken });
-    return { accessToken: response.accessToken, refreshToken: response.refreshToken || refreshToken };
+  async refresh(): Promise<AuthTokens> {
+    return toTokens(await apiClient.post<AuthTokensDTO>('/auth/web/refresh'));
   }
 
-  async logout(accessToken: string): Promise<void> {
-    await apiClient.post('/auth/logout', {}, bearer(accessToken));
+  async logout(): Promise<void> {
+    await apiClient.post('/auth/web/logout');
   }
 }

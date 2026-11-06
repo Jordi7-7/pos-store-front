@@ -1,19 +1,19 @@
 import type { SessionTenant, SessionUser } from '../../domain/entities/session';
 
 /** Versión del formato guardado en `localStorage` (`aura-pos-auth`). Súbela con cada cambio de forma. */
-export const AUTH_STORAGE_VERSION = 1;
+export const AUTH_STORAGE_VERSION = 2;
 
-/** Lo único que se guarda de la sesión: tokens, usuario y tienda (la selección de sucursal/caja es otro store). */
+/**
+ * Lo único que se guarda de la sesión: usuario y tienda (datos que se muestran, no secretos). Los tokens NO se
+ * guardan: el de acceso vive en memoria y el de renovación en una cookie `HttpOnly` que gestiona el navegador.
+ * La selección de sucursal/caja es otro store.
+ */
 export interface PersistedAuth {
-  accessToken: string | null;
-  refreshToken: string | null;
   user: SessionUser | null;
   tenant: SessionTenant | null;
 }
 
 const EMPTY: PersistedAuth = {
-  accessToken: null,
-  refreshToken: null,
   user: null,
   tenant: null,
 };
@@ -22,50 +22,17 @@ const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'obj
 const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v : null);
 
 /**
- * Convierte lo guardado por la versión anterior (plana, con campos duplicados) al formato actual,
- * para que nadie pierda la sesión al desplegar. Si falta algo imprescindible (usuario, tienda o
- * tokens) se descarta la sesión y se vuelve al login: mejor eso que una sesión a medias.
+ * Lo guardado por versiones anteriores (que incluían los tokens en `localStorage`) se descarta salvo la tienda,
+ * que la pantalla de login necesita: quien tenía sesión abierta vuelve a iniciar sesión una vez, y los tokens
+ * viejos desaparecen del navegador en cuanto se reescribe el almacenamiento.
  */
 export function migratePersistedAuth(persisted: unknown, version: number): PersistedAuth {
-  if (version >= AUTH_STORAGE_VERSION) return isRecord(persisted) ? { ...EMPTY, ...(persisted as Partial<PersistedAuth>) } : EMPTY;
   if (!isRecord(persisted)) return EMPTY;
+  if (version >= AUTH_STORAGE_VERSION) return { ...EMPTY, user: (persisted.user as SessionUser | null) ?? null, tenant: (persisted.tenant as SessionTenant | null) ?? null };
 
-  const legacyTenant = isRecord(persisted.publicTenant) ? persisted.publicTenant : null;
-  const tenant = legacyTenant ? toTenant(legacyTenant) : null;
-  const legacyUser = isRecord(persisted.user) ? persisted.user : null;
-  const accessToken = str(persisted.accessToken);
-  const refreshToken = str(persisted.refreshToken);
-
-  const base: PersistedAuth = {
-    ...EMPTY,
-    tenant,
-  };
-
-  const userId = legacyUser ? str(legacyUser.id) : null;
-  if (!legacyUser || !userId || !tenant || !accessToken || !refreshToken) return base;
-
-  const isOwner = persisted.role === 'OWNER';
-  const roleId = str(persisted.roleId);
-  const roleName = str(persisted.roleName);
-  const branchIds = stringArray(persisted.branchIds ?? legacyUser.branchIds);
-
-  return {
-    ...base,
-    accessToken,
-    refreshToken,
-    user: {
-      id: userId,
-      name: str(legacyUser.name) ?? '',
-      username: str(legacyUser.username) ?? '',
-      email: str(legacyUser.email),
-      isOwner,
-      role: !isOwner && roleId && roleName ? { id: roleId, name: roleName } : null,
-      permissions: stringArray(persisted.permissions),
-      // El perfil antiguo solo guardaba los ids; los nombres se completan al revalidar el perfil.
-      branches: branchIds.map((id) => ({ id, name: '' })),
-      cashRegisters: Array.isArray(persisted.cashRegisters) ? (persisted.cashRegisters as SessionUser['cashRegisters']) : [],
-    },
-  };
+  // Versión 1: `tenant` ya tiene la forma actual. Versión 0 (plana): la tienda estaba en `publicTenant`.
+  const legacyTenant = isRecord(persisted.tenant) ? persisted.tenant : isRecord(persisted.publicTenant) ? persisted.publicTenant : null;
+  return { user: null, tenant: legacyTenant ? toTenant(legacyTenant) : null };
 }
 
 function toTenant(raw: Record<string, unknown>): SessionTenant | null {
@@ -81,6 +48,3 @@ function toTenant(raw: Record<string, unknown>): SessionTenant | null {
   return { id, name, slug, ...(ruc ? { ruc } : {}), logoUrl: str(raw.logoUrl), country, currencyCode, currencySymbol, timezone };
 }
 
-function stringArray(v: unknown): string[] {
-  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
-}

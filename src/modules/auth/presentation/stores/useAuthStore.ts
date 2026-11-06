@@ -21,7 +21,8 @@ import { AUTH_STORAGE_VERSION, migratePersistedAuth, type PersistedAuth } from '
 export type PublicTenant = SessionTenant;
 
 interface AuthState extends PersistedAuth {
-  // Estado transitorio (no se guarda)
+  // Estado transitorio (no se guarda). El token de acceso vive solo en memoria: el de renovación es una cookie HttpOnly.
+  accessToken: string | null;
   isLoadingTenant: boolean;
   tenantError: string | null;
   isSessionExpiredModalOpen: boolean;
@@ -40,18 +41,27 @@ interface AuthState extends PersistedAuth {
   logout: () => void;
   fetchProfile: () => Promise<boolean>;
   refreshSession: () => Promise<boolean>;
+  /** Al arrancar: si hay un usuario guardado, recupera el token de acceso con la cookie de renovación. */
+  restoreSession: () => Promise<void>;
 
   openSessionExpiredModal: () => void;
   closeSessionExpiredModal: () => void;
 }
 
 /** Autenticado = hay token, perfil y tienda. Se deriva; no se guarda. */
-export const selectIsAuthenticated = (s: Pick<PersistedAuth, 'accessToken' | 'user' | 'tenant'>): boolean =>
+export const selectIsAuthenticated = (s: Pick<AuthState, 'accessToken' | 'user' | 'tenant'>): boolean =>
   Boolean(s.accessToken && s.user && s.tenant);
 
 const FALLBACK_LOGIN_ERROR = 'No se pudo iniciar sesión. Inténtalo de nuevo.';
 
 let inFlightProfilePromise: Promise<boolean> | null = null;
+
+/**
+ * La cookie de renovación rota en cada uso: dos pestañas renovando a la vez usarían la misma y el servidor lo tomaría
+ * por un robo. El candado del navegador (Web Locks) las pone en fila; la segunda ya manda la cookie nueva.
+ */
+const withRefreshLock = <T>(task: () => Promise<T>): Promise<T> =>
+  typeof navigator !== 'undefined' && navigator.locks ? navigator.locks.request('pos-session-refresh', task) : task();
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -60,7 +70,7 @@ export const useAuthStore = create<AuthState>()(
        * Guarda el usuario y la tienda del perfil, y mantiene coherente lo que depende de ellos:
        * la selección de sucursal/caja y la caché de datos si cambió moneda, país o zona horaria.
        */
-      const applyProfile = (user: SessionUser, tenant: SessionTenant, extra: Partial<PersistedAuth> = {}) => {
+      const applyProfile = (user: SessionUser, tenant: SessionTenant, extra: { accessToken?: string } = {}) => {
         const previousFormat = tenantFormatKey(get().tenant);
         set({ ...extra, user, tenant });
         useWorkspaceStore.getState().reconcile(user);
@@ -72,7 +82,7 @@ export const useAuthStore = create<AuthState>()(
       const startSession = async (credentials: SignInCredentials): Promise<LoginResult> => {
         try {
           const session = await signIn.execute(credentials);
-          applyProfile(session.user, session.tenant, { accessToken: session.tokens.accessToken, refreshToken: session.tokens.refreshToken });
+          applyProfile(session.user, session.tenant, { accessToken: session.tokens.accessToken });
           return { ok: true };
         } catch (error) {
           console.error('Error al iniciar sesión:', error);
@@ -82,9 +92,20 @@ export const useAuthStore = create<AuthState>()(
         }
       };
 
+      /** Cierra la sesión en este navegador (la tienda se conserva: la pantalla de login la usa). */
+      const clearLocalSession = () => {
+        set({ accessToken: null, user: null, isSessionExpiredModalOpen: false });
+        useWorkspaceStore.getState().reset();
+        // Vaciar la caché de datos (dashboard, ventas, métricas…) del usuario anterior.
+        try {
+          queryClient.clear();
+        } catch {
+          // No-op si no está inicializado
+        }
+      };
+
       return {
       accessToken: null,
-      refreshToken: null,
       user: null,
       tenant: null,
       isLoadingTenant: false,
@@ -143,28 +164,9 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        const { accessToken } = get();
-
-        // Avisar al backend para que revoque la sesión en Redis.
-        if (accessToken) {
-          authRepository.logout(accessToken).catch(() => {});
-        }
-
-        // La tienda se conserva a propósito: la pantalla de login la usa.
-        set({
-          accessToken: null,
-          refreshToken: null,
-          user: null,
-          isSessionExpiredModalOpen: false,
-        });
-        useWorkspaceStore.getState().reset();
-
-        // Vaciar la caché de datos (dashboard, ventas, métricas…) del usuario anterior.
-        try {
-          queryClient.clear();
-        } catch {
-          // No-op si no está inicializado
-        }
+        // Avisar al backend: revoca la sesión en Redis y borra la cookie de renovación.
+        authRepository.logout().catch(() => {});
+        clearLocalSession();
       },
 
       fetchProfile: async () => {
@@ -192,18 +194,31 @@ export const useAuthStore = create<AuthState>()(
         return inFlightProfilePromise;
       },
 
-      refreshSession: async () => {
-        const { refreshToken } = get();
-        if (!refreshToken) return false;
+      refreshSession: () =>
+        withRefreshLock(async () => {
+          try {
+            const tokens = await authRepository.refresh();
+            set({ accessToken: tokens.accessToken, isSessionExpiredModalOpen: false });
+            // Mantener permisos y datos de la tienda sincronizados con el servidor.
+            get().fetchProfile().catch(() => {});
+            return true;
+          } catch (err) {
+            console.error('Error al renovar la sesión con la cookie:', err);
+            return false;
+          }
+        }),
+
+      restoreSession: async () => {
+        if (!get().user || get().accessToken) return;
         try {
-          const tokens = await authRepository.refresh(refreshToken);
-          set({ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, isSessionExpiredModalOpen: false });
-          // Mantener permisos y datos de la tienda sincronizados con el servidor.
-          get().fetchProfile().catch(() => {});
-          return true;
-        } catch (err) {
-          console.error('Error al renovar sesión con refresh token:', err);
-          return false;
+          const tokens = await withRefreshLock(() => authRepository.refresh());
+          set({ accessToken: tokens.accessToken });
+          void get().fetchProfile();
+        } catch (error) {
+          // Cookie vencida o revocada: no hay sesión que recuperar. Una caída de red NO borra nada: al volver la
+          // conexión basta con iniciar sesión (el usuario guardado solo sirve para pintar la pantalla de login).
+          if (isApiError(error) && error.status === 401) clearLocalSession();
+          else console.error('No se pudo restaurar la sesión:', error);
         }
       },
       };
@@ -213,8 +228,6 @@ export const useAuthStore = create<AuthState>()(
       version: AUTH_STORAGE_VERSION,
       migrate: (persisted, version) => migratePersistedAuth(persisted, version) as unknown as AuthState,
       partialize: (state): PersistedAuth => ({
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
         user: state.user,
         tenant: state.tenant,
       }),

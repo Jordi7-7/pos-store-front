@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 import { configureApiClient } from '@/lib/apiClient';
-import { selectIsAuthenticated, useAuthStore } from '@/modules/auth/presentation/stores/useAuthStore';
+import { useAuthStore } from '@/modules/auth/presentation/stores/useAuthStore';
 
 /** Raíz de composición: único sitio que une el cliente HTTP con el store de sesión y los avisos. */
 export function setupApiClient(): void {
@@ -15,11 +15,10 @@ export function setupApiClient(): void {
 }
 
 /**
- * Al arrancar, el perfil guardado en el navegador se vuelve a pedir al servidor: así los permisos
- * y los datos de la tienda no quedan viejos entre recargas. Sin esperar: la pantalla pinta con lo guardado.
+ * Al arrancar: si hay un usuario guardado, recupera el token de acceso con la cookie de renovación (la pantalla
+ * espera este resultado) y el perfil se vuelve a pedir en segundo plano, para que permisos y datos de la tienda
+ * no queden viejos entre recargas.
  */
-export function revalidateSession(): void {
-  if (selectIsAuthenticated(useAuthStore.getState())) {
-    void useAuthStore.getState().fetchProfile();
-  }
+export async function restoreSessionOnStart(): Promise<void> {
+  await useAuthStore.getState().restoreSession();
 }

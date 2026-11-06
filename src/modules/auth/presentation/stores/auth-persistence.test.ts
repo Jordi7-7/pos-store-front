@@ -32,43 +32,29 @@ const legacy = {
 };
 
 describe('migratePersistedAuth', () => {
-  it('conserva la sesión de la versión anterior (nadie pierde el login al desplegar)', () => {
+  it('de la versión plana (0) conserva solo la tienda: los tokens viejos se descartan y hay que volver a iniciar sesión', () => {
     const next = migratePersistedAuth(legacy, 0);
-    expect(next.accessToken).toBe('a');
-    expect(next.refreshToken).toBe('r');
+    expect(next.user).toBeNull();
     expect(next.tenant).toMatchObject({ id: 't1', slug: 'leiza', currencyCode: 'MXN', timezone: 'America/Mexico_City' });
-    expect(next.user).toMatchObject({
-      id: 'u1',
-      isOwner: false,
-      role: { id: 'role-1', name: 'Cajero' },
-      permissions: ['view:pos'],
-      branches: [{ id: 'b1', name: '' }],
-    });
+    expect(JSON.stringify(next)).not.toMatch(/"a"|"r"|accessToken|refreshToken/);
   });
 
-  it('el propietario se reconoce por el rol OWNER y no lleva rol de usuario', () => {
-    const next = migratePersistedAuth({ ...legacy, role: 'OWNER', roleId: null, roleName: 'Propietario' }, 0);
-    expect(next.user?.isOwner).toBe(true);
-    expect(next.user?.role).toBeNull();
+  it('de la versión 1 (con tokens en localStorage) también: sin usuario y sin ningún token', () => {
+    const v1 = { accessToken: 'tok-secreto', refreshToken: 'ref-secreto', user: { id: 'u1' }, tenant: legacy.publicTenant };
+    const next = migratePersistedAuth(v1, 1);
+    expect(next.user).toBeNull();
+    expect(next.tenant?.slug).toBe('leiza');
+    expect(JSON.stringify(next)).not.toContain('secreto');
   });
 
-  it('no guarda campos duplicados ni derivados', () => {
-    const keys = Object.keys(migratePersistedAuth(legacy, 0)).sort();
-    expect(keys).toEqual(['accessToken', 'refreshToken', 'tenant', 'user']);
+  it('solo se guardan usuario y tienda, nunca tokens', () => {
+    expect(Object.keys(migratePersistedAuth(legacy, 0)).sort()).toEqual(['tenant', 'user']);
   });
 
-  it('si la tienda guardada está incompleta, descarta la sesión (no inventa datos)', () => {
+  it('si la tienda guardada está incompleta, queda sin tienda (no inventa datos)', () => {
     const next = migratePersistedAuth({ ...legacy, publicTenant: { ...legacy.publicTenant, timezone: undefined } }, 0);
-    expect(next.accessToken).toBeNull();
     expect(next.user).toBeNull();
     expect(next.tenant).toBeNull();
-  });
-
-  it('sin tokens o sin usuario, descarta la sesión pero conserva la tienda para el login', () => {
-    const noTokens = migratePersistedAuth({ ...legacy, accessToken: null }, 0);
-    expect(noTokens.user).toBeNull();
-    expect(noTokens.tenant?.slug).toBe('leiza');
-    expect(migratePersistedAuth({ ...legacy, user: null }, 0).accessToken).toBeNull();
   });
 
   it('basura o formato desconocido no rompe: devuelve estado vacío', () => {
@@ -76,8 +62,9 @@ describe('migratePersistedAuth', () => {
     expect(migratePersistedAuth(null, 0).tenant).toBeNull();
   });
 
-  it('la versión actual se acepta tal cual', () => {
-    const current = { accessToken: 'a', refreshToken: 'r', user: null, tenant: null };
-    expect(migratePersistedAuth(current, AUTH_STORAGE_VERSION)).toEqual(current);
+  it('la versión actual se acepta tal cual y descarta cualquier campo ajeno (por ejemplo un token)', () => {
+    const user = { id: 'u1' } as never;
+    const tenant = { id: 't1' } as never;
+    expect(migratePersistedAuth({ user, tenant, accessToken: 'intruso' }, AUTH_STORAGE_VERSION)).toEqual({ user, tenant });
   });
 });

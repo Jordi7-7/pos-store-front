@@ -8,8 +8,8 @@ const tenant = { id: 't1', slug: 'tienda' } as unknown as SessionTenant;
 
 function setup() {
   const repository = {
-    login: vi.fn(async () => ({ accessToken: 'a', refreshToken: 'r' })),
-    pinLogin: vi.fn(async () => ({ accessToken: 'pa', refreshToken: 'pr' })),
+    login: vi.fn(async () => ({ accessToken: 'a' })),
+    pinLogin: vi.fn(async () => ({ accessToken: 'pa' })),
     getProfile: vi.fn(async () => ({ user, tenant })),
   };
   return { repository, signIn: new SignIn(repository) };
@@ -19,7 +19,7 @@ describe('SignIn', () => {
   it('con usuario y contraseña devuelve la sesión completa y pide el perfil con el token recién entregado', async () => {
     const { repository, signIn } = setup();
     const session = await signIn.execute({ kind: 'password', identifier: 'admin', password: 'x', tenantSlug: 'tienda' });
-    expect(session).toEqual({ tokens: { accessToken: 'a', refreshToken: 'r' }, user, tenant });
+    expect(session).toEqual({ tokens: { accessToken: 'a' }, user, tenant });
     expect(repository.getProfile).toHaveBeenCalledWith('a'); // sin guardar antes una sesión a medias
   });
 
@@ -50,7 +50,7 @@ describe('SignIn', () => {
 
   it('una respuesta sin token no abre sesión', async () => {
     const { repository, signIn } = setup();
-    repository.login.mockResolvedValueOnce({ accessToken: '', refreshToken: '' });
+    repository.login.mockResolvedValueOnce({ accessToken: '' });
     await expect(signIn.execute({ kind: 'password', identifier: 'a', password: 'b' })).rejects.toBeInstanceOf(ProfileUnavailableError);
   });
 });

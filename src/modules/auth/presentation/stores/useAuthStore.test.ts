@@ -4,7 +4,13 @@ import type { ProfileDTO } from '../../infrastructure/dtos/auth.dto';
 import { toSessionTenant, toSessionUser } from '../../infrastructure/mappers/session.mapper';
 import type { SessionTenant, SessionUser } from '../../domain/entities/session';
 
-const { getProfile, loginRequest, pinLoginRequest } = vi.hoisted(() => ({ getProfile: vi.fn(), loginRequest: vi.fn(), pinLoginRequest: vi.fn() }));
+const { getProfile, loginRequest, pinLoginRequest, refreshRequest, logoutRequest } = vi.hoisted(() => ({
+  getProfile: vi.fn(),
+  loginRequest: vi.fn(),
+  pinLoginRequest: vi.fn(),
+  refreshRequest: vi.fn(),
+  logoutRequest: vi.fn(),
+}));
 // El repositorio es falso; el caso de uso SignIn y el store son los reales.
 vi.mock('../../infrastructure/dependencies', async () => {
   const { SignIn } = await import('../../application/use-cases/sign-in');
@@ -12,8 +18,8 @@ vi.mock('../../infrastructure/dependencies', async () => {
     getProfile: (...args: unknown[]) => getProfile(...args),
     login: (...args: unknown[]) => loginRequest(...args),
     pinLogin: (...args: unknown[]) => pinLoginRequest(...args),
-    logout: vi.fn(async () => undefined),
-    refresh: vi.fn(),
+    logout: (...args: unknown[]) => logoutRequest(...args),
+    refresh: (...args: unknown[]) => refreshRequest(...args),
     getPublicTenant: vi.fn(),
   };
   return { authRepository, signIn: new SignIn(authRepository) };
@@ -72,7 +78,10 @@ beforeEach(() => {
   getProfile.mockReset();
   loginRequest.mockReset();
   pinLoginRequest.mockReset();
-  useAuthStore.setState({ accessToken: 'tok', refreshToken: 'ref', user, tenant });
+  refreshRequest.mockReset();
+  logoutRequest.mockReset();
+  logoutRequest.mockResolvedValue(undefined);
+  useAuthStore.setState({ accessToken: 'tok', user, tenant });
   useWorkspaceStore.getState().reset();
 });
 
@@ -209,13 +218,14 @@ describe('cambio de formato de la tienda', () => {
 const apiError = (status: number, code: string) => new ApiError({ status, code, message: 'texto del servidor que no se parsea' });
 
 describe('iniciar sesión: el motivo del fallo llega a la pantalla', () => {
-  beforeEach(() => useAuthStore.setState({ accessToken: null, refreshToken: null, user: null }));
+  beforeEach(() => useAuthStore.setState({ accessToken: null, user: null }));
 
   it('con credenciales correctas guarda la sesión', async () => {
-    loginRequest.mockResolvedValueOnce({ accessToken: 'a', refreshToken: 'r' });
+    loginRequest.mockResolvedValueOnce({ accessToken: 'a' });
     getProfile.mockImplementationOnce(async () => fromDto(profile));
     expect(await useAuthStore.getState().login('admin', 'x', 'tienda')).toEqual({ ok: true });
-    expect(useAuthStore.getState()).toMatchObject({ accessToken: 'a', refreshToken: 'r' });
+    expect(useAuthStore.getState()).toMatchObject({ accessToken: 'a' });
+    expect(useAuthStore.getState()).not.toHaveProperty('refreshToken');
   });
 
   it.each([
@@ -246,10 +256,80 @@ describe('iniciar sesión: el motivo del fallo llega a la pantalla', () => {
   });
 
   it('si autentica pero el perfil falla, no queda sesión a medias y no se culpa a las credenciales', async () => {
-    pinLoginRequest.mockResolvedValueOnce({ accessToken: 'a', refreshToken: 'r' });
+    pinLoginRequest.mockResolvedValueOnce({ accessToken: 'a' });
     getProfile.mockRejectedValueOnce(ApiError.network(new TypeError('fetch failed')));
     const result = await useAuthStore.getState().pinLogin('123456', 'tienda');
     expect(result).toMatchObject({ ok: false, code: 'PROFILE_UNAVAILABLE' });
     expect(useAuthStore.getState()).toMatchObject({ accessToken: null, user: null });
+  });
+});
+
+describe('sesión con cookie: nada secreto en localStorage', () => {
+  it('lo que se guarda es solo el usuario y la tienda: el token de acceso no sale de la memoria', async () => {
+    localStorage.clear();
+    useAuthStore.setState({ accessToken: 'tok-secreto', user, tenant });
+    await useAuthStore.persist.rehydrate();
+    const raw = localStorage.getItem('aura-pos-auth') ?? '';
+    expect(raw).not.toContain('tok-secreto');
+    expect(raw).not.toMatch(/accessToken|refreshToken/);
+    expect(JSON.parse(raw).state).toEqual(expect.objectContaining({ user: expect.anything(), tenant: expect.anything() }));
+  });
+});
+
+describe('renovar la sesión con la cookie', () => {
+  it('refreshSession guarda el token nuevo y vuelve a pedir el perfil', async () => {
+    refreshRequest.mockResolvedValueOnce({ accessToken: 'nuevo' });
+    getProfile.mockImplementation(async () => fromDto(profile));
+    expect(await useAuthStore.getState().refreshSession()).toBe(true);
+    expect(useAuthStore.getState().accessToken).toBe('nuevo');
+    expect(refreshRequest).toHaveBeenCalledWith();
+  });
+
+  it('si la cookie ya no sirve, refreshSession devuelve false y deja el token como estaba', async () => {
+    refreshRequest.mockRejectedValueOnce(apiError(401, 'SESSION_EXPIRED'));
+    expect(await useAuthStore.getState().refreshSession()).toBe(false);
+    expect(useAuthStore.getState().accessToken).toBe('tok');
+  });
+});
+
+describe('restaurar la sesión al arrancar', () => {
+  beforeEach(() => useAuthStore.setState({ accessToken: null, user, tenant }));
+
+  it('con usuario guardado y cookie vigente recupera el token de acceso', async () => {
+    refreshRequest.mockResolvedValueOnce({ accessToken: 'recuperado' });
+    getProfile.mockImplementation(async () => fromDto(profile));
+    await useAuthStore.getState().restoreSession();
+    expect(useAuthStore.getState().accessToken).toBe('recuperado');
+    expect(selectIsAuthenticated(useAuthStore.getState())).toBe(true);
+  });
+
+  it('con la cookie vencida (401) cierra la sesión local pero conserva la tienda', async () => {
+    refreshRequest.mockRejectedValueOnce(apiError(401, 'SESSION_EXPIRED'));
+    await useAuthStore.getState().restoreSession();
+    expect(useAuthStore.getState()).toMatchObject({ accessToken: null, user: null });
+    expect(useAuthStore.getState().tenant?.slug).toBe('tienda');
+  });
+
+  it('sin red NO borra el usuario guardado (no hay token, pero tampoco se pierde nada)', async () => {
+    refreshRequest.mockRejectedValueOnce(ApiError.network(new TypeError('fetch failed')));
+    await useAuthStore.getState().restoreSession();
+    expect(useAuthStore.getState().user).not.toBeNull();
+    expect(useAuthStore.getState().accessToken).toBeNull();
+  });
+
+  it('sin usuario guardado no llama al servidor', async () => {
+    useAuthStore.setState({ user: null });
+    await useAuthStore.getState().restoreSession();
+    expect(refreshRequest).not.toHaveBeenCalled();
+  });
+});
+
+describe('cerrar sesión', () => {
+  it('avisa al servidor (revoca y borra la cookie) aunque no haya token de acceso, y limpia lo local', () => {
+    useAuthStore.setState({ accessToken: null, user, tenant });
+    useAuthStore.getState().logout();
+    expect(logoutRequest).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState()).toMatchObject({ accessToken: null, user: null });
+    expect(useAuthStore.getState().tenant?.slug).toBe('tienda');
   });
 });

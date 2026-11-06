@@ -23,9 +23,9 @@ export interface PinLoginRequestDTO {
   tenantSlug: string;
 }
 
+/** Respuesta de `/auth/web/*`: solo el token de acceso (el de renovación viaja en una cookie). */
 export interface AuthTokensDTO {
   accessToken: string;
-  refreshToken: string;
 }
 
 export interface ProfileDTO {

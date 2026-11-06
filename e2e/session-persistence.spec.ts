@@ -5,18 +5,31 @@ test.skip(!creds.slug || !creds.user || !creds.pass, 'Faltan credenciales E2E en
 
 const API = process.env.E2E_API_URL ?? 'http://localhost:3000';
 const STORAGE_KEY = 'aura-pos-auth';
+const COOKIE = 'pos_rt';
 
 interface PersistedEnvelope {
   version: number;
   state: Record<string, unknown>;
 }
 
-test('tras el login la sesión guarda solo tokens, usuario y tienda; la selección va en su propio store', async ({ page }) => {
+const storageDump = (page: import('@playwright/test').Page) =>
+  page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }));
+
+test('tras el login el navegador guarda solo usuario y tienda; los tokens no están en ningún almacenamiento ni son legibles por JavaScript', async ({ page, context }) => {
   await login(page);
+
   const raw = await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY);
   const saved = JSON.parse(raw ?? '{}') as PersistedEnvelope;
-  expect(saved.version).toBe(1);
-  expect(Object.keys(saved.state).sort()).toEqual(['accessToken', 'refreshToken', 'tenant', 'user']);
+  expect(saved.version).toBe(2);
+  expect(Object.keys(saved.state).sort()).toEqual(['tenant', 'user']);
+  expect(await storageDump(page)).not.toMatch(/accessToken|refreshToken|eyJ[A-Za-z0-9_-]{10,}\./);
+
+  // El refresh token está en una cookie HttpOnly (solo el navegador la manda) y la página no la ve
+  const cookie = (await context.cookies()).find((c) => c.name === COOKIE);
+  expect(cookie, 'el login web deja la cookie de renovación').toBeTruthy();
+  expect(cookie).toMatchObject({ httpOnly: true, sameSite: 'Strict', path: '/auth/web' });
+  expect(await page.evaluate(() => document.cookie)).not.toContain(COOKIE);
+
   // La selección se guarda aparte y solo cuando el usuario elige una sucursal en la cabecera.
   const branchSelect = page.locator('header select').first();
   await expect(branchSelect).toBeVisible();
@@ -24,50 +37,39 @@ test('tras el login la sesión guarda solo tokens, usuario y tienda; la selecci�
   const workspace = JSON.parse((await page.evaluate(() => localStorage.getItem('aura-pos-workspace'))) ?? '{}') as PersistedEnvelope;
   expect(workspace.version).toBe(1);
   expect(Object.keys(workspace.state).sort()).toEqual(['selectedBranchId', 'selectedCashRegisterId']);
+});
+
+test('al recargar, la sesión se recupera con la cookie sin volver a pedir contraseña', async ({ page }) => {
+  await login(page);
+  const refreshed = page.waitForResponse((r) => r.url().endsWith('/auth/web/refresh') && r.request().method() === 'POST');
   await page.reload();
+  expect((await refreshed).status()).toBe(200);
   await expect(page).not.toHaveURL(/\/login/);
 });
 
-test('una sesión guardada por la versión anterior sigue abierta y se revalida al arrancar', async ({ page, request }) => {
-  // Tokens y perfil reales; con ellos se fabrica el formato antiguo (plano, sin versión).
-  const loginResponse = await request.post(`${API}/auth/login`, {
-    data: { email: creds.user, password: creds.pass, tenantSlug: creds.slug },
-  });
+test('sin la cookie (vencida o borrada) la recarga lleva al login y limpia el usuario guardado', async ({ page, context }) => {
+  await login(page);
+  await context.clearCookies();
+  await page.reload();
+  await expect(page).toHaveURL(/\/login/);
+  const raw = await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY);
+  const saved = JSON.parse(raw ?? '{}') as PersistedEnvelope;
+  expect(saved.state.user).toBeNull();
+});
+
+test('una sesión guardada por la versión anterior (con tokens en localStorage) obliga a iniciar sesión y borra los tokens', async ({ page, request }) => {
+  // Tokens reales de la API antigua: se guardan tal como los dejaba la versión anterior de la web
+  const loginResponse = await request.post(`${API}/auth/login`, { data: { email: creds.user, password: creds.pass, tenantSlug: creds.slug } });
   const { accessToken, refreshToken } = (await loginResponse.json()) as { accessToken: string; refreshToken: string };
-  const profile = (await (
-    await request.get(`${API}/auth/profile`, { headers: { Authorization: `Bearer ${accessToken}` } })
-  ).json()) as {
+  const profile = (await (await request.get(`${API}/auth/profile`, { headers: { Authorization: `Bearer ${accessToken}` } })).json()) as {
     id: string;
     name: string;
     username: string;
-    email: string | null;
-    isOwner: boolean;
-    permissions: string[];
-    branches: Array<{ id: string; name: string }>;
-    cashRegisters: unknown[];
     tenant: Record<string, unknown>;
   };
-  const branchIds = profile.branches.map((b) => b.id);
   const legacy = {
-    state: {
-      accessToken,
-      refreshToken,
-      tenantId: profile.tenant.id,
-      tenantSlug: profile.tenant.slug,
-      publicTenant: profile.tenant,
-      role: profile.isOwner ? 'OWNER' : 'USER',
-      roleId: null,
-      roleName: 'Propietario',
-      permissions: profile.permissions,
-      user: { id: profile.id, name: profile.name, username: profile.username, email: profile.email, branchIds },
-      branchIds,
-      cashRegisters: profile.cashRegisters,
-      timezone: profile.tenant.timezone,
-      selectedBranchId: null,
-      selectedCashRegisterId: null,
-      isAuthenticated: true,
-    },
-    version: 0,
+    state: { accessToken, refreshToken, user: { id: profile.id, name: profile.name, username: profile.username }, tenant: profile.tenant },
+    version: 1,
   };
   await page.addInitScript(
     ([key, value]) => {
@@ -76,17 +78,9 @@ test('una sesión guardada por la versión anterior sigue abierta y se revalida 
     [STORAGE_KEY, JSON.stringify(legacy)],
   );
 
-  const profileRequest = page.waitForResponse((r) => r.url().endsWith('/auth/profile') && r.status() === 200);
   await page.goto('/dashboard');
-  await profileRequest; // revalidación al arrancar
-  await expect(page).toHaveURL(/\/dashboard/);
-
-  await expect
-    .poll(async () => {
-      const raw = await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY);
-      const saved = JSON.parse(raw ?? '{}') as PersistedEnvelope;
-      const user = saved.state.user as { branches: Array<{ name: string }> } | undefined;
-      return { version: saved.version, namesFilled: user?.branches.every((b) => b.name !== '') ?? false };
-    })
-    .toEqual({ version: 1, namesFilled: true });
+  await expect(page).toHaveURL(/\/login/);
+  const dump = await storageDump(page);
+  expect(dump).not.toContain(refreshToken);
+  expect(dump).not.toContain(accessToken);
 });

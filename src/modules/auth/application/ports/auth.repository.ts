@@ -14,7 +14,8 @@ export interface AuthRepository {
   pinLogin(credentials: Extract<SignInCredentials, { kind: 'pin' }>): Promise<AuthTokens>;
   /** Con `accessToken` explícito se puede pedir el perfil antes de guardar la sesión. */
   getProfile(accessToken?: string): Promise<{ user: SessionUser; tenant: SessionTenant }>;
-  refresh(refreshToken: string): Promise<AuthTokens>;
-  /** Revoca la sesión en el servidor. */
-  logout(accessToken: string): Promise<void>;
+  /** Renueva la sesión con la cookie de renovación que guarda el navegador; falla con 401 si ya no sirve. */
+  refresh(): Promise<AuthTokens>;
+  /** Revoca la sesión en el servidor y borra la cookie. */
+  logout(): Promise<void>;
 }

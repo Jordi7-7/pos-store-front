@@ -49,10 +49,12 @@ export interface SessionTenant {
   timezone: string;
 }
 
-/** Tokens de acceso y renovación que entrega el servidor. */
+/**
+ * Token de acceso que entrega el servidor. Vive solo en memoria. El de renovación no está aquí a propósito:
+ * va en una cookie `HttpOnly` que el JavaScript de la página no puede leer.
+ */
 export interface AuthTokens {
   accessToken: string;
-  refreshToken: string;
 }
 
 /** Lo que identifica una sesión abierta: tokens, usuario y tienda (y nada más). */

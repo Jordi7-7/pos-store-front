@@ -200,3 +200,40 @@ describe('HttpClient · renovación de sesión ante 401', () => {
     expect(hooks.onSessionExpired).not.toHaveBeenCalled();
   });
 });
+
+describe('rutas con cookie (sesión web)', () => {
+  const makeCookieClient = () => {
+    const client = new HttpClient({
+      baseUrl: BASE,
+      refreshExemptPaths: ['/auth/web/'],
+      credentialedPaths: ['/auth/web/'],
+      credentialedHeaders: { 'X-Requested-With': 'pos-web' },
+    });
+    client.configure(makeHooks());
+    return client;
+  };
+
+  it('las rutas de sesión mandan cookies y la cabecera contra CSRF', async () => {
+    fetchMock.mockResolvedValueOnce(json(200, { accessToken: 'a' }));
+    await makeCookieClient().post('/auth/web/refresh');
+    expect(sentInit(0).credentials).toBe('include');
+    expect(sentHeaders(0).get('X-Requested-With')).toBe('pos-web');
+  });
+
+  it('el resto de rutas no usan cookies ni la cabecera (así no dependen de CORS con credenciales)', async () => {
+    fetchMock.mockResolvedValueOnce(json(200, {}));
+    await makeCookieClient().get('/products');
+    expect(sentInit(0).credentials).toBeUndefined();
+    expect(sentHeaders(0).get('X-Requested-With')).toBeNull();
+  });
+
+  it('un 401 en una ruta de sesión no dispara otra renovación (evita el bucle)', async () => {
+    const hooks = makeHooks();
+    const client = new HttpClient({ baseUrl: BASE, refreshExemptPaths: ['/auth/web/'], credentialedPaths: ['/auth/web/'] });
+    client.configure(hooks);
+    fetchMock.mockResolvedValueOnce(contractError(401, 'SESSION_EXPIRED'));
+    await expect(client.post('/auth/web/refresh')).rejects.toBeInstanceOf(ApiError);
+    expect(hooks.refreshSession).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});

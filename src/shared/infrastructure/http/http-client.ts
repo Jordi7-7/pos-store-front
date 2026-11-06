@@ -16,6 +16,13 @@ export interface HttpClientConfig {
   baseUrl: string;
   /** Rutas (prefijo) donde un 401 NO debe provocar renovación: login, refresh, logout… */
   refreshExemptPaths?: readonly string[];
+  /**
+   * Rutas (prefijo) de la sesión por cookie: el navegador debe mandar y recibir cookies (`credentials: 'include'`) y la
+   * llamada lleva la cabecera propia que el servidor exige contra CSRF. Solo estas rutas: el resto usa `Authorization`.
+   */
+  credentialedPaths?: readonly string[];
+  /** Cabecera que acompaña a las rutas con cookie. */
+  credentialedHeaders?: Readonly<Record<string, string>>;
 }
 
 const NO_SESSION_HOOKS: HttpClientHooks = {
@@ -80,8 +87,12 @@ export class HttpClient {
     if (token && !headers.has('Authorization')) {
       headers.set('Authorization', `Bearer ${token}`);
     }
+    const credentialed = this.isCredentialed(path);
+    if (credentialed) {
+      for (const [name, value] of Object.entries(this.config.credentialedHeaders ?? {})) headers.set(name, value);
+    }
     try {
-      return await fetch(`${this.config.baseUrl}${path}`, { ...options, headers });
+      return await fetch(`${this.config.baseUrl}${path}`, { ...options, headers, ...(credentialed ? { credentials: 'include' as const } : {}) });
     } catch (cause) {
       throw ApiError.network(cause);
     }
@@ -98,6 +109,10 @@ export class HttpClient {
         });
     }
     return this.refreshInFlight;
+  }
+
+  private isCredentialed(path: string): boolean {
+    return (this.config.credentialedPaths ?? []).some((prefix) => path.startsWith(prefix));
   }
 
   private isRefreshExempt(path: string): boolean {

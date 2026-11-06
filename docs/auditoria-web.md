@@ -14,7 +14,7 @@ Qué se revisó: código (`src`), dependencias (`pnpm audit --prod`), cabeceras 
 
 ## Hallazgos de seguridad (de mayor a menor)
 
-1. **Tokens en `localStorage` (alto).** `aura-pos-auth` guarda `accessToken` y `refreshToken`. Cualquier XSS los lee y los roba. Plan: refresh token en cookie `httpOnly` y access token solo en memoria (ver "Plan de cookies").
+1. **Tokens en `localStorage` (alto) — RESUELTO.** Antes `aura-pos-auth` guardaba `accessToken` y `refreshToken`; cualquier XSS los leía. Ahora el refresh token va en una cookie `HttpOnly; SameSite=Strict` y el de acceso solo en memoria (ver "Plan de cookies", implementado).
 2. **`xlsx` 0.18.5 (alto).** Prototype pollution y ReDoS al leer Excel; el paquete de npm no recibe parches (los arreglos están en SheetJS ≥ 0.20.2, que se instala desde su propio CDN). La web lee archivos que sube el usuario (productos, compras). Opciones: pasar a SheetJS 0.20.x desde su CDN, o a otra librería. Decisión pendiente.
 3. **Dependencias de desarrollo en `dependencies` (medio).** `shadcn` (un CLI) está como dependencia de producción y arrastra **31 de los 77 avisos** (incluida la única crítica). No se empaqueta en la web, pero ensucia la auditoría; se mueve a `devDependencies`. Igual `@types/*`.
 4. **`zod` < 4.6.6 (alto) y `@tanstack/react-router` (moderado).** Actualizaciones menores; hacer con tests.
@@ -34,7 +34,9 @@ Qué se revisó: código (`src`), dependencias (`pnpm audit --prod`), cabeceras 
 - 37 `console.error` en `src` (revisar que no vuelquen datos de clientes en producción).
 - `luxon` solo se usa en un archivo y `date-fns` en seis: una de las dos sobra.
 
-## Plan de cookies (sesión web)
+## Plan de cookies (sesión web) — implementado
+
+Implementado en `pos-store` (`/auth/web/*`, commits `199dc59` y `403ab3f`) y en la web. Decisiones del dueño: todos vuelven a iniciar sesión una vez; backend primero y después la web.
 
 **Diseño recomendado:** el refresh token vive en una cookie `httpOnly`; el access token (corto) vive solo en memoria y se pide al cargar la página.
 

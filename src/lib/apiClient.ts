@@ -9,7 +9,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 export const httpClient = new HttpClient({
   baseUrl: API_URL,
   // En estas rutas un 401 es una respuesta normal (credenciales, token vencido…), no una sesión caída.
-  refreshExemptPaths: ['/auth/login', '/auth/pin-login', '/auth/logout', '/auth/refresh', '/tenants/public'],
+  refreshExemptPaths: ['/auth/web/', '/auth/login', '/auth/pin-login', '/auth/logout', '/auth/refresh', '/tenants/public'],
+  // La sesión web usa una cookie HttpOnly con el token de renovación (ver `docs/auth-session-contract.md`).
+  credentialedPaths: ['/auth/web/'],
+  credentialedHeaders: { 'X-Requested-With': 'pos-web' },
 });
 
 export const configureApiClient = (hooks: HttpClientHooks): void => httpClient.configure(hooks);
