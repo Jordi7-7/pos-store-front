@@ -13,7 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import type { CartItem } from '../../../domain/cart-item';
+import type { CartItem } from '../../../domain/entities/cart-item';
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 interface POSCartListProps {

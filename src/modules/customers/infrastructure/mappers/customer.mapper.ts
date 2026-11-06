@@ -1,4 +1,4 @@
-import { DEFAULT_CUSTOMER, type CustomerEntity } from '../../domain/customer.entity';
+import { DEFAULT_CUSTOMER, type CustomerEntity } from '../../domain/entities/customer.entity';
 import type { CustomerDTO } from '../dtos/customer.dto';
 
 export const toCustomerEntity = (dto: CustomerDTO): CustomerEntity => ({

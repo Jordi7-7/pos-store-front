@@ -1,4 +1,4 @@
-import type { CashRegisterEntity, MyCashRegisterEntity } from '../../domain/cash-register.entity';
+import type { CashRegisterEntity, MyCashRegisterEntity } from '../../domain/entities/cash-register.entity';
 
 export interface CreateCashRegisterInput {
   branchId: string;

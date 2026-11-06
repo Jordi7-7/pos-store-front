@@ -1,4 +1,4 @@
-import type { PaginatedImages, PresignedUpload, RegisteredImage } from '../../domain/media.entity';
+import type { PaginatedImages, PresignedUpload, RegisteredImage } from '../../domain/entities/media.entity';
 
 export interface ImagesQuery {
   page?: number;

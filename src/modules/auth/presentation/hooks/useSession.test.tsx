@@ -2,7 +2,7 @@ import { act, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useAuthStore } from '../stores/useAuthStore';
 import { formatMoney, useTenantFormatKey } from './useSession';
-import type { SessionTenant } from '../../domain/session';
+import type { SessionTenant } from '../../domain/entities/session';
 
 const tenant: SessionTenant = {
   id: 't1',

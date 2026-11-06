@@ -1,5 +1,5 @@
 import { selectIsAuthenticated, useAuthStore } from '../stores/useAuthStore';
-import { branchIdsOf, roleLabel, tenantFormatKey, type SessionTenant, type SessionUser } from '../../domain/session';
+import { branchIdsOf, roleLabel, tenantFormatKey, type SessionTenant, type SessionUser } from '../../domain/entities/session';
 import { formatMoneyAmount, localeForCountry } from '@/shared/domain/format-money';
 
 /**

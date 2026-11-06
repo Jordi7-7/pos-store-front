@@ -4,8 +4,8 @@ import { toast } from 'sonner';
 import { useSaleByInvoice } from './useSaleDetail';
 import { useExchangeProducts, useRefundSale } from './useSalesMutations';
 import { getErrorMessage } from '@/shared/presentation/error-messages';
-import { ExchangeError } from '../../application/exchange-products';
-import { RefundSaleError } from '../../application/refund-sale';
+import { ExchangeError } from '../../application/use-cases/exchange-products';
+import { RefundSaleError } from '../../application/use-cases/refund-sale';
 import type { SaleDetailEntity } from '../../domain/entities/sale.entity';
 import { productsService } from '@/modules/products/services/products.service';
 import type {

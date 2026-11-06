@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authRepository, signIn } from '../../infrastructure/dependencies';
-import { ProfileUnavailableError } from '../../application/sign-in';
+import { ProfileUnavailableError } from '../../application/use-cases/sign-in';
 import type { SignInCredentials } from '../../application/ports/auth.repository';
 import { queryClient } from '@/providers/QueryProvider';
 import { CLIENT_ERROR_CODES, isApiError } from '@/shared/infrastructure/http/api-error';
@@ -13,9 +13,9 @@ import {
   tenantFormatKey,
   type SessionTenant,
   type SessionUser,
-} from '../../domain/session';
-import type { LoginResult } from '../../domain/login-result';
-import { PROFILE_UNAVAILABLE } from '../../domain/login-result';
+} from '../../domain/entities/session';
+import type { LoginResult } from '../../domain/entities/login-result';
+import { PROFILE_UNAVAILABLE } from '../../domain/entities/login-result';
 import { AUTH_STORAGE_VERSION, migratePersistedAuth, type PersistedAuth } from './auth-persistence';
 
 export type PublicTenant = SessionTenant;

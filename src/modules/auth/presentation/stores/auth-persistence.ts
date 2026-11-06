@@ -1,4 +1,4 @@
-import type { SessionTenant, SessionUser } from '../../domain/session';
+import type { SessionTenant, SessionUser } from '../../domain/entities/session';
 
 /** Versión del formato guardado en `localStorage` (`aura-pos-auth`). Súbela con cada cambio de forma. */
 export const AUTH_STORAGE_VERSION = 1;

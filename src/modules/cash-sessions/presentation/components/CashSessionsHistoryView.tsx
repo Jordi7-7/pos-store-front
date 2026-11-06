@@ -15,7 +15,7 @@ import { CashSessionStatus, CashSessionDifferenceStatus } from '../../domain/enu
 import { useTenant } from '../../../auth/presentation/hooks/useSession';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import { ThermalClosingTicketModal } from '../../../printing/presentation/components/ThermalClosingTicketModal';
-import { buildClosingTicketData } from '../../domain/closing-ticket';
+import { buildClosingTicketData } from '../../domain/rules/closing-ticket';
 import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

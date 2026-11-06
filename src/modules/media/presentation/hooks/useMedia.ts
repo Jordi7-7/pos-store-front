@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { mediaRepository, uploadFile, uploadImage } from '../../infrastructure/dependencies';
-import type { PaginatedImages, RegisteredImage } from '../../domain/media.entity';
+import type { PaginatedImages, RegisteredImage } from '../../domain/entities/media.entity';
 
 export interface UseMediaUploadOptions {
   enabled?: boolean;

@@ -1,7 +1,7 @@
 import { redirect } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { useAuthStore } from '../stores/useAuthStore';
-import { decideRouteAccess, type GuardedPath } from '../../domain/route-access';
+import { decideRouteAccess, type GuardedPath } from '../../domain/rules/route-access';
 
 /**
  * `beforeLoad` de una pantalla protegida: si el usuario no tiene el permiso que la tabla

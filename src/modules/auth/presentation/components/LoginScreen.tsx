@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useIsAuthenticated, useTenant, useUser } from '../hooks/useSession';
-import { homeRouteFor } from '../../domain/route-access';
+import { homeRouteFor } from '../../domain/rules/route-access';
 import { Store, Lock, User, ArrowRight, Loader2, KeyRound, AlertCircle, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 

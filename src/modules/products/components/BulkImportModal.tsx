@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { downloadProductsTemplate } from '@/lib/excelTemplates';
 import { BulkImportPreviewTable } from '@/components/BulkImportPreviewTable';
 import { useBranches } from '../../branches/presentation/hooks/useBranches';
-import type { Branch } from '../../branches/domain/branch.entity';
+import type { Branch } from '../../branches/domain/entities/branch.entity';
 import { useProductImport } from '../hooks';
 import type { BulkImportProductItem } from '../types';
 import {

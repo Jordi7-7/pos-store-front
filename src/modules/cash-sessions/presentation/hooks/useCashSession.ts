@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useIsAuthenticated, useUser } from '@/modules/auth/presentation/hooks/useSession';
 import { cashSessionsRepository, closeCashSession, openCashSession, registerExpense } from '../../infrastructure/dependencies';
-import type { OpenCashSessionCommand } from '../../application/open-cash-session';
-import type { RegisterExpenseCommand } from '../../application/register-expense';
+import type { OpenCashSessionCommand } from '../../application/use-cases/open-cash-session';
+import type { RegisterExpenseCommand } from '../../application/use-cases/register-expense';
 
 /** Turno de caja abierto del usuario en la sucursal (y caja) indicadas. */
 export const useActiveCashSession = (branchId?: string, cashRegisterId?: string) => {

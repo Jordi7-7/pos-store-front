@@ -1,7 +1,7 @@
 import React from 'react';
 import { Info, DollarSign, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
-import { classifyDifference } from '@/modules/cash-sessions/domain/cash-closing';
+import { classifyDifference } from '@/modules/cash-sessions/domain/rules/cash-closing';
 
 /** Conteo físico del efectivo y banner de cuadre. El esperado solo se muestra si hay resumen real del turno. */
 interface ClosingCountFormProps {

@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { MyCashRegisterEntity } from '@/modules/cash-registers/domain/cash-register.entity';
+import type { MyCashRegisterEntity } from '@/modules/cash-registers/domain/entities/cash-register.entity';
 
 interface AperturaModalProps {
   isOpen: boolean;

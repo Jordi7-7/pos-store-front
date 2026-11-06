@@ -1,4 +1,4 @@
-import type { ClosingTicketData, TicketFormat, TicketSaleData } from '../../domain/ticket';
+import type { ClosingTicketData, TicketFormat, TicketSaleData } from '../../domain/entities/ticket';
 
 /**
  * Puerto de salida: imprimir tickets. La implementación actual es una impresora térmica USB

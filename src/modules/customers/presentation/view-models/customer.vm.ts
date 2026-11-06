@@ -1,5 +1,5 @@
 import type { Formatters } from '@/shared/presentation/formatters';
-import type { CustomerEntity } from '../../domain/customer.entity';
+import type { CustomerEntity } from '../../domain/entities/customer.entity';
 
 /** Cliente con los textos listos para mostrar (iniciales del avatar y fecha de alta en la zona de la tienda). */
 export type CustomerVM = CustomerEntity & { initials: string; createdAtFormatted: string };

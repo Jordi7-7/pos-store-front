@@ -1,5 +1,5 @@
 import type { ProfileDTO, PublicTenantDTO } from '../dtos/auth.dto';
-import type { SessionTenant, SessionUser } from '../../domain/session';
+import type { SessionTenant, SessionUser } from '../../domain/entities/session';
 
 /** El backend no mandó un dato de la tienda que la aplicación necesita (no se inventa uno). */
 export class IncompleteTenantError extends Error {

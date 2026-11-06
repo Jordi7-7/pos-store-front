@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
 import type { UserItem, CreateUserInput, UpdateUserInput } from '../services/users.service';
 import type { RoleItem } from '../services/roles.service';
-import type { Branch } from '@/modules/branches/domain/branch.entity';
+import type { Branch } from '@/modules/branches/domain/entities/branch.entity';
 import {
   UserPlus,
   Edit2,

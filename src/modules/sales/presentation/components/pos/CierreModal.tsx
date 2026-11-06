@@ -4,8 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import type { ActiveCashSessionEntity } from '@/modules/cash-sessions/domain/entities/cash-session.entity';
 import type { CashSessionDetailsVM } from '@/modules/cash-sessions/presentation/view-models/cash-session.vm';
 import type { ClosingDetailsStatus } from '@/modules/cash-sessions/presentation/view-models/closing-details-status';
-import { buildClosingSummary } from '@/modules/cash-sessions/domain/closing-summary';
-import { cashDifference, parseCountedCash } from '@/modules/cash-sessions/domain/cash-closing';
+import { buildClosingSummary } from '@/modules/cash-sessions/domain/rules/closing-summary';
+import { cashDifference, parseCountedCash } from '@/modules/cash-sessions/domain/rules/cash-closing';
 import { ClosingCashAudit } from './ClosingCashAudit';
 import { ClosingSalesSummary } from './ClosingSalesSummary';
 import { ClosingMovements } from './ClosingMovements';

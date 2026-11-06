@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { CheckoutCommand } from '../../application/checkout';
+import type { CheckoutCommand } from '../../application/use-cases/checkout';
 import { checkout, exchangeProducts, refundSale } from '../../infrastructure/dependencies';
-import type { ExchangeCommand } from '../../application/exchange-products';
-import type { RefundSaleCommand } from '../../application/refund-sale';
+import type { ExchangeCommand } from '../../application/use-cases/exchange-products';
+import type { RefundSaleCommand } from '../../application/use-cases/refund-sale';
 import { useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 
 export const useProcessSale = () => {

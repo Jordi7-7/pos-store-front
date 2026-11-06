@@ -1,4 +1,4 @@
-import type { AuthTokens, SessionTenant, SessionUser } from '../../domain/session';
+import type { AuthTokens, SessionTenant, SessionUser } from '../../domain/entities/session';
 
 export type SignInCredentials =
   | { kind: 'password'; identifier: string; password: string; tenantSlug?: string }

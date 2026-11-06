@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useFormatters } from '@/modules/auth/presentation/hooks/useFormatters';
 import { customersRepository } from '../../infrastructure/dependencies';
-import type { CustomerEntity } from '../../domain/customer.entity';
+import type { CustomerEntity } from '../../domain/entities/customer.entity';
 import { toCustomerVM } from '../view-models/customer.vm';
 
 export const CUSTOMERS_QUERY_KEY = ['customers'] as const;

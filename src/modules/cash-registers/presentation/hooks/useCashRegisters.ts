@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { cashRegistersRepository } from '../../infrastructure/dependencies';
 import type { CreateCashRegisterInput, UpdateCashRegisterInput } from '../../application/ports/cash-registers.repository';
-import type { CashRegisterEntity, MyCashRegisterEntity } from '../../domain/cash-register.entity';
+import type { CashRegisterEntity, MyCashRegisterEntity } from '../../domain/entities/cash-register.entity';
 import { useIsAuthenticated, useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 import { toast } from 'sonner';
 

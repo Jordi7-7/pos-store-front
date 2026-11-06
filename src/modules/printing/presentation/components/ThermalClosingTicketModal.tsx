@@ -1,4 +1,4 @@
-import type { ClosingTicketData } from '../../domain/ticket';
+import type { ClosingTicketData } from '../../domain/entities/ticket';
 import { useTicketFormat } from '../hooks/useTicketFormat';
 import React, { useMemo, useState, useEffect } from 'react';
 import { Printer, Download, RefreshCw, Zap } from 'lucide-react';
@@ -12,14 +12,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useTenant } from '@/modules/auth/presentation/hooks/useSession';
-import { thermalPrinterService } from '../../infrastructure/thermal-printer.service';
-import { buildClosingReceiptBytes } from '../../infrastructure/escpos-builder';
-import { parseEscPosBytes } from '../../infrastructure/escpos-parser';
+import { thermalPrinterService } from '../../infrastructure/printers/thermal-printer.service';
+import { buildClosingReceiptBytes } from '../../infrastructure/escpos/escpos-builder';
+import { parseEscPosBytes } from '../../infrastructure/escpos/escpos-parser';
 import {
   renderEscPosToDataUrl,
   downloadEscPosImage,
   printImageViaIframe,
-} from '../../infrastructure/escpos-image';
+} from '../../infrastructure/escpos/escpos-image';
 
 export interface ThermalClosingTicketModalProps {
   isOpen: boolean;

@@ -111,6 +111,56 @@ describe('dependencias entre módulos', () => {
   });
 });
 
+/**
+ * Jerarquía de carpetas de un módulo migrado: cada archivo vive en la carpeta que dice su función.
+ *
+ *   domain/          entities/ enums/ rules/              (qué es el negocio: datos y reglas puras)
+ *   application/     ports/ use-cases/ errors/            (qué se puede hacer: casos de uso y puertos)
+ *   infrastructure/  repositories/ dtos/ mappers/ dependencies.ts   (cómo se hace: HTTP, impresora…)
+ *   presentation/    components/ hooks/ stores/ view-models/        (cómo se muestra)
+ */
+const MODULE_LAYOUT = new RegExp(
+  '^/src/modules/[^/]+/(' +
+    [
+      'index\\.ts',
+      'domain/(entities|enums|rules)/[^/]+',
+      'application/(ports|use-cases|errors)/[^/]+',
+      'infrastructure/(repositories|dtos|mappers|escpos|printers)/[^/]+',
+      'infrastructure/dependencies\\.ts',
+      'presentation/(components|hooks|stores|view-models)/.+',
+    ].join('|') +
+    ')$',
+);
+
+describe('jerarquía de carpetas de los módulos migrados', () => {
+  const inMigratedModule = Object.keys(sources).filter((path) => MIGRATED_MODULES.some((m) => path.includes(m)));
+
+  it('hay archivos que revisar (la regla no pasa en vacío)', () => {
+    expect(inMigratedModule.length).toBeGreaterThan(150);
+  });
+
+  it('todo archivo está en la carpeta que corresponde a su función', () => {
+    expect(inMigratedModule.filter((path) => !MODULE_LAYOUT.test(path))).toEqual([]);
+  });
+
+  it('los casos de uso están en use-cases/, los puertos en ports/ y los repositorios HTTP en repositories/', () => {
+    const misplaced = inMigratedModule.filter(
+      (path) =>
+        (/\.repository\.ts$/.test(path) && !path.includes('/application/ports/')) ||
+        (/\.http-repository(\.test)?\.ts$/.test(path) && !path.includes('/infrastructure/repositories/')),
+    );
+    expect(misplaced).toEqual([]);
+  });
+
+  it('la regla detecta una carpeta no permitida', () => {
+    expect(MODULE_LAYOUT.test('/src/modules/x/application/sign-in.ts')).toBe(false);
+    expect(MODULE_LAYOUT.test('/src/modules/x/application/use-cases/sign-in.ts')).toBe(true);
+    expect(MODULE_LAYOUT.test('/src/modules/x/domain/session.ts')).toBe(false);
+    expect(MODULE_LAYOUT.test('/src/modules/x/infrastructure/x.http-repository.ts')).toBe(false);
+    expect(MODULE_LAYOUT.test('/src/modules/x/presentation/components/pos/A.tsx')).toBe(true);
+  });
+});
+
 describe('las reglas detectan las violaciones (si no, la guarda no sirve)', () => {
   const v = (files: Record<string, string>) => findViolations(files);
 

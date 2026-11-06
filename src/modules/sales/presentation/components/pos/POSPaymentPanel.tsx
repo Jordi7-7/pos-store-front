@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select';
 import type { CustomerVM } from '@/modules/customers';
-import type { CartItem } from '../../../domain/cart-item';
+import type { CartItem } from '../../../domain/entities/cart-item';
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 interface AddedPayment {

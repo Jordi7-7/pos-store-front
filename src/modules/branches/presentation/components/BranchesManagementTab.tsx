@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Building, MapPin, Plus, Edit2, Loader2 } from 'lucide-react';
 import { useBranches } from '../hooks/useBranches';
-import type { Branch } from '../../domain/branch.entity';
+import type { Branch } from '../../domain/entities/branch.entity';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';

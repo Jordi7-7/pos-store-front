@@ -1,4 +1,4 @@
-import type { Branch } from '../../domain/branch.entity';
+import type { Branch } from '../../domain/entities/branch.entity';
 
 export interface CreateBranchInput {
   name: string;

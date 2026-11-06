@@ -1,6 +1,6 @@
-import { UploadFile } from '../application/upload-file';
-import { UploadImage } from '../application/upload-image';
-import { MediaHttpRepository } from './media.http-repository';
+import { UploadFile } from '../application/use-cases/upload-file';
+import { UploadImage } from '../application/use-cases/upload-image';
+import { MediaHttpRepository } from './repositories/media.http-repository';
 
 /** Raíz de composición del módulo. */
 export const mediaRepository = new MediaHttpRepository();

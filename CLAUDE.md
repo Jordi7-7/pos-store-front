@@ -23,6 +23,31 @@ Contexto y reglas para cualquier sesión de trabajo en la web. **Léelo entero a
 - **Offline** se prepara (repositorios como puertos, `clientRequestId` por intento de cobro) pero no se implementa todavía.
 - Stack fijado: TS 6.0.x, pnpm 11, Node 24, React 19, Vite 8.
 
+## Jerarquía de carpetas de un módulo (vigilada por `architecture.test.ts`)
+```
+modules/<módulo>/
+├── domain/                 QUÉ ES el negocio (sin React, sin HTTP, sin estado)
+│   ├── entities/           datos del negocio (*.entity.ts) y sus tipos
+│   ├── enums/              vocabulario cerrado (estados, métodos…)
+│   └── rules/              reglas puras con test (cálculo de precios, arqueo…)
+├── application/            QUÉ SE PUEDE HACER
+│   ├── ports/              interfaces que el módulo necesita (*.repository.ts, impresora…)
+│   ├── use-cases/          un archivo por caso de uso (verbo-sustantivo.ts) + su test
+│   └── errors/             errores compartidos por varios casos de uso
+├── infrastructure/         CÓMO SE HACE (lo único que conoce HTTP, la impresora, el DTO)
+│   ├── repositories/       *.http-repository.ts: implementan los puertos y convierten DTO → entidad
+│   ├── dtos/               forma de las respuestas del backend
+│   ├── mappers/            DTO → entidad (puros, sin formato de pantalla)
+│   └── dependencies.ts     raíz de composición: une repositorios y casos de uso
+├── presentation/           CÓMO SE MUESTRA
+│   ├── components/         pantallas y piezas de UI
+│   ├── hooks/              hooks de vista que llaman a casos de uso/repositorios
+│   ├── stores/             estado de cliente (zustand), si el módulo lo necesita
+│   └── view-models/        entidad → textos de pantalla (moneda, fechas, etiquetas)
+└── index.ts                API pública del módulo
+```
+Regla de lectura: **domain no conoce a nadie; application solo conoce a domain; infrastructure implementa lo que application pide; presentation usa application a través de `dependencies.ts`.** `printing` añade `infrastructure/escpos/` y `infrastructure/printers/` (generador ESC/POS e impresora USB).
+
 ## Patrón por módulo (referencia: `sales`, `cash-sessions`, `cash-registers`, `printing`, `auth`, `branches`, `customers`, `media`)
 - **Datos:** la vista → hook (`presentation/hooks`) → **repositorio** (interfaz en `application/ports`, implementación `*HttpRepository` en `infrastructure`, que convierte DTO → entidad) o **caso de uso** (`application`) cuando hay reglas. Los hooks obtienen el repositorio/caso de uso de `infrastructure/dependencies.ts` (raíz de composición); **nunca** importan mappers, DTO ni clases HTTP (lo vigila `architecture.test.ts`).
 - **Entidades puras:** solo datos del negocio. Los textos de pantalla (importes con moneda, fechas con zona horaria, etiquetas) se construyen en **view-models** (`presentation/view-models`, funciones puras que reciben `useFormatters()`), nunca en la entidad ni en el mapper. Una regla impide campos `*Formatted`/`*Label` en `domain`.

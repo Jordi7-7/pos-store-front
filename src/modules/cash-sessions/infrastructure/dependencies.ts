@@ -1,7 +1,7 @@
-import { CloseCashSession } from '../application/close-cash-session';
-import { OpenCashSession } from '../application/open-cash-session';
-import { RegisterExpense } from '../application/register-expense';
-import { CashSessionsHttpRepository } from './cash-sessions.http-repository';
+import { CloseCashSession } from '../application/use-cases/close-cash-session';
+import { OpenCashSession } from '../application/use-cases/open-cash-session';
+import { RegisterExpense } from '../application/use-cases/register-expense';
+import { CashSessionsHttpRepository } from './repositories/cash-sessions.http-repository';
 
 /** Raíz de composición del módulo: enchufa la implementación HTTP a los casos de uso. */
 export const cashSessionsRepository = new CashSessionsHttpRepository();

@@ -1,7 +1,7 @@
 import { useTenant } from '@/modules/auth/presentation/hooks/useSession';
 import { MissingTenantDataError } from '@/modules/auth/presentation/hooks/useSession';
 import { localeForCountry } from '@/shared/domain/format-money';
-import type { TicketFormat } from '../../domain/ticket';
+import type { TicketFormat } from '../../domain/entities/ticket';
 
 /** Moneda e idioma de la tienda para escribir importes en tickets. Exige sesión con tienda: no hay valores por defecto. */
 export function useTicketFormat(): TicketFormat {

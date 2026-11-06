@@ -11,16 +11,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useTenant } from '@/modules/auth/presentation/hooks/useSession';
-import { thermalPrinterService } from '../../infrastructure/thermal-printer.service';
-import { buildSaleReceiptBytes } from '../../infrastructure/escpos-builder';
-import { parseEscPosBytes } from '../../infrastructure/escpos-parser';
+import { thermalPrinterService } from '../../infrastructure/printers/thermal-printer.service';
+import { buildSaleReceiptBytes } from '../../infrastructure/escpos/escpos-builder';
+import { parseEscPosBytes } from '../../infrastructure/escpos/escpos-parser';
 import {
   renderEscPosToDataUrl,
   downloadEscPosImage,
   printImageViaIframe,
-} from '../../infrastructure/escpos-image';
-import type { TicketSaleData } from '../../domain/ticket';
-export type { TicketSaleData, TicketSaleItem } from '../../domain/ticket';
+} from '../../infrastructure/escpos/escpos-image';
+import type { TicketSaleData } from '../../domain/entities/ticket';
+export type { TicketSaleData, TicketSaleItem } from '../../domain/entities/ticket';
 
 export interface ThermalTicketModalProps {
   isOpen: boolean;

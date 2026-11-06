@@ -1,8 +1,8 @@
-import { Checkout } from '../application/checkout';
-import { ExchangeProducts } from '../application/exchange-products';
-import { RefundSale } from '../application/refund-sale';
-import { CheckoutAttempt } from '../domain/checkout-attempt';
-import { SalesHttpRepository } from './sales.http-repository';
+import { Checkout } from '../application/use-cases/checkout';
+import { ExchangeProducts } from '../application/use-cases/exchange-products';
+import { RefundSale } from '../application/use-cases/refund-sale';
+import { CheckoutAttempt } from '../domain/rules/checkout-attempt';
+import { SalesHttpRepository } from './repositories/sales.http-repository';
 
 /**
  * Raíz de composición del módulo: aquí se enchufan los adaptadores reales a los casos de uso.

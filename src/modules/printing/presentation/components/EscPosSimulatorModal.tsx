@@ -21,19 +21,19 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { parseEscPosBytes } from '../../infrastructure/escpos-parser';
+import { parseEscPosBytes } from '../../infrastructure/escpos/escpos-parser';
 import {
   renderEscPosToDataUrl,
   downloadEscPosImage,
-} from '../../infrastructure/escpos-image';
+} from '../../infrastructure/escpos/escpos-image';
 import {
   buildSaleReceiptBytes,
   buildClosingReceiptBytes,
   EscPosBuilder,
   type PaperWidth,
-} from '../../infrastructure/escpos-builder';
+} from '../../infrastructure/escpos/escpos-builder';
 import { useTenant } from '@/modules/auth/presentation/hooks/useSession';
-import type { TicketSaleData } from '../../domain/ticket';
+import type { TicketSaleData } from '../../domain/entities/ticket';
 
 interface EscPosSimulatorModalProps {
   isOpen: boolean;
