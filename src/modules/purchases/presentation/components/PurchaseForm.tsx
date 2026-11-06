@@ -1,301 +1,58 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState } from 'react';
+import { AlertCircle, Building, ClipboardList, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
+import { useLayoutContext } from '@/providers/LayoutContext';
+import { filledLines, toPurchaseRequest } from '../../domain/rules/purchase-lines';
+import { useDefaultSupplier } from '../hooks/useDefaultSupplier';
+import { usePurchaseLines } from '../hooks/usePurchaseLines';
 import { useRegisterPurchase } from '../hooks/usePurchaseOrders';
 import { useSuppliers } from '../hooks/useSuppliers';
-import { useVariantSearch } from '@/modules/products/presentation/hooks';
-import type { SupplierEntity } from '../../domain/entities/supplier.entity';
-import { useLayoutContext } from '@/providers/LayoutContext';
-import { ClipboardList, Loader2, Plus, FileSpreadsheet, Building, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
 import { BulkPurchaseModal } from './BulkPurchaseModal';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import {
-  Combobox,
-  ComboboxInput,
-  ComboboxContent,
-  ComboboxList,
-  ComboboxItem,
-  ComboboxEmpty,
-} from '@/components/ui/combobox';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-  TableFooter
-} from "@/components/ui/table";
-import { PurchaseFormRow } from './PurchaseFormRow';
-import { useFormatters } from '@/modules/auth/presentation/hooks/useFormatters';
-
-interface PurchaseItemInput {
-  variantId: string;
-  variantSku: string;
-  productName: string;
-  combinationText: string;
-  quantity: number;
-  unitCost: number;
-}
+import { PurchaseLinesTable } from './PurchaseLinesTable';
+import { SupplierCombobox } from './SupplierCombobox';
 
 interface PurchaseFormProps {
   selectedBranchId?: string;
   onSuccess: () => void;
 }
 
+/** Ingreso de mercancía: proveedor, referencia y filas por SKU. Las filas y sus reglas viven en `usePurchaseLines`. */
 export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
-  const fmt = useFormatters();
   const { selectedBranchId, selectedBranchName } = useLayoutContext();
   const { suppliers } = useSuppliers();
   const { registerPurchase, isRegistering } = useRegisterPurchase();
-  const { findVariantBySku } = useVariantSearch();
-
-  // Local Purchase Order general inputs
-  const [selectedSupplierId, setSelectedSupplierId] = useState('');
-  const [purInvoice, setPurInvoice] = useState('');
+  const { supplierId, setSupplierId } = useDefaultSupplier(suppliers);
+  const rows = usePurchaseLines();
+  const [invoice, setInvoice] = useState('');
   const [isBulkOpen, setIsBulkOpen] = useState(false);
 
-  // Auto-select generic supplier by default if not set
-  useEffect(() => {
-    if (!selectedSupplierId && suppliers.length > 0) {
-      const generic = suppliers.find(
-        (s: SupplierEntity) =>
-          s.identityNumber?.toUpperCase() === 'GENERICO' ||
-          s.name?.toUpperCase().includes('GENERICO')
-      );
-      if (generic) {
-        setSelectedSupplierId(generic.id);
-      } else {
-        const firstSupplier = suppliers[0];
-        if (firstSupplier) {
-          setSelectedSupplierId(firstSupplier.id);
-        }
-      }
-    }
-  }, [suppliers, selectedSupplierId]);
-
-  // Purchase items table state, initialized with one empty row
-  const [purchaseItems, setPurchaseItems] = useState<PurchaseItemInput[]>([
-    {
-      variantId: '',
-      variantSku: '',
-      productName: '',
-      combinationText: '',
-      quantity: 1,
-      unitCost: 0
-    }
-  ]);
-
-  const updateRow = (index: number, fields: Partial<PurchaseItemInput>) => {
-    const updated = [...purchaseItems];
-    const current = updated[index];
-    if (!current) return;
-    updated[index] = { ...current, ...fields };
-    setPurchaseItems(updated);
-  };
-
-  const handleRowProductSelect = async (index: number, skuVal: string | null) => {
-    if (!skuVal) {
-      updateRow(index, {
-        variantId: '',
-        variantSku: '',
-        productName: '',
-        combinationText: '',
-        unitCost: 0,
-      });
-      return;
-    }
-
-    const trimmed = skuVal.trim();
-    if (!trimmed) return;
-
-    try {
-      const variant = await findVariantBySku(trimmed);
-      if (variant && variant.id) {
-        const nextIndex = index + 1;
-
-        setPurchaseItems((prevItems) => {
-          const updated = [...prevItems];
-          const current = updated[index];
-          if (!current) return prevItems;
-          updated[index] = {
-            ...current,
-            variantId: variant.id,
-            variantSku: variant.sku,
-            productName: variant.productName,
-            combinationText: 'Estándar',
-            unitCost: Number(variant.purchasePrice || 0),
-          };
-
-          // If this is the last row, automatically append a new empty row
-          if (index === updated.length - 1) {
-            updated.push({
-              variantId: '',
-              variantSku: '',
-              productName: '',
-              combinationText: '',
-              quantity: 1,
-              unitCost: 0,
-            });
-          }
-          return updated;
-        });
-
-        // Set focus to the SKU input of the next row after state updates
-        setTimeout(() => {
-          const nextInput = document.querySelector(`[data-row="${nextIndex}"][data-col="sku"]`) as HTMLInputElement | null;
-          if (nextInput) {
-            nextInput.focus();
-            nextInput.select();
-          }
-        }, 80);
-
-      } else {
-        throw new Error('Producto no encontrado');
-      }
-    } catch {
-      toast.error(`Error: El SKU "${trimmed}" no se encuentra en el catálogo.`);
-      // Focus back and select text on the same SKU input
-      setTimeout(() => {
-        const currentInput = document.querySelector(`[data-row="${index}"][data-col="sku"]`) as HTMLInputElement | null;
-        if (currentInput) {
-          currentInput.focus();
-          currentInput.select();
-        }
-      }, 50);
-    }
-  };
-
-  const handleAddRow = () => {
-    setPurchaseItems([
-      ...purchaseItems,
-      {
-        variantId: '',
-        variantSku: '',
-        productName: '',
-        combinationText: '',
-        quantity: 1,
-        unitCost: 0,
-      }
-    ]);
-  };
-
-  const handleRemoveRow = (index: number) => {
-    if (purchaseItems.length === 1) {
-      // Reset the single row instead of deleting it
-      setPurchaseItems([
-        {
-          variantId: '',
-          variantSku: '',
-          productName: '',
-          combinationText: '',
-          quantity: 1,
-          unitCost: 0,
-        }
-      ]);
-    } else {
-      setPurchaseItems(purchaseItems.filter((_, idx) => idx !== index));
-    }
-  };
-
-  const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>, 
-    rowIndex: number, 
-    field: 'sku' | 'quantity' | 'unitCost'
-  ) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      const nextInput = document.querySelector(`[data-row="${rowIndex + 1}"][data-col="${field}"]`) as HTMLInputElement | null;
-      if (nextInput) {
-        nextInput.focus();
-        nextInput.select();
-      } else if (rowIndex === purchaseItems.length - 1) {
-        handleAddRow();
-        setTimeout(() => {
-          const newInput = document.querySelector(`[data-row="${rowIndex + 1}"][data-col="sku"]`) as HTMLInputElement | null;
-          newInput?.focus();
-        }, 50);
-      }
-    } else if (e.key === 'ArrowUp' && rowIndex > 0) {
-      e.preventDefault();
-      const prevInput = document.querySelector(`[data-row="${rowIndex - 1}"][data-col="${field}"]`) as HTMLInputElement | null;
-      if (prevInput) {
-        prevInput.focus();
-        prevInput.select();
-      }
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (field === 'sku') {
-        handleRowProductSelect(rowIndex, e.currentTarget.value);
-      } else if (field === 'quantity') {
-        if (rowIndex === purchaseItems.length - 1) {
-          handleAddRow();
-          setTimeout(() => {
-            const newInput = document.querySelector(`[data-row="${rowIndex + 1}"][data-col="sku"]`) as HTMLInputElement | null;
-            newInput?.focus();
-          }, 50);
-        } else {
-          const nextSkuInput = document.querySelector(`[data-row="${rowIndex + 1}"][data-col="sku"]`) as HTMLInputElement | null;
-          nextSkuInput?.focus();
-        }
-      }
-    }
-  };
-
-  const preventEnterSubmit = (e: React.KeyboardEvent<HTMLFormElement>) => {
-    if (e.key === 'Enter') {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT') {
-        e.preventDefault();
-      }
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!selectedBranchId) {
       toast.warning('Por favor selecciona una sucursal específica en la barra superior antes de registrar ingresos.');
       return;
     }
-    
-    const validItems = purchaseItems.filter(i => i.variantId !== '');
-    if (validItems.length === 0) {
+    if (filledLines(rows.lines).length === 0) {
       toast.warning('Debes añadir al menos un artículo válido (selecciona un producto de la lista).');
       return;
     }
-
     try {
-      await registerPurchase({
-        branchId: selectedBranchId,
-        supplierId: selectedSupplierId || undefined,
-        invoiceNumber: purInvoice.trim() || undefined,
-        items: validItems.map(i => ({
-          variantId: i.variantId,
-          quantity: i.quantity,
-          purchasePrice: i.unitCost
-        }))
-      });
-
+      await registerPurchase(toPurchaseRequest(rows.lines, selectedBranchId, supplierId, invoice));
       toast.success('¡Ingreso registrado en Kardex y stock incrementado!');
-      setPurInvoice('');
-      setPurchaseItems([
-        {
-          variantId: '',
-          variantSku: '',
-          productName: '',
-          combinationText: '',
-          quantity: 1,
-          unitCost: 0
-        }
-      ]);
+      setInvoice('');
+      rows.reset();
       onSuccess();
-    } catch (err: any) {
-      toast.error(err.message || 'Error al registrar el ingreso.');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Error al registrar el ingreso.'));
     }
   };
 
-  const totalCostOfPurchase = useMemo(() => {
-    return purchaseItems.reduce((sum, item) => sum + (item.quantity || 0) * (item.unitCost || 0), 0);
-  }, [purchaseItems]);
+  // Enter dentro de un campo mueve el foco de la tabla; no debe enviar el formulario.
+  const preventEnterSubmit = (event: React.KeyboardEvent<HTMLFormElement>) => {
+    if (event.key === 'Enter' && (event.target as HTMLElement).tagName === 'INPUT') event.preventDefault();
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -335,119 +92,51 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
           </div>
         </CardHeader>
         <CardContent className="p-6">
-      
-      <form onSubmit={handleSubmit} onKeyDown={preventEnterSubmit} className="space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-[10px] uppercase tracking-wider font-bold mb-1 text-muted-foreground">
-              Proveedor Comercial *
-            </label>
-            <Combobox
-              value={selectedSupplierId || ''}
-              onValueChange={(val) => setSelectedSupplierId(val || '')}
-            >
-              <ComboboxInput
-                placeholder="Buscar o seleccionar proveedor..."
-                className="text-xs shadow-none h-9 bg-muted/30 border-border rounded-xl"
-                showTrigger
-                value={(() => {
-                  const s = suppliers.find((sup: SupplierEntity) => sup.id === selectedSupplierId);
-                  return s ? `${s.name} (${s.identityNumber})` : '';
-                })()}
-              />
-              <ComboboxContent className="bg-popover border border-border rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto">
-                <ComboboxEmpty className="p-3 text-center text-xs text-muted-foreground">
-                  No se encontraron proveedores.
-                </ComboboxEmpty>
-                <ComboboxList className="p-1">
-                  {suppliers.map((sup: SupplierEntity) => (
-                    <ComboboxItem key={sup.id} value={sup.id} className="text-xs py-1.5 cursor-pointer">
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-foreground">{sup.name}</span>
-                        <span className="text-[10px] text-muted-foreground font-mono">
-                          RUC / ID: {sup.identityNumber}
-                        </span>
-                      </div>
-                    </ComboboxItem>
-                  ))}
-                </ComboboxList>
-              </ComboboxContent>
-            </Combobox>
-          </div>
-
-          <div>
-            <label className="block text-[10px] uppercase tracking-wider font-bold mb-1 text-muted-foreground">Referencia / Factura (Opcional)</label>
-            <input 
-              type="text" 
-              value={purInvoice}
-              onChange={(e) => setPurInvoice(e.target.value)}
-              placeholder="Ej. Guía, FAC-123" 
-              className="w-full bg-muted/30 border border-border rounded-xl py-2 px-3 text-xs text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary h-9" 
-            />
-          </div>
-        </div>
-
-        {/* Tabular Input Area */}
-        <div className="border border-border rounded-xl overflow-hidden shadow-sm">
-          <Table>
-            <TableHeader className="bg-muted/30">
-              <TableRow>
-                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground w-1/4">SKU / Código</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground w-1/3">Nombre del Producto</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-right w-24">Cant.</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-right w-28">Costo U.</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-right w-28">Subtotal</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-center w-12">Acción</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {purchaseItems.map((item, index) => (
-                <PurchaseFormRow
-                  key={index}
-                  index={index}
-                  item={item}
-                  onUpdateRow={updateRow}
-                  onRemoveRow={handleRemoveRow}
-                  onProductSelect={handleRowProductSelect}
-                  onKeyDown={handleKeyDown}
+          <form onSubmit={handleSubmit} onKeyDown={preventEnterSubmit} className="space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider font-bold mb-1 text-muted-foreground">Proveedor Comercial *</label>
+                <SupplierCombobox
+                  suppliers={suppliers}
+                  value={supplierId}
+                  onChange={setSupplierId}
+                  placeholder="Buscar o seleccionar proveedor..."
+                  emptyText="No se encontraron proveedores."
+                  inputClassName="text-xs shadow-none h-9 bg-muted/30 border-border rounded-xl"
                 />
-              ))}
-            </TableBody>
-            <TableFooter className="bg-muted/20 border-t border-border">
-              <TableRow>
-                <TableCell colSpan={4} className="text-right text-xs font-bold text-muted-foreground">Total de Ingreso:</TableCell>
-                <TableCell className="text-right text-sm font-extrabold text-primary font-mono">{fmt.money(totalCostOfPurchase)}</TableCell>
-                <TableCell />
-              </TableRow>
-            </TableFooter>
-          </Table>
-        </div>
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider font-bold mb-1 text-muted-foreground">Referencia / Factura (Opcional)</label>
+                <input
+                  type="text"
+                  value={invoice}
+                  onChange={(event) => setInvoice(event.target.value)}
+                  placeholder="Ej. Guía, FAC-123"
+                  className="w-full bg-muted/30 border border-border rounded-xl py-2 px-3 text-xs text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary h-9"
+                />
+              </div>
+            </div>
 
-        {/* Add row manually button */}
-        <div className="flex justify-start">
-          <button
-            type="button"
-            onClick={handleAddRow}
-            className="flex items-center gap-1 px-3 py-1.5 border border-dashed border-border hover:border-primary/50 text-xs font-semibold rounded-lg text-muted-foreground hover:text-primary transition-all bg-card/50"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Agregar Fila</span>
-          </button>
-        </div>
+            <PurchaseLinesTable
+              lines={rows.lines}
+              total={rows.total}
+              onUpdateRow={rows.updateRow}
+              onRemoveRow={rows.removeRow}
+              onProductSelect={rows.selectProduct}
+              onKeyDown={rows.onKeyDown}
+              onAddRow={rows.addRow}
+            />
 
-        <button 
-          type="submit" 
-          disabled={isRegistering || purchaseItems.every(i => i.variantId === '')}
-          className="w-full py-3 bg-primary hover:bg-primary/95 disabled:bg-muted disabled:text-muted-foreground text-white text-xs font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-        >
-          {isRegistering ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-          <span>Registrar Ingreso (Kardex)</span>
-        </button>
-      </form>
-      <BulkPurchaseModal
-        isOpen={isBulkOpen}
-        onClose={() => setIsBulkOpen(false)}
-      />
+            <button
+              type="submit"
+              disabled={isRegistering || filledLines(rows.lines).length === 0}
+              className="w-full py-3 bg-primary hover:bg-primary/95 disabled:bg-muted disabled:text-muted-foreground text-white text-xs font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              {isRegistering ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+              <span>Registrar Ingreso (Kardex)</span>
+            </button>
+          </form>
+          <BulkPurchaseModal isOpen={isBulkOpen} onClose={() => setIsBulkOpen(false)} />
         </CardContent>
       </Card>
     </div>

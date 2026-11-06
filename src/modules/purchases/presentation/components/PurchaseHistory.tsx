@@ -12,7 +12,6 @@ import {
   AlertTriangle,
   RotateCcw,
 } from 'lucide-react';
-import type { SupplierEntity } from '../../domain/entities/supplier.entity';
 import type { PurchaseVM } from '../view-models/purchase.vm';
 import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -23,14 +22,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Field } from '@/components/ui/field';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import {
-  Combobox,
-  ComboboxInput,
-  ComboboxContent,
-  ComboboxList,
-  ComboboxItem,
-  ComboboxEmpty,
-} from '@/components/ui/combobox';
+import { SupplierCombobox } from './SupplierCombobox';
 
 interface PurchaseHistoryProps {
   selectedBranchId?: string;
@@ -151,40 +143,16 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
 
               {/* Supplier Filter Combobox */}
               <div className="w-56">
-                <Combobox
+                <SupplierCombobox
+                  suppliers={suppliers}
                   value={selectedSupplierId}
-                  onValueChange={handleSupplierSelect}
-                >
-                  <ComboboxInput
-                    placeholder="Filtrar por proveedor..."
-                    className="text-xs shadow-none h-9 bg-bg-dark border-border-card rounded-xl"
-                    showTrigger
-                    value={(() => {
-                      const s = suppliers.find((sup: SupplierEntity) => sup.id === selectedSupplierId);
-                      return s ? s.name : '';
-                    })()}
-                  />
-                  <ComboboxContent className="bg-popover border border-border rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto">
-                    <ComboboxEmpty className="p-3 text-center text-xs text-muted-foreground">
-                      No hay proveedores.
-                    </ComboboxEmpty>
-                    <ComboboxList className="p-1">
-                      <ComboboxItem value="" className="text-xs py-1.5 cursor-pointer font-semibold text-primary">
-                        Todos los Proveedores
-                      </ComboboxItem>
-                      {suppliers.map((sup: SupplierEntity) => (
-                        <ComboboxItem key={sup.id} value={sup.id} className="text-xs py-1.5 cursor-pointer">
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-foreground">{sup.name}</span>
-                            <span className="text-[10px] text-muted-foreground font-mono">
-                              RUC / ID: {sup.identityNumber}
-                            </span>
-                          </div>
-                        </ComboboxItem>
-                      ))}
-                    </ComboboxList>
-                  </ComboboxContent>
-                </Combobox>
+                  onChange={handleSupplierSelect}
+                  placeholder="Filtrar por proveedor..."
+                  emptyText="No hay proveedores."
+                  inputClassName="text-xs shadow-none h-9 bg-bg-dark border-border-card rounded-xl"
+                  allLabel="Todos los Proveedores"
+                  nameOnly
+                />
               </div>
 
               {(selectedSupplierId || dateRange) && (

@@ -1,21 +1,13 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
 import { TableRow, TableCell } from '@/components/ui/table';
-import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
-
-interface PurchaseItemInput {
-  variantId: string;
-  variantSku: string;
-  productName: string;
-  combinationText: string;
-  quantity: number;
-  unitCost: number;
-}
+import { useFormatters } from '@/modules/auth/presentation/hooks/useFormatters';
+import { lineSubtotal, type PurchaseLine } from '../../domain/rules/purchase-lines';
 
 interface PurchaseFormRowProps {
   index: number;
-  item: PurchaseItemInput;
-  onUpdateRow: (index: number, fields: Partial<PurchaseItemInput>) => void;
+  item: PurchaseLine;
+  onUpdateRow: (index: number, fields: Partial<PurchaseLine>) => void;
   onRemoveRow: (index: number) => void;
   onProductSelect: (index: number, skuVal: string | null) => void;
   onKeyDown: (
@@ -33,6 +25,7 @@ export const PurchaseFormRow: React.FC<PurchaseFormRowProps> = ({
   onProductSelect,
   onKeyDown,
 }) => {
+  const fmt = useFormatters();
   const [isQtyFocused, setIsQtyFocused] = React.useState(false);
 
   return (
@@ -89,10 +82,10 @@ export const PurchaseFormRow: React.FC<PurchaseFormRowProps> = ({
         />
       </TableCell>
       <TableCell className="p-2 text-right font-mono text-xs text-foreground/80">
-        {formatMoney(item.unitCost || 0)}
+        {fmt.money(item.unitCost || 0)}
       </TableCell>
       <TableCell className="p-2 text-right font-bold text-foreground/80 font-mono text-xs">
-        {formatMoney((item.quantity || 0) * (item.unitCost || 0))}
+        {fmt.money(lineSubtotal(item))}
       </TableCell>
       <TableCell className="p-2 text-center">
         <button

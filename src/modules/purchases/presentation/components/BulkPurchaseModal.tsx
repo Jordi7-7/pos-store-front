@@ -1,9 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { downloadPurchasesTemplate } from '@/lib/excelTemplates';
 import { BulkImportPreviewTable } from '@/components/BulkImportPreviewTable';
+import { useDefaultSupplier } from '../hooks/useDefaultSupplier';
 import { useSuppliers } from '../hooks/useSuppliers';
 import { usePurchaseImport } from '../hooks/usePurchaseImport';
-import type { SupplierEntity } from '../../domain/entities/supplier.entity';
 import type { BulkPurchaseItemInput } from '../../application/ports/purchases.repository';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import {
@@ -12,14 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Combobox,
-  ComboboxInput,
-  ComboboxContent,
-  ComboboxList,
-  ComboboxItem,
-  ComboboxEmpty,
-} from '@/components/ui/combobox';
+import { SupplierCombobox } from './SupplierCombobox';
 import { toast } from 'sonner';
 import { FileDown, Upload, FileSpreadsheet, Loader2, RefreshCw, AlertTriangle, ArrowRight, CheckCircle2, Building, AlertCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -33,10 +26,10 @@ interface BulkPurchaseModalProps {
 
 export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, onClose }) => {
   const { selectedBranchId, selectedBranchName } = useLayoutContext();
-  const { suppliers = [] } = useSuppliers();
+  const { suppliers } = useSuppliers();
+  const { supplierId: selectedSupplierId, setSupplierId: setSelectedSupplierId } = useDefaultSupplier(suppliers);
 
   // States
-  const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [parsedData, setParsedData] = useState<BulkPurchaseItemInput[]>([]);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -47,24 +40,6 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
   const [fileName, setFileName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Set default generic supplier
-  React.useEffect(() => {
-    if (!selectedSupplierId && suppliers.length > 0) {
-      const generic = suppliers.find(
-        (s: SupplierEntity) =>
-          s.identityNumber?.toUpperCase() === 'GENERICO' ||
-          s.name?.toUpperCase().includes('GENERICO')
-      );
-      if (generic) {
-        setSelectedSupplierId(generic.id);
-      } else {
-        const firstSupplier = suppliers[0];
-        if (firstSupplier) {
-          setSelectedSupplierId(firstSupplier.id);
-        }
-      }
-    }
-  }, [suppliers, selectedSupplierId]);
 
   // Hook for bulk purchases import
   const {
@@ -271,37 +246,14 @@ export const BulkPurchaseModal: React.FC<BulkPurchaseModalProps> = ({ isOpen, on
                     </span>
                   )}
                 </div>
-                <Combobox
-                  value={selectedSupplierId || ''}
-                  onValueChange={(val) => setSelectedSupplierId(val || '')}
-                >
-                  <ComboboxInput
-                    placeholder="Buscar o seleccionar proveedor..."
-                    className="text-xs shadow-none h-9 bg-muted/40 border-border rounded-xl"
-                    showTrigger
-                    value={(() => {
-                      const s = suppliers.find((sup: SupplierEntity) => sup.id === selectedSupplierId);
-                      return s ? `${s.name} (${s.identityNumber})` : '';
-                    })()}
-                  />
-                  <ComboboxContent className="bg-popover border border-border rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto">
-                    <ComboboxEmpty className="p-3 text-center text-xs text-muted-foreground">
-                      No se encontraron proveedores.
-                    </ComboboxEmpty>
-                    <ComboboxList className="p-1">
-                      {suppliers.map((sup: SupplierEntity) => (
-                        <ComboboxItem key={sup.id} value={sup.id} className="text-xs py-1.5 cursor-pointer">
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-foreground">{sup.name}</span>
-                            <span className="text-[10px] text-muted-foreground font-mono">
-                              RUC / ID: {sup.identityNumber}
-                            </span>
-                          </div>
-                        </ComboboxItem>
-                      ))}
-                    </ComboboxList>
-                  </ComboboxContent>
-                </Combobox>
+                <SupplierCombobox
+                  suppliers={suppliers}
+                  value={selectedSupplierId}
+                  onChange={setSelectedSupplierId}
+                  placeholder="Buscar o seleccionar proveedor..."
+                  emptyText="No se encontraron proveedores."
+                  inputClassName="text-xs shadow-none h-9 bg-muted/40 border-border rounded-xl"
+                />
               </div>
 
               <div className="space-y-1">
