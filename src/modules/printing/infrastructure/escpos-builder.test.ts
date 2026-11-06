@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PaymentMethod } from '@/shared/domain/payments';
-import type { ClosingTicketData, TicketSaleData } from '../../domain/ticket';
+import type { ClosingTicketData, TicketSaleData } from '../domain/ticket';
 import { buildClosingReceiptBytes, buildSaleReceiptBytes } from './escpos-builder';
 
 /** Los comandos ESC/POS son bytes de control; el texto es ASCII/CP850, así que se lee como latin1. */

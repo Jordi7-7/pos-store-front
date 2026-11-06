@@ -79,3 +79,40 @@ export function findViolations(files: Record<string, string>): string[] {
   }
   return violations;
 }
+
+// ── Dependencias entre módulos ──────────────────────────────────────────────────────────────────
+
+const MODULE_OF = /^\/src\/modules\/([^/]+)/;
+
+/** Qué módulos importa cada módulo (ignora los tests y los imports dentro del mismo módulo). */
+export function moduleDependencies(files: Record<string, string>): Map<string, Set<string>> {
+  const graph = new Map<string, Set<string>>();
+  for (const [path, source] of Object.entries(files)) {
+    const from = MODULE_OF.exec(path)?.[1];
+    if (!from) continue;
+    for (const specifier of importsOf(source)) {
+      const resolved = resolveImport(path, specifier);
+      const to = resolved ? MODULE_OF.exec(resolved)?.[1] : undefined;
+      if (to && to !== from) (graph.get(from) ?? graph.set(from, new Set()).get(from))?.add(to);
+    }
+  }
+  return graph;
+}
+
+/** Ciclos entre módulos (cada uno como lista ordenada de nombres), p. ej. `['media', 'products']`. */
+export function findModuleCycles(graph: ReadonlyMap<string, ReadonlySet<string>>): string[][] {
+  const cycles = new Map<string, string[]>();
+  const visit = (node: string, trail: string[]): void => {
+    for (const next of graph.get(node) ?? []) {
+      const at = trail.indexOf(next);
+      if (at >= 0) {
+        const cycle = [...trail.slice(at)].sort();
+        cycles.set(cycle.join('>'), cycle);
+      } else if (!trail.includes(next)) {
+        visit(next, [...trail, next]);
+      }
+    }
+  };
+  for (const node of graph.keys()) visit(node, [node]);
+  return [...cycles.values()];
+}

@@ -7,9 +7,9 @@ import { buildClosingTicketData } from '@/modules/cash-sessions/domain/closing-t
 import { useLayoutContext } from '@/providers/LayoutContext';
 import { useWorkspaceStore } from '@/shared/presentation/stores/workspace.store';
 import { getErrorMessage } from '@/shared/presentation/error-messages';
-import { ticketPrinter } from '../../../infrastructure/dependencies';
+import { ticketPrinter } from '@/modules/printing/infrastructure/dependencies';
 import { useActiveCashSession, useCloseCashSession, useOpenCashSession, useRegisterExpense } from '@/modules/cash-sessions/presentation/hooks/useCashSession';
-import { useTicketFormat } from '../useTicketFormat';
+import { useTicketFormat } from '../../../../printing/presentation/hooks/useTicketFormat';
 import type { ActiveCashSessionEntity } from '@/modules/cash-sessions/domain/entities/cash-session.entity';
 import type { ClosingDetailsStatus } from '@/modules/cash-sessions/presentation/view-models/closing-details-status';
 

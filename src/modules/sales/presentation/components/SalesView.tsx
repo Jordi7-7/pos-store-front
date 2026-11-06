@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { usePaginatedSales } from '../hooks/useSalesList';
 import { SaleDetailModal } from './SaleDetailModal';
-import { ThermalTicketModal, type TicketSaleData } from './pos/ThermalTicketModal';
+import { ThermalTicketModal, type TicketSaleData } from '../../../printing/presentation/components/ThermalTicketModal';
 import { useSaleByInvoice } from '../hooks/useSaleDetail';
 import { toTicketSaleData, SALE_STATUS_BADGE } from '../view-models/sale.vm';
 import { useFormatters } from '@/modules/auth/hooks/useFormatters';

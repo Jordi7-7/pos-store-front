@@ -1,4 +1,4 @@
-import { useTicketFormat } from '../../hooks/useTicketFormat';
+import { useTicketFormat } from '../hooks/useTicketFormat';
 import React, { useMemo, useState, useEffect } from 'react';
 import { Printer, Download, RefreshCw, Zap } from 'lucide-react';
 import {
@@ -11,16 +11,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useTenant } from '@/modules/auth/hooks/useSession';
-import { thermalPrinterService } from '../../../infrastructure/printing/thermal-printer.service';
-import { buildSaleReceiptBytes } from '../../../infrastructure/printing/escpos-builder';
-import { parseEscPosBytes } from '../../../infrastructure/printing/escpos-parser';
+import { thermalPrinterService } from '../../infrastructure/thermal-printer.service';
+import { buildSaleReceiptBytes } from '../../infrastructure/escpos-builder';
+import { parseEscPosBytes } from '../../infrastructure/escpos-parser';
 import {
   renderEscPosToDataUrl,
   downloadEscPosImage,
   printImageViaIframe,
-} from '../../../infrastructure/printing/escpos-image';
-import type { TicketSaleData } from '../../../domain/ticket';
-export type { TicketSaleData, TicketSaleItem } from '../../../domain/ticket';
+} from '../../infrastructure/escpos-image';
+import type { TicketSaleData } from '../../domain/ticket';
+export type { TicketSaleData, TicketSaleItem } from '../../domain/ticket';
 
 export interface ThermalTicketModalProps {
   isOpen: boolean;

@@ -10,10 +10,10 @@ import type { ActiveCashSessionEntity } from '@/modules/cash-sessions/domain/ent
 import { CheckoutError } from '../../../application/checkout';
 import type { CartItem } from '../../../domain/cart-item';
 import { PaymentMethod } from '../../../domain/enums';
-import type { TicketSaleData } from '../../../domain/ticket';
-import { ticketPrinter } from '../../../infrastructure/dependencies';
+import type { TicketSaleData } from '../../../../printing/domain/ticket';
+import { ticketPrinter } from '@/modules/printing/infrastructure/dependencies';
 import { useProcessSale } from '../useSalesMutations';
-import { useTicketFormat } from '../useTicketFormat';
+import { useTicketFormat } from '../../../../printing/presentation/hooks/useTicketFormat';
 import type { AddedPayment } from './usePOSPayments';
 
 interface Customer {

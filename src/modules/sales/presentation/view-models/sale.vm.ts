@@ -8,7 +8,7 @@ import type {
   SaleRefundItemEntity,
   SaleSummaryEntity,
 } from '../../domain/entities/sale.entity';
-import type { TicketSaleData } from '../../domain/ticket';
+import type { TicketSaleData } from '../../../printing/domain/ticket';
 
 /**
  * View-models de venta: la entidad más los textos listos para mostrar con la moneda, el idioma y

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findViolations, importsOf, layerOf, resolveImport } from './test/layer-rules';
+import { findModuleCycles, findViolations, importsOf, layerOf, moduleDependencies, resolveImport } from './test/layer-rules';
 
 const sources = import.meta.glob(['/src/**/*.ts', '/src/**/*.tsx'], {
   query: '?raw',
@@ -66,6 +66,42 @@ describe('la presentación no usa los internos de infraestructura', () => {
     expect(INFRA_INTERNALS.test('../../infrastructure/sales.http-repository')).toBe(true);
     expect(INFRA_INTERNALS.test('../../infrastructure/sales.service')).toBe(true);
     expect(INFRA_INTERNALS.test('../../infrastructure/dependencies')).toBe(false);
+  });
+});
+
+/**
+ * Dirección de las dependencias entre módulos. Los módulos migrados solo pueden depender de lo
+ * listado aquí: `printing` no conoce a nadie, `cash-sessions` no conoce a `sales` (es `sales` quien
+ * usa el turno), y no hay ciclos. Ampliar una lista exige una decisión consciente.
+ */
+const ALLOWED_DEPENDENCIES: Record<string, string[]> = {
+  printing: ['auth'],
+  'cash-sessions': ['auth', 'printing'],
+  'cash-registers': ['auth', 'branches', 'users'],
+  sales: ['auth', 'branches', 'cash-registers', 'cash-sessions', 'customers', 'printing', 'products'],
+};
+/** Ciclos que ya existían en módulos sin migrar. La lista solo puede encogerse. */
+const KNOWN_LEGACY_CYCLES = [['media', 'products']];
+
+describe('dependencias entre módulos', () => {
+  const graph = moduleDependencies(production);
+
+  it.each(Object.entries(ALLOWED_DEPENDENCIES))('%s solo depende de lo permitido', (module, allowed) => {
+    expect([...(graph.get(module) ?? [])].filter((dependency) => !allowed.includes(dependency))).toEqual([]);
+  });
+
+  it('no hay ciclos entre módulos salvo los heredados conocidos', () => {
+    expect(findModuleCycles(graph)).toEqual(KNOWN_LEGACY_CYCLES);
+  });
+
+  it('el detector encuentra ciclos (si no, la regla no sirve)', () => {
+    const cyclic = new Map([['a', new Set(['b'])], ['b', new Set(['c'])], ['c', new Set(['a'])], ['d', new Set(['a'])]]);
+    expect(findModuleCycles(cyclic)).toEqual([['a', 'b', 'c']]);
+    expect(findModuleCycles(new Map([['a', new Set(['b'])]]))).toEqual([]);
+  });
+
+  it('el grafo no está vacío (la regla no pasa en vacío)', () => {
+    expect(graph.get('sales')?.has('cash-sessions')).toBe(true);
   });
 });
 

@@ -14,7 +14,7 @@ import type { CashSessionHeaderVM } from '../view-models/cash-session.vm';
 import { CashSessionStatus, CashSessionDifferenceStatus } from '../../domain/enums';
 import { useTenant } from '../../../auth/hooks/useSession';
 import { useLayoutContext } from '@/providers/LayoutContext';
-import { ThermalClosingTicketModal } from '../../../sales/presentation/components/pos/ThermalClosingTicketModal';
+import { ThermalClosingTicketModal } from '../../../printing/presentation/components/ThermalClosingTicketModal';
 import { buildClosingTicketData } from '../../domain/closing-ticket';
 import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';

@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Loader2, Receipt, RotateCcw, Printer } from 'lucide-react';
 import { useSaleByInvoice } from '../hooks/useSaleDetail';
-import { ThermalTicketModal } from './pos/ThermalTicketModal';
+import { ThermalTicketModal } from '../../../printing/presentation/components/ThermalTicketModal';
 import { useTenant } from '@/modules/auth/hooks/useSession';
 import { toTicketSaleData, type SaleDetailItemVM, type SaleRefundItemVM } from '../view-models/sale.vm';
 import { useFormatters } from '@/modules/auth/hooks/useFormatters';

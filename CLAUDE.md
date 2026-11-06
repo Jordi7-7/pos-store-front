@@ -26,6 +26,7 @@ Contexto y reglas para cualquier sesión de trabajo en la web. **Léelo entero a
 ## Patrón por módulo (referencia: `sales`, `cash-sessions`, `cash-registers`)
 - **Datos:** la vista → hook (`presentation/hooks`) → **repositorio** (interfaz en `application/ports`, implementación `*HttpRepository` en `infrastructure`, que convierte DTO → entidad) o **caso de uso** (`application`) cuando hay reglas. Los hooks obtienen el repositorio/caso de uso de `infrastructure/dependencies.ts` (raíz de composición); **nunca** importan mappers, DTO ni clases HTTP (lo vigila `architecture.test.ts`).
 - **Entidades puras:** solo datos del negocio. Los textos de pantalla (importes con moneda, fechas con zona horaria, etiquetas) se construyen en **view-models** (`presentation/view-models`, funciones puras que reciben `useFormatters()`), nunca en la entidad ni en el mapper. Una regla impide campos `*Formatted`/`*Label` en `domain`.
+- **Dirección entre módulos** (vigilada): `printing` (tickets, impresora) no depende de ventas ni de turnos; `cash-sessions` depende de `printing`, nunca de `sales`; `sales` usa a ambos. El vocabulario común (`PaymentMethod`, `SaleStatus`) vive en `shared/domain/payments.ts`. No se permiten ciclos entre módulos (queda el heredado `media ↔ products`, que solo puede desaparecer).
 - Los módulos aún no migrados (`products`, `customers`, `purchases`, `reports`, `users`…) conservan `components/hooks/services` y mappers que formatean; se migran por etapas.
 
 ## Reglas del código

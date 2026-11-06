@@ -1,4 +1,4 @@
-import { useTicketFormat } from '../../hooks/useTicketFormat';
+import { useTicketFormat } from '../hooks/useTicketFormat';
 import React, { useState, useMemo } from 'react';
 import {
   Dialog,
@@ -21,19 +21,19 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { parseEscPosBytes } from '../../../infrastructure/printing/escpos-parser';
+import { parseEscPosBytes } from '../../infrastructure/escpos-parser';
 import {
   renderEscPosToDataUrl,
   downloadEscPosImage,
-} from '../../../infrastructure/printing/escpos-image';
+} from '../../infrastructure/escpos-image';
 import {
   buildSaleReceiptBytes,
   buildClosingReceiptBytes,
   EscPosBuilder,
   type PaperWidth,
-} from '../../../infrastructure/printing/escpos-builder';
+} from '../../infrastructure/escpos-builder';
 import { useTenant } from '@/modules/auth/hooks/useSession';
-import type { TicketSaleData } from '../../../domain/ticket';
+import type { TicketSaleData } from '../../domain/ticket';
 
 interface EscPosSimulatorModalProps {
   isOpen: boolean;

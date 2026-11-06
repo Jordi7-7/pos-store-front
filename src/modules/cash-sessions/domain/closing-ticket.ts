@@ -1,4 +1,4 @@
-import type { ClosingTicketData } from '@/modules/sales/domain/ticket';
+import type { ClosingTicketData } from '@/modules/printing/domain/ticket';
 import type { CashSessionDetailsEntity } from './entities/cash-session.entity';
 import { CashSessionStatus } from './enums';
 import { PaymentMethod } from '@/shared/domain/payments';

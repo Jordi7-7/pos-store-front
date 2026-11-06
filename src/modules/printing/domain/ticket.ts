@@ -1,4 +1,4 @@
-import type { PaymentMethod } from './enums';
+import type { PaymentMethod } from '@/shared/domain/payments';
 
 /** Datos de un ticket de venta: lo que se imprime, sin importar cómo se dibuje. */
 export interface TicketSaleItem {

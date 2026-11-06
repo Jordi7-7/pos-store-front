@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import {
   thermalPrinterService,
   type PrinterConfig,
-} from '../../../infrastructure/printing/thermal-printer.service';
+} from '../../infrastructure/thermal-printer.service';
 import { EscPosSimulatorModal } from './EscPosSimulatorModal';
 
 interface PrinterConfigModalProps {

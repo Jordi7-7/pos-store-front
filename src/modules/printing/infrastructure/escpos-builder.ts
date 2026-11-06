@@ -1,5 +1,5 @@
 import { numeroALetras } from 'numero-a-letras-es';
-import type { ClosingTicketData, TicketFormat, TicketSaleData } from '../../domain/ticket';
+import type { ClosingTicketData, TicketFormat, TicketSaleData } from '../domain/ticket';
 import { ticketMoney } from './ticket-money';
 import { PaymentMethod } from '@/shared/domain/payments';
 
