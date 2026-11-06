@@ -22,6 +22,14 @@ export interface TagDTO {
   name: string;
 }
 
+/** Valor de atributo tal como lo devuelve el detalle de un producto (`GET /products/:id`). */
+export interface VariantAttributeValueDTO {
+  id?: string;
+  attributeId?: string;
+  value?: string;
+  attribute?: { id?: string; name?: string };
+}
+
 export interface ProductVariantDTO {
   id?: string;
   sku: string;
@@ -31,7 +39,7 @@ export interface ProductVariantDTO {
   wholesalePrice?: number | null;
   imageIds?: string[];
   images?: ProductImageDTO[];
-  attributeValues?: any[];
+  attributeValues?: VariantAttributeValueDTO[];
   attributes?: VariantAttributeDTO[];
   stocks?: VariantStockDTO[];
   tags?: TagDTO[];

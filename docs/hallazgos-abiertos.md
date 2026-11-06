@@ -8,3 +8,5 @@ Resuelto en la Etapa 4: las etiquetas de código de barras ya imprimen el precio
 
 ## Pendiente anotado (no es un hallazgo de la web)
 - `GET /sales/cash-sessions/:id/details` comprueba acceso por **sucursal**, no por quién abrió el turno: un cajero puede leer el resumen de turnos de otros cajeros de su sucursal. El dueño decidió dejarlo así por ahora (2026-11-05).
+| 4 | **El modal de edición de un producto variable descarta los cambios sin guardar de la ficha del padre** cuando se crea una variante dentro del modal (crear la variante recarga el producto y el formulario se reinicia con los datos del servidor) | `e2e/products-variable.spec.ts` edita el nombre después de añadir la variante por esto | Al trocear `ProductVariableEditModal`: no reiniciar el formulario si ya fue modificado |
+

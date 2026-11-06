@@ -17,7 +17,8 @@ export interface ProductVariantEntity {
   wholesalePrice: number | null;
   images: ProductImageEntity[];
   primaryImageUrl: string;
-  attributes: Array<{ name: string; value: string }>;
+  /** Valores de atributo de la variante (talla, color…), con los ids del atributo y del valor cuando el servidor los envía. */
+  attributes: Array<{ name: string; value: string; attributeId?: string; valueId?: string }>;
   stocks: Array<{ branchId: string; branchName: string; quantity: number }>;
   totalStock: number;
 }

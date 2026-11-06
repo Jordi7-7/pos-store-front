@@ -123,10 +123,9 @@ export const ProductVariableEditModal: React.FC<ProductVariableEditModalProps> =
 
     // Recolectar los attributeIds que usa este producto
     const usedAttrIds = new Set<string>();
-    product.variants.forEach((v: any) => {
-      (v.attributeValues || []).forEach((av: any) => {
-        if (av.attributeId) usedAttrIds.add(av.attributeId);
-        else if (av.attribute?.id) usedAttrIds.add(av.attribute.id);
+    product.variants.forEach((variant) => {
+      variant.attributes.forEach((attribute) => {
+        if (attribute.attributeId) usedAttrIds.add(attribute.attributeId);
       });
     });
 
@@ -155,8 +154,8 @@ export const ProductVariableEditModal: React.FC<ProductVariableEditModalProps> =
     if (product.variants && product.variants.length > 0) {
       setEditableVariants(
         product.variants.map((v: any) => {
-          const combo = (v.attributeValues || [])
-            .map((av: any) => `${av.attribute?.name || 'Atributo'}: ${av.value}`)
+          const combo = (v.attributes || [])
+            .map((attribute: { name?: string; value: string }) => `${attribute.name || 'Atributo'}: ${attribute.value}`)
             .join(' · ');
 
           const varImages = (v.images || []).map((img: any) => ({

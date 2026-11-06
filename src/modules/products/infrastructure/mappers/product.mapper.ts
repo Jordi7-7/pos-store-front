@@ -16,10 +16,17 @@ export const toProductVariantEntity = (dto: ProductVariantDTO): ProductVariantEn
     description: img.description || '',
   }));
 
-  const attributes = (dto.attributes || []).map((attr) => ({
-    name: attr.name || '',
-    value: attr.value || '',
-  }));
+  // El listado manda `attributes` (nombre y valor); el detalle manda `attributeValues` (con el atributo anidado).
+  // Se aceptan las dos formas para que la variante tenga siempre sus atributos.
+  const attributes =
+    dto.attributes && dto.attributes.length > 0
+      ? dto.attributes.map((attr) => ({ name: attr.name || '', value: attr.value || '' }))
+      : (dto.attributeValues || []).map((attr) => ({
+          name: attr.attribute?.name || '',
+          value: attr.value || '',
+          attributeId: attr.attributeId ?? attr.attribute?.id,
+          valueId: attr.id,
+        }));
 
   const stocks = (dto.stocks || []).map((st) => ({
     branchId: st.branchId,
@@ -89,9 +96,9 @@ export const toCreatedVariantEntity = (dto: ProductVariantDTO): CreatedVariantEn
   purchasePrice: Number(dto.purchasePrice) || 0,
   salePrice: Number(dto.salePrice) || 0,
   wholesalePrice: dto.wholesalePrice !== null && dto.wholesalePrice !== undefined ? Number(dto.wholesalePrice) : null,
-  attributes: (dto.attributeValues || []).map((value: { attribute?: { name?: string }; value: string }) => ({
+  attributes: (dto.attributeValues || []).map((value) => ({
     name: value.attribute?.name || 'Atributo',
-    value: value.value,
+    value: value.value || '',
   })),
   images: (dto.images || []).map((image) => ({ id: image.id, url: image.url || '', description: image.description })),
 });
