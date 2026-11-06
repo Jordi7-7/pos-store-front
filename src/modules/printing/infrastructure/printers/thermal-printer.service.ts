@@ -6,6 +6,8 @@ import {
 } from '../escpos/escpos-builder';
 import type { TicketPrinter } from '../../application/ports/ticket-printer';
 import type { ClosingTicketData, TicketFormat, TicketSaleData } from '../../domain/entities/ticket';
+import { getSerial, type SerialPortLike } from './web-serial';
+import { isDevicePickerCancelled, NO_PRINTER_CONFIGURED } from '../../domain/rules/device-error';
 
 export interface PrinterConfig {
   paperWidth: PaperWidth;
@@ -24,11 +26,17 @@ const DEFAULT_CONFIG: PrinterConfig = {
 const STORAGE_KEY = 'aura_pos_printer_config';
 
 class ThermalPrinterService implements TicketPrinter {
-  private activePort: any = null;
+  private activePort: SerialPortLike | null = null;
 
   /** Comprueba si el navegador soporta Web Serial API */
   isSupported(): boolean {
-    return typeof navigator !== 'undefined' && 'serial' in navigator;
+    return getSerial() !== undefined;
+  }
+
+  private serial() {
+    const serial = getSerial();
+    if (!serial) throw new Error('Web Serial API no soportada');
+    return serial;
   }
 
   /** Obtiene la configuración guardada de impresora */
@@ -56,7 +64,7 @@ class ThermalPrinterService implements TicketPrinter {
   async isConfigured(): Promise<boolean> {
     if (!this.isSupported()) return false;
     try {
-      const ports = await (navigator as any).serial.getPorts();
+      const ports = await this.serial().getPorts();
       return ports && ports.length > 0;
     } catch {
       return false;
@@ -70,11 +78,11 @@ class ThermalPrinterService implements TicketPrinter {
     }
 
     try {
-      const port = await (navigator as any).serial.requestPort();
+      const port = await this.serial().requestPort();
       this.activePort = port;
       return true;
-    } catch (err: any) {
-      if (err.name === 'NotFoundError') {
+    } catch (err) {
+      if (isDevicePickerCancelled(err)) {
         // Usuario canceló la selección de dispositivo
         return false;
       }
@@ -83,7 +91,7 @@ class ThermalPrinterService implements TicketPrinter {
   }
 
   /** Obtiene un puerto listo para escribir (abre conexión si no está abierta) */
-  private async getOpenPort(): Promise<any> {
+  private async getOpenPort(): Promise<SerialPortLike | null> {
     if (!this.isSupported()) {
       throw new Error('Web Serial API no soportada');
     }
@@ -91,11 +99,10 @@ class ThermalPrinterService implements TicketPrinter {
     let port = this.activePort;
 
     if (!port) {
-      const ports = await (navigator as any).serial.getPorts();
-      if (!ports || ports.length === 0) {
-        return null;
-      }
-      port = ports[0];
+      const ports = await this.serial().getPorts();
+      const first = ports[0];
+      if (!first) return null;
+      port = first;
       this.activePort = port;
     }
 
@@ -112,9 +119,10 @@ class ThermalPrinterService implements TicketPrinter {
   async sendRawBytes(bytes: Uint8Array): Promise<void> {
     const port = await this.getOpenPort();
     if (!port) {
-      throw new Error('NO_PRINTER_CONFIGURED');
+      throw new Error(NO_PRINTER_CONFIGURED);
     }
 
+    if (!port.writable) throw new Error('El puerto de la impresora no admite escritura.');
     const writer = port.writable.getWriter();
     try {
       await writer.write(bytes);

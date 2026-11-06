@@ -20,6 +20,7 @@ import {
   downloadEscPosImage,
   printImageViaIframe,
 } from '../../infrastructure/escpos/escpos-image';
+import { deviceErrorMessage } from '../../domain/rules/device-error';
 
 export interface ThermalClosingTicketModalProps {
   isOpen: boolean;
@@ -57,8 +58,8 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
         setIsUsbConfigured(true);
         toast.success('¡Impresora térmica USB vinculada con éxito!');
       }
-    } catch (err: any) {
-      toast.error(err.message || 'Error al vincular impresora USB.');
+    } catch (err) {
+      toast.error(deviceErrorMessage(err, 'Error al vincular impresora USB.'));
     } finally {
       setIsConnectingUsb(false);
     }
@@ -114,7 +115,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
       // Fallback: Diálogo del navegador con imagen limpia
       printImageViaIframe(pngDataUrl, `Corte-Caja-${sessionData.id.slice(0, 8)}`);
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error al imprimir corte de caja:', err);
       printImageViaIframe(pngDataUrl, `Corte-Caja-${sessionData.id.slice(0, 8)}`);
       onClose();

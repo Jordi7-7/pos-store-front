@@ -11,6 +11,7 @@ import { ThermalPrintOutput, printThermalLabels } from './ThermalPrintOutput';
 import { useTicketFormat } from '@/modules/printing/presentation/hooks/useTicketFormat';
 import { labelPrinterService } from '../../../../printing/infrastructure/printers/label-printer.service';
 import { LabelPrinterConfigModal } from './LabelPrinterConfigModal';
+import { deviceErrorMessage, isNoPrinterConfigured } from '@/modules/printing/domain/rules/device-error';
 
 export type { BarcodeLabelItem } from './types';
 
@@ -95,12 +96,12 @@ export const BarcodePrintModal: React.FC<BarcodePrintModalProps> = ({
       setIsDirectPrinting(true);
       await labelPrinterService.printLabels(items, storeName, ticketFormat);
       toast.success(`¡${totalLabelsCount} etiqueta(s) enviadas a la impresora térmica!`);
-    } catch (err: any) {
-      if (err.message === 'NO_PRINTER_CONFIGURED') {
+    } catch (err) {
+      if (isNoPrinterConfigured(err)) {
         setShowConfigModal(true);
         toast.info('Vincula tu impresora térmica USB para imprimir directamente.');
       } else {
-        toast.error(`Error al imprimir en USB: ${err.message || 'Verifica la impresora'}`);
+        toast.error(`Error al imprimir en USB: ${deviceErrorMessage(err, 'Verifica la impresora')}`);
       }
     } finally {
       setIsDirectPrinting(false);

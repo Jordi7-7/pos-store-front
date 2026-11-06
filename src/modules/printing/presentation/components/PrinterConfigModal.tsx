@@ -14,6 +14,7 @@ import {
   type PrinterConfig,
 } from '../../infrastructure/printers/thermal-printer.service';
 import { EscPosSimulatorModal } from './EscPosSimulatorModal';
+import { deviceErrorMessage, isNoPrinterConfigured } from '../../domain/rules/device-error';
 
 interface PrinterConfigModalProps {
   isOpen: boolean;
@@ -58,8 +59,8 @@ export const PrinterConfigModal: React.FC<PrinterConfigModalProps> = ({
         toast.success('¡Impresora USB vinculada con éxito!');
         if (onConfigured) onConfigured();
       }
-    } catch (err: any) {
-      toast.error(err.message || 'Error al conectar con la impresora USB.');
+    } catch (err) {
+      toast.error(deviceErrorMessage(err, 'Error al conectar con la impresora USB.'));
     } finally {
       setIsConnecting(false);
     }
@@ -70,11 +71,11 @@ export const PrinterConfigModal: React.FC<PrinterConfigModalProps> = ({
       setIsTesting(true);
       await thermalPrinterService.printTestTicket();
       toast.success('¡Ticket de prueba enviado a la impresora!');
-    } catch (err: any) {
-      if (err.message === 'NO_PRINTER_CONFIGURED') {
+    } catch (err) {
+      if (isNoPrinterConfigured(err)) {
         toast.error('Primero debes vincular tu impresora USB.');
       } else {
-        toast.error(`Error al imprimir: ${err.message || 'Verifica la conexión USB'}`);
+        toast.error(`Error al imprimir: ${deviceErrorMessage(err, 'Verifica la conexión USB')}`);
       }
     } finally {
       setIsTesting(false);

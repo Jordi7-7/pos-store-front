@@ -2,6 +2,8 @@ import type { LabelPrinter } from '../../application/ports/label-printer';
 import { DEFAULT_LABEL_DIMENSIONS, type LabelDimensions, type LabelItem, type LabelProtocol } from '../../domain/entities/label';
 import type { TicketFormat } from '../../domain/entities/ticket';
 import { buildTsplLabelCommands, buildZplLabelCommands, buildTestLabelCommands } from '../labels/label-builder';
+import { getSerial, type SerialPortLike } from './web-serial';
+import { isDevicePickerCancelled, NO_PRINTER_CONFIGURED } from '../../domain/rules/device-error';
 
 export interface LabelPrinterConfig {
   widthMm: number;
@@ -22,11 +24,17 @@ const DEFAULT_LABEL_CONFIG: LabelPrinterConfig = {
 const STORAGE_KEY = 'aura_label_printer_config';
 
 class LabelPrinterService implements LabelPrinter {
-  private activePort: any = null;
+  private activePort: SerialPortLike | null = null;
 
   /** Comprueba si el navegador actual soporta Web Serial API */
   isSupported(): boolean {
-    return typeof navigator !== 'undefined' && 'serial' in navigator;
+    return getSerial() !== undefined;
+  }
+
+  private serial() {
+    const serial = getSerial();
+    if (!serial) throw new Error('Web Serial API no soportada');
+    return serial;
   }
 
   /** Obtiene la configuración de impresora de etiquetas */
@@ -54,7 +62,7 @@ class LabelPrinterService implements LabelPrinter {
   async isConfigured(): Promise<boolean> {
     if (!this.isSupported()) return false;
     try {
-      const ports = await (navigator as any).serial.getPorts();
+      const ports = await this.serial().getPorts();
       return ports && ports.length > 0;
     } catch {
       return false;
@@ -68,11 +76,11 @@ class LabelPrinterService implements LabelPrinter {
     }
 
     try {
-      const port = await (navigator as any).serial.requestPort();
+      const port = await this.serial().requestPort();
       this.activePort = port;
       return true;
-    } catch (err: any) {
-      if (err.name === 'NotFoundError') {
+    } catch (err) {
+      if (isDevicePickerCancelled(err)) {
         return false;
       }
       throw err;
@@ -80,7 +88,7 @@ class LabelPrinterService implements LabelPrinter {
   }
 
   /** Obtiene el puerto abierto para comunicación */
-  private async getOpenPort(): Promise<any> {
+  private async getOpenPort(): Promise<SerialPortLike | null> {
     if (!this.isSupported()) {
       throw new Error('Web Serial API no soportada');
     }
@@ -88,12 +96,11 @@ class LabelPrinterService implements LabelPrinter {
     let port = this.activePort;
 
     if (!port) {
-      const ports = await (navigator as any).serial.getPorts();
-      if (!ports || ports.length === 0) {
-        return null;
-      }
-      // Si hay más de un puerto, toma el último o el disponible
-      port = ports[ports.length - 1];
+      const ports = await this.serial().getPorts();
+      // Si hay más de un puerto, toma el último
+      const last = ports[ports.length - 1];
+      if (!last) return null;
+      port = last;
       this.activePort = port;
     }
 
@@ -109,9 +116,10 @@ class LabelPrinterService implements LabelPrinter {
   async sendRawBytes(bytes: Uint8Array): Promise<void> {
     const port = await this.getOpenPort();
     if (!port) {
-      throw new Error('NO_PRINTER_CONFIGURED');
+      throw new Error(NO_PRINTER_CONFIGURED);
     }
 
+    if (!port.writable) throw new Error('El puerto de la impresora no admite escritura.');
     const writer = port.writable.getWriter();
     try {
       await writer.write(bytes);

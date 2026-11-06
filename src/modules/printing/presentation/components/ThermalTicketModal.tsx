@@ -20,6 +20,7 @@ import {
   printImageViaIframe,
 } from '../../infrastructure/escpos/escpos-image';
 import type { TicketSaleData } from '../../domain/entities/ticket';
+import { deviceErrorMessage } from '../../domain/rules/device-error';
 export type { TicketSaleData, TicketSaleItem } from '../../domain/entities/ticket';
 
 export interface ThermalTicketModalProps {
@@ -55,8 +56,8 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
         setIsUsbConfigured(true);
         toast.success('¡Impresora térmica USB vinculada con éxito!');
       }
-    } catch (err: any) {
-      toast.error(err.message || 'Error al vincular impresora USB.');
+    } catch (err) {
+      toast.error(deviceErrorMessage(err, 'Error al vincular impresora USB.'));
     } finally {
       setIsConnectingUsb(false);
     }
@@ -114,7 +115,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
       // Fallback: Diálogo de impresión del navegador imprimiendo la imagen limpia
       printImageViaIframe(pngDataUrl, `Ticket-${saleData.invoiceNumber}`);
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error al imprimir ticket:', err);
       printImageViaIframe(pngDataUrl, `Ticket-${saleData.invoiceNumber}`);
       onClose();

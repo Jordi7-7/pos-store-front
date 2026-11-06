@@ -16,6 +16,7 @@ import {
 import { ZEBRA_LABEL_PRESETS } from '@/modules/printing/domain/rules/label-presets';
 import { useTicketFormat } from '@/modules/printing/presentation/hooks/useTicketFormat';
 import type { LabelPreset } from '@/modules/printing/domain/entities/label';
+import { deviceErrorMessage, isNoPrinterConfigured } from '@/modules/printing/domain/rules/device-error';
 
 interface LabelPrinterConfigModalProps {
   isOpen: boolean;
@@ -60,8 +61,8 @@ export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = (
         toast.success('¡Puerto Serie (COM) vinculado con éxito!');
         if (onConfigured) onConfigured();
       }
-    } catch (err: any) {
-      toast.error(err.message || 'Error al conectar con el puerto serie.');
+    } catch (err) {
+      toast.error(deviceErrorMessage(err, 'Error al conectar con el puerto serie.'));
     } finally {
       setIsConnecting(false);
     }
@@ -72,11 +73,11 @@ export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = (
       setIsTesting(true);
       await labelPrinterService.printTestLabel(ticketFormat);
       toast.success('¡Etiqueta de prueba enviada al puerto serie!');
-    } catch (err: any) {
-      if (err.message === 'NO_PRINTER_CONFIGURED') {
+    } catch (err) {
+      if (isNoPrinterConfigured(err)) {
         toast.error('Primero debes vincular un puerto serie (COM).');
       } else {
-        toast.error(`Error al imprimir en serie: ${err.message || 'Verifica la conexión'}`);
+        toast.error(`Error al imprimir en serie: ${deviceErrorMessage(err, 'Verifica la conexión')}`);
       }
     } finally {
       setIsTesting(false);
