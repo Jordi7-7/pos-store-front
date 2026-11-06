@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { apiClient } from '@/lib/apiClient';
 import { 
   FileSpreadsheet, 
   FileText, 
@@ -13,7 +12,7 @@ import { type DateRange } from 'react-day-picker';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { getTenantLocale, useTimezone } from '../../auth/presentation/hooks/useSession';
+import { getTenantLocale, useTimezone } from '../../../auth/presentation/hooks/useSession';
 import { useProductSalesReport } from '../hooks/useReports';
 import { Calendar } from '@/components/ui/calendar';
 import { Field } from '@/components/ui/field';
@@ -31,7 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
+import { formatMoney, useTenant } from '@/modules/auth/presentation/hooks/useSession';
 
 interface ProductSalesTabProps {
   selectedBranchId?: string;
@@ -39,7 +38,7 @@ interface ProductSalesTabProps {
 
 export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranchId }) => {
   const timezone = useTimezone();
-  const [currentTenant, setCurrentTenant] = useState<any>(null);
+  const currentTenant = useTenant(); // el nombre del negocio ya está en la sesión: no hace falta pedirlo
 
   const { loading, data: productSalesData, fetchProductSales } = useProductSalesReport();
 
@@ -49,11 +48,6 @@ export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranch
     to: new Date()
   });
 
-  useEffect(() => {
-    apiClient.request('/tenants/current')
-      .then((t) => setCurrentTenant(t))
-      .catch((e) => console.error('Error fetching tenant metadata:', e));
-  }, []);
 
   const loadReport = () => {
     if (!dateRange?.from) {

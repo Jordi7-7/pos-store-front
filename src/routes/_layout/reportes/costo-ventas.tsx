@@ -1,6 +1,6 @@
 import { guardRoute } from '@/modules/auth/presentation/hooks/route-guard';
 import { createFileRoute } from '@tanstack/react-router';
-import { CostSalesTab } from '@/modules/reports/components/CostSalesTab';
+import { CostSalesTab } from '@/modules/reports/presentation/components/CostSalesTab';
 import { useLayoutContext } from '@/providers/LayoutContext';
 
 export const Route = createFileRoute('/_layout/reportes/costo-ventas')({

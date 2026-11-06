@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { reportsService } from '../services/reports.service';
-import type { SalesCostReportRow, ValuedInventoryRow, ProductSaleRow } from '../types/reports.types';
+import { reportsRepository } from '../../infrastructure/dependencies';
+import type { ProductSaleRow, SalesCostReportRow, ValuedInventoryMeta, ValuedInventoryRow } from '../../domain/entities/report.entity';
 import { toast } from 'sonner';
 
 export const useSalesCostReport = () => {
@@ -10,7 +10,7 @@ export const useSalesCostReport = () => {
   const fetchSalesCost = async (startDate: string, endDate: string, branchId?: string) => {
     try {
       setLoading(true);
-      const res = await reportsService.getSalesCost(startDate, endDate, branchId);
+      const res = await reportsRepository.salesCost(startDate, endDate, branchId);
       setData(res);
       return res;
     } catch (error) {
@@ -32,7 +32,7 @@ export const useSalesCostReport = () => {
 export const useValuedInventoryReport = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ValuedInventoryRow[]>([]);
-  const [meta, setMeta] = useState<{ total: number; page: number; limit: number; totalPages: number; totalQuantity?: number; totalValue?: number }>({
+  const [meta, setMeta] = useState<ValuedInventoryMeta>({
     total: 0,
     page: 1,
     limit: 10,
@@ -42,7 +42,7 @@ export const useValuedInventoryReport = () => {
   const fetchValuedInventory = async (params?: { page?: number; limit?: number; branchId?: string }) => {
     try {
       setLoading(true);
-      const res = await reportsService.getValuedInventory(params);
+      const res = await reportsRepository.valuedInventory(params);
       setData(res.data);
       setMeta(res.meta);
       return res;
@@ -70,7 +70,7 @@ export const useProductSalesReport = () => {
   const fetchProductSales = async (startDate: string, endDate: string, branchId?: string) => {
     try {
       setLoading(true);
-      const res = await reportsService.getProductSales(startDate, endDate, branchId);
+      const res = await reportsRepository.productSales(startDate, endDate, branchId);
       setData(res);
       return res;
     } catch (error) {

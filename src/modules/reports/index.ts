@@ -1,3 +1,3 @@
-export * from './types/reports.types';
-export * from './services/reports.service';
-export * from './hooks/useReports';
+// API pública del módulo.
+export type { SalesCostReportRow, ValuedInventoryRow, ProductSaleRow } from './domain/entities/report.entity';
+export * from './presentation/hooks/useReports';

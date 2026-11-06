@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { apiClient } from '@/lib/apiClient';
 import { 
   FileSpreadsheet,
   FileText,
@@ -8,12 +7,10 @@ import {
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useTimezone } from '../../auth/presentation/hooks/useSession';
+import { useTimezone } from '../../../auth/presentation/hooks/useSession';
 import { useValuedInventoryReport } from '../hooks/useReports';
 import { PaginationControls } from '@/shared/presentation/components/PaginationControls';
-import { 
-  reportsService 
-} from '../services/reports.service';
+import { reportsRepository } from '../../infrastructure/dependencies';
 import {
   Table,
   TableBody,
@@ -23,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
+import { formatMoney, useTenant } from '@/modules/auth/presentation/hooks/useSession';
 
 interface ValuedInventoryTabProps {
   selectedBranchId?: string;
@@ -31,7 +28,7 @@ interface ValuedInventoryTabProps {
 
 export const ValuedInventoryTab: React.FC<ValuedInventoryTabProps> = ({ selectedBranchId }) => {
   const timezone = useTimezone();
-  const [currentTenant, setCurrentTenant] = useState<any>(null);
+  const currentTenant = useTenant(); // el nombre del negocio ya está en la sesión: no hace falta pedirlo
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -48,12 +45,6 @@ export const ValuedInventoryTab: React.FC<ValuedInventoryTabProps> = ({ selected
     fetchValuedInventory({ page, limit, branchId: selectedBranchId });
   }, [page, limit, selectedBranchId]);
 
-  useEffect(() => {
-    // Fetch tenant name
-    apiClient.request('/tenants/current')
-      .then((t) => setCurrentTenant(t))
-      .catch((e) => console.error('Error fetching tenant metadata:', e));
-  }, []);
 
   // Aggregate totals (uses global totals from meta returned by backend)
   const totals = useMemo(() => {
@@ -73,7 +64,7 @@ export const ValuedInventoryTab: React.FC<ValuedInventoryTabProps> = ({ selected
     let printTotals = totals;
 
     try {
-      const fullRes = await reportsService.getValuedInventory({ branchId: selectedBranchId });
+      const fullRes = await reportsRepository.valuedInventory({ branchId: selectedBranchId });
       printData = fullRes.data;
       printTotals = printData.reduce(
         (acc, row) => {
@@ -224,7 +215,7 @@ export const ValuedInventoryTab: React.FC<ValuedInventoryTabProps> = ({ selected
     let exportTotals = totals;
 
     try {
-      const fullRes = await reportsService.getValuedInventory({ branchId: selectedBranchId });
+      const fullRes = await reportsRepository.valuedInventory({ branchId: selectedBranchId });
       exportData = fullRes.data;
       exportTotals = exportData.reduce(
         (acc, row) => {

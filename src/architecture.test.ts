@@ -44,7 +44,7 @@ describe('el dominio no lleva texto de pantalla', () => {
  * En los módulos ya migrados, la presentación habla con repositorios y casos de uso a través de la
  * raíz de composición (`infrastructure/dependencies`): nunca importa mappers, DTO ni clases HTTP.
  */
-const MIGRATED_MODULES = ['/modules/sales/', '/modules/cash-sessions/', '/modules/cash-registers/', '/modules/printing/', '/modules/auth/', '/modules/branches/', '/modules/customers/', '/modules/media/', '/modules/products/', '/modules/users/'];
+const MIGRATED_MODULES = ['/modules/sales/', '/modules/cash-sessions/', '/modules/cash-registers/', '/modules/printing/', '/modules/auth/', '/modules/branches/', '/modules/customers/', '/modules/media/', '/modules/products/', '/modules/users/', '/modules/reports/'];
 const INFRA_INTERNALS = /infrastructure\/(mappers|dtos|[\w-]+\.http-repository|[\w.-]+\.service)\b/;
 /** `printing` es un módulo de dispositivo: sus pantallas de vista previa y configuración usan su propia infraestructura (generador ESC/POS, impresora USB). */
 const DEVICE_MODULES = ['/modules/printing/'];
@@ -84,6 +84,7 @@ const ALLOWED_DEPENDENCIES: Record<string, string[]> = {
   printing: ['auth'],
   products: ['auth', 'branches', 'media', 'printing'],
   users: ['auth', 'branches'],
+  reports: ['auth'],
   'cash-sessions': ['auth', 'printing'],
   'cash-registers': ['auth', 'branches', 'users'],
   sales: ['auth', 'branches', 'cash-registers', 'cash-sessions', 'customers', 'printing', 'products'],
