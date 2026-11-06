@@ -7,7 +7,7 @@ import { getErrorMessage } from '@/shared/presentation/formatting/error-messages
 import { ExchangeError } from '../../application/use-cases/exchange-products';
 import { RefundSaleError } from '../../application/use-cases/refund-sale';
 import type { SaleDetailEntity } from '../../domain/entities/sale.entity';
-import { productsService } from '@/modules/products/services/products.service';
+import { useVariantSearch } from '@/modules/products';
 import type {
   ModalStep,
   SaleItemRow,
@@ -31,6 +31,7 @@ export function useExchangeReturn({
   const { fetchSale } = useSaleByInvoice();
   const { refundSale, isRefunding } = useRefundSale();
   const { exchangeProducts, isExchanging } = useExchangeProducts();
+  const { searchPos } = useVariantSearch();
 
   // Modal flow state
   const [step, setStep] = useState<ModalStep>('search');
@@ -112,14 +113,14 @@ export function useExchangeReturn({
       setScanInput('');
       setIsScanLoading(true);
       try {
-        const variants = await productsService.getPosVariantBySku(code, branchId);
-        if (!variants || variants.length === 0) {
+        const result = await searchPos(code, branchId);
+        const variant = result.kind === 'variants' ? result.variants[0] : undefined;
+        if (!variant) {
           toast.error(`Producto no encontrado: ${code}`);
           return;
         }
-        const variant = variants[0];
         const attrsString = (variant.attributeValues ?? [])
-          .map((av: any) => `${av.attribute?.name ?? ''}: ${av.value}`)
+          .map((av) => `${av.attribute?.name ?? ''}: ${av.value}`)
           .filter(Boolean)
           .join(' / ');
 

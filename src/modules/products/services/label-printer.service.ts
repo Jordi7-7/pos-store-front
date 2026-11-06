@@ -1,4 +1,4 @@
-import type { BarcodeLabelItem } from '../components/barcode-printer/types';
+import type { BarcodeLabelItem } from '../presentation/components/barcode-printer/types';
 import {
   buildTsplLabelCommands,
   buildZplLabelCommands,

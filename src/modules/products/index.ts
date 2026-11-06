@@ -1,8 +1,8 @@
-export * from './enums';
-export * from './types';
-export * from './entities';
-export * from './mappers';
-export * from './services/products.service';
-export * from './hooks';
-export * from './views';
-export * from './components';
+// API pública del módulo.
+export * from './domain/enums';
+export type { ProductEntity, ProductVariantEntity, ProductImageEntity } from './domain/entities/product.entity';
+export type { ProductVM, ProductVariantVM } from './presentation/view-models/product.vm';
+export type { PosSearchResult, PosVariantEntity, PosVariableProductEntity } from './domain/entities/catalog.entity';
+export * from './presentation/hooks';
+export * from './presentation/components/views';
+export * from './presentation/components';

@@ -12,6 +12,8 @@ export interface Formatters {
   money(value: number | null | undefined): string;
   /** `05 nov 2026` */
   date(value?: string | Date | null): string;
+  /** `05/11/2026` (numérica, para tablas) */
+  shortDate(value?: string | Date | null): string;
   /** `10:30` */
   time(value?: string | Date | null): string;
   /** `05/11/2026, 10:30` */
@@ -34,6 +36,11 @@ export function createFormatters({ currencyCode, locale, timezone }: FormatConte
     date: (value) => {
       const date = toDate(value);
       return date ? date.toLocaleDateString(locale, { timeZone: timezone, day: '2-digit', month: 'short', year: 'numeric' }) : '';
+    },
+
+    shortDate: (value) => {
+      const date = toDate(value);
+      return date ? date.toLocaleDateString(locale, { timeZone: timezone, day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
     },
 
     time: (value) => {

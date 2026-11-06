@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { Search, CornerDownLeft, X, Package, Maximize2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useVariantSearch } from '@/modules/products/hooks';
-import { ProductType } from '@/modules/products/enums';
+import { useVariantSearch } from '@/modules/products/presentation/hooks';
+import { ProductType } from '@/modules/products/domain/enums';
 import { PosVariableProductModal } from './PosVariableProductModal';
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
@@ -24,7 +24,7 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
   const [showSearchModal, setShowSearchModal] = useState<boolean>(false);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const isSearchingRef = useRef<boolean>(false);
-  const { findPosVariantBySku } = useVariantSearch();
+  const { searchPos } = useVariantSearch();
 
   // Variable product modal state
   const [variableProductData, setVariableProductData] = useState<any | null>(null);
@@ -43,20 +43,21 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
     try {
       isSearchingRef.current = true;
       setIsSearching(true);
-      const res = await findPosVariantBySku(code, branchId);
+      const result = await searchPos(code, branchId);
 
-      // Case 1: Returned a variable product wrapper object by baseSku
-      if (res && !Array.isArray(res) && (res as any).variants) {
-        setVariableProductData(res);
+      // Case 1: el código es el SKU base de un producto variable: se elige la variante
+      if (result.kind === 'variable-product') {
+        setVariableProductData(result.product);
         setShowVariableModal(true);
         setSearchTerm('');
         return;
       }
 
-      // Case 2: Returned array of direct variants (or multiple matches)
-      if (Array.isArray(res) && res.length > 0) {
-        if (res.length === 1) {
-          const singleRes = res[0];
+      // Case 2: variantes que coinciden (una sola o varias, p. ej. código de barras repetido)
+      const res = result.variants;
+      if (res.length > 0) {
+        const singleRes = res[0];
+        if (res.length === 1 && singleRes) {
           const fakeProduct = {
             id: singleRes.id,
             name: singleRes.productName,

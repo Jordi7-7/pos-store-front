@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRegisterPurchase, useSuppliers } from '../hooks';
-import { useVariantSearch } from '@/modules/products/hooks';
+import { useVariantSearch } from '@/modules/products/presentation/hooks';
 import type { Supplier } from '../types';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import { ClipboardList, Loader2, Plus, FileSpreadsheet, Building, AlertCircle } from 'lucide-react';

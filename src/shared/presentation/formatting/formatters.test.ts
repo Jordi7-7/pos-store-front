@@ -17,6 +17,11 @@ describe('formateadores de la tienda', () => {
     expect(ec.time(instant)).toMatch(/(13|01):30/); // UTC-5 (es-EC usa reloj de 12 h)
   });
 
+  it('fecha numérica en la zona de la tienda (el día cambia según la zona)', () => {
+    expect(mx.shortDate('2026-11-05T03:30:00Z')).toBe('04/11/2026'); // aún es 4 de noviembre en México
+    expect(ec.shortDate(null)).toBe('-');
+  });
+
   it('fechas inválidas o ausentes no rompen la pantalla', () => {
     expect(mx.date(null)).toBe('');
     expect(mx.time('no es fecha')).toBe('');
