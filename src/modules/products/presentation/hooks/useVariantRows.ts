@@ -50,12 +50,13 @@ export function useVariantRows(product: ProductVM | null, isOpen: boolean) {
   const setRowImages = (id: string, images: NonNullable<EditableVariantRow['images']>) =>
     setRows((current) => current.map((row) => (row.id === id ? { ...row, images, imageIds: images.map((image) => image.id), hasChanged: true } : row)));
 
-  const remove = async (id: string, sku: string) => {
+  /** Elimina una variante. Si se pasa `confirmRemoval`, se le pregunta a la persona antes de borrar. */
+  const remove = async (id: string, sku: string, confirmRemoval?: () => Promise<boolean>) => {
     if (rows.length <= 1) {
       toast.warning('No puedes eliminar la última variante restante del producto.');
       return;
     }
-    if (!window.confirm(`¿Estás seguro de que deseas eliminar la variante "${sku}"? Esta acción no se puede deshacer.`)) return;
+    if (confirmRemoval && !(await confirmRemoval())) return;
     try {
       await deleteVariant(id);
       setRows((current) => current.filter((row) => row.id !== id));

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, Image as ImageIcon, FileText, Loader2, Link2, Trash2, Search, X } from 'lucide-react';
 import { PaginationControls } from '@/shared/presentation/components/PaginationControls';
 import type { RegisteredImage } from '../../domain/entities/media.entity';
+import { useConfirm } from '@/shared/presentation/components/useConfirm';
 
 interface MediaViewProps {
   uploadedImages: RegisteredImage[];
@@ -152,10 +153,17 @@ export const MediaView: React.FC<MediaViewProps> = ({
     }
   };
 
+  const { confirm, confirmDialog } = useConfirm();
+
   const handleDelete = async (id: string) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar esta imagen permanentemente del catálogo y del almacenamiento?')) {
-      return;
-    }
+    const accepted = await confirm({
+      title: 'Eliminar imagen',
+      message: 'Se eliminará de la galería y del almacenamiento. Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      destructive: true,
+    });
+    if (!accepted) return;
+
     
     try {
       setDeletingId(id);
@@ -169,6 +177,7 @@ export const MediaView: React.FC<MediaViewProps> = ({
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {confirmDialog}
       <div className="flex flex-col md:flex-row gap-6">
         
         {/* Left Side: Images Gallery */}

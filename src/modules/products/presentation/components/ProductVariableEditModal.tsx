@@ -21,6 +21,7 @@ import { ImagePickerModals } from './variable-edit/ImagePickerModals';
 import { NewVariantDialog } from './variable-edit/NewVariantDialog';
 import { ParentInfoTab } from './variable-edit/ParentInfoTab';
 import { VariantsTable } from './variable-edit/VariantsTable';
+import { useConfirm } from '@/shared/presentation/components/useConfirm';
 
 interface ProductVariableEditModalProps {
   productId: string | null;
@@ -42,6 +43,7 @@ export const ProductVariableEditModal: React.FC<ProductVariableEditModalProps> =
   const { categories, createCategory, isCreating: isCreatingCategory } = useCategories();
   const { attributes } = useAttributes();
 
+  const { confirm, confirmDialog } = useConfirm();
   const [activeTab, setActiveTab] = useState<EditorTab>('info');
   const parent = useParentInfoForm(product, isOpen);
   const variants = useVariantRows(product, isOpen);
@@ -168,7 +170,7 @@ export const ProductVariableEditModal: React.FC<ProductVariableEditModalProps> =
                     savedBaseSku={product?.baseSku ?? ''}
                     isDeleting={variants.isDeleting}
                     onChangeField={variants.updateField}
-                    onDelete={variants.remove}
+                    onDelete={(id, sku) => variants.remove(id, sku, () => confirm({ title: 'Eliminar variante', message: `Se eliminará la variante "${sku}". Esta acción no se puede deshacer.`, confirmLabel: 'Eliminar', destructive: true }))}
                     onPickImage={picker.openForVariant}
                     onAddVariant={openAddVariant}
                   />
@@ -188,6 +190,7 @@ export const ProductVariableEditModal: React.FC<ProductVariableEditModalProps> =
           </div>
         )}
 
+        {confirmDialog}
         <ImagePickerModals picker={picker} />
 
         {suggestion && (
