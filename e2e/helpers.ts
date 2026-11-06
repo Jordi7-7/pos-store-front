@@ -8,7 +8,7 @@ export const creds = {
 
 export async function login(page: Page): Promise<void> {
   await page.goto(`/login/${creds.slug}`);
-  await page.getByRole('button', { name: /Usuario \/ Clave/ }).click();
+  await page.getByRole('tab', { name: /Usuario \/ Clave/ }).click();
   await page.getByPlaceholder('cajero1 o admin@tienda.com').fill(creds.user);
   await page.getByPlaceholder('••••••••').fill(creds.pass);
   await page.getByRole('button', { name: /Acceder al Sistema/ }).click();

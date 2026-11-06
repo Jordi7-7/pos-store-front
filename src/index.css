@@ -212,3 +212,25 @@ body {
     @apply font-sans;
   }
 }
+/* Animaciones de las pantallas de acceso */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
+  50% { transform: translateY(-8px) rotate(var(--tilt, 0deg)); }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@theme inline {
+  --animate-shake: shake 0.4s ease-in-out;
+  --animate-float-soft: float-soft 7s ease-in-out infinite;
+  --animate-fade-up: fade-up 0.5s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-shake, .animate-float-soft, .animate-fade-up { animation: none; }
+}

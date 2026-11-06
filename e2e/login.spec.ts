@@ -9,12 +9,12 @@ test('login con usuario y contraseña entra a la aplicación', async ({ page }) 
 
 test('contraseña incorrecta muestra un error y no entra (1 solo intento: el límite es 5)', async ({ page }) => {
   await page.goto(`/login/${creds.slug}`);
-  await page.getByRole('button', { name: /Usuario \/ Clave/ }).click();
+  await page.getByRole('tab', { name: /Usuario \/ Clave/ }).click();
   await page.getByPlaceholder('cajero1 o admin@tienda.com').fill(creds.user);
   await page.getByPlaceholder('••••••••').fill(`${creds.pass}-incorrecta`);
   await page.getByRole('button', { name: /Acceder al Sistema/ }).click();
   await expect(page).toHaveURL(/\/login/);
-  const banner = page.locator('div.text-rose-500').first();
+  const banner = page.getByRole('alert').first();
   await expect(banner).toBeVisible();
   test.info().annotations.push({ type: 'mensaje mostrado', description: await banner.innerText() });
 });
