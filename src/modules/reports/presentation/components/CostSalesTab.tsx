@@ -13,7 +13,11 @@ import { type DateRange } from 'react-day-picker';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { getTenantLocale, useTimezone } from '../../../auth/presentation/hooks/useSession';
+import { useFormatters } from '@/modules/auth/presentation/hooks/useFormatters';
+import { printHtml } from '@/shared/presentation/export/print-html';
+import { downloadCsv } from '@/shared/presentation/export/download-csv';
+import { salesCostTotals } from '../../domain/rules/report-totals';
+import { salesCostCsv, salesCostPrintHtml } from '../view-models/sales-cost.export';
 import { useSalesCostReport } from '../hooks/useReports';
 import { Calendar } from '@/components/ui/calendar';
 import { Field } from '@/components/ui/field';
@@ -38,7 +42,7 @@ interface CostSalesTabProps {
 }
 
 export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) => {
-  const timezone = useTimezone();
+  const fmt = useFormatters();
   const currentTenant = useTenant(); // el nombre del negocio ya está en la sesión: no hace falta pedirlo
 
   // Use modular hook
@@ -83,32 +87,13 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
     }
   }, [dateRange, selectedBranchId]);
 
-  // Aggregate totals
-  const totals = useMemo(() => {
-    return salesCostData.reduce(
-      (acc, row) => {
-        acc.pieces += Number(row.pieces || 0);
-        acc.sales += Number(row.salePrice || 0);
-        acc.cost += Number(row.costPrice || 0);
-        acc.difference += Number(row.difference || 0);
-        return acc;
-      },
-      { pieces: 0, sales: 0, cost: 0, difference: 0 }
-    );
-  }, [salesCostData]);
+  const totals = useMemo(() => salesCostTotals(salesCostData), [salesCostData]);
+  const formatReportDate = (iso: string) => fmt.shortDate(iso);
 
-  // Format date helper DD/MM in selected timezone
-  const formatReportDate = (isoStr: string) => {
-    try {
-      const date = new Date(isoStr);
-      return date.toLocaleDateString(getTenantLocale(), {
-        timeZone: timezone,
-        day: '2-digit',
-        month: '2-digit'
-      });
-    } catch {
-      return '';
-    }
+  const periodText = () => {
+    const from = dateRange?.from ? format(dateRange.from, 'dd/MM/yyyy') : '';
+    const to = dateRange?.to ? format(dateRange.to, 'dd/MM/yyyy') : from;
+    return `${from} al ${to}`;
   };
 
   const handlePrintCostReport = () => {
@@ -116,166 +101,7 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
       toast.warning('No hay datos para imprimir');
       return;
     }
-
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow?.document;
-    if (!doc) return;
-
-    const startStr = dateRange?.from ? format(dateRange.from, 'dd/MM/yyyy') : '';
-    const endStr = dateRange?.to ? format(dateRange.to, 'dd/MM/yyyy') : startStr;
-    const periodStr = `${startStr} al ${endStr}`;
-    const todayStr = new Date().toLocaleDateString(undefined, { timeZone: timezone });
-
-    const rowsHtml = salesCostData.map((row) => {
-      let itemsHtml = '';
-      if (row.items && row.items.length > 0) {
-        const itemRows = row.items.map((item) => `
-          <tr style="background-color: #fafafa; font-size: 8.5px; color: #555;">
-            <td style="padding-left: 14px;">↳ ${item.sku ? `[${item.sku}] ` : ''}${item.productName}</td>
-            <td></td>
-            <td style="text-align: right;">Costo U: ${formatMoney(item.unitCost)} | Venta U: ${formatMoney(item.unitPrice)}</td>
-            <td style="text-align: right;">${item.quantity}</td>
-            <td style="text-align: right;">${formatMoney(item.totalPrice)}</td>
-            <td style="text-align: right;">${formatMoney(item.totalCost)}</td>
-            <td style="text-align: right;">${formatMoney(item.profit)}</td>
-          </tr>
-        `).join('');
-
-        itemsHtml = `
-          <tr style="background-color: #f0f0f0; font-size: 8px; font-weight: bold; color: #666;">
-            <td colspan="7" style="padding-left: 14px; text-transform: uppercase;">Detalle de productos:</td>
-          </tr>
-          ${itemRows}
-        `;
-      }
-
-      return `
-        <tr style="border-top: 1px solid #ccc; font-weight: 500;">
-          <td><strong>${row.invoiceNumber}</strong></td>
-          <td>${formatReportDate(row.createdAt)}</td>
-          <td style="text-transform: uppercase;">${row.clientName}</td>
-          <td style="text-align: right;">${Math.floor(row.pieces)}</td>
-          <td style="text-align: right;">${formatMoney(Number(row.salePrice))}</td>
-          <td style="text-align: right;">${formatMoney(Number(row.costPrice))}</td>
-          <td style="text-align: right;">${formatMoney(Number(row.difference))}</td>
-        </tr>
-        ${itemsHtml}
-      `;
-    }).join('');
-
-    doc.open();
-    doc.write(`
-      <html>
-        <head>
-          <title>Resumen de Costo de Ventas por Documentos</title>
-          <style>
-            @page {
-              margin: 10mm;
-              size: portrait;
-            }
-            body {
-              font-family: Arial, sans-serif;
-              font-size: 10px;
-              color: #000;
-              margin: 0;
-              padding: 0;
-            }
-            .header {
-              margin-bottom: 15px;
-            }
-            .header-title {
-              font-size: 13px;
-              font-weight: bold;
-              text-decoration: underline;
-              margin-bottom: 2px;
-            }
-            .header-info {
-              font-size: 10px;
-              margin-bottom: 1px;
-            }
-            .print-date {
-              float: right;
-              font-size: 9px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 5px;
-            }
-            th {
-              border-top: 1px solid #000;
-              border-bottom: 1px solid #000;
-              padding: 5px 2px;
-              font-weight: bold;
-              text-align: left;
-              font-size: 10px;
-            }
-            td {
-              padding: 4px 2px;
-              font-size: 9.5px;
-            }
-            .total-row td {
-              border-top: 1px solid #000;
-              border-bottom: 1.5px double #000;
-              font-weight: bold;
-            }
-            .page-number {
-              float: right;
-              font-size: 8px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="print-date">Impreso el: ${todayStr}</div>
-          <div class="page-number">Página: 1</div>
-          <div class="header">
-            <div class="header-title" style="text-transform: uppercase;">${currentTenant?.name || 'NEGOCIO'}</div>
-            <div class="header-info" style="font-weight: bold;">Resumen de costo de ventas por documentos</div>
-            <div class="header-info">Documentos: Factura (Solo completadas)</div>
-            <div class="header-info" style="font-weight: bold;">Período: ${periodStr}</div>
-          </div>
-
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 15%;">Factura</th>
-                <th style="width: 10%;">Fecha</th>
-                <th style="width: 30%;">Cliente</th>
-                <th style="width: 9%; text-align: right;">Pzas</th>
-                <th style="width: 12%; text-align: right;">Precio de venta</th>
-                <th style="width: 12%; text-align: right;">Precio de costo</th>
-                <th style="width: 12%; text-align: right;">Diferencia</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml}
-              <tr class="total-row">
-                <td colspan="3">Gran total...</td>
-                <td style="text-align: right;">${Math.floor(totals.pieces)}</td>
-                <td style="text-align: right;">${formatMoney(Number(totals.sales))}</td>
-                <td style="text-align: right;">${formatMoney(Number(totals.cost))}</td>
-                <td style="text-align: right;">${formatMoney(Number(totals.difference))}</td>
-              </tr>
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `);
-    doc.close();
-
-    setTimeout(() => {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 1000);
-    }, 200);
+    printHtml(salesCostPrintHtml(salesCostData, totals, fmt, { tenantName: currentTenant?.name || '', period: periodText(), printedOn: fmt.shortDate(new Date()) }));
   };
 
   const handleExportExcel = () => {
@@ -283,75 +109,7 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
       toast.warning('No hay datos para exportar');
       return;
     }
-
-    const headers = ['Tipo', 'Factura', 'Fecha', 'Cliente / Producto', 'SKU', 'Pzas', 'Costo Unit.', 'Precio Unit.', 'Total Venta', 'Total Costo', 'Diferencia / Margen'];
-    const rows: (string | number)[][] = [];
-
-    salesCostData.forEach((row) => {
-      // Venta principal
-      rows.push([
-        'VENTA',
-        row.invoiceNumber,
-        formatReportDate(row.createdAt),
-        row.clientName,
-        '',
-        Math.floor(row.pieces),
-        '',
-        '',
-        Number(row.salePrice).toFixed(2),
-        Number(row.costPrice).toFixed(2),
-        Number(row.difference).toFixed(2)
-      ]);
-
-      // Desglose de productos
-      if (row.items && row.items.length > 0) {
-        row.items.forEach((item) => {
-          rows.push([
-            'PRODUCTO',
-            row.invoiceNumber,
-            '',
-            item.productName,
-            item.sku,
-            item.quantity,
-            item.unitCost.toFixed(2),
-            item.unitPrice.toFixed(2),
-            item.totalPrice.toFixed(2),
-            item.totalCost.toFixed(2),
-            item.profit.toFixed(2)
-          ]);
-        });
-      }
-    });
-
-    rows.push([
-      'TOTAL',
-      'Gran total...',
-      '',
-      '',
-      '',
-      Math.floor(totals.pieces),
-      '',
-      '',
-      Number(totals.sales).toFixed(2),
-      Number(totals.cost).toFixed(2),
-      Number(totals.difference).toFixed(2)
-    ]);
-
-    const csvContent = [
-      headers.join(';'),
-      ...rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(';'))
-    ].join('\n');
-
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `cogs_report_${format(dateRange?.from || new Date(), 'yyyyMMdd')}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCsv(`cogs_report_${format(dateRange?.from || new Date(), 'yyyyMMdd')}.csv`, salesCostCsv(salesCostData, totals, fmt));
   };
 
   return (

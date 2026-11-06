@@ -7,7 +7,6 @@ import {
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useTimezone } from '../../../auth/presentation/hooks/useSession';
 import { useValuedInventoryReport } from '../hooks/useReports';
 import { PaginationControls } from '@/shared/presentation/components/PaginationControls';
 import { reportsRepository } from '../../infrastructure/dependencies';
@@ -21,13 +20,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatMoney, useTenant } from '@/modules/auth/presentation/hooks/useSession';
+import { useFormatters } from '@/modules/auth/presentation/hooks/useFormatters';
+import { printHtml } from '@/shared/presentation/export/print-html';
+import { downloadCsv } from '@/shared/presentation/export/download-csv';
+import { inventoryTotals } from '../../domain/rules/report-totals';
+import { valuedInventoryCsv, valuedInventoryPrintHtml } from '../view-models/valued-inventory.export';
 
 interface ValuedInventoryTabProps {
   selectedBranchId?: string;
 }
 
 export const ValuedInventoryTab: React.FC<ValuedInventoryTabProps> = ({ selectedBranchId }) => {
-  const timezone = useTimezone();
+  const fmt = useFormatters();
   const currentTenant = useTenant(); // el nombre del negocio ya está en la sesión: no hace falta pedirlo
 
   const [page, setPage] = useState(1);
@@ -54,155 +58,24 @@ export const ValuedInventoryTab: React.FC<ValuedInventoryTabProps> = ({ selected
     };
   }, [meta]);
 
+  /** El informe completo (no solo la página que se ve) para imprimir o exportar; si falla, se usa lo que hay en pantalla. */
+  const loadFullInventory = async () => {
+    try {
+      const full = await reportsRepository.valuedInventory({ branchId: selectedBranchId });
+      return { rows: full.data, totals: inventoryTotals(full.data) };
+    } catch (e) {
+      console.error('Error al pedir el inventario valuado completo:', e);
+      return { rows: inventoryData, totals };
+    }
+  };
+
   const handlePrintReport = async () => {
     if (inventoryData.length === 0) {
       toast.warning('No hay datos para imprimir');
       return;
     }
-
-    let printData = inventoryData;
-    let printTotals = totals;
-
-    try {
-      const fullRes = await reportsRepository.valuedInventory({ branchId: selectedBranchId });
-      printData = fullRes.data;
-      printTotals = printData.reduce(
-        (acc, row) => {
-          acc.quantity += Number(row.quantity || 0);
-          acc.totalValue += Number(row.totalValue || 0);
-          return acc;
-        },
-        { quantity: 0, totalValue: 0 }
-      );
-    } catch (e) {
-      console.error('Error fetching full valued inventory data for printing:', e);
-    }
-
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow?.document;
-    if (!doc) return;
-
-    const todayStr = new Date().toLocaleDateString(undefined, { timeZone: timezone });
-
-    const rowsHtml = printData.map((row) => `
-      <tr>
-        <td>${row.sku}</td>
-        <td style="text-transform: uppercase;">${row.name}</td>
-        <td style="text-align: right;">${Math.floor(row.quantity)}</td>
-        <td style="text-align: right;">${formatMoney(Number(row.purchasePrice))}</td>
-        <td style="text-align: right;">${formatMoney(Number(row.totalValue))}</td>
-      </tr>
-    `).join('');
-
-    doc.open();
-    doc.write(`
-      <html>
-        <head>
-          <title>Reporte de Existencias Valuadas</title>
-          <style>
-            @page {
-              margin: 10mm;
-              size: portrait;
-            }
-            body {
-              font-family: Arial, sans-serif;
-              font-size: 10px;
-              color: #000;
-              margin: 0;
-              padding: 0;
-            }
-            .header {
-              margin-bottom: 15px;
-            }
-            .header-title {
-              font-size: 13px;
-              font-weight: bold;
-              text-decoration: underline;
-              margin-bottom: 2px;
-            }
-            .header-info {
-              font-size: 10px;
-              margin-bottom: 1px;
-            }
-            .print-date {
-              float: right;
-              font-size: 9px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 10px;
-            }
-            th {
-              border-top: 1px solid #000;
-              border-bottom: 1px solid #000;
-              padding: 5px 2px;
-              font-weight: bold;
-              text-align: left;
-              font-size: 10px;
-            }
-            td {
-              padding: 4px 2px;
-              font-size: 9.5px;
-            }
-            .total-row td {
-              border-top: 1px solid #000;
-              border-bottom: 1.5px double #000;
-              font-weight: bold;
-            }
-            .page-number {
-              float: right;
-              font-size: 8px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="print-date">Impreso el: ${todayStr}</div>
-          <div class="page-number">Página: 1</div>
-          <div class="header">
-            <div class="header-title" style="text-transform: uppercase;">${currentTenant?.name || 'NEGOCIO'}</div>
-            <div class="header-info" style="font-weight: bold;">Reporte de Existencias Valuadas</div>
-            <div class="header-info">Valores consolidados de inventario actual</div>
-          </div>
-
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 20%;">SKU</th>
-                <th style="width: 45%;">Nombre</th>
-                <th style="width: 10%; text-align: right;">Cantidad</th>
-                <th style="width: 12%; text-align: right;">Precio de compra</th>
-                <th style="width: 13%; text-align: right;">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml}
-              <tr class="total-row">
-                <td colspan="2">Gran total...</td>
-                <td style="text-align: right;">${Math.floor(printTotals.quantity)}</td>
-                <td style="text-align: right;">-</td>
-                <td style="text-align: right;">${formatMoney(Number(printTotals.totalValue))}</td>
-              </tr>
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `);
-    doc.close();
-
-    setTimeout(() => {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 1000);
-    }, 200);
+    const full = await loadFullInventory();
+    printHtml(valuedInventoryPrintHtml(full.rows, full.totals, fmt, { tenantName: currentTenant?.name || '', printedOn: fmt.shortDate(new Date()) }));
   };
 
   const handleExportExcel = async () => {
@@ -210,57 +83,8 @@ export const ValuedInventoryTab: React.FC<ValuedInventoryTabProps> = ({ selected
       toast.warning('No hay datos para exportar');
       return;
     }
-
-    let exportData = inventoryData;
-    let exportTotals = totals;
-
-    try {
-      const fullRes = await reportsRepository.valuedInventory({ branchId: selectedBranchId });
-      exportData = fullRes.data;
-      exportTotals = exportData.reduce(
-        (acc, row) => {
-          acc.quantity += Number(row.quantity || 0);
-          acc.totalValue += Number(row.totalValue || 0);
-          return acc;
-        },
-        { quantity: 0, totalValue: 0 }
-      );
-    } catch (e) {
-      console.error('Error fetching full valued inventory data for Excel export:', e);
-    }
-
-    const headers = ['SKU', 'Nombre', 'Cantidad', 'Precio de compra', 'Total'];
-    const rows = exportData.map((row) => [
-      row.sku,
-      row.name,
-      Math.floor(row.quantity),
-      Number(row.purchasePrice).toFixed(2),
-      Number(row.totalValue).toFixed(2)
-    ]);
-
-    rows.push([
-      'Gran total...',
-      '',
-      Math.floor(exportTotals.quantity),
-      '',
-      Number(exportTotals.totalValue).toFixed(2)
-    ]);
-
-    const csvContent = [
-      headers.join(';'),
-      ...rows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(';'))
-    ].join('\n');
-
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `reporte_existencias_valuadas_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const full = await loadFullInventory();
+    downloadCsv(`reporte_existencias_valuadas_${new Date().toISOString().split('T')[0]}.csv`, valuedInventoryCsv(full.rows, full.totals));
   };
 
   return (

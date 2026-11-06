@@ -12,7 +12,10 @@ import { type DateRange } from 'react-day-picker';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { getTenantLocale, useTimezone } from '../../../auth/presentation/hooks/useSession';
+import { useFormatters } from '@/modules/auth/presentation/hooks/useFormatters';
+import { printHtml } from '@/shared/presentation/export/print-html';
+import { soldPieces } from '../../domain/rules/report-totals';
+import { productSalesPrintHtml } from '../view-models/product-sales.export';
 import { useProductSalesReport } from '../hooks/useReports';
 import { Calendar } from '@/components/ui/calendar';
 import { Field } from '@/components/ui/field';
@@ -37,7 +40,7 @@ interface ProductSalesTabProps {
 }
 
 export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranchId }) => {
-  const timezone = useTimezone();
+  const fmt = useFormatters();
   const currentTenant = useTenant(); // el nombre del negocio ya está en la sesión: no hace falta pedirlo
 
   const { loading, data: productSalesData, fetchProductSales } = useProductSalesReport();
@@ -65,169 +68,21 @@ export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranch
     }
   }, [dateRange, selectedBranchId]);
 
-  // Totales agregados (únicamente piezas vendidas reales)
-  const totals = useMemo(() => {
-    return productSalesData.reduce(
-      (acc, row) => {
-        acc.soldQuantity += Number(row.soldQuantity || 0);
-        return acc;
-      },
-      { soldQuantity: 0 }
-    );
-  }, [productSalesData]);
+  const totals = useMemo(() => ({ soldQuantity: soldPieces(productSalesData) }), [productSalesData]);
+  const formatReportDateTime = (iso: string) => fmt.dateTime(iso);
 
-  const formatReportDateTime = (isoStr: string) => {
-    try {
-      const d = new Date(isoStr);
-      return d.toLocaleString(getTenantLocale(), {
-        timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      });
-    } catch {
-      return '';
-    }
+  const periodText = () => {
+    const from = dateRange?.from ? format(dateRange.from, 'dd/MM/yyyy') : '';
+    const to = dateRange?.to ? format(dateRange.to, 'dd/MM/yyyy') : from;
+    return `${from} al ${to}`;
   };
 
-  // Exportar a PDF (Impresión nativa estilizada)
   const handlePrintReport = () => {
     if (productSalesData.length === 0) {
       toast.warning('No hay datos para imprimir');
       return;
     }
-
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow?.document;
-    if (!doc) return;
-
-    const startStr = dateRange?.from ? format(dateRange.from, 'dd/MM/yyyy') : '';
-    const endStr = dateRange?.to ? format(dateRange.to, 'dd/MM/yyyy') : startStr;
-    const periodStr = `${startStr} al ${endStr}`;
-    const todayStr = new Date().toLocaleDateString(undefined, { timeZone: timezone });
-
-    const rowsHtml = productSalesData.map((row) => `
-      <tr style="border-top: 1px solid #e5e7eb;">
-        <td style="font-family: monospace; font-weight: bold;">${row.sku}</td>
-        <td style="text-transform: uppercase;">${row.name}</td>
-        <td style="font-size: 8.5px; color: #555;">${formatReportDateTime(row.createdAt)}</td>
-        <td style="text-align: right; font-weight: bold;">${row.soldQuantity}</td>
-        <td style="text-align: right;">${row.currentStock}</td>
-        <td style="text-align: right;">${formatMoney(Number(row.salePrice))}</td>
-      </tr>
-    `).join('');
-
-    doc.open();
-    doc.write(`
-      <html>
-        <head>
-          <title>Reporte de Ventas por Producto</title>
-          <style>
-            @page {
-              margin: 10mm;
-              size: portrait;
-            }
-            body {
-              font-family: Arial, sans-serif;
-              font-size: 10px;
-              color: #111;
-              margin: 0;
-              padding: 0;
-            }
-            .header {
-              margin-bottom: 15px;
-            }
-            .header-title {
-              font-size: 13px;
-              font-weight: bold;
-              text-decoration: underline;
-              margin-bottom: 2px;
-            }
-            .header-info {
-              font-size: 10px;
-              margin-bottom: 1px;
-            }
-            .print-date {
-              float: right;
-              font-size: 9px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 5px;
-            }
-            th {
-              border-top: 1px solid #000;
-              border-bottom: 1px solid #000;
-              padding: 5px 4px;
-              font-weight: bold;
-              text-align: left;
-              font-size: 10px;
-            }
-            td {
-              padding: 4px;
-              font-size: 9.5px;
-            }
-            .total-row td {
-              border-top: 1px solid #000;
-              border-bottom: 1.5px double #000;
-              font-weight: bold;
-            }
-            .page-number {
-              float: right;
-              font-size: 8px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="print-date">Impreso el: ${todayStr}</div>
-          <div class="page-number">Página: 1</div>
-          <div class="header">
-            <div class="header-title" style="text-transform: uppercase;">${currentTenant?.name || 'NEGOCIO'}</div>
-            <div class="header-info" style="font-weight: bold;">Reporte de Ventas por Producto</div>
-            <div class="header-info" style="font-weight: bold;">Período: ${periodStr}</div>
-          </div>
-
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 15%;">SKU</th>
-                <th style="width: 37%;">Nombre del Producto</th>
-                <th style="width: 18%;">Fecha y Hora</th>
-                <th style="width: 10%; text-align: right;">Vendidos</th>
-                <th style="width: 10%; text-align: right;">Stock Actual</th>
-                <th style="width: 10%; text-align: right;">Precio Vta.</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml}
-              <tr class="total-row">
-                <td colspan="3" style="text-align: right; text-transform: uppercase;">Total Piezas Vendidas:</td>
-                <td style="text-align: right;">${totals.soldQuantity}</td>
-                <td style="text-align: right;">-</td>
-                <td style="text-align: right;">-</td>
-              </tr>
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `);
-    doc.close();
-
-    setTimeout(() => {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-      document.body.removeChild(iframe);
-    }, 500);
+    printHtml(productSalesPrintHtml(productSalesData, totals.soldQuantity, fmt, { tenantName: currentTenant?.name || '', period: periodText(), printedOn: fmt.shortDate(new Date()) }), 500);
   };
 
   // Exportar a Excel

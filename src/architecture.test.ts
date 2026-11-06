@@ -168,7 +168,7 @@ describe('jerarquía de carpetas de los módulos migrados', () => {
 
 /** El núcleo compartido sigue la misma lógica que un módulo, con sus propias carpetas. */
 const SHARED_LAYOUT =
-  /^\/src\/shared\/(domain\/(value-objects|enums|rules)\/[^/]+|infrastructure\/http\/[^/]+|presentation\/(components|stores|formatting)\/[^/]+)$/;
+  /^\/src\/shared\/(domain\/(value-objects|enums|rules)\/[^/]+|infrastructure\/http\/[^/]+|presentation\/(components|stores|formatting|export)\/[^/]+)$/;
 
 describe('jerarquía de carpetas del núcleo compartido', () => {
   const shared = Object.keys(sources).filter((path) => path.startsWith('/src/shared/'));
