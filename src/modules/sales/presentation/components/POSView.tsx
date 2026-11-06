@@ -156,7 +156,6 @@ export const POSView: React.FC<POSViewProps> = ({ activeSession: externalActiveS
         onClose={sale.closeTicketModal}
         saleData={sale.lastCompletedSale}
         tenantRuc={tenant?.ruc || ''}
-        currencyCode={tenant?.currencyCode || ''}
       />
 
       {shift.isAperturaModalOpen && (

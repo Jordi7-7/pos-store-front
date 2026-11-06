@@ -1,5 +1,5 @@
-import type { CashSessionDetails } from '../../domain/session-types';
-import { CashSessionStatus } from '../../domain/enums';
+import type { CashSessionDetails } from './session-types';
+import { CashSessionStatus } from './enums';
 import { PaymentMethod } from '@/modules/sales/domain/enums';
 
 export interface ClosingTicketData {

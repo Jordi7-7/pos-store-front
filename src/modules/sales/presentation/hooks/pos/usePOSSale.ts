@@ -11,8 +11,9 @@ import type { CartItem } from '../../../domain/cart-item';
 import { PaymentMethod } from '../../../domain/enums';
 import type { TicketSaleData } from '../../../domain/ticket';
 import { formatSaleDateTime } from '../../../infrastructure/mappers/sale.mapper';
-import { thermalPrinterService } from '../../../infrastructure/printing/thermal-printer.service';
+import { ticketPrinter } from '../../../infrastructure/dependencies';
 import { useProcessSale } from '../useSalesMutations';
+import { useTicketFormat } from '../useTicketFormat';
 import type { AddedPayment } from './usePOSPayments';
 
 interface Customer {
@@ -45,6 +46,7 @@ export function usePOSSale(options: Options) {
   const { processSale, isProcessing } = useProcessSale();
   const currentUser = useAuthStore((state) => state.user);
   const tenant = useTenant();
+  const ticketFormat = useTicketFormat();
 
   const [lastCompletedSale, setLastCompletedSale] = useState<TicketSaleData | null>(null);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
@@ -109,9 +111,9 @@ export function usePOSSale(options: Options) {
       options.onSaleCompleted();
 
       // Ticket: directo por USB si hay impresora configurada; si no, vista previa
-      if (await thermalPrinterService.isConfigured()) {
+      if (await ticketPrinter.isConfigured()) {
         try {
-          await thermalPrinterService.printSaleTicket(ticket, { tenantRuc: tenant?.ruc, currencyCode: tenant?.currencyCode });
+          await ticketPrinter.printSaleTicket(ticket, { tenantRuc: tenant?.ruc, format: ticketFormat });
           toast.success('¡Venta procesada y ticket impreso con éxito!');
         } catch (printErr) {
           console.error('Error al imprimir directamente:', printErr);

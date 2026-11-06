@@ -1,3 +1,4 @@
+import { useTicketFormat } from '../../hooks/useTicketFormat';
 import React, { useMemo, useState, useEffect } from 'react';
 import { Printer, Download, RefreshCw, Zap } from 'lucide-react';
 import {
@@ -70,6 +71,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
   tenantName,
 }) => {
   const publicTenant = useTenant();
+  const format = useTicketFormat();
   const [isPrinting, setIsPrinting] = useState(false);
   const [viewMode, setViewMode] = useState<'paper' | 'image'>('paper');
   const [isUsbConfigured, setIsUsbConfigured] = useState<boolean | null>(null);
@@ -107,9 +109,9 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
       cutPaper: config.cutPaper,
       tenantName: tenantName || publicTenant?.name,
       tenantRuc: tenantRuc || publicTenant?.ruc,
-      currencyCode: publicTenant?.currencyCode,
+      format,
     });
-  }, [sessionData, config, tenantName, tenantRuc, publicTenant]);
+  }, [sessionData, config, tenantName, tenantRuc, publicTenant, format]);
 
   // 2. Decodificación de líneas exactas
   const parseResult = useMemo(() => {
@@ -139,7 +141,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
       const isConfigured = await thermalPrinterService.isConfigured();
 
       if (isConfigured) {
-        await thermalPrinterService.printClosingTicket(sessionData);
+        await thermalPrinterService.printClosingTicket(sessionData, format);
         toast.success('¡Corte de caja impreso directamente por USB!');
         onClose();
         return;

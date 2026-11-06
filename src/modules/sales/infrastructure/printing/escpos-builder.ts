@@ -1,5 +1,7 @@
 import { numeroALetras } from 'numero-a-letras-es';
-import type { TicketSaleData } from '../../domain/ticket';
+import type { TicketFormat, TicketSaleData } from '../../domain/ticket';
+import type { ClosingTicketData } from '@/modules/cash-sessions/domain/closing-ticket';
+import { ticketMoney } from './ticket-money';
 import { CashSessionStatus } from '@/modules/cash-sessions/domain/enums';
 import { PaymentMethod } from '../../domain/enums';
 
@@ -11,8 +13,10 @@ export interface EscPosOptions {
   cutPaper?: boolean;
   tenantName?: string;
   tenantRuc?: string;
-  currencyCode?: string;
 }
+
+/** Los tickets con importes exigen el formato de la tienda: no hay moneda por defecto. */
+export type TicketOptions = EscPosOptions & { format: TicketFormat };
 
 /**
  * Generador nativo de comandos ESC/POS en formato Uint8Array sin dependencias externas.
@@ -169,8 +173,9 @@ export class EscPosBuilder {
  */
 export function buildSaleReceiptBytes(
   saleData: TicketSaleData,
-  options: EscPosOptions = {}
+  options: TicketOptions
 ): Uint8Array {
+  const money = ticketMoney(options.format);
   const width = options.paperWidth || '58mm';
   const builder = new EscPosBuilder(width);
 
@@ -225,14 +230,14 @@ export function buildSaleReceiptBytes(
     const titleLine = `${item.variantSku ? item.variantSku + ' ' : ''}${item.productName}`.toUpperCase();
     builder.line(titleLine);
 
-    builder.row(` ${qty} x $${unitPrice.toFixed(2)}`, `$${totalLinePrice.toFixed(2)}`);
+    builder.row(` ${qty} x ${money(unitPrice)}`, `${money(totalLinePrice)}`);
 
     if (totalLineDiscount > 0) {
       const pct = unitPrice > 0 ? Math.round((unitDiscount / unitPrice) * 100) : 0;
       const discountLabel = pct > 0
         ? (qty > 1 ? `   Desc. (-${pct}% x${qty}):` : `   Desc. (-${pct}%):`)
         : (qty > 1 ? `   Desc. Ítem (x${qty}):` : `   Desc. Ítem:`);
-      builder.row(discountLabel, `-$${totalLineDiscount.toFixed(2)}`);
+      builder.row(discountLabel, `-${money(totalLineDiscount)}`);
     }
   });
 
@@ -259,55 +264,55 @@ export function buildSaleReceiptBytes(
   // Caso 1: Tiene AMBOS descuentos (por producto Y global de venta)
   if (itemsDiscount > 0 && globalDiscount > 0) {
     builder
-      .row('SUBTOTAL BRUTO:', `$${grossSubtotal.toFixed(2)}`)
-      .row('DESC. PRODUCTOS:', `-$${itemsDiscount.toFixed(2)}`)
+      .row('SUBTOTAL BRUTO:', `${money(grossSubtotal)}`)
+      .row('DESC. PRODUCTOS:', `-${money(itemsDiscount)}`)
       .separator()
-      .row('SUBTOTAL NETO:', `$${netSubtotalBase.toFixed(2)}`)
-      .row(globalDescLabel, `-$${globalDiscount.toFixed(2)}`)
+      .row('SUBTOTAL NETO:', `${money(netSubtotalBase)}`)
+      .row(globalDescLabel, `-${money(globalDiscount)}`)
       .separator();
   }
   // Caso 2: Solo descuento de productos
   else if (itemsDiscount > 0) {
     builder
-      .row('SUBTOTAL:', `$${grossSubtotal.toFixed(2)}`)
-      .row('DESC. PRODUCTOS:', `-$${itemsDiscount.toFixed(2)}`)
+      .row('SUBTOTAL:', `${money(grossSubtotal)}`)
+      .row('DESC. PRODUCTOS:', `-${money(itemsDiscount)}`)
       .separator();
   }
   // Caso 3: Solo descuento global de venta
   else if (globalDiscount > 0) {
     builder
-      .row('SUBTOTAL:', `$${grossSubtotal.toFixed(2)}`)
-      .row(globalDescLabel, `-$${globalDiscount.toFixed(2)}`)
+      .row('SUBTOTAL:', `${money(grossSubtotal)}`)
+      .row(globalDescLabel, `-${money(globalDiscount)}`)
       .separator();
   }
   // Caso 4: Descuento genérico (si solo viene discountAmount)
   else if (totalDiscount > 0) {
     builder
-      .row('SUBTOTAL:', `$${grossSubtotal.toFixed(2)}`)
-      .row('DESCUENTO:', `-$${totalDiscount.toFixed(2)}`)
+      .row('SUBTOTAL:', `${money(grossSubtotal)}`)
+      .row('DESCUENTO:', `-${money(totalDiscount)}`)
       .separator();
   }
   // Caso 5: Sin descuentos
   else {
     builder
-      .row('SUBTOTAL:', `$${grossSubtotal.toFixed(2)}`)
+      .row('SUBTOTAL:', `${money(grossSubtotal)}`)
       .separator();
   }
 
   // TOTAL A PAGAR (Destacado)
   builder.bold(true);
-  builder.row('TOTAL A PAGAR:', `$${totalToPay.toFixed(2)}`);
+  builder.row('TOTAL A PAGAR:', `${money(totalToPay)}`);
   builder.bold(false);
 
   // Leyenda de Ahorro
   if (totalDiscount > 0) {
     builder
       .align('center')
-      .line(`¡Su ahorro total fue de $${totalDiscount.toFixed(2)}!`);
+      .line(`¡Su ahorro total fue de ${money(totalDiscount)}!`);
   }
 
   // Texto en letras
-  const currency = (options.currencyCode || 'MXN').toUpperCase();
+  const currency = options.format.currencyCode.toUpperCase();
   try {
     const letras = numeroALetras(totalToPay, { moneda: currency, mayusculas: true });
     builder.align('center').line(`Son: ${letras}`);
@@ -369,9 +374,10 @@ function formatShiftDuration(openDateStr?: string, closeDateStr?: string): strin
  * Separa claramente el Arqueo de Efectivo Fisico del Resumen General de Ventas, con doble firma.
  */
 export function buildClosingReceiptBytes(
-  sessionData: any,
-  options: EscPosOptions = {}
+  sessionData: ClosingTicketData,
+  options: TicketOptions
 ): Uint8Array {
+  const money = ticketMoney(options.format);
   const width = options.paperWidth || '58mm';
   const builder = new EscPosBuilder(width);
 
@@ -433,27 +439,27 @@ export function buildClosingReceiptBytes(
     .bold(true)
     .line('ARQUEO DE EFECTIVO (CAJON)')
     .bold(false)
-    .row('(+) Fondo Inicial:', `$${openingCash.toFixed(2)}`)
-    .row('(+) Cobros Efectivo:', `$${cashSales.toFixed(2)}`)
-    .row('(-) Gastos en Caja:', `-$${expenses.toFixed(2)}`);
+    .row('(+) Fondo Inicial:', `${money(openingCash)}`)
+    .row('(+) Cobros Efectivo:', `${money(cashSales)}`)
+    .row('(-) Gastos en Caja:', `-${money(expenses)}`);
 
   if (refunds > 0) {
-    builder.row('(-) Devoluciones Efec:', `-$${refunds.toFixed(2)}`);
+    builder.row('(-) Devoluciones Efec:', `-${money(refunds)}`);
   }
 
   builder
     .separator()
     .bold(true)
-    .row('(=) EFECTIVO ESPERADO:', `$${expectedCash.toFixed(2)}`);
+    .row('(=) EFECTIVO ESPERADO:', `${money(expectedCash)}`);
 
   if (isClosed) {
-    builder.row('(=) EFECTIVO CONTADO:', `$${countedCash.toFixed(2)}`);
+    builder.row('(=) EFECTIVO CONTADO:', `${money(countedCash)}`);
     if (Math.abs(cashDiff) < 0.01) {
-      builder.row('ESTADO:', 'CUADRADA ($0.00)');
+      builder.row('ESTADO:', `CUADRADA (${money(0)})`);
     } else if (cashDiff > 0) {
-      builder.row('ESTADO:', `SOBRANTE (+$${cashDiff.toFixed(2)})`);
+      builder.row('ESTADO:', `SOBRANTE (+${money(cashDiff)})`);
     } else {
-      builder.row('ESTADO:', `FALTANTE (-$${Math.abs(cashDiff).toFixed(2)})`);
+      builder.row('ESTADO:', `FALTANTE (-${money(Math.abs(cashDiff))})`);
     }
   } else {
     builder.row('ESTADO:', 'TURNO EN CURSO');
@@ -474,43 +480,43 @@ export function buildClosingReceiptBytes(
     .bold(false)
     .row('Tickets Emitidos:', `${salesCount}`)
     .row('Piezas Vendidas:', `${totalPieces}`)
-    .row('Ticket Promedio:', `$${avgTicket.toFixed(2)}`)
-    .row('Ventas Efectivo:', `$${cashSales.toFixed(2)}`)
-    .row('Ventas Tarjeta/Dig:', `$${cardSales.toFixed(2)}`);
+    .row('Ticket Promedio:', `${money(avgTicket)}`)
+    .row('Ventas Efectivo:', `${money(cashSales)}`)
+    .row('Ventas Tarjeta/Dig:', `${money(cardSales)}`);
 
   // Otros metodos de pago si existieran (ej. TRANSFERENCIA)
   if (sessionData.paymentsBreakdown) {
     Object.entries(sessionData.paymentsBreakdown).forEach(([method, amount]) => {
       const mUpper = method.toUpperCase();
       if (mUpper !== PaymentMethod.EFECTIVO && mUpper !== PaymentMethod.TARJETA && Number(amount) > 0) {
-        builder.row(`Ventas ${mUpper.slice(0, 10)}:`, `$${Number(amount).toFixed(2)}`);
+        builder.row(`Ventas ${mUpper.slice(0, 10)}:`, `${money(Number(amount))}`);
       }
     });
   }
 
   // Si hubo devoluciones en el turno, mostrarlas como deducción de ventas
   if (refunds > 0) {
-    builder.row('(-) Devoluciones/Reemb:', `-$${refunds.toFixed(2)}`);
+    builder.row('(-) Devoluciones/Reemb:', `-${money(refunds)}`);
   }
 
   builder
     .separator()
     .bold(true)
-    .row('TOTAL VENTAS NETAS:', `$${totalSales.toFixed(2)}`)
+    .row('TOTAL VENTAS NETAS:', `${money(totalSales)}`)
     .bold(false)
     .separator();
 
   // 5. Desglose de Gastos de Turno (si existen)
   if (sessionData.expensesList && sessionData.expensesList.length > 0) {
     builder.bold(true).line('DETALLE DE GASTOS').bold(false);
-    sessionData.expensesList.forEach((exp: any) => {
+    sessionData.expensesList.forEach((exp) => {
       const maxDesc = width === '80mm' ? 24 : 16;
       const desc = (exp.description || 'Gasto').slice(0, maxDesc);
-      builder.row(` ${desc}`, `-$${Number(exp.amount).toFixed(2)}`);
+      builder.row(` ${desc}`, `-${money(Number(exp.amount))}`);
     });
     builder
       .bold(true)
-      .row('TOTAL GASTOS:', `-$${expenses.toFixed(2)}`)
+      .row('TOTAL GASTOS:', `-${money(expenses)}`)
       .bold(false)
       .separator();
   }

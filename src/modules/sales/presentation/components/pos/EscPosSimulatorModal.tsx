@@ -1,3 +1,4 @@
+import { useTicketFormat } from '../../hooks/useTicketFormat';
 import React, { useState, useMemo } from 'react';
 import {
   Dialog,
@@ -44,7 +45,6 @@ interface EscPosSimulatorModalProps {
   /** Datos de cierre de caja opcionales para generar los bytes en vivo */
   closingData?: any;
   tenantRuc?: string;
-  currencyCode?: string;
   defaultPaperWidth?: PaperWidth;
 }
 
@@ -109,11 +109,10 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
   saleData,
   closingData,
   tenantRuc,
-  currencyCode,
   defaultPaperWidth = '58mm',
 }) => {
   const publicTenant = useTenant();
-  const effectiveCurrency = currencyCode || publicTenant?.currencyCode || 'MXN';
+  const format = useTicketFormat();
   const effectiveRuc = tenantRuc || publicTenant?.ruc || '';
 
   const [paperWidth, setPaperWidth] = useState<PaperWidth>(defaultPaperWidth);
@@ -156,6 +155,7 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
         paperWidth,
         openDrawer: true,
         cutPaper: true,
+        format,
       });
     }
 
@@ -165,9 +165,9 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
       openDrawer: true,
       cutPaper: true,
       tenantRuc: effectiveRuc,
-      currencyCode: effectiveCurrency,
+      format,
     });
-  }, [externalBytes, saleData, closingData, effectiveRuc, effectiveCurrency, paperWidth, sampleMode]);
+  }, [externalBytes, saleData, closingData, effectiveRuc, format, paperWidth, sampleMode]);
 
   // Decodificar los bytes con el parser
   const parseResult = useMemo(() => {

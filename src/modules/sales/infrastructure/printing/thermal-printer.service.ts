@@ -4,7 +4,9 @@ import {
   EscPosBuilder,
   type PaperWidth,
 } from './escpos-builder';
-import type { TicketSaleData } from '../../domain/ticket';
+import type { TicketPrinter } from '../../application/ports/ticket-printer';
+import type { ClosingTicketData } from '@/modules/cash-sessions/domain/closing-ticket';
+import type { TicketFormat, TicketSaleData } from '../../domain/ticket';
 
 export interface PrinterConfig {
   paperWidth: PaperWidth;
@@ -22,7 +24,7 @@ const DEFAULT_CONFIG: PrinterConfig = {
 
 const STORAGE_KEY = 'aura_pos_printer_config';
 
-class ThermalPrinterService {
+class ThermalPrinterService implements TicketPrinter {
   private activePort: any = null;
 
   /** Comprueba si el navegador soporta Web Serial API */
@@ -125,7 +127,7 @@ class ThermalPrinterService {
   /** Imprime un ticket de venta directamente sin ventanas emergentes */
   async printSaleTicket(
     saleData: TicketSaleData,
-    extraOptions: { tenantRuc?: string; currencyCode?: string } = {}
+    extraOptions: { tenantRuc?: string; format: TicketFormat }
   ): Promise<boolean> {
     const config = this.getConfig();
     const bytes = buildSaleReceiptBytes(saleData, {
@@ -133,7 +135,7 @@ class ThermalPrinterService {
       openDrawer: config.openDrawer,
       cutPaper: config.cutPaper,
       tenantRuc: extraOptions.tenantRuc,
-      currencyCode: extraOptions.currencyCode,
+      format: extraOptions.format,
     });
 
     await this.sendRawBytes(bytes);
@@ -141,12 +143,13 @@ class ThermalPrinterService {
   }
 
   /** Imprime un ticket de cierre de caja compacto */
-  async printClosingTicket(sessionData: any): Promise<boolean> {
+  async printClosingTicket(sessionData: ClosingTicketData, format: TicketFormat): Promise<boolean> {
     const config = this.getConfig();
     const bytes = buildClosingReceiptBytes(sessionData, {
       paperWidth: config.paperWidth,
       openDrawer: config.openDrawer,
       cutPaper: config.cutPaper,
+      format,
     });
 
     await this.sendRawBytes(bytes);

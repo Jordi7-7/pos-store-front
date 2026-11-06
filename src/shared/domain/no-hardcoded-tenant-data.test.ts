@@ -14,8 +14,8 @@ const sources = import.meta.glob(['/src/**/*.ts', '/src/**/*.tsx'], {
 
 // Se excluyen los tests, el catálogo shadcn (no es nuestro) y el árbol de rutas generado.
 const IGNORED = ['/components/ui/', '/routeTree.gen.ts', '.test.ts', '.test.tsx'];
-// Los tickets térmicos y las etiquetas se imprimen con su propio formato (Etapa 3: puertos de impresión).
-const PRINTING = ['escpos-builder.ts', 'label-builder.ts'];
+// Las etiquetas de código de barras aún imprimen con su propio formato (módulo `products`, Etapa 4).
+const PRINTING = ['label-builder.ts'];
 
 const files = Object.entries(sources).filter(([path]) => !IGNORED.some((part) => path.includes(part)));
 
@@ -24,6 +24,7 @@ const FORBIDDEN: Array<{ name: string; pattern: RegExp }> = [
   { name: "idioma de Ecuador fijo ('es-EC')", pattern: /['"]es-EC['"]/ },
   { name: "zona horaria de Ecuador fija ('America/Guayaquil')", pattern: /America\/Guayaquil/ },
   { name: 'símbolo de moneda fijo ($ delante de toFixed(2))', pattern: /\$\$\{[^}]*\.toFixed\(2\)\}/ },
+  { name: "moneda por defecto (|| 'MXN' / ?? 'USD')", pattern: /(\|\||\?\?)\s*['"](MXN|USD|EUR)['"]/ },
 ];
 
 describe('datos de la tienda sin valores fijos', () => {

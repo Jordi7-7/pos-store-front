@@ -191,7 +191,6 @@ export const SalesView: React.FC = () => {
           }}
           saleData={ticketSaleData}
           tenantRuc={publicTenant?.ruc || ''}
-          currencyCode={publicTenant?.currencyCode || ''}
         />
       )}
     </div>

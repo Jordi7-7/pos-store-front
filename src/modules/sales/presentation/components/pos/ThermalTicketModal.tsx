@@ -1,3 +1,4 @@
+import { useTicketFormat } from '../../hooks/useTicketFormat';
 import React, { useMemo, useState, useEffect } from 'react';
 import { Printer, Download, RefreshCw, Zap } from 'lucide-react';
 import {
@@ -26,7 +27,6 @@ export interface ThermalTicketModalProps {
   onClose: () => void;
   saleData: TicketSaleData | null;
   tenantRuc?: string;
-  currencyCode?: string;
 }
 
 export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
@@ -34,7 +34,6 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
   onClose,
   saleData,
   tenantRuc,
-  currencyCode,
 }) => {
   const publicTenant = useTenant();
   const [isPrinting, setIsPrinting] = useState(false);
@@ -64,7 +63,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
   };
 
   const config = useMemo(() => thermalPrinterService.getConfig(), [isOpen]);
-  const effectiveCurrency = currencyCode || publicTenant?.currencyCode || 'MXN';
+  const format = useTicketFormat();
   const effectiveRuc = tenantRuc || publicTenant?.ruc || '';
 
   // 1. Única Fuente de la Verdad: Generación de bytes ESC/POS
@@ -75,9 +74,9 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
       openDrawer: config.openDrawer,
       cutPaper: config.cutPaper,
       tenantRuc: effectiveRuc,
-      currencyCode: effectiveCurrency,
+      format,
     });
-  }, [saleData, config, effectiveRuc, effectiveCurrency]);
+  }, [saleData, config, effectiveRuc, format]);
 
   // 2. Decodificación de líneas exactas
   const parseResult = useMemo(() => {
@@ -105,7 +104,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
       if (isConfigured) {
         await thermalPrinterService.printSaleTicket(saleData, {
           tenantRuc: effectiveRuc,
-          currencyCode: effectiveCurrency,
+          format,
         });
         toast.success('¡Ticket impreso directamente por USB!');
         onClose();

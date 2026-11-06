@@ -101,7 +101,6 @@ export const SaleDetailModal: React.FC<SaleDetailModalProps> = ({ invoiceNumber,
           onClose={() => setIsTicketModalOpen(false)}
           saleData={saleDataForTicket}
           tenantRuc={publicTenant?.ruc || ''}
-          currencyCode={publicTenant?.currencyCode || ''}
         />
       )}
     </>

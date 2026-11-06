@@ -24,7 +24,7 @@ import type {
   CashSessionRefundEntity,
 } from '../../domain/entities';
 import { SaleStatus } from '@/modules/sales/domain/enums';
-import { useCurrencyCode, useTenant } from '../../../auth/hooks/useSession';
+import { useTenant } from '../../../auth/hooks/useSession';
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -45,7 +45,7 @@ import {
 } from '@/components/ui/dialog';
 import { ThermalTicketModal } from '../../../sales/presentation/components/pos/ThermalTicketModal';
 import { ThermalClosingTicketModal } from '../../../sales/presentation/components/pos/ThermalClosingTicketModal';
-import { buildClosingTicketData } from '../utils/buildClosingTicketData';
+import { buildClosingTicketData } from '../../domain/closing-ticket';
 
 interface CashSessionAuditModalProps {
   sessionId: string | null;
@@ -59,7 +59,6 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
   onClose,
 }) => {
   const publicTenant = useTenant();
-  const currencyCode = useCurrencyCode();
 
   const { details, rawDetails, isLoading } = useCashSessionDetailsQuery(sessionId);
 
@@ -795,7 +794,6 @@ export const CashSessionAuditModal: React.FC<CashSessionAuditModalProps> = ({
           }}
           saleData={reprintSaleData}
           tenantRuc={publicTenant?.ruc || ''}
-          currencyCode={currencyCode}
         />
       )}
 

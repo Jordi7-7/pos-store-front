@@ -27,3 +27,9 @@ export interface TicketSaleData {
   total: number;
   userName?: string;
 }
+
+/** Cómo se escriben los importes en un ticket: moneda e idioma de la tienda (nunca valores fijos). */
+export interface TicketFormat {
+  currencyCode: string;
+  locale: string;
+}

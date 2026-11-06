@@ -3,13 +3,14 @@ import { toast } from 'sonner';
 import { useMyCashRegisters } from '@/modules/cash-registers/presentation/hooks/useCashRegisters';
 import { useCashSessionDetailsQuery } from '@/modules/cash-sessions/presentation/hooks/useCashSessions';
 import { CloseCashSessionError } from '@/modules/cash-sessions/application/close-cash-session';
-import { buildClosingTicketData } from '@/modules/cash-sessions/presentation/utils/buildClosingTicketData';
+import { buildClosingTicketData } from '@/modules/cash-sessions/domain/closing-ticket';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import { useWorkspaceStore } from '@/shared/presentation/stores/workspace.store';
 import { getErrorMessage } from '@/shared/presentation/error-messages';
-import { thermalPrinterService } from '../../../infrastructure/printing/thermal-printer.service';
+import { ticketPrinter } from '../../../infrastructure/dependencies';
 import { useActiveCashSession, useCloseCashSession, useOpenCashSession } from '../useCashSession';
 import { useRegisterExpense } from '../useSalesMutations';
+import { useTicketFormat } from '../useTicketFormat';
 import type { ActiveCashSession, ClosingDetailsStatus } from '@/modules/cash-sessions/domain/session-types';
 
 const EXPENSE_CATEGORY = 'Servicios';
@@ -25,6 +26,7 @@ interface Options {
  */
 export function usePOSShift({ externalActiveSession, setExternalActiveSession }: Options) {
   const { selectedBranchId } = useLayoutContext();
+  const ticketFormat = useTicketFormat();
   const { selectedCashRegisterId, setSelectedCashRegisterId } = useWorkspaceStore();
   const { myCashRegisters: availableRegistersForUser } = useMyCashRegisters(selectedBranchId || undefined);
   const [selectedRegisterId, setSelectedRegisterId] = useState<string>(selectedCashRegisterId || '');
@@ -121,9 +123,9 @@ export function usePOSShift({ externalActiveSession, setExternalActiveSession }:
       }
       setClosingSessionToPrint(closingData);
 
-      if (await thermalPrinterService.isConfigured()) {
+      if (await ticketPrinter.isConfigured()) {
         try {
-          await thermalPrinterService.printClosingTicket(closingData);
+          await ticketPrinter.printClosingTicket(closingData, ticketFormat);
           toast.success('¡Sesión de caja cerrada y corte impreso en ticket!');
         } catch (printErr) {
           console.error('Error al imprimir corte directo:', printErr);
