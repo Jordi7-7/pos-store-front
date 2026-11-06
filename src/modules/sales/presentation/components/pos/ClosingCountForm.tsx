@@ -2,6 +2,7 @@ import React from 'react';
 import { Info, DollarSign, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 import { classifyDifference } from '@/modules/cash-sessions/domain/rules/cash-closing';
+import { CurrencySymbol } from '@/modules/auth/presentation/hooks/CurrencySymbol';
 
 /** Conteo físico del efectivo y banner de cuadre. El esperado solo se muestra si hay resumen real del turno. */
 interface ClosingCountFormProps {
@@ -23,7 +24,7 @@ export const ClosingCountForm: React.FC<ClosingCountFormProps> = ({ closingBalan
     <div className="space-y-2 pt-1">
       <div className="flex items-center justify-between">
         <label className="block text-[10px] text-neutral uppercase tracking-wider font-bold">
-          Monto de Cierre Físico en Gaveta ($)
+          Monto de Cierre Físico en Gaveta (<CurrencySymbol />)
         </label>
         {expectedCash !== null && (
           <span className="text-[10px] text-neutral">

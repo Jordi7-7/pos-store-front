@@ -22,6 +22,7 @@ const FORBIDDEN: Array<{ name: string; pattern: RegExp }> = [
   { name: "idioma de Ecuador fijo ('es-EC')", pattern: /['"]es-EC['"]/ },
   { name: "zona horaria de Ecuador fija ('America/Guayaquil')", pattern: /America\/Guayaquil/ },
   { name: 'símbolo de moneda fijo ($ delante de toFixed(2))', pattern: /\$\$\{[^}]*\.toFixed\(2\)\}/ },
+  { name: 'símbolo de moneda fijo en una etiqueta ("($)")', pattern: /\(\$\)/ },
   { name: "moneda por defecto (|| 'MXN' / ?? 'USD')", pattern: /(\|\||\?\?)\s*['"](MXN|USD|EUR)['"]/ },
 ];
 

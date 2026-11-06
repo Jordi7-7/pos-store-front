@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { CurrencySymbol } from '@/modules/auth/presentation/hooks/CurrencySymbol';
 
 interface EgresoModalProps {
   isOpen: boolean;
@@ -52,7 +53,7 @@ export const EgresoModal: React.FC<EgresoModalProps> = ({
           </div>
           <div>
             <label className="block text-[10px] text-neutral mb-1 uppercase tracking-wider font-bold">
-              Monto ($)
+              Monto (<CurrencySymbol />)
             </label>
             <input 
               type="number" 

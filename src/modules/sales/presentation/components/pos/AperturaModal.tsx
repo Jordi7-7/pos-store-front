@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import type { MyCashRegisterEntity } from '@/modules/cash-registers/domain/entities/cash-register.entity';
+import { CurrencySymbol } from '@/modules/auth/presentation/hooks/CurrencySymbol';
 
 interface AperturaModalProps {
   isOpen: boolean;
@@ -128,7 +129,7 @@ export const AperturaModal: React.FC<AperturaModalProps> = ({
 
           <div>
             <label className="block text-[10px] text-neutral mb-1 uppercase tracking-wider font-bold">
-              Monto Fondo Inicial ($)
+              Monto Fondo Inicial (<CurrencySymbol />)
             </label>
             <input 
               type="number" 

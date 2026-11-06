@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/field';
 import type { ProductFormValues } from './product-form.schema';
 import type { TagEntity as Tag } from '../../../domain/entities/catalog.entity';
+import { CurrencySymbol } from '@/modules/auth/presentation/hooks/CurrencySymbol';
 
 interface Category {
   id: string;
@@ -197,7 +198,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor={`${formId}-purchase-price`} className="text-[11px] font-bold uppercase tracking-wider truncate">
-                    Compra ($) <span className="text-destructive">*</span>
+                    Compra (<CurrencySymbol />) <span className="text-destructive">*</span>
                   </FieldLabel>
                   <Input
                     id={`${formId}-purchase-price`}
@@ -220,7 +221,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor={`${formId}-sale-price`} className="text-[11px] font-bold uppercase tracking-wider truncate">
-                    Venta ($) <span className="text-destructive">*</span>
+                    Venta (<CurrencySymbol />) <span className="text-destructive">*</span>
                   </FieldLabel>
                   <Input
                     id={`${formId}-sale-price`}
@@ -243,7 +244,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor={`${formId}-wholesale-price`} className="text-[11px] font-bold uppercase tracking-wider truncate">
-                    Precio Mayoreo ($)
+                    Precio Mayoreo (<CurrencySymbol />)
                   </FieldLabel>
                   <Input
                     id={`${formId}-wholesale-price`}

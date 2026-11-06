@@ -15,6 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import type { CartItem } from '../../../domain/entities/cart-item';
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
+import { useCurrencySymbol } from '@/modules/auth/presentation/hooks/useCurrencySymbol';
 
 interface POSCartListProps {
   cart: CartItem[];
@@ -43,6 +44,7 @@ export const POSCartList: React.FC<POSCartListProps> = ({
   onClearCart,
   onOpenImageZoom,
 }) => {
+  const currencySymbol = useCurrencySymbol();
   return (
     <>
       {/* Cart Header */}
@@ -249,7 +251,7 @@ export const POSCartList: React.FC<POSCartListProps> = ({
                     title={
                       currentItemDiscountType === DiscountType.PERCENTAGE
                         ? 'Descuento (%)'
-                        : 'Precio Especial ($)'
+                        : `Precio Especial (${currencySymbol})`
                     }
                   >
                     <button
@@ -263,7 +265,7 @@ export const POSCartList: React.FC<POSCartListProps> = ({
                       className="w-5 h-5 rounded flex items-center justify-center text-neutral hover:text-secondary hover:bg-bg-dark transition-colors cursor-pointer shrink-0"
                       title={
                         currentItemDiscountType === DiscountType.PERCENTAGE
-                          ? 'Cambiar a Precio Fijo ($)'
+                          ? `Cambiar a Precio Fijo (${currencySymbol})`
                           : 'Cambiar a Porcentaje (%)'
                       }
                     >

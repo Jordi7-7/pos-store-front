@@ -46,7 +46,7 @@ export async function pinLogin(page: Page, pin: string = cashier.pin): Promise<v
 
 interface AdminSession {
   token: string;
-  call: <T>(method: 'GET' | 'POST', path: string, body?: unknown) => Promise<{ status: number; data: T }>;
+  call: <T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, body?: unknown) => Promise<{ status: number; data: T }>;
 }
 
 /** Sesión de la propietaria por API, para preparar y verificar datos sin pasar por la interfaz. */
@@ -57,7 +57,7 @@ export async function adminApi(request: APIRequestContext): Promise<AdminSession
   const { accessToken } = (await login.json()) as { accessToken: string };
   return {
     token: accessToken,
-    call: async <T>(method: 'GET' | 'POST', path: string, body?: unknown) => {
+    call: async <T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, body?: unknown) => {
       const response = await request.fetch(`${API_URL}${path}`, {
         method,
         headers: { Authorization: `Bearer ${accessToken}` },

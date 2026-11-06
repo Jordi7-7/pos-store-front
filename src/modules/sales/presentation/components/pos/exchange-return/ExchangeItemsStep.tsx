@@ -14,6 +14,7 @@ import {
 import type { SaleItemRow, NewExchangeItem } from './exchange-return.types';
 import { formatMoney } from './exchange-return.types';
 import { refundAmount } from '../../../../domain/rules/exchange-rules';
+import { useCurrencySymbol } from '@/modules/auth/presentation/hooks/useCurrencySymbol';
 
 interface ExchangeItemsStepProps {
   selectedReturnItems: SaleItemRow[];
@@ -56,6 +57,7 @@ export const ExchangeItemsStep: React.FC<ExchangeItemsStepProps> = ({
   onConfirmExchange,
   isProcessing,
 }) => {
+  const currencySymbol = useCurrencySymbol();
   return (
     <div className="flex flex-col gap-3">
       {/* Returned items (negative) */}
@@ -132,7 +134,7 @@ export const ExchangeItemsStep: React.FC<ExchangeItemsStepProps> = ({
                   {/* Discount pill */}
                   <div
                     className="flex items-center bg-background/80 border border-border rounded-lg h-7 px-1 shadow-xs shrink-0"
-                    title={discountType === DiscountType.PERCENTAGE ? 'Descuento (%)' : 'Precio Especial ($)'}
+                    title={discountType === DiscountType.PERCENTAGE ? 'Descuento (%)' : `Precio Especial (${currencySymbol})`}
                   >
                     <button
                       type="button"
@@ -142,7 +144,7 @@ export const ExchangeItemsStep: React.FC<ExchangeItemsStepProps> = ({
                         onUpdateNewItemDiscount(item.variantId, nextType, nextVal);
                       }}
                       className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
-                      title={discountType === DiscountType.PERCENTAGE ? 'Cambiar a Precio Fijo ($)' : 'Cambiar a Porcentaje (%)'}
+                      title={discountType === DiscountType.PERCENTAGE ? `Cambiar a Precio Fijo (${currencySymbol})` : 'Cambiar a Porcentaje (%)'}
                     >
                       {discountType === DiscountType.PERCENTAGE ? (
                         <Percent className="w-2.5 h-2.5 text-blue-400 font-bold" />
