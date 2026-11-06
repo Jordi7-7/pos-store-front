@@ -695,7 +695,6 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
         productId={selectedVariableProductId}
         isOpen={isVariableEditModalOpen}
         onClose={handleCloseVariableEditModal}
-        categories={categories}
         selectedBranchId={selectedBranchId}
       />
       <ProductDetailModal

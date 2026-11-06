@@ -96,7 +96,7 @@ export interface BulkImportProductsResult {
 /** Variante nueva que se añade a un producto existente. */
 export interface NewVariantInput {
   sku: string;
-  barcode: string;
+  barcode?: string;
   purchasePrice: number;
   salePrice: number;
   wholesalePrice?: number | null;

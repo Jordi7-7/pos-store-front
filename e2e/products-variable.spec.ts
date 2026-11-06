@@ -56,12 +56,17 @@ test('producto variable: editar el padre, cambiar el precio de una variante y a�
     await expect(row).toBeVisible();
     await row.getByTitle('Editar Ficha de Producto').click();
 
-    // 1. Variantes: cada una muestra su combinación (defecto: el detalle las traía en otra forma y salía "Variante")
+    // 1. Ficha del padre: cambiar el nombre ANTES de tocar las variantes. Crear una variante recarga el producto y
+    //    el editor debe conservar lo escrito (antes descartaba los cambios sin guardar de la ficha del padre).
+    const newName = `${name} editado`;
+    await page.getByPlaceholder('Ej. Playera Oversize').fill(newName);
+
+    // 2. Variantes: cada una muestra su combinación (defecto: el detalle las traía en otra forma y salía "Variante")
     await page.getByText(/2\. Variantes y Precios/).first().click();
     await expect(page.getByText(`E2E Talla ${stamp}: S`)).toBeVisible();
     await expect(page.getByText(`E2E Talla ${stamp}: M`)).toBeVisible();
 
-    // 2. Añadir una variante nueva (talla L): el diálogo solo ofrece los atributos que ya usa el producto
+    // Añadir una variante nueva (talla L): el diálogo solo ofrece los atributos que ya usa el producto
     await page.getByRole('button', { name: /Nueva Variante/ }).click();
     const dialog = page.getByRole('dialog').filter({ hasText: 'Agregar Nueva Variante' });
     await dialog.locator('select').selectOption({ label: 'L' });
@@ -71,14 +76,7 @@ test('producto variable: editar el padre, cambiar el precio de una variante y a�
     expect((await variantCreated).status()).toBe(201);
     await expect(page.getByText(`E2E Talla ${stamp}: L`)).toBeVisible();
 
-    // 3. Ficha del padre: cambiar el nombre. Se hace DESPUÉS de crear la variante a propósito: crear una variante
-    //    recarga el producto y el modal descarta lo que se hubiera escrito antes en la ficha del padre (hallazgo abierto).
-    await page.getByText(/1\. Ficha General del Padre/).first().click();
-    const newName = `${name} editado`;
-    await page.getByPlaceholder('Ej. Playera Oversize').fill(newName);
-
-    // 4. Cambiar el precio de venta de la primera variante
-    await page.getByText(/Variantes y Precios/).first().click();
+    // 3. Cambiar el precio de venta de la primera variante
     const firstRow = page.getByRole('dialog').locator('tbody tr').first();
     await firstRow.locator('input').nth(3).fill('150', { timeout: 10_000 }); // SKU, código de barras, compra, venta, mayoreo
 
