@@ -49,6 +49,14 @@ export interface SessionTenant {
   timezone: string;
 }
 
+/**
+ * Clave de lo que condiciona cómo se MUESTRAN los datos (moneda, idioma de formato, zona horaria).
+ * Si cambia, la pantalla se vuelve a pintar y la caché de datos ya formateados se descarta.
+ */
+export function tenantFormatKey(tenant: SessionTenant | null): string {
+  return tenant ? `${tenant.currencyCode}|${tenant.country}|${tenant.timezone}` : '';
+}
+
 export const OWNER_LABEL = 'Propietario';
 const DEFAULT_ROLE_LABEL = 'Usuario';
 

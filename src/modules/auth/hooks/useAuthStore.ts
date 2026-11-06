@@ -8,6 +8,7 @@ import { useWorkspaceStore } from '@/shared/presentation/stores/workspace.store'
 import {
   hasAnyPermission,
   hasPermission,
+  tenantFormatKey,
   type SessionTenant,
 } from '../domain/session';
 import { toSessionTenant, toSessionUser } from '../mappers/session.mapper';
@@ -170,8 +171,14 @@ export const useAuthStore = create<AuthState>()(
             const profile = await authService.getProfile();
             const user = toSessionUser(profile);
             const tenant = toSessionTenant(profile.tenant);
+            const previousFormat = tenantFormatKey(get().tenant);
             set({ user, tenant });
             useWorkspaceStore.getState().reconcile(user);
+            // Cambió la moneda, el país o la zona horaria: los datos guardados en caché ya vienen
+            // formateados con la configuración anterior; se descartan para volver a pedirlos.
+            if (previousFormat && previousFormat !== tenantFormatKey(tenant)) {
+              queryClient.clear();
+            }
             return true;
           } catch (error) {
             console.error('Error al obtener el perfil:', error);

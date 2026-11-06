@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hasAnyPermission, hasPermission, homeRouteFor, roleLabel, type SessionUser } from './session';
+import { hasAnyPermission, hasPermission, homeRouteFor, roleLabel, tenantFormatKey, type SessionUser } from './session';
 
 const base: SessionUser = {
   id: 'u',
@@ -31,5 +31,18 @@ describe('reglas de sesión', () => {
     expect(homeRouteFor({ ...base, isOwner: true })).toBe('/dashboard');
     expect(homeRouteFor(base)).toBe('/pos');
     expect(homeRouteFor(null)).toBe('/pos');
+  });
+});
+
+describe('tenantFormatKey', () => {
+  const tenant = { id: 't', name: 'T', slug: 't', logoUrl: null, country: 'MX', currencyCode: 'MXN', currencySymbol: '$', timezone: 'America/Mexico_City' };
+
+  it('cambia solo con moneda, país o zona horaria; no con nombre o logo', () => {
+    const base = tenantFormatKey(tenant);
+    expect(tenantFormatKey({ ...tenant, currencyCode: 'USD' })).not.toBe(base);
+    expect(tenantFormatKey({ ...tenant, country: 'EC' })).not.toBe(base);
+    expect(tenantFormatKey({ ...tenant, timezone: 'America/Guayaquil' })).not.toBe(base);
+    expect(tenantFormatKey({ ...tenant, name: 'Otro', logoUrl: 'x' })).toBe(base);
+    expect(tenantFormatKey(null)).toBe('');
   });
 });

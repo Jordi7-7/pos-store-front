@@ -1,5 +1,5 @@
 import { selectIsAuthenticated, useAuthStore } from './useAuthStore';
-import { branchIdsOf, roleLabel, type SessionTenant, type SessionUser } from '../domain/session';
+import { branchIdsOf, roleLabel, tenantFormatKey, type SessionTenant, type SessionUser } from '../domain/session';
 import { formatMoneyAmount, localeForCountry } from '@/shared/domain/format-money';
 
 /**
@@ -19,6 +19,8 @@ export const useIsAuthenticated = (): boolean => useAuthStore(selectIsAuthentica
 export const useUser = (): SessionUser | null => useAuthStore((s) => s.user);
 export const useTenant = (): SessionTenant | null => useAuthStore((s) => s.tenant);
 export const useTenantId = (): string | null => useAuthStore((s) => s.tenant?.id ?? null);
+/** Cambia cuando cambia la moneda, el país o la zona horaria de la tienda: úsala como `key` para repintar. */
+export const useTenantFormatKey = (): string => useAuthStore((s) => tenantFormatKey(s.tenant));
 export const useIsOwner = (): boolean => useAuthStore((s) => Boolean(s.user?.isOwner));
 export const useRoleName = (): string => useAuthStore((s) => roleLabel(s.user));
 

@@ -168,3 +168,24 @@ describe('sucursal y caja seleccionadas viven fuera de la sesión', () => {
     expect(useWorkspaceStore.getState()).toMatchObject({ selectedBranchId: null, selectedCashRegisterId: null });
   });
 });
+
+describe('cambio de formato de la tienda', () => {
+  it('si cambia la moneda, la caché de datos ya formateados se descarta', async () => {
+    const { queryClient } = await import('@/providers/QueryProvider');
+    const clear = vi.spyOn(queryClient, 'clear');
+    getProfile.mockResolvedValueOnce({ ...profile, tenant: { ...profile.tenant, currencyCode: 'USD' } });
+    await useAuthStore.getState().fetchProfile();
+    expect(clear).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState().tenant?.currencyCode).toBe('USD');
+    clear.mockRestore();
+  });
+
+  it('si el formato no cambia (p. ej. solo el nombre), la caché se conserva', async () => {
+    const { queryClient } = await import('@/providers/QueryProvider');
+    const clear = vi.spyOn(queryClient, 'clear');
+    getProfile.mockResolvedValueOnce({ ...profile, tenant: { ...profile.tenant, name: 'Otro nombre' } });
+    await useAuthStore.getState().fetchProfile();
+    expect(clear).not.toHaveBeenCalled();
+    clear.mockRestore();
+  });
+});

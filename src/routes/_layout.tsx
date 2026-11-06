@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { createFileRoute, Outlet, redirect, useNavigate, useRouterState } from '@tanstack/react-router';
-import { useAuthStore, selectIsAuthenticated, useIsAuthenticated, useTenant, SessionExpiredModal, useIdleTimer } from '@/modules/auth';
+import { useAuthStore, selectIsAuthenticated, useIsAuthenticated, useTenant, useTenantFormatKey, SessionExpiredModal, useIdleTimer } from '@/modules/auth';
 import { LayoutContextProvider, useLayoutContext } from '@/providers/LayoutContext';
 import type { Branch } from '@/modules/branches';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -51,6 +51,8 @@ function AppLayout() {
 
 function DashboardShell() {
   const { user } = useAuthStore();
+  // Si cambia la moneda, el país o la zona horaria de la tienda, el contenido se repinta con el formato nuevo.
+  const tenantFormatKey = useTenantFormatKey();
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
 
@@ -173,7 +175,7 @@ function DashboardShell() {
 
             {/* Dynamic Outlet with auto route rendering */}
             <main className="flex-1 overflow-y-auto p-6 bg-bg-dark relative">
-              <Outlet />
+              <Outlet key={tenantFormatKey} />
             </main>
           </div>
         </div>
