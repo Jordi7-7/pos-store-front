@@ -81,7 +81,7 @@ export function useExchangeReturn({
       setReturnQtyMap(qtyMap);
       setStep('select-items');
     } catch (err: any) {
-      toast.error(err?.message || `No se encontró la venta con folio "${inv}"`);
+      toast.error(getErrorMessage(err, `No se encontró la venta con folio "${inv}"`));
     } finally {
       setIsSearching(false);
     }

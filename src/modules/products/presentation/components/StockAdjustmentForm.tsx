@@ -4,6 +4,7 @@ import { useStockAdjustment } from '../hooks/useStockAdjustment';
 import type { ProductVM as ProductDTO } from '../view-models/product.vm';
 import { AlertCircle, ArrowDownToLine, ArrowUpToLine, Loader2 } from 'lucide-react';
 import { ProductType, InventoryMovementType } from '../../domain/enums';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 
 interface StockAdjustmentFormProps {
   product: ProductDTO;
@@ -47,7 +48,7 @@ export const StockAdjustmentForm: React.FC<StockAdjustmentFormProps> = ({
       setQuantity('1');
       setComment('');
     } catch (error: any) {
-      toast.error(error?.message || 'No se pudo registrar el ajuste.');
+      toast.error(getErrorMessage(error, 'No se pudo registrar el ajuste.'));
     }
   };
 

@@ -23,6 +23,7 @@ import { Field } from '@/components/ui/field';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { SupplierCombobox } from './SupplierCombobox';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 
 interface PurchaseHistoryProps {
   selectedBranchId?: string;
@@ -85,7 +86,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
       await cancelPurchase(id);
       toast.success('Ingreso anulado correctamente. El stock ha sido revertido.');
     } catch (err: any) {
-      toast.error(err?.message || 'No se pudo anular el ingreso.');
+      toast.error(getErrorMessage(err, 'No se pudo anular el ingreso.'));
     }
   };
 

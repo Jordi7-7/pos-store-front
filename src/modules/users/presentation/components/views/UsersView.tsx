@@ -17,6 +17,7 @@ import { useBranches } from '@/modules/branches';
 import { useAuthStore } from '@/modules/auth/presentation/stores/useAuthStore';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 
 export const UsersView: React.FC = () => {
   const { user: currentAuthUser } = useAuthStore();
@@ -96,7 +97,7 @@ export const UsersView: React.FC = () => {
       });
       toast.success(`Usuario ${newStatus ? 'habilitado' : 'deshabilitado'} exitosamente.`);
     } catch (err: any) {
-      toast.error(err?.message || 'Error al cambiar estado.');
+      toast.error(getErrorMessage(err, 'Error al cambiar estado.'));
     }
   };
 
@@ -108,7 +109,7 @@ export const UsersView: React.FC = () => {
       setPinTargetUser(user);
       setShowPinModal(true);
     } catch (err: any) {
-      toast.error(err?.message || 'Error al generar PIN.');
+      toast.error(getErrorMessage(err, 'Error al generar PIN.'));
     }
   };
 

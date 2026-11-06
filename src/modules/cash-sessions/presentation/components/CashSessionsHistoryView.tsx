@@ -28,6 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CashSessionAuditModal } from './CashSessionAuditModal';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 
 export const CashSessionsHistoryView: React.FC = () => {
   const { selectedBranchId } = useLayoutContext();
@@ -55,7 +56,7 @@ export const CashSessionsHistoryView: React.FC = () => {
       setSessionClosingDataToPrint(sessionTicketData);
       setIsClosingTicketModalOpen(true);
     } catch (err: any) {
-      toast.error(err.message || 'Error al obtener detalles para imprimir el ticket');
+      toast.error(getErrorMessage(err, 'Error al obtener detalles para imprimir el ticket'));
     } finally {
       setPrintingSessionId(null);
     }

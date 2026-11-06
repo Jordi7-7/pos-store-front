@@ -4,6 +4,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { MediaView } from '@/modules/media/presentation/components/MediaView';
 import { useMediaUpload } from '@/modules/media';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 
 export const Route = createFileRoute('/_layout/multimedia')({
   beforeLoad: () => guardRoute('/multimedia'),
@@ -59,7 +60,7 @@ function MediaRoute() {
       return res;
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || 'Error al procesar la imagen externa.');
+      toast.error(getErrorMessage(err, 'Error al procesar la imagen externa.'));
       throw err;
     }
   };
@@ -71,7 +72,7 @@ function MediaRoute() {
       return res;
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || 'Error al eliminar la imagen.');
+      toast.error(getErrorMessage(err, 'Error al eliminar la imagen.'));
       throw err;
     }
   };

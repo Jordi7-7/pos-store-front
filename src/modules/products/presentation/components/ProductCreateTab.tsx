@@ -21,6 +21,7 @@ import { ImageUploadModal } from './forms/ImageUploadModal';
 import { MediaGallerySelectorModal } from './forms/MediaGallerySelectorModal';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -101,7 +102,7 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
       setIsCreatingCategoryInline(false);
       toast.success('¡Categoría creada e incorporada al producto!');
     } catch (e: any) {
-      toast.error(e.message || 'Error al crear la categoría.');
+      toast.error(getErrorMessage(e, 'Error al crear la categoría.'));
     }
   };
 
@@ -137,7 +138,7 @@ export const ProductCreateTab: React.FC<ProductCreateTabProps> = ({
       onSuccess();
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || 'Error al registrar el producto en el servidor.');
+      toast.error(getErrorMessage(err, 'Error al registrar el producto en el servidor.'));
     }
   };
 

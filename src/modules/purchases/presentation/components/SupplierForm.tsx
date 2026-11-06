@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSuppliers, useCreateSupplier } from '../hooks/useSuppliers';
 import { Truck, Plus, Mail, Phone, MapPin, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 
 export const SupplierForm: React.FC = () => {
   const { suppliers, isLoading } = useSuppliers();
@@ -35,7 +36,7 @@ export const SupplierForm: React.FC = () => {
       setSupPhone('');
       setSupAddress('');
     } catch (err: any) {
-      toast.error(err.message || 'Error al registrar el proveedor.');
+      toast.error(getErrorMessage(err, 'Error al registrar el proveedor.'));
     }
   };
 

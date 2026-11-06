@@ -4,6 +4,7 @@ import type { CreateCashRegisterInput, UpdateCashRegisterInput } from '../../app
 import type { CashRegisterEntity, MyCashRegisterEntity } from '../../domain/entities/cash-register.entity';
 import { useIsAuthenticated, useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 
 export const useMyCashRegisters = (branchId?: string) => {
   const tenantId = useTenantId();
@@ -51,7 +52,7 @@ export const useCreateCashRegister = () => {
       toast.success('Caja registradora creada correctamente');
     },
     onError: (err: any) => {
-      toast.error(err?.message || 'Error al crear la caja registradora');
+      toast.error(getErrorMessage(err, 'Error al crear la caja registradora'));
     },
   });
 
@@ -72,7 +73,7 @@ export const useUpdateCashRegister = () => {
       toast.success('Caja registradora actualizada correctamente');
     },
     onError: (err: any) => {
-      toast.error(err?.message || 'Error al actualizar la caja registradora');
+      toast.error(getErrorMessage(err, 'Error al actualizar la caja registradora'));
     },
   });
 
@@ -94,7 +95,7 @@ export const useAssignUsersToRegister = () => {
       toast.success('Usuarios asignados correctamente a la caja');
     },
     onError: (err: any) => {
-      toast.error(err?.message || 'Error al asignar usuarios a la caja');
+      toast.error(getErrorMessage(err, 'Error al asignar usuarios a la caja'));
     },
   });
 

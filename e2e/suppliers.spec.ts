@@ -58,3 +58,27 @@ test('proveedores: crear, buscar, editar y eliminar desde la pantalla', async ({
     if (leftover) await admin.call('DELETE', `/purchases/suppliers/${leftover.id}`);
   }
 });
+
+test('un proveedor repetido muestra el texto del catálogo para SUPPLIER_IDENTITY_TAKEN, no el del backend', async ({ page, request }) => {
+  const admin = await adminApi(request);
+  const stamp = Date.now().toString().slice(-8);
+  const identity = `8${stamp}001`;
+  const existing = await admin.call<Supplier>('POST', '/purchases/suppliers', { name: `Proveedor e2e dup ${stamp}`, identityNumber: identity });
+  expect(existing.status).toBe(201);
+
+  try {
+    await login(page);
+    await page.goto('/compras/proveedores');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'Nuevo Proveedor' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByLabel(/RUC \/ Identificación/).fill(identity);
+    await dialog.getByLabel(/Nombre \/ Razón Social/).fill(`Otro nombre ${stamp}`);
+    const rejected = page.waitForResponse((r) => r.url().endsWith('/purchases/suppliers') && r.request().method() === 'POST');
+    await dialog.getByRole('button', { name: 'Registrar Proveedor' }).click();
+    expect((await rejected).status()).toBe(409);
+    await expect(page.getByText('Ya existe un proveedor con ese documento.')).toBeVisible();
+  } finally {
+    await admin.call('DELETE', `/purchases/suppliers/${existing.data.id}`);
+  }
+});

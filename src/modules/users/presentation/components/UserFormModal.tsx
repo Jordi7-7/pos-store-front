@@ -29,6 +29,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -139,7 +140,7 @@ export const UserFormModal: React.FC<UserFormModalProps> = ({
       }
       onClose();
     } catch (err: any) {
-      toast.error(err?.message || `Error al ${isEditing ? 'actualizar' : 'crear'} usuario.`);
+      toast.error(getErrorMessage(err, `Error al ${isEditing ? 'actualizar' : 'crear'} usuario.`));
     }
   };
 

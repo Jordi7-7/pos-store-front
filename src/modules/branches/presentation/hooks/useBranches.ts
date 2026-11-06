@@ -3,6 +3,7 @@ import { branchesRepository } from '../../infrastructure/dependencies';
 import type { CreateBranchInput, UpdateBranchInput } from '../../application/ports/branches.repository';
 import { useIsAuthenticated, useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 
 export const useBranches = () => {
   const tenantId = useTenantId();
@@ -23,7 +24,7 @@ export const useBranches = () => {
       toast.success('Sucursal creada exitosamente.');
     },
     onError: (err: any) => {
-      toast.error(err?.message || 'Error al crear la sucursal.');
+      toast.error(getErrorMessage(err, 'Error al crear la sucursal.'));
     },
   });
 
@@ -35,7 +36,7 @@ export const useBranches = () => {
       toast.success('Sucursal actualizada exitosamente.');
     },
     onError: (err: any) => {
-      toast.error(err?.message || 'Error al actualizar la sucursal.');
+      toast.error(getErrorMessage(err, 'Error al actualizar la sucursal.'));
     },
   });
 

@@ -160,7 +160,7 @@ export const ProductEditDrawer: React.FC<ProductEditDrawerProps> = ({
       setIsCreatingCategoryInline(false);
       toast.success('¡Categoría creada e incorporada al producto!');
     } catch (e: any) {
-      toast.error(e.message || 'Error al crear la categoría.');
+      toast.error(getErrorMessage(e, 'Error al crear la categoría.'));
     }
   };
 

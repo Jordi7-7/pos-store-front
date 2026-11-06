@@ -24,6 +24,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import type { AttributeEntity as Attribute } from '../../domain/entities/catalog.entity';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 
 export const AttributeCatalogManager: React.FC = () => {
   const { 
@@ -53,7 +54,7 @@ export const AttributeCatalogManager: React.FC = () => {
       setIsModalOpen(false);
       toast.success(`Atributo "${created.name}" creado con éxito.`);
     } catch (err: any) {
-      toast.error(err.message || 'Error al crear el atributo.');
+      toast.error(getErrorMessage(err, 'Error al crear el atributo.'));
     }
   };
 
@@ -66,7 +67,7 @@ export const AttributeCatalogManager: React.FC = () => {
       setNewValueMap((prev) => ({ ...prev, [attributeId]: '' }));
       toast.success(`Valor "${created.value}" agregado al catálogo.`);
     } catch (err: any) {
-      toast.error(err.message || 'Error al agregar el valor.');
+      toast.error(getErrorMessage(err, 'Error al agregar el valor.'));
     }
   };
 

@@ -9,6 +9,7 @@ import { Field, FieldLabel } from '@/components/ui/field';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { CategoryEntity } from '../../../domain/entities/catalog.entity';
 import type { ImageItem, ParentFormValues } from '../../hooks/useParentInfoForm';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 
 interface ParentInfoTabProps {
   control: Control<ParentFormValues>;
@@ -36,7 +37,7 @@ export const ParentInfoTab: React.FC<ParentInfoTabProps> = ({ control, categorie
       setIsCreatingCategoryInline(false);
       toast.success('¡Categoría creada e incorporada!');
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Error al crear la categoría.');
+      toast.error(getErrorMessage(e, 'Error al crear la categoría.'));
     }
   };
 

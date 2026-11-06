@@ -5,6 +5,7 @@ import type { RoleEntity } from '../../domain/entities/role.entity';
 import type { PermissionDefinition, PermissionModuleGroup } from '@/constants/permissions';
 import { useIsAuthenticated, useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 
 export const PERMISSIONS_CATALOG_KEY = ['permissions-catalog'];
 
@@ -50,7 +51,7 @@ export function useCreateRole() {
       toast.success(`Rol "${newRole.name}" creado con éxito.`);
     },
     onError: (err: any) => {
-      toast.error(err.message || 'Error al crear el rol.');
+      toast.error(getErrorMessage(err, 'Error al crear el rol.'));
     },
   });
 
@@ -72,7 +73,7 @@ export function useUpdateRole() {
       toast.success(`Rol "${updatedRole.name}" actualizado.`);
     },
     onError: (err: any) => {
-      toast.error(err.message || 'Error al actualizar el rol.');
+      toast.error(getErrorMessage(err, 'Error al actualizar el rol.'));
     },
   });
 
@@ -93,7 +94,7 @@ export function useDeleteRole() {
       toast.success(res.message || 'Rol eliminado.');
     },
     onError: (err: any) => {
-      toast.error(err.message || 'Error al eliminar el rol.');
+      toast.error(getErrorMessage(err, 'Error al eliminar el rol.'));
     },
   });
 

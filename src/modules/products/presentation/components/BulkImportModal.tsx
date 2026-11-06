@@ -14,6 +14,7 @@ import {
 import { toast } from 'sonner';
 import { FileDown, Upload, FileSpreadsheet, Loader2, RefreshCw, AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 
 interface BulkImportModalProps {
   isOpen: boolean;
@@ -60,7 +61,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
     onValidateError: (err) => {
       setIsValidated(false);
       setIsValidating(false);
-      const msg = err.message || 'Error al validar el archivo.';
+      const msg = getErrorMessage(err, 'Error al validar el archivo.');
       setGlobalError(msg);
       toast.error(msg);
     },
@@ -70,7 +71,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
       onClose();
     },
     onImportError: (err) => {
-      toast.error(err.message || 'Error al importar los productos.');
+      toast.error(getErrorMessage(err, 'Error al importar los productos.'));
     },
   });
 
