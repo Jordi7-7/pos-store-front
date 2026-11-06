@@ -24,7 +24,7 @@ Contexto y reglas para cualquier sesión de trabajo en la web. **Léelo entero a
 - Stack fijado: TS 6.0.x, pnpm 11, Node 24, React 19, Vite 8.
 
 ## Reglas del código
-- `domain` no importa `react`, `@tanstack/*`, `zustand`, `sonner`, `fetch`, ni nada de `infrastructure`/`presentation`. `application` no importa `infrastructure` ni `presentation`. Se hará cumplir con una regla automática (Etapa 1).
+- `domain` no importa `react`, `@tanstack/*`, `zustand`, `sonner`, `fetch`, ni nada de `infrastructure`/`presentation`. `application` no importa `infrastructure` ni `presentation`. Lo hace cumplir `src/architecture.test.ts` (reglas en `src/test/layer-rules.ts`; también vigila `infrastructure` → sin `presentation`, UI ni estado). Hallazgos pendientes: `docs/hallazgos-abiertos.md`.
 - La **lógica de negocio no vive en componentes ni en hooks de UI**: va en `domain/rules` (puras, con test) o en un caso de uso. `toast` solo en `presentation`.
 - Un componente > ~300 líneas se divide en contenedor (hook/view-model) + piezas de UI. Nada de `apiClient` ni `fetch` en componentes.
 - **Todo cambio de reglas de dinero o de caja lleva test** (Vitest). Las reglas puras (carrito, arqueo, asignación de pagos) deben tener paridad con las del backend (`../pos-store/src/modules/sales/domain/services/`).
@@ -37,6 +37,7 @@ Contexto y reglas para cualquier sesión de trabajo en la web. **Léelo entero a
 pnpm dev            # http://localhost:5173 (el backend debe estar en el 3000)
 pnpm typecheck && pnpm lint && pnpm test      # = pnpm verify
 pnpm build
+pnpm e2e            # Playwright contra el backend real (puerto 3000); credenciales en .env.e2e.local (ignorado por git)
 ```
 Línea base al empezar el refactor: **typecheck limpio · 22 tests · lint con tope de 265 avisos · 202 `any`**. Si una cifra empeora, algo se rompió.
 
