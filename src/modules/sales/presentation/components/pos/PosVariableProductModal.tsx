@@ -117,7 +117,7 @@ export const PosVariableProductModal: React.FC<PosVariableProductModalProps> = (
               {productName}
             </h3>
             {baseSku && (
-              <span className="text-[11px] font-mono text-neutral block mt-0.5">
+              <span className="text-xs font-mono text-neutral block mt-0.5">
                 Base SKU: <strong className="text-primary">{baseSku}</strong>
               </span>
             )}
@@ -158,7 +158,7 @@ export const PosVariableProductModal: React.FC<PosVariableProductModalProps> = (
               </div>
               <div className="flex items-center gap-1.5">
                 <span
-                  className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md ${
+                  className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md ${
                     currentStock > 0
                       ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                       : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
@@ -177,7 +177,7 @@ export const PosVariableProductModal: React.FC<PosVariableProductModalProps> = (
 
               return (
                 <div key={attr.id} className="space-y-2">
-                  <label className="text-xs font-bold text-secondary uppercase tracking-wider block">
+ <label className="text-xs font-bold text-secondary block">
                     {attr.name}
                   </label>
                   <div className="flex flex-wrap gap-2">

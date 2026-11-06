@@ -29,16 +29,16 @@ export const ExchangeSelectItemsStep: React.FC<ExchangeSelectItemsStepProps> = (
       {/* Sale header */}
       <div className="rounded-xl bg-muted/50 border border-border px-4 py-3 flex items-center justify-between">
         <div>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Folio</p>
+ <p className="text-xs text-muted-foreground ">Folio</p>
           <p className="text-sm font-bold text-foreground font-mono">{foundSale.invoiceNumber}</p>
         </div>
         <div className="text-right">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total original</p>
+ <p className="text-xs text-muted-foreground ">Total original</p>
           <p className="text-sm font-bold text-foreground">{formatMoney(foundSale.total)}</p>
         </div>
         <div>
           <Badge
-            className={`text-[9px] font-bold px-2 py-0.5 ${
+            className={`text-xs font-bold px-2 py-0.5 ${
               foundSale.status === 'COMPLETED' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 border' :
               foundSale.status === 'REFUNDED' ? 'bg-rose-500/15 text-rose-400 border-rose-500/30 border' :
               'bg-amber-500/15 text-amber-400 border-amber-500/30 border'
@@ -76,19 +76,19 @@ export const ExchangeSelectItemsStep: React.FC<ExchangeSelectItemsStepProps> = (
                     {item.productName}
                   </p>
                   {item.refundedQty > 0 && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/25 shrink-0">
+                    <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/25 shrink-0">
                       {isFullyRefunded ? 'Devuelta' : `${item.refundedQty} devuelta(s)`}
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap mt-0.5">
                   {item.sku && (
-                    <span className="text-[11px] font-mono font-medium px-1.5 py-0.5 rounded bg-muted/80 border border-border text-foreground">
+                    <span className="text-xs font-mono font-medium px-1.5 py-0.5 rounded bg-muted/80 border border-border text-foreground">
                       SKU: {item.sku}
                     </span>
                   )}
                   {item.attributes && (
-                    <span className="text-[11px] text-muted-foreground">{item.attributes}</span>
+                    <span className="text-xs text-muted-foreground">{item.attributes}</span>
                   )}
                 </div>
                 <div className="flex items-center gap-1.5 flex-wrap mt-1">
@@ -96,17 +96,17 @@ export const ExchangeSelectItemsStep: React.FC<ExchangeSelectItemsStepProps> = (
                     {formatMoney(getNetUnitPrice(item))} × {item.quantity}
                   </span>
                   {Number(item.discountAmount) > 0 && (
-                    <span className="text-[10px] text-muted-foreground line-through">
+                    <span className="text-xs text-muted-foreground line-through">
                       {formatMoney(item.price)}
                     </span>
                   )}
                   {Number(item.discountAmount) > 0 && (
-                    <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/15 text-emerald-500 font-medium">
+                    <span className="text-xs px-1 py-0.2 rounded bg-emerald-500/15 text-emerald-500 font-medium">
                       desc. -{formatMoney(Number(item.discountAmount))}
                     </span>
                   )}
                   {item.refundableQty < item.quantity && !isFullyRefunded && (
-                    <span className="text-[11px] text-muted-foreground font-normal"> (disponibles: {item.refundableQty})</span>
+                    <span className="text-xs text-muted-foreground font-normal"> (disponibles: {item.refundableQty})</span>
                   )}
                 </div>
               </div>
@@ -141,7 +141,7 @@ export const ExchangeSelectItemsStep: React.FC<ExchangeSelectItemsStepProps> = (
       {selectedReturnItems.length > 0 && (
         <div className="mt-1 rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-3 flex items-center justify-between">
           <div>
-            <p className="text-[10px] text-rose-400 uppercase tracking-wider">A devolver</p>
+ <p className="text-xs text-rose-400 ">A devolver</p>
             <p className="text-base font-bold text-rose-500">{formatMoney(totalToReturn)}</p>
           </div>
           <p className="text-xs text-muted-foreground">{selectedReturnItems.length} prenda(s)</p>

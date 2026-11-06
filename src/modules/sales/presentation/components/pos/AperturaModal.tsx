@@ -40,7 +40,7 @@ export const AperturaModal: React.FC<AperturaModalProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-md bg-bg-card border border-border-card p-6">
         <DialogHeader>
-          <DialogTitle className="text-sm font-bold text-secondary uppercase tracking-wider flex items-center gap-2">
+ <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
             <Wallet className="w-4 h-4 text-emerald-500" />
             <span>Apertura de Caja Registradora</span>
           </DialogTitle>
@@ -56,18 +56,18 @@ export const AperturaModal: React.FC<AperturaModalProps> = ({
                 </div>
                 <div>
                   <span className="text-xs font-bold text-secondary block">{selectedRegister.name}</span>
-                  <span className="text-[10px] text-neutral flex items-center gap-1">
+                  <span className="text-xs text-neutral flex items-center gap-1">
                     <Building className="w-3 h-3 text-neutral/70" /> {selectedRegister.branchName}
                   </span>
                 </div>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold uppercase tracking-wider border border-emerald-500/20">
+ <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
                 Asignada
               </span>
             </div>
           ) : (
             <div>
-              <label className="block text-[10px] text-neutral mb-1.5 uppercase tracking-wider font-bold">
+ <label className="block text-xs text-neutral mb-1.5 font-bold">
                 Selecciona la Caja en la que vas a operar hoy:
               </label>
 
@@ -102,7 +102,7 @@ export const AperturaModal: React.FC<AperturaModalProps> = ({
                             <span className="text-xs font-bold text-secondary block truncate">
                               {reg.name}
                             </span>
-                            <span className="text-[10px] text-neutral block truncate">
+                            <span className="text-xs text-neutral block truncate">
                               {reg.branchName}
                             </span>
                           </div>
@@ -110,11 +110,11 @@ export const AperturaModal: React.FC<AperturaModalProps> = ({
 
                         <div className="shrink-0 pl-2">
                           {isOccupied ? (
-                            <span className="text-[10px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
+                            <span className="text-xs font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
                               En uso
                             </span>
                           ) : (
-                            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                            <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
                               Disponible
                             </span>
                           )}
@@ -128,7 +128,7 @@ export const AperturaModal: React.FC<AperturaModalProps> = ({
           )}
 
           <div>
-            <label className="block text-[10px] text-neutral mb-1 uppercase tracking-wider font-bold">
+ <label className="block text-xs text-neutral mb-1 font-bold">
               Monto Fondo Inicial (<CurrencySymbol />)
             </label>
             <input 
@@ -143,7 +143,7 @@ export const AperturaModal: React.FC<AperturaModalProps> = ({
           <button 
             onClick={onOpenSession}
             disabled={isOpening || !selectedRegisterId}
-            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-xs font-bold rounded-xl transition-all shadow flex items-center justify-center gap-1.5 cursor-pointer"
+            className="w-full h-10 bg-primary hover:bg-primary-hover disabled:opacity-40 text-white text-sm font-semibold rounded-lg transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
           >
             {isOpening && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             <span>Abrir Turno de Caja</span>

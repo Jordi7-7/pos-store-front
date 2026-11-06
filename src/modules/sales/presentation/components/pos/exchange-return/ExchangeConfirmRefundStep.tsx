@@ -29,7 +29,7 @@ export const ExchangeConfirmRefundStep: React.FC<ExchangeConfirmRefundStepProps>
   return (
     <div className="flex flex-col gap-3">
       <div className="rounded-xl bg-rose-500/10 border border-rose-500/20 px-4 py-3">
-        <p className="text-xs text-rose-400 uppercase tracking-wider font-semibold mb-1">Resumen de Devolución</p>
+ <p className="text-xs text-rose-400 font-semibold mb-1">Resumen de Devolución</p>
         <p className="text-xs text-muted-foreground">Folio: <span className="text-foreground font-mono">{foundSale?.invoiceNumber}</span></p>
       </div>
 
@@ -40,11 +40,11 @@ export const ExchangeConfirmRefundStep: React.FC<ExchangeConfirmRefundStepProps>
               <p className="text-sm font-semibold text-foreground">{item.productName}</p>
               <div className="flex items-center gap-2 flex-wrap mt-0.5">
                 {item.sku && (
-                  <span className="text-[11px] font-mono font-medium px-1.5 py-0.5 rounded bg-muted/80 border border-border text-foreground">
+                  <span className="text-xs font-mono font-medium px-1.5 py-0.5 rounded bg-muted/80 border border-border text-foreground">
                     SKU: {item.sku}
                   </span>
                 )}
-                {item.attributes && <span className="text-[11px] text-muted-foreground">{item.attributes}</span>}
+                {item.attributes && <span className="text-xs text-muted-foreground">{item.attributes}</span>}
               </div>
             </div>
             <div className="text-right shrink-0">
@@ -62,7 +62,7 @@ export const ExchangeConfirmRefundStep: React.FC<ExchangeConfirmRefundStepProps>
 
       {/* Reason input */}
       <div>
-        <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold block mb-1.5">
+ <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
           Razón de devolución
         </label>
         <textarea

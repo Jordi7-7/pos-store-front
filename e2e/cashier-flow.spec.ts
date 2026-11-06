@@ -24,9 +24,9 @@ test.describe('cajero (login por PIN)', () => {
   test('un PIN correcto entra al POS con el menú reducido a lo que puede usar', async ({ page }) => {
     await pinLogin(page);
     await expect(page.getByText('Punto de Venta (POS)').first()).toBeVisible();
-    await expect(page.getByText('Directorio de Clientes')).toBeVisible();
-    for (const hidden of ['Personal y Roles', 'Configuración Negocio', 'Reportes y Utilidades']) {
-      await expect(page.getByText(hidden)).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Clientes', exact: true })).toBeVisible();
+    for (const hidden of ['Personal y roles', 'Configuración', 'Reportes']) {
+      await expect(page.getByText(hidden, { exact: true })).toHaveCount(0);
     }
   });
 

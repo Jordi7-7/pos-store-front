@@ -62,7 +62,7 @@ export const ExchangeItemsStep: React.FC<ExchangeItemsStepProps> = ({
     <div className="flex flex-col gap-3">
       {/* Returned items (negative) */}
       <div>
-        <p className="text-[10px] text-rose-400 uppercase tracking-wider font-semibold mb-1.5">Prendas que devuelve</p>
+ <p className="text-xs text-rose-400 font-semibold mb-1.5">Prendas que devuelve</p>
         <div className="flex flex-col gap-1.5">
           {selectedReturnItems.map((item: SaleItemRow) => (
             <div key={item.variantId} className="flex items-center justify-between rounded-lg bg-rose-500/8 border border-rose-500/20 px-3.5 py-2.5">
@@ -70,11 +70,11 @@ export const ExchangeItemsStep: React.FC<ExchangeItemsStepProps> = ({
                 <p className="text-sm font-semibold text-foreground">{item.productName}</p>
                 <div className="flex items-center gap-2 flex-wrap mt-0.5">
                   {item.sku && (
-                    <span className="text-[11px] font-mono font-medium px-1.5 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400">
+                    <span className="text-xs font-mono font-medium px-1.5 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400">
                       SKU: {item.sku}
                     </span>
                   )}
-                  {item.attributes && <span className="text-[11px] text-muted-foreground">{item.attributes}</span>}
+                  {item.attributes && <span className="text-xs text-muted-foreground">{item.attributes}</span>}
                 </div>
               </div>
               <div className="text-right shrink-0">
@@ -88,7 +88,7 @@ export const ExchangeItemsStep: React.FC<ExchangeItemsStepProps> = ({
 
       {/* New items scanner */}
       <div>
-        <p className="text-[10px] text-indigo-400 uppercase tracking-wider font-semibold mb-1.5">Prendas que lleva</p>
+ <p className="text-xs text-indigo-400 font-semibold mb-1.5">Prendas que lleva</p>
         <div className="relative flex gap-2 mb-2">
           <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <input
@@ -117,14 +117,14 @@ export const ExchangeItemsStep: React.FC<ExchangeItemsStepProps> = ({
                     <p className="text-sm font-semibold text-foreground">{item.productName}</p>
                     <div className="flex items-center gap-2 flex-wrap mt-0.5">
                       {item.sku && (
-                        <span className="text-[11px] font-mono font-medium px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                        <span className="text-xs font-mono font-medium px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
                           SKU: {item.sku}
                         </span>
                       )}
-                      {item.attributes && <span className="text-[11px] text-muted-foreground">{item.attributes}</span>}
-                      <span className="text-[11px] font-mono text-muted-foreground">· {formatMoney(item.price)} c/u</span>
+                      {item.attributes && <span className="text-xs text-muted-foreground">{item.attributes}</span>}
+                      <span className="text-xs font-mono text-muted-foreground">· {formatMoney(item.price)} c/u</span>
                       {unitDiscount > 0 && (
-                        <span className="text-[10px] font-mono text-emerald-400 font-medium">
+                        <span className="text-xs font-mono text-emerald-400 font-medium">
                           (-{formatMoney(unitDiscount * item.quantity)})
                         </span>
                       )}
@@ -162,7 +162,7 @@ export const ExchangeItemsStep: React.FC<ExchangeItemsStepProps> = ({
                         const val = Math.max(0, parseFloat(e.target.value) || 0);
                         onUpdateNewItemDiscount(item.variantId, discountType, val);
                       }}
-                      className="w-10 h-6 text-[10.5px] font-mono text-right bg-transparent text-foreground focus:outline-none pr-0.5"
+                      className="w-10 h-6 text-xs font-mono text-right bg-transparent text-foreground focus:outline-none pr-0.5"
                     />
                   </div>
 
@@ -245,7 +245,7 @@ export const ExchangeItemsStep: React.FC<ExchangeItemsStepProps> = ({
       {/* Reason input for exchange */}
       {newItems.length > 0 && (
         <div>
-          <label className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold block mb-1.5">
+ <label className="text-xs text-muted-foreground font-semibold block mb-1.5">
             Razón del cambio
           </label>
           <textarea

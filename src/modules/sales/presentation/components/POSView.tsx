@@ -19,6 +19,10 @@ import { POSProductSearch } from './pos/POSProductSearch';
 import { POSCartList } from './pos/POSCartList';
 import { POSPaymentPanel } from './pos/POSPaymentPanel';
 import { NoBranchSelected } from './pos/NoBranchSelected';
+import { KeyboardHints } from './pos/KeyboardHints';
+import { ShiftClosedNotice } from './pos/ShiftClosedNotice';
+import { usePermissions } from '@/hooks/usePermissions';
+import { APP_PERMISSIONS } from '@/constants/permissions';
 import { ThermalTicketModal } from '../../../printing/presentation/components/ThermalTicketModal';
 import { ThermalClosingTicketModal } from '../../../printing/presentation/components/ThermalClosingTicketModal';
 import { PrinterConfigModal } from '../../../printing/presentation/components/PrinterConfigModal';
@@ -36,6 +40,7 @@ interface POSViewProps {
 export const POSView: React.FC<POSViewProps> = ({ activeSession: externalActiveSession, setActiveSession: setExternalActiveSession }) => {
   const { selectedBranchId, selectedBranch, selectedBranchName, setSelectedBranchId, branches } = useLayoutContext();
   const tenant = useTenant();
+  const { can } = usePermissions();
   const timezone = useTimezone();
 
   const shift = usePOSShift({ externalActiveSession, setExternalActiveSession });
@@ -79,6 +84,7 @@ export const POSView: React.FC<POSViewProps> = ({ activeSession: externalActiveS
     onCompletePayment: () => {
       void sale.handleCompletePayment();
     },
+    onExactPayment: payments.handleAddExactPayment,
   });
 
   if (!selectedBranchId) return <NoBranchSelected branches={branches} onSelectBranch={setSelectedBranchId} />;
@@ -100,12 +106,14 @@ export const POSView: React.FC<POSViewProps> = ({ activeSession: externalActiveS
 
       <div className="grid min-h-0 grid-cols-1 lg:flex-1 lg:grid-cols-5 gap-6 relative items-stretch">
         <div className="lg:col-span-3 min-h-0 space-y-4 bg-bg-card border border-border-card rounded-2xl p-5 shadow-sm flex flex-col">
+          {!shift.activeSession && <ShiftClosedNotice canOpen={can(APP_PERMISSIONS.CASH_OPEN_CLOSE)} onOpen={() => shift.setIsAperturaModalOpen(true)} />}
           <POSProductSearch
             branchId={selectedBranchId}
             searchInputRef={searchInputRef}
             onAddVariantToCart={cart.addVariantToCart}
             onOpenImageZoom={setSelectedImageForZoom}
           />
+          <KeyboardHints />
           <POSCartList
             cart={cart.cart}
             isGlobalWholesale={cart.isGlobalWholesale}
@@ -143,6 +151,7 @@ export const POSView: React.FC<POSViewProps> = ({ activeSession: externalActiveS
           customAmountText={payments.customAmountText}
           onChangeCustomAmountText={payments.setCustomAmountText}
           onAddPayment={payments.handleAddPayment}
+          onAddExactPayment={payments.handleAddExactPayment}
           onRemovePayment={payments.handleRemovePayment}
           onCompletePayment={sale.handleCompletePayment}
           isProcessing={sale.isProcessing}

@@ -69,8 +69,8 @@ export const POSHeader: React.FC<POSHeaderProps> = ({
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 bg-bg-card border border-border-card rounded-2xl px-4 py-3 shadow-sm">
       {/* Compact Unified Status Widget: Register + Current Time + Shift Open Duration */}
-      <div className="flex items-center">
-        <div className="inline-flex items-center bg-bg-dark border border-border-card rounded-xl p-1 text-xs shadow-xs">
+      <div className="flex min-w-0 items-center">
+        <div className="inline-flex flex-wrap items-center bg-bg-dark border border-border-card rounded-xl p-1 text-xs shadow-xs">
           {/* Status Indicator & Register */}
           <div
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition-colors ${
@@ -92,7 +92,7 @@ export const POSHeader: React.FC<POSHeaderProps> = ({
           </div>
 
           {/* Time & Shift Duration */}
-          <div className="flex items-center gap-2 px-2.5 py-1 text-secondary font-mono text-[11px]">
+          <div className="flex items-center gap-2 px-2.5 py-1 text-secondary font-mono text-xs">
             <div className="flex items-center gap-1.5" title="Hora actual">
               <Clock className="w-3.5 h-3.5 text-neutral shrink-0" />
               <span>{currentTime}</span>
@@ -115,7 +115,7 @@ export const POSHeader: React.FC<POSHeaderProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2">
         {onOpenPrinterConfig && (
           <button
             type="button"

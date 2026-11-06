@@ -23,7 +23,7 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
   return (
     <div className="border border-border-card rounded-xl bg-bg-dark/30 p-2.5 space-y-2">
       <div className="flex items-center justify-between border-b border-border-card/60 pb-1.5">
-        <span className="text-[10px] text-neutral uppercase font-bold tracking-wider flex items-center gap-1">
+ <span className="text-xs text-neutral font-bold flex items-center gap-1">
           <Layers className="w-3.5 h-3.5 text-primary" /> Desglose de Movimientos
         </span>
 
@@ -32,7 +32,7 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
           <button
             type="button"
             onClick={() => setActiveTab('sales')}
-            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer transition-colors ${
+            className={`px-2 py-0.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
               activeTab === 'sales'
                 ? 'bg-primary text-primary-foreground'
                 : 'text-neutral hover:text-secondary'
@@ -43,7 +43,7 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
           <button
             type="button"
             onClick={() => setActiveTab('products')}
-            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer transition-colors ${
+            className={`px-2 py-0.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
               activeTab === 'products'
                 ? 'bg-primary text-primary-foreground'
                 : 'text-neutral hover:text-secondary'
@@ -54,7 +54,7 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
           <button
             type="button"
             onClick={() => setActiveTab('expenses')}
-            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer transition-colors ${
+            className={`px-2 py-0.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
               activeTab === 'expenses'
                 ? 'bg-primary text-primary-foreground'
                 : 'text-neutral hover:text-secondary'
@@ -65,7 +65,7 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
           <button
             type="button"
             onClick={() => setActiveTab('refunds')}
-            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer transition-colors ${
+            className={`px-2 py-0.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
               activeTab === 'refunds'
                 ? 'bg-primary text-primary-foreground'
                 : 'text-neutral hover:text-secondary'
@@ -82,7 +82,7 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
         {/* Pestaña: Ventas */}
         {activeTab === 'sales' && (
           activeSessionSales.length === 0 ? (
-            <span className="text-[10.5px] text-neutral italic block py-2 text-center">
+            <span className="text-xs text-neutral italic block py-2 text-center">
               Sin ventas en este turno
             </span>
           ) : (
@@ -93,16 +93,16 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
                 return (
                   <div
                     key={sale.id}
-                    className="flex justify-between items-center text-[10.5px] border-b border-border-card/40 pb-1 last:border-b-0 last:pb-0 font-mono"
+                    className="flex justify-between items-center text-xs border-b border-border-card/40 pb-1 last:border-b-0 last:pb-0 font-mono"
                   >
                     <div className="flex items-center gap-1.5 truncate max-w-[280px]">
                       <span className="text-neutral">[{sale.createdAtFormatted}]</span>
                       <span className="text-secondary font-semibold">{sale.invoiceNumber}</span>
-                      <span className="text-[9px] px-1 py-0.2 rounded bg-bg-dark text-neutral border border-border-card">
+                      <span className="text-xs px-1 py-0.2 rounded bg-bg-dark text-neutral border border-border-card">
                         {methodsStr}
                       </span>
                       {sale.status === SaleStatus.REFUNDED && (
-                        <span className="text-[9px] px-1 rounded bg-rose-500/10 text-rose-500 font-sans font-bold">
+                        <span className="text-xs px-1 rounded bg-rose-500/10 text-rose-500 font-sans font-bold">
                           Reembolsada
                         </span>
                       )}
@@ -120,7 +120,7 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
         {/* Pestaña: Artículos Vendidos */}
         {activeTab === 'products' && (
           productsSummary.length === 0 ? (
-            <span className="text-[10.5px] text-neutral italic block py-2 text-center">
+            <span className="text-xs text-neutral italic block py-2 text-center">
               Sin artículos vendidos en este turno
             </span>
           ) : (
@@ -128,14 +128,14 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
               {productsSummary.map((prod) => (
                 <div
                   key={prod.sku}
-                  className="flex justify-between items-center text-[10.5px] border-b border-border-card/40 pb-1 last:border-b-0 last:pb-0"
+                  className="flex justify-between items-center text-xs border-b border-border-card/40 pb-1 last:border-b-0 last:pb-0"
                 >
                   <div className="truncate max-w-[280px]">
                     <span className="font-mono font-bold text-primary mr-1.5">{prod.sku}</span>
-                    <span className="text-secondary uppercase">{prod.name}</span>
+ <span className="text-secondary ">{prod.name}</span>
                   </div>
                   <div className="flex items-center gap-3 shrink-0 font-mono">
-                    <span className="text-neutral text-[10px]">x{prod.quantity}</span>
+                    <span className="text-neutral text-xs">x{prod.quantity}</span>
                     <span className="font-bold text-secondary">{fmt.money(prod.total)}</span>
                   </div>
                 </div>
@@ -147,7 +147,7 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
         {/* Pestaña: Gastos */}
         {activeTab === 'expenses' && (
           activeSessionExpenses.length === 0 ? (
-            <span className="text-[10.5px] text-neutral italic block py-2 text-center">
+            <span className="text-xs text-neutral italic block py-2 text-center">
               Sin gastos en este turno
             </span>
           ) : (
@@ -156,7 +156,7 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
                 return (
                   <div
                     key={exp.id}
-                    className="flex justify-between items-center text-[10.5px] border-b border-border-card/40 pb-1 last:border-b-0 last:pb-0 font-mono"
+                    className="flex justify-between items-center text-xs border-b border-border-card/40 pb-1 last:border-b-0 last:pb-0 font-mono"
                   >
                     <div className="truncate max-w-[280px]">
                       <span className="text-neutral mr-1.5">[{exp.createdAtFormatted}]</span>
@@ -175,7 +175,7 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
         {/* Pestaña: Devoluciones */}
         {activeTab === 'refunds' && (
           activeSessionRefunds.length === 0 ? (
-            <span className="text-[10.5px] text-neutral italic block py-2 text-center">
+            <span className="text-xs text-neutral italic block py-2 text-center">
               Sin devoluciones en este turno
             </span>
           ) : (
@@ -184,7 +184,7 @@ export const ClosingMovements: React.FC<ClosingMovementsProps> = ({ sales: activ
                 return (
                   <div
                     key={refund.id}
-                    className="flex justify-between items-center text-[10.5px] border-b border-border-card/40 pb-1 last:border-b-0 last:pb-0 font-mono"
+                    className="flex justify-between items-center text-xs border-b border-border-card/40 pb-1 last:border-b-0 last:pb-0 font-mono"
                   >
                     <div className="truncate max-w-[280px]">
                       <span className="text-neutral mr-1.5">[{refund.createdAtFormatted}]</span>

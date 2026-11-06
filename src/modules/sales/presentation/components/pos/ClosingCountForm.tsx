@@ -23,11 +23,11 @@ export const ClosingCountForm: React.FC<ClosingCountFormProps> = ({ closingBalan
   return (
     <div className="space-y-2 pt-1">
       <div className="flex items-center justify-between">
-        <label className="block text-[10px] text-neutral uppercase tracking-wider font-bold">
+ <label className="block text-xs text-neutral font-bold">
           Monto de Cierre Físico en Gaveta (<CurrencySymbol />)
         </label>
         {expectedCash !== null && (
-          <span className="text-[10px] text-neutral">
+          <span className="text-xs text-neutral">
             Esperado: <strong className="text-primary font-mono">{formatMoney(expectedCash)}</strong>
           </span>
         )}
@@ -65,7 +65,7 @@ export const ClosingCountForm: React.FC<ClosingCountFormProps> = ({ closingBalan
             ) : (
               <AlertTriangle className="w-4 h-4 shrink-0" />
             )}
-            <span className="text-[10px] uppercase tracking-wider">
+ <span className="text-xs ">
               {isExact
                 ? '✓ Caja Cuadrada Exacta'
                 : isShortage
@@ -79,7 +79,7 @@ export const ClosingCountForm: React.FC<ClosingCountFormProps> = ({ closingBalan
         </div>
       )}
 
-      <p className="text-[9.5px] text-neutral flex items-center gap-1 leading-normal">
+      <p className="text-xs text-neutral flex items-center gap-1 leading-normal">
         <Info className="w-3 h-3 text-primary shrink-0" />
         Cuenta el dinero físico real (billetes y monedas) en la gaveta. Al confirmar se generará el ticket de corte Z.
       </p>

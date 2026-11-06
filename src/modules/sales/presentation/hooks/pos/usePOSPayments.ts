@@ -33,6 +33,16 @@ export function usePOSPayments(cartTotal: number) {
     setCustomAmountText('');
   };
 
+  /** Cobra de una vez lo que falta con el método elegido (el caso más común: el cliente paga justo). */
+  const handleAddExactPayment = () => {
+    if (remaining <= 0) {
+      toast.warning('La venta ya está totalmente pagada.');
+      return;
+    }
+    setAddedPayments([...addedPayments, { paymentMethod: selectedMethod, amount: roundMoney(remaining) }]);
+    setCustomAmountText('');
+  };
+
   const handleRemovePayment = (index: number) => setAddedPayments(addedPayments.filter((_, idx) => idx !== index));
   const resetPayments = () => setAddedPayments([]);
 
@@ -45,6 +55,7 @@ export function usePOSPayments(cartTotal: number) {
     amountPaid,
     remaining,
     handleAddPayment,
+    handleAddExactPayment,
     handleRemovePayment,
     resetPayments,
   };

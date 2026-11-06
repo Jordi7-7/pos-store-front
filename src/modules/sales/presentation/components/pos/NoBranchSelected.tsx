@@ -21,7 +21,7 @@ export const NoBranchSelected: React.FC<NoBranchSelectedProps> = ({ branches, on
       </p>
 
       <div className="w-full space-y-2">
-        <span className="text-[11px] font-semibold text-neutral uppercase tracking-wider block text-left mb-1">Sucursales disponibles:</span>
+ <span className="text-xs font-semibold text-neutral block text-left mb-1">Sucursales disponibles:</span>
         {branches && branches.length > 0 ? (
           branches.map((b) => (
             <button
@@ -33,7 +33,7 @@ export const NoBranchSelected: React.FC<NoBranchSelectedProps> = ({ branches, on
                 <Building className="w-4 h-4 text-neutral group-hover:text-primary transition-colors" />
                 <div>
                   <div className="text-xs font-bold text-secondary group-hover:text-primary transition-colors">{b.name}</div>
-                  {b.address && <div className="text-[10px] text-neutral line-clamp-1">{b.address}</div>}
+                  {b.address && <div className="text-xs text-neutral line-clamp-1">{b.address}</div>}
                 </div>
               </div>
               <ArrowRight className="w-4 h-4 text-neutral/50 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />

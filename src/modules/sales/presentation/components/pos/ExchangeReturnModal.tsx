@@ -32,11 +32,11 @@ function StepIndicator({ current, steps }: { current: number; steps: string[] })
       {steps.map((label, i) => (
         <React.Fragment key={i}>
           <div className={`flex items-center gap-1.5 ${i === current ? 'opacity-100' : i < current ? 'opacity-60' : 'opacity-30'}`}>
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold
+            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold
               ${i < current ? 'bg-emerald-500 text-white' : i === current ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
               {i < current ? '✓' : i + 1}
             </div>
-            <span className="text-[10px] font-medium text-muted-foreground hidden sm:inline">{label}</span>
+            <span className="text-xs font-medium text-muted-foreground hidden sm:inline">{label}</span>
           </div>
           {i < steps.length - 1 && <div className="flex-1 h-px bg-border mx-1" />}
         </React.Fragment>
@@ -103,7 +103,7 @@ export function ExchangeReturnModal({
       <DialogContent className="sm:max-w-3xl max-w-3xl w-[92vw] max-h-[90vh] overflow-hidden flex flex-col gap-0 p-0">
         {/* Header */}
         <DialogHeader className="px-6 pt-5 pb-0 shrink-0">
-          <DialogTitle className="text-xs font-bold text-secondary uppercase tracking-wider flex items-center gap-2 mb-1">
+ <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2 mb-1">
             {step === 'search' || step === 'select-items' || step === 'choose-mode' ? (
               <ArrowLeftRight className="w-4 h-4 text-primary" />
             ) : step === 'confirm-refund' ? (
@@ -124,7 +124,7 @@ export function ExchangeReturnModal({
                 else if (step === 'confirm-refund') setStep('choose-mode');
                 else if (step === 'exchange') setStep('choose-mode');
               }}
-              className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors mt-1 cursor-pointer"
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mt-1 cursor-pointer"
             >
               <ArrowLeft className="w-3 h-3" /> Volver
             </button>

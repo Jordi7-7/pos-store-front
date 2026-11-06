@@ -4,12 +4,14 @@ interface UsePOSHotkeysProps {
   onSearchFocus: () => void;
   onCompletePayment: () => void;
   onPaymentFocus: () => void;
+  onExactPayment: () => void;
 }
 
 export const usePOSHotkeys = ({
   onSearchFocus,
   onCompletePayment,
   onPaymentFocus,
+  onExactPayment,
 }: UsePOSHotkeysProps) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -25,6 +27,12 @@ export const usePOSHotkeys = ({
         onPaymentFocus();
       }
 
+      // F8 key: Adds the remaining amount as a payment with the selected method
+      if (e.key === 'F8') {
+        e.preventDefault();
+        onExactPayment();
+      }
+
       // F12 key: Completes/processes the sale
       if (e.key === 'F12') {
         e.preventDefault();
@@ -36,5 +44,5 @@ export const usePOSHotkeys = ({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onSearchFocus, onCompletePayment, onPaymentFocus]);
+  }, [onSearchFocus, onCompletePayment, onPaymentFocus, onExactPayment]);
 };

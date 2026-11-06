@@ -13,14 +13,14 @@ export const ClosingSalesSummary: React.FC<ClosingSalesSummaryProps> = ({ summar
     <div className="bg-bg-dark/60 border border-border-card p-3 rounded-xl space-y-2 flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between pb-1.5 border-b border-border-card/60">
-          <span className="text-[10px] font-bold text-secondary uppercase tracking-wider flex items-center gap-1.5">
+ <span className="text-xs font-bold text-secondary flex items-center gap-1.5">
             <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
             Resumen General Ventas
           </span>
-          <span className="text-[9px] font-bold text-neutral">Comercial</span>
+          <span className="text-xs font-bold text-neutral">Comercial</span>
         </div>
 
-        <div className="mt-2 space-y-1 font-mono text-[11px] leading-tight">
+        <div className="mt-2 space-y-1 font-mono text-xs leading-tight">
           <div className="flex justify-between text-neutral">
             <span>Tickets Emitidos:</span>
             <span className="text-secondary font-semibold">{salesCount}</span>
@@ -51,7 +51,7 @@ export const ClosingSalesSummary: React.FC<ClosingSalesSummaryProps> = ({ summar
       </div>
 
       <div className="border-t border-border-card/80 pt-2 flex justify-between items-center">
-        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
+ <span className="text-xs font-bold text-emerald-600 ">
           Total Ventas Netas:
         </span>
         <span className="font-mono text-base font-black text-emerald-600">

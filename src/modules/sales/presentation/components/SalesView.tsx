@@ -16,6 +16,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Field } from '@/components/ui/field';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/shared/presentation/components/PageHeader';
 
 export const SalesView: React.FC = () => {
   const { selectedBranchId } = useLayoutContext();
@@ -67,10 +68,7 @@ export const SalesView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-sm font-bold text-secondary">Ventas</h3>
-        <p className="text-xs text-neutral mt-0.5">Consulta las ventas registradas en el período seleccionado.</p>
-      </div>
+      <PageHeader title="Ventas" description="Consulta las ventas registradas en el período seleccionado." />
 
       <Card>
         <CardHeader className="pb-4">
@@ -139,7 +137,7 @@ export const SalesView: React.FC = () => {
                       </td>
                       {isAllBranches && (
                         <td className="p-3 font-medium text-foreground">
-                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-muted border border-border">
+                          <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md bg-muted border border-border">
                             {sale.branchName}
                           </span>
                         </td>
@@ -147,7 +145,7 @@ export const SalesView: React.FC = () => {
                       <td className="p-3">{sale.customerName}</td>
                       <td className="p-3 text-right font-mono font-bold">{sale.totalFormatted}</td>
                       <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${SALE_STATUS_BADGE[sale.status].className}`}>{SALE_STATUS_BADGE[sale.status].label}</span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-semibold border ${SALE_STATUS_BADGE[sale.status].className}`}>{SALE_STATUS_BADGE[sale.status].label}</span>
                       </td>
                       <td className="p-3 text-right">
                         <Button

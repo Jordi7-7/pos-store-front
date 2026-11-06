@@ -46,18 +46,18 @@ export const CierreModal: React.FC<CierreModalProps> = ({
         {/* Encabezado */}
         <DialogHeader className="border-b border-border pb-3 shrink-0">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-sm font-bold text-secondary uppercase tracking-wider flex items-center gap-2">
+ <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
               <Receipt className="w-4 h-4 text-primary" />
               <span>Cierre de Caja Registradora (Corte Z)</span>
             </DialogTitle>
             <div className="flex items-center gap-2">
               {activeSession?.cashRegisterName && (
-                <span className="text-[10px] text-neutral bg-bg-dark border border-border-card px-2 py-0.5 rounded-lg font-medium">
+                <span className="text-xs text-neutral bg-bg-dark border border-border-card px-2 py-0.5 rounded-lg font-medium">
                   Caja: <strong className="text-secondary">{activeSession.cashRegisterName}</strong>
                 </span>
               )}
               {activeSession?.openedByName && (
-                <span className="text-[10px] text-neutral bg-bg-dark border border-border-card px-2 py-0.5 rounded-lg font-medium">
+                <span className="text-xs text-neutral bg-bg-dark border border-border-card px-2 py-0.5 rounded-lg font-medium">
                   Cajero: <strong className="text-secondary">{activeSession.openedByName}</strong>
                 </span>
               )}
@@ -75,7 +75,7 @@ export const CierreModal: React.FC<CierreModalProps> = ({
               ) : (
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               )}
-              <p className="text-[11px] font-medium leading-snug">
+              <p className="text-xs font-medium leading-snug">
                 {detailsStatus === 'loading'
                   ? 'Cargando el resumen del turno…'
                   : 'No se pudo cargar el resumen del turno (efectivo esperado y movimientos). Puedes cerrar la caja contando el efectivo; el sistema calculará la diferencia. Si falla siempre, pide a un administrador el permiso para consultar sesiones de caja.'}
@@ -113,7 +113,7 @@ export const CierreModal: React.FC<CierreModalProps> = ({
           <button 
             onClick={onCloseSession}
             disabled={isClosing || closingBalance === ''}
-            className="w-full py-3 bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white text-xs font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-1.5 cursor-pointer"
+            className="w-full h-10 bg-primary hover:bg-primary-hover disabled:opacity-40 text-white text-sm font-semibold rounded-lg transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
           >
             {isClosing && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             <span>Cerrar Caja y Emitir Corte Z</span>

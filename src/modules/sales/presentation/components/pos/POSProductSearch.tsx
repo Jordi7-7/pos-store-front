@@ -98,17 +98,20 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
       {/* Barcode Search Header */}
       <div className="flex gap-2 items-center justify-between border-b border-border-card pb-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-3 w-4 h-4 text-neutral" />
+          <Search className="absolute left-3.5 top-3 w-4.5 h-4.5 text-neutral" />
           <input
             ref={searchInputRef}
             type="text"
-            placeholder="Escanea código de barras o busca por SKU/Nombre y presiona Enter..."
+            placeholder="Escanea código o escribe SKU / nombre y pulsa Enter"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={handleSearchKeyPress}
-            className="w-full bg-bg-dark border border-border-card rounded-xl py-2 pl-10 pr-4 text-xs text-secondary focus:outline-none focus:border-primary transition-all placeholder-neutral"
+            className="w-full h-11 bg-bg-dark border-2 border-border-card rounded-lg pl-11 pr-14 text-sm text-secondary focus:outline-none focus:border-primary transition-all placeholder-neutral"
             autoFocus
           />
+          <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-border-card bg-bg-card px-1.5 py-0.5 text-xs font-mono font-semibold text-neutral">
+            F5
+          </kbd>
         </div>
 
         <button
@@ -116,9 +119,9 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
           onClick={executeSearch}
           disabled={!searchTerm.trim() || isSearching}
           title="Buscar código / Confirmar (Enter)"
-          className="flex items-center gap-1 px-3 py-2 bg-primary hover:bg-primary/90 active:scale-95 text-white font-bold text-xs rounded-xl shadow-sm transition-all disabled:opacity-40 disabled:pointer-events-none cursor-pointer shrink-0"
+          className="flex items-center justify-center gap-1 h-11 w-11 bg-primary hover:bg-primary/90 active:scale-95 text-white font-bold text-xs rounded-xl shadow-sm transition-all disabled:opacity-40 disabled:pointer-events-none cursor-pointer shrink-0"
         >
-          {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <CornerDownLeft className="w-4 h-4" />}
+          {isSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : <CornerDownLeft className="w-5 h-5" />}
         </button>
       </div>
 
@@ -132,7 +135,7 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
                 <h3 className="text-sm font-extrabold text-secondary">
                   Múltiples coincidencias encontradas
                 </h3>
-                <p className="text-[10px] text-neutral mt-0.5">
+                <p className="text-xs text-neutral mt-0.5">
                   Selecciona el producto que deseas agregar al carrito
                 </p>
               </div>
@@ -210,7 +213,7 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
                         </span>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-[10px] text-neutral font-mono">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-xs text-neutral font-mono">
                         <span>SKU: {variant.sku}</span>
                         {variant.barcode && (
                           <>
@@ -236,7 +239,7 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
                         {formatMoney(Number(variant.salePrice || 0))}
                       </span>
                       <span
-                        className={`text-[11px] font-bold mt-0.5 block ${
+                        className={`text-xs font-bold mt-0.5 block ${
                           stockQty > 0 ? 'text-emerald-500' : 'text-rose-500'
                         }`}
                       >

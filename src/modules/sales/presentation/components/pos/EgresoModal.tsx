@@ -33,14 +33,14 @@ export const EgresoModal: React.FC<EgresoModalProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle className="text-xs font-bold text-secondary uppercase tracking-wider flex items-center gap-2">
+ <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
             <ArrowRightLeft className="w-4 h-4 text-amber-500" />
             <span>Registrar Gasto</span>
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3 pt-2">
           <div>
-            <label className="block text-[10px] text-neutral mb-1 uppercase tracking-wider font-bold">
+ <label className="block text-xs text-neutral mb-1 font-bold">
               Descripción del Gasto
             </label>
             <input 
@@ -52,7 +52,7 @@ export const EgresoModal: React.FC<EgresoModalProps> = ({
             />
           </div>
           <div>
-            <label className="block text-[10px] text-neutral mb-1 uppercase tracking-wider font-bold">
+ <label className="block text-xs text-neutral mb-1 font-bold">
               Monto (<CurrencySymbol />)
             </label>
             <input 
@@ -66,7 +66,7 @@ export const EgresoModal: React.FC<EgresoModalProps> = ({
           <button 
             onClick={onAddExpense}
             disabled={isRegistering}
-            className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white text-xs font-bold rounded-xl transition-all shadow flex items-center justify-center gap-1.5 cursor-pointer"
+            className="w-full h-10 bg-primary hover:bg-primary-hover disabled:opacity-40 text-white text-sm font-semibold rounded-lg transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
           >
             {isRegistering && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             <span>Guardar Gasto</span>
