@@ -1,7 +1,7 @@
 import type { ProductDTO, ProductVariantDTO } from '../types/product.types';
 import type { ProductEntity, ProductVariantEntity, ProductImageEntity } from '../entities/product.entity';
 import { ProductType } from '../enums';
-import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 export const toProductVariantEntity = (dto: ProductVariantDTO): ProductVariantEntity => {
   const purchasePrice = Number(dto.purchasePrice || 0);

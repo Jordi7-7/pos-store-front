@@ -4,7 +4,7 @@ import { useVariantSales } from '../../hooks';
 import { ProductPagination } from '../ProductPagination';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Loader2 } from 'lucide-react';
-import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 interface ProductDetailSalesTabProps {
   activeVariantId: string;

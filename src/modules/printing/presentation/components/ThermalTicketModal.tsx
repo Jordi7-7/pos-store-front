@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useTenant } from '@/modules/auth/hooks/useSession';
+import { useTenant } from '@/modules/auth/presentation/hooks/useSession';
 import { thermalPrinterService } from '../../infrastructure/thermal-printer.service';
 import { buildSaleReceiptBytes } from '../../infrastructure/escpos-builder';
 import { parseEscPosBytes } from '../../infrastructure/escpos-parser';

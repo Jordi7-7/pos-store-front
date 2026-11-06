@@ -1,6 +1,6 @@
 import React from 'react';
 import { Coins } from 'lucide-react';
-import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 import type { ClosingSummary } from '@/modules/cash-sessions/domain/closing-summary';
 
 /** Arqueo de efectivo del cajón: fondo inicial, cobros, gastos y devoluciones hasta el efectivo esperado. */

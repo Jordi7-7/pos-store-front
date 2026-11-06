@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select';
 import type { CustomerEntity } from '@/modules/customers';
 import type { CartItem } from '../../../domain/cart-item';
-import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 interface AddedPayment {
   paymentMethod: PaymentMethod;

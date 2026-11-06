@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useFormatters } from '@/modules/auth/hooks/useFormatters';
+import { useFormatters } from '@/modules/auth/presentation/hooks/useFormatters';
 import { cashSessionsRepository } from '../../infrastructure/dependencies';
 import type { CashSessionDetailsEntity, CashSessionHeaderEntity } from '../../domain/entities/cash-session.entity';
 import { toCashSessionDetailsVM, toCashSessionHeaderVM } from '../view-models/cash-session.vm';

@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useVariantSearch } from '@/modules/products/hooks';
 import { ProductType } from '@/modules/products/enums';
 import { PosVariableProductModal } from './PosVariableProductModal';
-import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 interface POSProductSearchProps {
   branchId: string;

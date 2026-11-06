@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { productsService } from '../services/products.service';
 import { toProductEntities } from '../mappers/product.mapper';
 import type { ProductType } from '../enums';
-import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 
 export const useProductList = (params?: {
   page?: number;

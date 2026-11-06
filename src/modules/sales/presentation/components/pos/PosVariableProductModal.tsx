@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { X, Package, Check, ShoppingCart,} from 'lucide-react';
 import { toast } from 'sonner';
-import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 export interface PosVariableProductModalProps {
   isOpen: boolean;

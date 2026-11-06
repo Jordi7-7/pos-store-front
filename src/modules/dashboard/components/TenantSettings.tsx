@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { Globe, DollarSign, Clock, Building, Save, AlertCircle, Loader2, Link2, Image as ImageIcon, UploadCloud, Upload, Trash2, Palette, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuthStore } from '../../auth/hooks/useAuthStore';
+import { useAuthStore } from '../../auth/presentation/stores/useAuthStore';
 import { mediaService } from '@/modules/media/services/media.service';
 import { getSavedTheme, saveTheme, DEFAULT_THEME, type TenantThemeColors } from '@/lib/themeManager';
 import { BranchesManagementTab } from '@/modules/branches';

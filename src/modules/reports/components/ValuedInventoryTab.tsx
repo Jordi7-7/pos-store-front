@@ -8,7 +8,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useTimezone } from '../../auth/hooks/useSession';
+import { useTimezone } from '../../auth/presentation/hooks/useSession';
 import { useValuedInventoryReport } from '../hooks/useReports';
 import { ProductPagination } from '@/modules/products/components/ProductPagination';
 import { 
@@ -23,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 interface ValuedInventoryTabProps {
   selectedBranchId?: string;

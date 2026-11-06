@@ -1,5 +1,5 @@
-import { useAuthStore } from "@/modules/auth/hooks/useAuthStore"
-import { useRoleName, useTenant, useUser } from "@/modules/auth/hooks/useSession"
+import { useAuthStore } from "@/modules/auth/presentation/stores/useAuthStore"
+import { useRoleName, useTenant, useUser } from "@/modules/auth/presentation/hooks/useSession"
 import { LogOut, ShieldCheck, ChevronDown } from "lucide-react"
 import {
   Sidebar,

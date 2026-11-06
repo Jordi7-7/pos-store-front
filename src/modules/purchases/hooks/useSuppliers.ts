@@ -3,7 +3,7 @@ import { purchasesService } from '../services/purchases.service';
 import type { CreateSupplierInput, UpdateSupplierInput, Supplier } from '../types/purchases.types';
 import { toSupplierEntities } from '../mappers';
 import type { SupplierEntity } from '../entities';
-import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 
 export const useSuppliers = (options?: { enabled?: boolean }): {
   suppliers: SupplierEntity[];

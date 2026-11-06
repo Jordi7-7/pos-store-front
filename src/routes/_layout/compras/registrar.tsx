@@ -1,4 +1,4 @@
-import { guardRoute } from '@/modules/auth/hooks/route-guard';
+import { guardRoute } from '@/modules/auth/presentation/hooks/route-guard';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { PurchaseForm } from '@/modules/purchases/components/PurchaseForm';
 import { useLayoutContext } from '@/providers/LayoutContext';

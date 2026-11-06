@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useCashSessionDetailsQuery } from '../hooks/useCashSessions';
 import { useAuditReprint } from '../hooks/useAuditReprint';
-import { useTenant } from '../../../auth/hooks/useSession';
+import { useTenant } from '../../../auth/presentation/hooks/useSession';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ThermalTicketModal } from '../../../printing/presentation/components/ThermalTicketModal';

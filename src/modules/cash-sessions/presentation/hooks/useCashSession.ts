@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useIsAuthenticated, useUser } from '@/modules/auth/hooks/useSession';
+import { useIsAuthenticated, useUser } from '@/modules/auth/presentation/hooks/useSession';
 import { cashSessionsRepository, closeCashSession, openCashSession, registerExpense } from '../../infrastructure/dependencies';
 import type { OpenCashSessionCommand } from '../../application/open-cash-session';
 import type { RegisterExpenseCommand } from '../../application/register-expense';

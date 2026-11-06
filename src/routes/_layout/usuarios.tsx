@@ -1,4 +1,4 @@
-import { guardRoute } from '@/modules/auth/hooks/route-guard';
+import { guardRoute } from '@/modules/auth/presentation/hooks/route-guard';
 import { createFileRoute } from '@tanstack/react-router'
 import { UsersView } from '@/modules/users/views/UsersView';
 

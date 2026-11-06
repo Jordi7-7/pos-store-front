@@ -28,7 +28,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { APP_PERMISSIONS } from '@/constants/permissions';
 
 import type { ProductEntity } from '../entities/product.entity';
-import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 type TabName = 'details' | 'sales' | 'purchases' | 'batches' | 'movements' | 'adjustment';
 

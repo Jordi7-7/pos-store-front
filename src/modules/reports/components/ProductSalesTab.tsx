@@ -13,7 +13,7 @@ import { type DateRange } from 'react-day-picker';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { getTenantLocale, useTimezone } from '../../auth/hooks/useSession';
+import { getTenantLocale, useTimezone } from '../../auth/presentation/hooks/useSession';
 import { useProductSalesReport } from '../hooks/useReports';
 import { Calendar } from '@/components/ui/calendar';
 import { Field } from '@/components/ui/field';
@@ -31,7 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 interface ProductSalesTabProps {
   selectedBranchId?: string;

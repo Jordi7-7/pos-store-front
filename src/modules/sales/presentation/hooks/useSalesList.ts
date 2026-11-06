@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useFormatters } from '@/modules/auth/hooks/useFormatters';
+import { useFormatters } from '@/modules/auth/presentation/hooks/useFormatters';
 import { toSaleSummaryVM } from '../view-models/sale.vm';
 import { salesRepository } from '../../infrastructure/dependencies';
 import type { SalesPage } from '../../application/ports/sales.repository';
-import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 
 export interface UsePaginatedSalesParams {
   startDate?: string;

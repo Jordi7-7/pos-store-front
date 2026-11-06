@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useAuthStore } from './useAuthStore';
+import { useAuthStore } from '../stores/useAuthStore';
 import { useIsAuthenticated } from './useSession';
 
 // Tiempo máximo de inactividad antes de abrir el modal (por defecto 15 minutos o configurable en .env)

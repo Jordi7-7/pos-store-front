@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import type { CartItem } from '../../domain/cart-item';
 import { ProductType } from '@/modules/products/enums';
-import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 import {
   clampGlobalDiscount,
   computeCartTotals,

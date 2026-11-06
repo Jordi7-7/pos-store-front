@@ -8,7 +8,7 @@ import type {
   UpdateVariantInput,
   ProductVariantDTO,
 } from '../types/product.types';
-import { useTenantId } from '@/modules/auth/hooks/useSession';
+import { useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 
 export const useProductMutations = () => {
   const queryClient = useQueryClient();

@@ -1,6 +1,6 @@
 import React from 'react';
 import { DollarSign, Package, RotateCcw } from 'lucide-react';
-import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 interface TodaySalesCardProps {
   totalSales: number;

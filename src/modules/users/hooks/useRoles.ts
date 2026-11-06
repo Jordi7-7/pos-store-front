@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { rolesService } from '../services/roles.service';
 import type { RoleItem, CreateRoleInput, UpdateRoleInput } from '../services/roles.service';
 import type { PermissionDefinition, PermissionModuleGroup } from '@/constants/permissions';
-import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 import { toast } from 'sonner';
 
 export const PERMISSIONS_CATALOG_KEY = ['permissions-catalog'];

@@ -1,4 +1,4 @@
-import { guardRoute } from '@/modules/auth/hooks/route-guard';
+import { guardRoute } from '@/modules/auth/presentation/hooks/route-guard';
 import { useState, useEffect } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { MediaView } from '@/modules/media/components/MediaView';

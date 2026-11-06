@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useLayoutContext } from '@/providers/LayoutContext';
-import { useTenant, useTimezone } from '@/modules/auth/hooks/useSession';
+import { useTenant, useTimezone } from '@/modules/auth/presentation/hooks/useSession';
 import { CashSessionAuditModal } from '@/modules/cash-sessions/presentation/components/CashSessionAuditModal';
 import type { ActiveCashSessionEntity } from '@/modules/cash-sessions/domain/entities/cash-session.entity';
 import { toast } from 'sonner';

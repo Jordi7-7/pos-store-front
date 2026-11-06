@@ -3,7 +3,7 @@ import { Printer, Barcode, Settings2, Zap } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useTenant } from '@/modules/auth/hooks/useSession';
+import { useTenant } from '@/modules/auth/presentation/hooks/useSession';
 import type { BarcodeLabelItem } from './types';
 import { BarcodeQueueList } from './BarcodeQueueList';
 import { BarcodePreviewPanel } from './BarcodePreviewPanel';

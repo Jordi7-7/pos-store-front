@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersService } from '../services/users.service';
 import type { CreateUserInput, UpdateUserInput, UserItem } from '../services/users.service';
-import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 
 export const useUsers = () => {
   const tenantId = useTenantId();

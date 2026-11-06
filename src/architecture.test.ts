@@ -44,17 +44,19 @@ describe('el dominio no lleva texto de pantalla', () => {
  * En los módulos ya migrados, la presentación habla con repositorios y casos de uso a través de la
  * raíz de composición (`infrastructure/dependencies`): nunca importa mappers, DTO ni clases HTTP.
  */
-const MIGRATED_MODULES = ['/modules/sales/', '/modules/cash-sessions/', '/modules/cash-registers/'];
+const MIGRATED_MODULES = ['/modules/sales/', '/modules/cash-sessions/', '/modules/cash-registers/', '/modules/printing/', '/modules/auth/'];
 const INFRA_INTERNALS = /infrastructure\/(mappers|dtos|[\w-]+\.http-repository|[\w.-]+\.service)\b/;
-const ALLOWED_INFRA = /infrastructure\/printing\//; // la configuración de la impresora USB es específica del dispositivo
+/** `printing` es un módulo de dispositivo: sus pantallas de vista previa y configuración usan su propia infraestructura (generador ESC/POS, impresora USB). */
+const DEVICE_MODULES = ['/modules/printing/'];
 
 describe('la presentación no usa los internos de infraestructura', () => {
-  it('sales, cash-sessions y cash-registers solo entran por infrastructure/dependencies', () => {
+  it('sales, cash-sessions, cash-registers, printing y auth solo entran por infrastructure/dependencies', () => {
     const offenders: string[] = [];
     for (const [path, content] of Object.entries(production)) {
       if (layerOf(path) !== 'presentation' || !MIGRATED_MODULES.some((m) => path.includes(m))) continue;
+      if (DEVICE_MODULES.some((m) => path.includes(m))) continue;
       for (const specifier of importsOf(content)) {
-        if (INFRA_INTERNALS.test(specifier) && !ALLOWED_INFRA.test(specifier)) offenders.push(`${path}: ${specifier}`);
+        if (INFRA_INTERNALS.test(specifier)) offenders.push(`${path}: ${specifier}`);
       }
     }
     expect(offenders).toEqual([]);
@@ -75,6 +77,7 @@ describe('la presentación no usa los internos de infraestructura', () => {
  * usa el turno), y no hay ciclos. Ampliar una lista exige una decisión consciente.
  */
 const ALLOWED_DEPENDENCIES: Record<string, string[]> = {
+  auth: [],
   printing: ['auth'],
   'cash-sessions': ['auth', 'printing'],
   'cash-registers': ['auth', 'branches', 'users'],

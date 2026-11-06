@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Badge } from '@/components/ui/badge';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useAuthStore } from '@/modules/auth/presentation/stores/useAuthStore';
 import { APP_PERMISSIONS } from '@/constants/permissions';
 
 export const BranchesManagementTab: React.FC = () => {

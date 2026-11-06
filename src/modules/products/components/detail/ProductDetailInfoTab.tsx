@@ -4,7 +4,7 @@ import type { ProductDTO, ProductVariantDTO } from '../../types';
 import type { ProductEntity } from '../../entities/product.entity';
 import { Badge } from '@/components/ui/badge';
 import { Barcode } from 'lucide-react';
-import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 interface ProductDetailInfoTabProps {
   detailProduct: ProductDTO | ProductEntity;

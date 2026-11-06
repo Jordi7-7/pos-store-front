@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { useAuthStore } from '../hooks/useAuthStore';
+import { useAuthStore } from '../stores/useAuthStore';
 import { useTenant } from '../hooks/useSession';
 import {
   Dialog,

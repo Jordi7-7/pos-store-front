@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsService } from '../services/products.service';
 import type { AdjustStockInput } from '../types/inventory.types';
-import { useTenantId } from '@/modules/auth/hooks/useSession';
+import { useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 
 export const useStockAdjustment = () => {
   const queryClient = useQueryClient();

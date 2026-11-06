@@ -1,7 +1,7 @@
 import React from 'react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import type { BarcodeLabelItem } from './types';
-import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 interface BarcodeQueueListProps {
   items: BarcodeLabelItem[];

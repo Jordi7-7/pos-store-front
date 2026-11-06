@@ -1,7 +1,7 @@
 import type { CustomerDTO } from '../types/customer.types';
 import type { CustomerEntity } from '../entities/customer.entity';
 import { DEFAULT_CUSTOMER } from '../enums/customer.enums';
-import { getTenantLocale, getTenantTimezone } from '@/modules/auth/hooks/useSession';
+import { getTenantLocale, getTenantTimezone } from '@/modules/auth/presentation/hooks/useSession';
 
 export const getCustomerInitials = (name?: string): string => {
   if (!name || !name.trim()) return 'CL';

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { usePurchases, useCancelPurchase, useSuppliers } from '../hooks';
-import { useTimezone } from '../../auth/hooks/useSession';
+import { useTimezone } from '../../auth/presentation/hooks/useSession';
 import {
   ClipboardList,
   Calendar as CalendarIcon,
@@ -31,7 +31,7 @@ import {
   ComboboxItem,
   ComboboxEmpty,
 } from '@/components/ui/combobox';
-import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 interface PurchaseHistoryProps {
   selectedBranchId?: string;

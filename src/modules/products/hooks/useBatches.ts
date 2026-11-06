@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { productsService } from '../services/products.service';
 import { toInventoryLotEntity } from '../mappers';
-import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 import type { InventoryLotEntity } from '../entities';
 import type { PaginatedResult, InventoryLotDTO } from '../types';
 

@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Receipt, RotateCcw, Printer } from 'lucide-react';
 import { useSaleByInvoice } from '../hooks/useSaleDetail';
 import { ThermalTicketModal } from '../../../printing/presentation/components/ThermalTicketModal';
-import { useTenant } from '@/modules/auth/hooks/useSession';
+import { useTenant } from '@/modules/auth/presentation/hooks/useSession';
 import { toTicketSaleData, type SaleDetailItemVM, type SaleRefundItemVM } from '../view-models/sale.vm';
-import { useFormatters } from '@/modules/auth/hooks/useFormatters';
+import { useFormatters } from '@/modules/auth/presentation/hooks/useFormatters';
 
 interface SaleDetailModalProps {
   invoiceNumber?: string;

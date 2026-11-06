@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/shared/infrastructure/http/api-error';
-import type { ProfileDTO } from '../infrastructure/dtos/auth.dto';
-import { toSessionTenant, toSessionUser } from '../infrastructure/mappers/session.mapper';
-import type { SessionTenant, SessionUser } from '../domain/session';
+import type { ProfileDTO } from '../../infrastructure/dtos/auth.dto';
+import { toSessionTenant, toSessionUser } from '../../infrastructure/mappers/session.mapper';
+import type { SessionTenant, SessionUser } from '../../domain/session';
 
 const { getProfile, loginRequest, pinLoginRequest } = vi.hoisted(() => ({ getProfile: vi.fn(), loginRequest: vi.fn(), pinLoginRequest: vi.fn() }));
 // El repositorio es falso; el caso de uso SignIn y el store son los reales.
-vi.mock('../infrastructure/dependencies', async () => {
-  const { SignIn } = await import('../application/sign-in');
+vi.mock('../../infrastructure/dependencies', async () => {
+  const { SignIn } = await import('../../application/sign-in');
   const authRepository = {
     getProfile: (...args: unknown[]) => getProfile(...args),
     login: (...args: unknown[]) => loginRequest(...args),

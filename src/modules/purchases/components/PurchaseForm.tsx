@@ -25,7 +25,7 @@ import {
   TableFooter
 } from "@/components/ui/table";
 import { PurchaseFormRow } from './PurchaseFormRow';
-import { formatMoney } from '@/modules/auth/hooks/useSession';
+import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 interface PurchaseItemInput {
   variantId: string;

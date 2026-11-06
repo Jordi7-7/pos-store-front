@@ -11,7 +11,7 @@ import type {
   LotItemEntity,
 } from '../entities/inventory.entity';
 import { InventoryMovementType, BatchStatus } from '../enums';
-import { formatMoney, getTenantLocale } from '@/modules/auth/hooks/useSession';
+import { formatMoney, getTenantLocale } from '@/modules/auth/presentation/hooks/useSession';
 
 export const toInventoryMovementEntity = (dto: InventoryMovementDTO): InventoryMovementEntity => {
   const dateObj = new Date(dto.createdAt);

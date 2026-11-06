@@ -12,7 +12,7 @@ import {
 import { useCashSessionsList, useFetchCashSessionDetails } from '../hooks/useCashSessions';
 import type { CashSessionHeaderVM } from '../view-models/cash-session.vm';
 import { CashSessionStatus, CashSessionDifferenceStatus } from '../../domain/enums';
-import { useTenant } from '../../../auth/hooks/useSession';
+import { useTenant } from '../../../auth/presentation/hooks/useSession';
 import { useLayoutContext } from '@/providers/LayoutContext';
 import { ThermalClosingTicketModal } from '../../../printing/presentation/components/ThermalClosingTicketModal';
 import { buildClosingTicketData } from '../../domain/closing-ticket';

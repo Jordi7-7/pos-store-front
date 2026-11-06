@@ -3,7 +3,7 @@ import { purchasesService } from '../services/purchases.service';
 import type { RegisterPurchaseInput, GetPurchasesParams, PaginatedPurchasesResponse } from '../types/purchases.types';
 import { toPurchaseEntities } from '../mappers/purchase.mapper';
 import type { PurchaseEntity } from '../entities/purchase.entity';
-import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 
 export const useRegisterPurchase = () => {
   const queryClient = useQueryClient();

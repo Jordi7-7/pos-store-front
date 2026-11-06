@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Layers } from 'lucide-react';
-import { useFormatters } from '@/modules/auth/hooks/useFormatters';
+import { useFormatters } from '@/modules/auth/presentation/hooks/useFormatters';
 import type { CashSessionExpenseVM, CashSessionRefundVM, CashSessionSaleVM } from '@/modules/cash-sessions/presentation/view-models/cash-session.vm';
 import { SaleStatus } from '@/modules/sales/domain/enums';
 import type { ProductSummaryItem } from '@/modules/cash-sessions/domain/closing-summary';

@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 import { configureApiClient } from '@/lib/apiClient';
-import { selectIsAuthenticated, useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { selectIsAuthenticated, useAuthStore } from '@/modules/auth/presentation/stores/useAuthStore';
 
 /** Raíz de composición: único sitio que une el cliente HTTP con el store de sesión y los avisos. */
 export function setupApiClient(): void {

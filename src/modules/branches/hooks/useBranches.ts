@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { branchesService } from '../services/branches.service';
 import type { CreateBranchInput, UpdateBranchInput } from '../services/branches.service';
-import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 import { toast } from 'sonner';
 
 export const useBranches = () => {

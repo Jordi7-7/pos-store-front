@@ -1,5 +1,5 @@
-import { useTenant } from '@/modules/auth/hooks/useSession';
-import { MissingTenantDataError } from '@/modules/auth/hooks/useSession';
+import { useTenant } from '@/modules/auth/presentation/hooks/useSession';
+import { MissingTenantDataError } from '@/modules/auth/presentation/hooks/useSession';
 import { localeForCountry } from '@/shared/domain/format-money';
 import type { TicketFormat } from '../../domain/ticket';
 

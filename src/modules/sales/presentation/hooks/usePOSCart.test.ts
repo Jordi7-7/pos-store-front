@@ -2,7 +2,7 @@ import { DiscountType } from '@/modules/sales/domain/enums';
 import { act, renderHook } from '@testing-library/react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePOSCart } from './usePOSCart';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useAuthStore } from '@/modules/auth/presentation/stores/useAuthStore';
 
 const toast = vi.hoisted(() => ({
   success: vi.fn(),

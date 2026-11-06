@@ -13,7 +13,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { APP_PERMISSIONS } from '@/constants/permissions';
 import { Users, UserPlus, Search, Shield, Plus } from 'lucide-react';
 import { useBranches } from '@/modules/branches';
-import { useAuthStore } from '@/modules/auth/hooks/useAuthStore';
+import { useAuthStore } from '@/modules/auth/presentation/stores/useAuthStore';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 

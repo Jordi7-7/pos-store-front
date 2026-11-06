@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productsService } from '../services/products.service';
 import type { AttributeDTO  } from '../types';
-import { useTenantId } from '@/modules/auth/hooks/useSession';
+import { useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 
 export const useAttributes = () => {
   const queryClient = useQueryClient();

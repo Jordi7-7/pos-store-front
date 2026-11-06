@@ -32,7 +32,7 @@ import {
   EscPosBuilder,
   type PaperWidth,
 } from '../../infrastructure/escpos-builder';
-import { useTenant } from '@/modules/auth/hooks/useSession';
+import { useTenant } from '@/modules/auth/presentation/hooks/useSession';
 import type { TicketSaleData } from '../../domain/ticket';
 
 interface EscPosSimulatorModalProps {

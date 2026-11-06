@@ -23,11 +23,11 @@ Contexto y reglas para cualquier sesión de trabajo en la web. **Léelo entero a
 - **Offline** se prepara (repositorios como puertos, `clientRequestId` por intento de cobro) pero no se implementa todavía.
 - Stack fijado: TS 6.0.x, pnpm 11, Node 24, React 19, Vite 8.
 
-## Patrón por módulo (referencia: `sales`, `cash-sessions`, `cash-registers`)
+## Patrón por módulo (referencia: `sales`, `cash-sessions`, `cash-registers`, `printing`, `auth`)
 - **Datos:** la vista → hook (`presentation/hooks`) → **repositorio** (interfaz en `application/ports`, implementación `*HttpRepository` en `infrastructure`, que convierte DTO → entidad) o **caso de uso** (`application`) cuando hay reglas. Los hooks obtienen el repositorio/caso de uso de `infrastructure/dependencies.ts` (raíz de composición); **nunca** importan mappers, DTO ni clases HTTP (lo vigila `architecture.test.ts`).
 - **Entidades puras:** solo datos del negocio. Los textos de pantalla (importes con moneda, fechas con zona horaria, etiquetas) se construyen en **view-models** (`presentation/view-models`, funciones puras que reciben `useFormatters()`), nunca en la entidad ni en el mapper. Una regla impide campos `*Formatted`/`*Label` en `domain`.
 - **Dirección entre módulos** (vigilada): `printing` (tickets, impresora) no depende de ventas ni de turnos; `cash-sessions` depende de `printing`, nunca de `sales`; `sales` usa a ambos. El vocabulario común (`PaymentMethod`, `SaleStatus`) vive en `shared/domain/payments.ts`. No se permiten ciclos entre módulos (queda el heredado `media ↔ products`, que solo puede desaparecer).
-- Los módulos aún no migrados (`products`, `customers`, `purchases`, `reports`, `users`…) conservan `components/hooks/services` y mappers que formatean; se migran por etapas.
+- Los módulos aún no migrados (`products`, `customers`, `purchases`, `reports`, `users`, `dashboard`, `branches`, `media`) conservan `components/hooks/services` y mappers que formatean; se migran por etapas.
 
 ## Reglas del código
 - `domain` no importa `react`, `@tanstack/*`, `zustand`, `sonner`, `fetch`, ni nada de `infrastructure`/`presentation`. `application` no importa `infrastructure` ni `presentation`. Lo hace cumplir `src/architecture.test.ts` (reglas en `src/test/layer-rules.ts`; también vigila `infrastructure` → sin `presentation`, UI ni estado). Hallazgos pendientes: `docs/hallazgos-abiertos.md`.

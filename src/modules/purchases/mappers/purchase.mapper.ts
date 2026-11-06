@@ -1,6 +1,6 @@
 import type { Purchase, PurchaseItem } from '../types/purchases.types';
 import type { PurchaseEntity, PurchaseItemEntity } from '../entities/purchase.entity';
-import { formatMoney, getTenantLocale } from '@/modules/auth/hooks/useSession';
+import { formatMoney, getTenantLocale } from '@/modules/auth/presentation/hooks/useSession';
 
 export const toPurchaseItemEntity = (dto: PurchaseItem): PurchaseItemEntity => {
   const purchasePrice = Number(dto.purchasePrice ?? 0);

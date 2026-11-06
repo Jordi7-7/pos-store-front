@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { dashboardService } from '../services/dashboard.service';
-import { useTenantId } from '@/modules/auth/hooks/useSession';
+import { useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 
 export const useDashboardMetrics = (branchId?: string | null) => {
   const tenantId = useTenantId();

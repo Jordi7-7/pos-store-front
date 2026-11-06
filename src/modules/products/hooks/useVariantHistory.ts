@@ -8,7 +8,7 @@ import type {
   ProductHistorySaleDTO,
   PaginatedResult,
 } from '../types/inventory.types';
-import { useIsAuthenticated, useTenantId } from '@/modules/auth/hooks/useSession';
+import { useIsAuthenticated, useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 
 export const useInventoryMovementsByVariant = (
   variantId?: string,
