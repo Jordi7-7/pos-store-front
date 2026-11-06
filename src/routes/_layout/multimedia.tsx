@@ -5,6 +5,7 @@ import { MediaView } from '@/modules/media/presentation/components/MediaView';
 import { useMediaUpload } from '@/modules/media';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
+import { PageHeader } from '@/shared/presentation/components/PageHeader';
 
 export const Route = createFileRoute('/_layout/multimedia')({
   beforeLoad: () => guardRoute('/multimedia'),
@@ -78,22 +79,25 @@ function MediaRoute() {
   };
 
   return (
-    <MediaView
-      uploadedImages={uploadedImages}
-      isUploading={isUploading}
-      isDeleting={isDeleting}
-      isLoading={isLoadingMedia}
-      meta={meta}
-      onPageChange={setPage}
-      onLimitChange={(newLimit) => {
-        setLimit(newLimit);
-        setPage(1);
-      }}
-      search={search}
-      onSearchChange={setSearch}
-      onUpload={async (file, desc) => { await handleUpload({ file, description: desc }); }}
-      onUploadByUrl={async (url, desc) => { await handleUploadByUrl({ url, description: desc }); }}
-      onDelete={handleDeleteImage}
-    />
+    <>
+      <PageHeader title="Galería" description="Imágenes de tu catálogo y galería multimedia." />
+      <MediaView
+        uploadedImages={uploadedImages}
+        isUploading={isUploading}
+        isDeleting={isDeleting}
+        isLoading={isLoadingMedia}
+        meta={meta}
+        onPageChange={setPage}
+        onLimitChange={(newLimit) => {
+          setLimit(newLimit);
+          setPage(1);
+        }}
+        search={search}
+        onSearchChange={setSearch}
+        onUpload={async (file, desc) => { await handleUpload({ file, description: desc }); }}
+        onUploadByUrl={async (url, desc) => { await handleUploadByUrl({ url, description: desc }); }}
+        onDelete={handleDeleteImage}
+      />
+    </>
   );
 }

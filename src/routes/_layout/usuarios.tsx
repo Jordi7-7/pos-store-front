@@ -1,6 +1,7 @@
 import { guardRoute } from '@/modules/auth/presentation/hooks/route-guard';
 import { createFileRoute } from '@tanstack/react-router'
 import { UsersView } from '@/modules/users/presentation/components/views/UsersView';
+import { PageHeader } from '@/shared/presentation/components/PageHeader';
 
 export const Route = createFileRoute('/_layout/usuarios')({
   beforeLoad: () => guardRoute('/usuarios'),
@@ -8,5 +9,10 @@ export const Route = createFileRoute('/_layout/usuarios')({
 });
 
 function UsersRoute() {
-  return <UsersView />;
+  return (
+    <>
+      <PageHeader title="Personal y roles" description="Gestiona usuarios, PIN de caja y permisos." />
+      <UsersView />
+    </>
+  );
 }

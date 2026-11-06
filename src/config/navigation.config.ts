@@ -32,12 +32,18 @@ export interface NavSubItem {
 
 export interface NavItem {
   id: string;
+  /** Sección del menú lateral en la que se agrupa; sin sección = arriba del todo. */
+  section?: NavSection;
   label: string;
   path?: string; // Absolute path, e.g. '/dashboard', '/pos'
   icon: LucideIcon;
   permission?: string;
   children?: NavSubItem[];
 }
+
+/** Secciones del menú lateral, en el orden en que se muestran. */
+export const NAV_SECTIONS = ['Ventas', 'Inventario', 'Análisis', 'Administración'] as const;
+export type NavSection = (typeof NAV_SECTIONS)[number];
 
 export const navigationConfig: NavItem[] = [
   {
@@ -49,6 +55,7 @@ export const navigationConfig: NavItem[] = [
   },
   {
     id: 'pos',
+    section: 'Ventas',
     label: 'Punto de Venta (POS)',
     path: '/pos',
     icon: ShoppingBag,
@@ -56,6 +63,7 @@ export const navigationConfig: NavItem[] = [
   },
   {
     id: 'sales',
+    section: 'Ventas',
     label: 'Ventas',
     path: '/ventas',
     icon: Receipt,
@@ -63,6 +71,7 @@ export const navigationConfig: NavItem[] = [
   },
   {
     id: 'inventory',
+    section: 'Inventario',
     label: 'Inventario',
     icon: Package,
     permission: APP_PERMISSIONS.VIEW_PRODUCTS,
@@ -76,21 +85,21 @@ export const navigationConfig: NavItem[] = [
       },
       {
         id: 'inventory-batches',
-        label: 'Lotes de Inventario',
+        label: 'Lotes',
         path: '/inventario/lotes',
         icon: Boxes,
         permission: APP_PERMISSIONS.VIEW_PRODUCTS,
       },
       {
         id: 'inventory-create',
-        label: 'Crear Producto',
+        label: 'Crear producto',
         path: '/inventario/crear',
         icon: PlusCircle,
         permission: APP_PERMISSIONS.PRODUCTS_CREATE,
       },
       {
         id: 'inventory-create-variable',
-        label: 'Crear Producto Compuesto',
+        label: 'Crear con variantes',
         path: '/inventario/crear-compuesto',
         icon: Layers,
         permission: APP_PERMISSIONS.PRODUCTS_CREATE,
@@ -99,20 +108,21 @@ export const navigationConfig: NavItem[] = [
   },
   {
     id: 'purchases-group',
+    section: 'Inventario',
     label: 'Compras',
     icon: Truck,
     permission: APP_PERMISSIONS.VIEW_PURCHASES,
     children: [
       {
         id: 'purchases-create',
-        label: 'Registrar Compra',
+        label: 'Registrar compra',
         path: '/compras/registrar',
         icon: ShoppingCart,
         permission: APP_PERMISSIONS.PURCHASES_CREATE,
       },
       {
         id: 'purchases-history',
-        label: 'Historial de Compras',
+        label: 'Historial de compras',
         path: '/compras/historial',
         icon: History,
         permission: APP_PERMISSIONS.VIEW_PURCHASES,
@@ -128,26 +138,28 @@ export const navigationConfig: NavItem[] = [
   },
   {
     id: 'customers',
-    label: 'Directorio de Clientes',
+    section: 'Ventas',
+    label: 'Clientes',
     path: '/clientes',
     icon: Contact,
     permission: APP_PERMISSIONS.VIEW_CUSTOMERS,
   },
   {
     id: 'cash-registers-group',
-    label: 'Cajas Registradoras',
+    section: 'Ventas',
+    label: 'Cajas',
     icon: CreditCard,
     children: [
       {
         id: 'cash-registers',
-        label: 'Cajas',
+        label: 'Cajas registradoras',
         path: '/cajas/registradoras',
         icon: CreditCard,
         permission: APP_PERMISSIONS.VIEW_CASH_REGISTERS,
       },
       {
         id: 'cash-sessions',
-        label: 'Historial de Cajas',
+        label: 'Historial de turnos',
         path: '/cajas/historial',
         icon: History,
         permission: APP_PERMISSIONS.VIEW_CASH_SESSIONS,
@@ -156,27 +168,28 @@ export const navigationConfig: NavItem[] = [
   },
   {
     id: 'reports-group',
-    label: 'Reportes y Utilidades',
+    section: 'Análisis',
+    label: 'Reportes',
     icon: BarChart3,
     permission: APP_PERMISSIONS.VIEW_REPORTS,
     children: [
       {
         id: 'reports-cost-sales',
-        label: 'Costo de Ventas',
+        label: 'Costo de ventas',
         path: '/reportes/costo-ventas',
         icon: FileText,
         permission: APP_PERMISSIONS.VIEW_REPORTS,
       },
       {
         id: 'reports-product-sales',
-        label: 'Ventas por Producto',
+        label: 'Ventas por producto',
         path: '/reportes/ventas-productos',
         icon: ShoppingBag,
         permission: APP_PERMISSIONS.VIEW_REPORTS,
       },
       {
         id: 'reports-valued-inventory',
-        label: 'Existencias Valuadas',
+        label: 'Existencias valuadas',
         path: '/reportes/existencias-valuadas',
         icon: Boxes,
         permission: APP_PERMISSIONS.VIEW_REPORTS,
@@ -185,21 +198,24 @@ export const navigationConfig: NavItem[] = [
   },
   {
     id: 'users',
-    label: 'Personal y Roles',
+    section: 'Administración',
+    label: 'Personal y roles',
     path: '/usuarios',
     icon: Users,
     permission: APP_PERMISSIONS.VIEW_USERS,
   },
   {
     id: 'media',
-    label: 'Multimedia / Galería',
+    section: 'Inventario',
+    label: 'Galería',
     path: '/multimedia',
     icon: ImageIcon,
     permission: APP_PERMISSIONS.VIEW_MEDIA,
   },
   {
     id: 'tenant-settings',
-    label: 'Configuración Negocio',
+    section: 'Administración',
+    label: 'Configuración',
     path: '/configuracion',
     icon: Settings,
     permission: APP_PERMISSIONS.VIEW_SETTINGS,

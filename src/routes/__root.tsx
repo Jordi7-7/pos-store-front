@@ -5,7 +5,7 @@ export const Route = createRootRoute({
   component: () => (
     <>
       <Outlet />
-      <Toaster richColors closeButton theme="dark" position="top-right" />
+      <Toaster richColors closeButton theme="dark" position="bottom-center" />
     </>
   ),
 });
