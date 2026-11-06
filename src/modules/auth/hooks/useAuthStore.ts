@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authService } from '../services/auth.service';
 import { queryClient } from '@/providers/QueryProvider';
-import { isApiError } from '@/shared/infrastructure/http/api-error';
+import { CLIENT_ERROR_CODES, isApiError } from '@/shared/infrastructure/http/api-error';
 import { getErrorMessage } from '@/shared/presentation/error-messages';
 import { useWorkspaceStore } from '@/shared/presentation/stores/workspace.store';
 import {
@@ -12,6 +12,8 @@ import {
   type SessionTenant,
 } from '../domain/session';
 import { toSessionTenant, toSessionUser } from '../mappers/session.mapper';
+import type { LoginResult } from '../domain/login-result';
+import { PROFILE_UNAVAILABLE } from '../domain/login-result';
 import { AUTH_STORAGE_VERSION, migratePersistedAuth, type PersistedAuth } from './auth-persistence';
 
 export type PublicTenant = SessionTenant;
@@ -31,8 +33,8 @@ interface AuthState extends PersistedAuth {
   clearTenant: () => void;
 
   // Sesión
-  login: (identifier: string, password: string, _targetWorkflow?: 'admin' | 'store', slugOverride?: string) => Promise<boolean>;
-  pinLogin: (pin: string, slugOverride?: string) => Promise<'SUCCESS' | 'INVALID' | 'EXPIRED' | 'NOT_FOUND'>;
+  login: (identifier: string, password: string, slugOverride?: string) => Promise<LoginResult>;
+  pinLogin: (pin: string, slugOverride?: string) => Promise<LoginResult>;
   logout: () => void;
   fetchProfile: () => Promise<boolean>;
   refreshSession: () => Promise<boolean>;
@@ -45,11 +47,34 @@ interface AuthState extends PersistedAuth {
 export const selectIsAuthenticated = (s: Pick<PersistedAuth, 'accessToken' | 'user' | 'tenant'>): boolean =>
   Boolean(s.accessToken && s.user && s.tenant);
 
+const FALLBACK_LOGIN_ERROR = 'No se pudo iniciar sesión. Inténtalo de nuevo.';
+
 let inFlightProfilePromise: Promise<boolean> | null = null;
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set, get) => {
+      /** Pide los tokens, carga el perfil y devuelve el motivo exacto si algo falla. */
+      const startSession = async (request: () => Promise<{ accessToken?: string; refreshToken?: string }>): Promise<LoginResult> => {
+        try {
+          const response = await request();
+          if (!response?.accessToken) {
+            return { ok: false, code: PROFILE_UNAVAILABLE, message: getErrorMessage(null, FALLBACK_LOGIN_ERROR) };
+          }
+          set({ accessToken: response.accessToken, refreshToken: response.refreshToken ?? null });
+          if (!(await get().fetchProfile())) {
+            get().logout();
+            return { ok: false, code: PROFILE_UNAVAILABLE, message: 'No se pudo cargar tu perfil. Inténtalo de nuevo.' };
+          }
+          return { ok: true };
+        } catch (error) {
+          console.error('Error al iniciar sesión:', error);
+          const code = isApiError(error) ? error.code : CLIENT_ERROR_CODES.UNKNOWN_ERROR;
+          return { ok: false, code, message: getErrorMessage(error, FALLBACK_LOGIN_ERROR) };
+        }
+      };
+
+      return {
       accessToken: null,
       refreshToken: null,
       user: null,
@@ -98,43 +123,15 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      login: async (identifier, password, _targetWorkflow = 'store', slugOverride) => {
-        const effectiveSlug = slugOverride || get().tenant?.slug || undefined;
-        try {
-          const response = await authService.login({ email: identifier, password, tenantSlug: effectiveSlug });
-          if (!response?.accessToken) return false;
-
-          set({ accessToken: response.accessToken, refreshToken: response.refreshToken });
-
-          if (!(await get().fetchProfile())) {
-            get().logout();
-            return false;
-          }
-          return true;
-        } catch (error) {
-          console.error('Error de login en backend:', error);
-          return false;
-        }
+      login: async (identifier, password, slugOverride) => {
+        const tenantSlug = slugOverride || get().tenant?.slug || undefined;
+        return startSession(() => authService.login({ email: identifier, password, tenantSlug }));
       },
 
       // Login directo del cajero por PIN (solo necesita el identificador de la tienda).
       pinLogin: async (pin, slugOverride) => {
-        const effectiveSlug = slugOverride || get().tenant?.slug || '';
-        try {
-          const response = await authService.pinLogin({ pin, tenantSlug: effectiveSlug });
-          if (!response?.accessToken) return 'INVALID';
-
-          set({ accessToken: response.accessToken, refreshToken: response.refreshToken });
-
-          if (!(await get().fetchProfile())) {
-            get().logout();
-            return 'INVALID';
-          }
-          return 'SUCCESS';
-        } catch (error) {
-          console.error('Error de PIN login:', error);
-          return isApiError(error) && error.code === 'TENANT_NOT_FOUND' ? 'NOT_FOUND' : 'INVALID';
-        }
+        const tenantSlug = slugOverride || get().tenant?.slug || '';
+        return startSession(() => authService.pinLogin({ pin, tenantSlug }));
       },
 
       logout: () => {
@@ -215,7 +212,8 @@ export const useAuthStore = create<AuthState>()(
           return false;
         }
       },
-    }),
+      };
+    },
     {
       name: 'aura-pos-auth',
       version: AUTH_STORAGE_VERSION,

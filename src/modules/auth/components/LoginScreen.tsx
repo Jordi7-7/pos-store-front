@@ -59,7 +59,7 @@ export const LoginScreen: React.FC = () => {
         const targetSlug = publicTenant?.slug;
         const res = await pinLogin(submittedPin, targetSlug);
 
-        if (res === 'SUCCESS') {
+        if (res.ok) {
           toast.success('¡Sesión iniciada con éxito!');
           redirectToApp();
           return;
@@ -68,11 +68,8 @@ export const LoginScreen: React.FC = () => {
         setPinError(true);
         setPinShake(true);
         setPin('');
-        if (res === 'NOT_FOUND') {
-          toast.error('Tienda no encontrada. Verifica la URL.');
-        } else {
-          toast.error('PIN incorrecto. Intenta de nuevo.');
-        }
+        // El mensaje depende del motivo real: PIN incorrecto, demasiados intentos, usuario deshabilitado, sin conexión…
+        toast.error(res.message);
         setTimeout(() => setPinShake(false), 500);
       } finally {
         setIsPinLoading(false);
@@ -131,9 +128,9 @@ export const LoginScreen: React.FC = () => {
     setIsCredentialsLoading(true);
     try {
       const targetSlug = publicTenant?.slug;
-      const success = await login(identifier, password, 'store', targetSlug);
-      if (!success) {
-        setCredentialsError('Credenciales incorrectas o usuario no asignado a esta tienda.');
+      const result = await login(identifier, password, targetSlug);
+      if (!result.ok) {
+        setCredentialsError(result.message);
       } else {
         toast.success('¡Bienvenido al sistema!');
         redirectToApp();

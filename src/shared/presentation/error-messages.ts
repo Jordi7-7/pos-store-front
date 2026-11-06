@@ -9,6 +9,12 @@ export const ERROR_MESSAGES: Readonly<Record<string, string>> = {
   [CLIENT_ERROR_CODES.NETWORK_ERROR]: 'No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.',
   [CLIENT_ERROR_CODES.INVALID_RESPONSE]: 'El servidor respondió algo inesperado. Inténtalo de nuevo.',
   TOO_MANY_ATTEMPTS: 'Demasiados intentos fallidos. Espera unos minutos antes de volver a intentarlo.',
+  TOO_MANY_REQUESTS: 'Demasiadas peticiones seguidas. Espera un momento e inténtalo de nuevo.',
+  INVALID_CREDENTIALS: 'Credenciales incorrectas o usuario no asignado a esta tienda.',
+  INVALID_PIN: 'PIN incorrecto. Intenta de nuevo.',
+  USER_DISABLED: 'Tu usuario está deshabilitado. Contacta a un administrador.',
+  TENANT_NOT_FOUND: 'Tienda no encontrada. Verifica la URL.',
+  TENANT_SLUG_REQUIRED: 'Falta el identificador de la tienda. Verifica la URL.',
 };
 
 /**

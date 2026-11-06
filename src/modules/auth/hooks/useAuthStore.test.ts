@@ -4,8 +4,15 @@ import type { ProfileResponse } from '../services/auth.service';
 import type { SessionTenant, SessionUser } from '../domain/session';
 
 const getProfile = vi.fn();
+const loginRequest = vi.fn();
+const pinLoginRequest = vi.fn();
 vi.mock('../services/auth.service', () => ({
-  authService: { getProfile: (...args: unknown[]) => getProfile(...args), logout: vi.fn(async () => ({ message: 'ok' })) },
+  authService: {
+    getProfile: (...args: unknown[]) => getProfile(...args),
+    login: (...args: unknown[]) => loginRequest(...args),
+    pinLogin: (...args: unknown[]) => pinLoginRequest(...args),
+    logout: vi.fn(async () => ({ message: 'ok' })),
+  },
 }));
 
 const { useAuthStore, selectIsAuthenticated } = await import('./useAuthStore');
@@ -56,6 +63,8 @@ const tenant: SessionTenant = {
 
 beforeEach(() => {
   getProfile.mockReset();
+  loginRequest.mockReset();
+  pinLoginRequest.mockReset();
   useAuthStore.setState({ accessToken: 'tok', refreshToken: 'ref', user, tenant });
   useWorkspaceStore.getState().reset();
 });
@@ -187,5 +196,53 @@ describe('cambio de formato de la tienda', () => {
     await useAuthStore.getState().fetchProfile();
     expect(clear).not.toHaveBeenCalled();
     clear.mockRestore();
+  });
+});
+
+const apiError = (status: number, code: string) => new ApiError({ status, code, message: 'texto del servidor que no se parsea' });
+
+describe('iniciar sesión: el motivo del fallo llega a la pantalla', () => {
+  beforeEach(() => useAuthStore.setState({ accessToken: null, refreshToken: null, user: null }));
+
+  it('con credenciales correctas guarda la sesión', async () => {
+    loginRequest.mockResolvedValueOnce({ accessToken: 'a', refreshToken: 'r' });
+    getProfile.mockResolvedValueOnce(profile);
+    expect(await useAuthStore.getState().login('admin', 'x', 'tienda')).toEqual({ ok: true });
+    expect(useAuthStore.getState()).toMatchObject({ accessToken: 'a', refreshToken: 'r' });
+  });
+
+  it.each([
+    [401, 'INVALID_PIN', /PIN incorrecto/],
+    [429, 'TOO_MANY_ATTEMPTS', /Demasiados intentos/],
+    [401, 'USER_DISABLED', /deshabilitado/],
+    [404, 'TENANT_NOT_FOUND', /Tienda no encontrada/],
+  ])('PIN: %i %s se distingue de un PIN incorrecto', async (status, code, message) => {
+    pinLoginRequest.mockRejectedValueOnce(apiError(status, code));
+    const result = await useAuthStore.getState().pinLogin('123456', 'tienda');
+    expect(result).toMatchObject({ ok: false, code });
+    expect(result.ok === false && result.message).toMatch(message);
+    expect(useAuthStore.getState().accessToken).toBeNull();
+  });
+
+  it('usuario y contraseña: 429 no se presenta como credenciales incorrectas', async () => {
+    loginRequest.mockRejectedValueOnce(apiError(429, 'TOO_MANY_ATTEMPTS'));
+    const result = await useAuthStore.getState().login('admin', 'x', 'tienda');
+    expect(result).toMatchObject({ ok: false, code: 'TOO_MANY_ATTEMPTS' });
+    expect(result.ok === false && result.message).not.toMatch(/incorrectas/);
+  });
+
+  it('sin conexión se dice que no hay conexión', async () => {
+    pinLoginRequest.mockRejectedValueOnce(ApiError.network(new TypeError('fetch failed')));
+    const result = await useAuthStore.getState().pinLogin('123456', 'tienda');
+    expect(result).toMatchObject({ ok: false, code: 'NETWORK_ERROR' });
+    expect(result.ok === false && result.message).toMatch(/conexión/);
+  });
+
+  it('si autentica pero el perfil falla, no queda sesión a medias y no se culpa a las credenciales', async () => {
+    pinLoginRequest.mockResolvedValueOnce({ accessToken: 'a', refreshToken: 'r' });
+    getProfile.mockRejectedValueOnce(ApiError.network(new TypeError('fetch failed')));
+    const result = await useAuthStore.getState().pinLogin('123456', 'tienda');
+    expect(result).toMatchObject({ ok: false, code: 'PROFILE_UNAVAILABLE' });
+    expect(useAuthStore.getState()).toMatchObject({ accessToken: null, user: null });
   });
 });
