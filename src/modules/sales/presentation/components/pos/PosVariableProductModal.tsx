@@ -2,44 +2,14 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { X, Package, Check, ShoppingCart,} from 'lucide-react';
 import { toast } from 'sonner';
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
+import type { PosVariableProductEntity } from '@/modules/products/domain/entities/catalog.entity';
+import type { CartProductRef, CartVariantRef } from '../../../domain/entities/cart-item';
 
 export interface PosVariableProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  productData: {
-    productId: string;
-    productName: string;
-    baseSku: string | null;
-    description?: string;
-    imageUrl?: string | null;
-    productType?: any;
-    attributes: Array<{
-      id: string;
-      name: string;
-      values: Array<{ id: string; value: string }>;
-    }>;
-    variants: Array<{
-      id: string;
-      sku: string;
-      barcode: string;
-      purchasePrice: number;
-      salePrice: number;
-      wholesalePrice: number | null;
-      stock: number;
-      imageUrl?: string | null;
-      attributes?: Array<{
-        name: string;
-        value: string;
-      }>;
-      attributeValues: Array<{
-        attributeId: string;
-        attributeName: string;
-        valueId: string;
-        valueName: string;
-      }>;
-    }>;
-  } | null;
-  onAddToCart: (product: any, variant: any, maxStock: number) => void;
+  productData: PosVariableProductEntity | null;
+  onAddToCart: (product: CartProductRef, variant: CartVariantRef, maxStock: number) => void;
 }
 
 export type PosVariableProductData = NonNullable<PosVariableProductModalProps['productData']>;

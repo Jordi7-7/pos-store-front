@@ -1,7 +1,7 @@
 import { DiscountType } from '@/modules/sales/domain/enums';
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
-import type { CartItem } from '../../domain/entities/cart-item';
+import type { CartItem, CartProductRef, CartVariantRef } from '../../domain/entities/cart-item';
 import { ProductType } from '@/modules/products/domain/enums';
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 import {
@@ -18,7 +18,7 @@ export function usePOSCart() {
   const [globalDiscountType] = useState<DiscountType>(DiscountType.PERCENTAGE);
   const [globalDiscountRate, setGlobalDiscountRate] = useState<number>(0);
 
-  const addVariantToCart = (product: any, variant: any, maxStock: number) => {
+  const addVariantToCart = (product: CartProductRef, variant: CartVariantRef, maxStock: number) => {
     const totalQtyInCart = cart
       .filter((item) => item.variantId === variant.id)
       .reduce((sum, item) => sum + item.quantity, 0);
@@ -35,7 +35,7 @@ export function usePOSCart() {
         ? variant.attributes.map((a: { name: string; value: string }) => `${a.name}: ${a.value}`).join(' / ')
         : 'Estándar';
 
-    const imageUrl = variant.imageUrl;
+    const imageUrl = variant.imageUrl ?? undefined;
     const unitSalePrice = Number(variant.salePrice || 0);
     const rawWholesale =
       variant.wholesalePrice !== undefined && variant.wholesalePrice !== null

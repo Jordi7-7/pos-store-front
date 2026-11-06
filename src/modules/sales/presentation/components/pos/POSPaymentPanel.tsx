@@ -8,6 +8,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { PaymentMethod } from '../../../domain/enums';
+import { toPaymentMethod } from '@/shared/domain/enums/payments';
 import { Combobox, ComboboxInput, ComboboxContent, ComboboxList, ComboboxItem, ComboboxEmpty, ComboboxTrigger } from '@/components/ui/combobox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -119,7 +120,7 @@ export const POSPaymentPanel: React.FC<POSPaymentPanelProps> = ({
             <Combobox
               items={customers}
               value={customers.find((c: CustomerVM) => c.id === selectedCustomerId) || null}
-              onValueChange={(val: any) => onSelectCustomer(val?.id || '')}
+              onValueChange={(val: CustomerVM | null) => onSelectCustomer(val?.id || '')}
             >
               <ComboboxTrigger
                 render={
@@ -157,7 +158,7 @@ export const POSPaymentPanel: React.FC<POSPaymentPanelProps> = ({
                   No se encontraron clientes
                 </ComboboxEmpty>
                 <ComboboxList>
-                  {(c: any) => (
+                  {(c: CustomerVM) => (
                     <ComboboxItem
                       key={c.id}
                       value={c}
@@ -274,9 +275,7 @@ export const POSPaymentPanel: React.FC<POSPaymentPanelProps> = ({
               <div className="w-[125px] shrink-0">
                 <Select
                   value={selectedMethod}
-                  onValueChange={(val: any) =>
-                    onSelectMethod(val || PaymentMethod.EFECTIVO)
-                  }
+                  onValueChange={(val) => onSelectMethod(toPaymentMethod(val))}
                 >
                   <SelectTrigger className="w-full justify-between font-normal bg-bg-dark border-border-card text-xs text-secondary rounded-lg py-1 px-2 h-8 hover:bg-bg-dark/80 hover:text-secondary flex items-center border">
                     {(() => {

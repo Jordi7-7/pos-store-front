@@ -3,9 +3,10 @@ import { Loader2, CheckCircle } from 'lucide-react';
 import type { SaleItemRow } from './exchange-return.types';
 import { formatMoney } from './exchange-return.types';
 import { refundAmount } from '../../../../domain/rules/exchange-rules';
+import type { SaleDetailEntity } from '../../../../domain/entities/sale.entity';
 
 interface ExchangeConfirmRefundStepProps {
-  foundSale: any;
+  foundSale: SaleDetailEntity;
   selectedReturnItems: SaleItemRow[];
   returnQtyMap: Record<string, number>;
   totalToReturn: number;

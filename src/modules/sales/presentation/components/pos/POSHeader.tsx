@@ -12,12 +12,13 @@ import {
 import { toast } from 'sonner';
 import { usePermissions } from '@/hooks/usePermissions';
 import { APP_PERMISSIONS } from '@/constants/permissions';
+import type { MyCashRegisterEntity } from '@/modules/cash-registers/domain/entities/cash-register.entity';
 
 interface POSHeaderProps {
   currentTime: string;
   shiftDuration: string;
   activeSession: ActiveCashSessionEntity | null;
-  availableRegistersForUser: any[];
+  availableRegistersForUser: MyCashRegisterEntity[];
   onOpenApertura: () => void;
   onOpenEgreso: () => void;
   onOpenHistorial: () => void;

@@ -1,3 +1,4 @@
+import type { CartProductRef, CartVariantRef } from '../entities/cart-item';
 import { DiscountType } from '@/modules/sales/domain/enums';
 import { Money } from '@/shared/domain/value-objects/money';
 
@@ -119,5 +120,29 @@ export function computeCartTotals(
     netSubtotal: net.toNumber(),
     globalDiscountAmount: global.toNumber(),
     total: net.minus(global).toNumber(),
+  };
+}
+
+/** Variante del buscador del POS en el formato que pide el carrito: precios como número y mayoreo ausente como `null`. */
+export function cartRefsFromPosVariant(found: {
+  id: string;
+  sku: string;
+  productName: string;
+  productType?: string;
+  salePrice: number;
+  wholesalePrice?: number | null;
+  attributes?: Array<{ name: string; value: string }>;
+  imageUrl?: string | null;
+}): { product: CartProductRef; variant: CartVariantRef } {
+  return {
+    product: { id: found.id, name: found.productName, type: found.productType },
+    variant: {
+      id: found.id,
+      sku: found.sku,
+      salePrice: Number(found.salePrice || 0),
+      wholesalePrice: found.wholesalePrice !== undefined && found.wholesalePrice !== null ? Number(found.wholesalePrice) : null,
+      attributes: found.attributes ?? [],
+      imageUrl: found.imageUrl,
+    },
   };
 }

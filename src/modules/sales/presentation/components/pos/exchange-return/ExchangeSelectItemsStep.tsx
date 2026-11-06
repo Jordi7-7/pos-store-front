@@ -3,9 +3,10 @@ import { Minus, Plus, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { SaleItemRow } from './exchange-return.types';
 import { getNetUnitPrice, formatMoney } from './exchange-return.types';
+import type { SaleDetailEntity } from '../../../../domain/entities/sale.entity';
 
 interface ExchangeSelectItemsStepProps {
-  foundSale: any;
+  foundSale: SaleDetailEntity;
   returnQtyMap: Record<string, number>;
   onAdjustReturnQty: (variantId: string, delta: number, max: number) => void;
   selectedReturnItems: SaleItemRow[];

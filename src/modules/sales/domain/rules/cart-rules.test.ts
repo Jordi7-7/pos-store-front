@@ -1,6 +1,6 @@
 import { DiscountType } from '@/modules/sales/domain/enums';
 import { describe, expect, it } from 'vitest';
-import { clampGlobalDiscount, computeCartTotals, computeLineDiscount, discountForPrice, withWholesale, type PricedCartLine } from './cart-rules';
+import { cartRefsFromPosVariant, clampGlobalDiscount, computeCartTotals, computeLineDiscount, discountForPrice, withWholesale, type PricedCartLine } from './cart-rules';
 import { priceSale } from './sale-pricing';
 
 const line = (overrides: Partial<PricedCartLine> = {}): PricedCartLine => ({
@@ -75,5 +75,19 @@ describe('totales del carrito', () => {
       expect(totals.total).toBe(server.total);
       expect(totals.grossSubtotal).toBe(server.subtotal);
     }
+  });
+});
+
+describe('cartRefsFromPosVariant', () => {
+  it('pasa los precios a número y deja el mayoreo ausente como null', () => {
+    const { product, variant } = cartRefsFromPosVariant({ id: 'v1', sku: 'A-1', productName: 'Playera', productType: 'SIMPLE', salePrice: '10.5' as unknown as number, wholesalePrice: undefined });
+    expect(product).toEqual({ id: 'v1', name: 'Playera', type: 'SIMPLE' });
+    expect(variant).toMatchObject({ id: 'v1', sku: 'A-1', salePrice: 10.5, wholesalePrice: null, attributes: [] });
+  });
+
+  it('conserva un mayoreo de 0 como número y los atributos que trae', () => {
+    const { variant } = cartRefsFromPosVariant({ id: 'v', sku: 's', productName: 'p', salePrice: 1, wholesalePrice: 0, attributes: [{ name: 'Talla', value: 'M' }] });
+    expect(variant.wholesalePrice).toBe(0);
+    expect(variant.attributes).toEqual([{ name: 'Talla', value: 'M' }]);
   });
 });

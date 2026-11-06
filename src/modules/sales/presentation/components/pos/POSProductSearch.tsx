@@ -3,13 +3,16 @@ import { Search, CornerDownLeft, X, Package, Maximize2, Loader2 } from 'lucide-r
 import { toast } from 'sonner';
 import { useVariantSearch } from '@/modules/products/presentation/hooks';
 import { ProductType } from '@/modules/products/domain/enums';
+import type { PosVariantEntity, PosVariableProductEntity } from '@/modules/products/domain/entities/catalog.entity';
+import type { CartProductRef, CartVariantRef } from '../../../domain/entities/cart-item';
+import { cartRefsFromPosVariant } from '../../../domain/rules/cart-rules';
 import { PosVariableProductModal } from './PosVariableProductModal';
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 interface POSProductSearchProps {
   branchId: string;
   searchInputRef: React.RefObject<HTMLInputElement | null>;
-  onAddVariantToCart: (product: any, variant: any, maxStock: number) => void;
+  onAddVariantToCart: (product: CartProductRef, variant: CartVariantRef, maxStock: number) => void;
   onOpenImageZoom?: (url: string) => void;
 }
 
@@ -20,14 +23,14 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
   onOpenImageZoom,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<PosVariantEntity[]>([]);
   const [showSearchModal, setShowSearchModal] = useState<boolean>(false);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const isSearchingRef = useRef<boolean>(false);
   const { searchPos } = useVariantSearch();
 
   // Variable product modal state
-  const [variableProductData, setVariableProductData] = useState<any | null>(null);
+  const [variableProductData, setVariableProductData] = useState<PosVariableProductEntity | null>(null);
   const [showVariableModal, setShowVariableModal] = useState<boolean>(false);
 
   const focusInput = () => {
@@ -58,30 +61,14 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
       if (res.length > 0) {
         const singleRes = res[0];
         if (res.length === 1 && singleRes) {
-          const fakeProduct = {
-            id: singleRes.id,
-            name: singleRes.productName,
-            type: singleRes.productType,
-          };
-          const fakeVariant = {
-            id: singleRes.id,
-            sku: singleRes.sku,
-            salePrice: Number(singleRes.salePrice || 0),
-            wholesalePrice:
-              singleRes.wholesalePrice !== undefined && singleRes.wholesalePrice !== null
-                ? Number(singleRes.wholesalePrice)
-                : null,
-            attributes: singleRes.attributes || [],
-            attributeValues: singleRes.attributeValues || [],
-            imageUrl: singleRes.imageUrl,
-          };
+          const { product, variant } = cartRefsFromPosVariant(singleRes);
           const stockQty = Number(singleRes.stock || 0);
           if (stockQty <= 0) {
             toast.warning(
               `Aviso: El stock del producto "${singleRes.productName}" quedará en negativo (Stock disponible: ${stockQty} pzs.)`,
             );
           }
-          onAddVariantToCart(fakeProduct, fakeVariant, stockQty);
+          onAddVariantToCart(product, variant, stockQty);
           setSearchTerm('');
         } else {
           setSearchResults(res);
@@ -174,30 +161,13 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
                   <div
                     key={variant.id}
                     onClick={() => {
-                      const fakeProduct = {
-                        id: variant.id,
-                        name: variant.productName,
-                        type: variant.productType,
-                      };
-                      const fakeVariant = {
-                        id: variant.id,
-                        sku: variant.sku,
-                        salePrice: Number(variant.salePrice || 0),
-                        wholesalePrice:
-                          variant.wholesalePrice !== undefined &&
-                          variant.wholesalePrice !== null
-                            ? Number(variant.wholesalePrice)
-                            : null,
-                        attributes: variant.attributes || [],
-                        attributeValues: variant.attributeValues || [],
-                        imageUrl: variant.imageUrl,
-                      };
+                      const { product, variant: cartVariant } = cartRefsFromPosVariant(variant);
                       if (stockQty <= 0) {
                         toast.warning(
                           `Aviso: El stock del producto "${variant.productName}" quedará en negativo (Stock disponible: ${stockQty} pzs.)`,
                         );
                       }
-                      onAddVariantToCart(fakeProduct, fakeVariant, stockQty);
+                      onAddVariantToCart(product, cartVariant, stockQty);
                       setShowSearchModal(false);
                       setSearchResults([]);
                       setSearchTerm('');
@@ -253,7 +223,7 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
                             <span className="text-border-card">•</span>
                             <span className="text-neutral font-semibold">
                               {(variant.attributes || [])
-                                .map((a: any) => `${a.name}: ${a.value}`)
+                                .map((a) => `${a.name}: ${a.value}`)
                                 .join(', ')}
                             </span>
                           </>

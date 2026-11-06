@@ -14,3 +14,8 @@ export enum PaymentMethod {
   EFECTIVO = 'EFECTIVO',
   TARJETA = 'TARJETA',
 }
+
+/** Convierte el valor de un selector (texto o vacío) en un método de pago; lo desconocido cuenta como efectivo. */
+export function toPaymentMethod(value: string | null | undefined): PaymentMethod {
+  return Object.values(PaymentMethod).find((method) => method === value) ?? PaymentMethod.EFECTIVO;
+}

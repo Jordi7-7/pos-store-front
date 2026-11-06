@@ -170,7 +170,7 @@ export function ExchangeReturnModal({
             />
           )}
 
-          {step === 'confirm-refund' && (
+          {step === 'confirm-refund' && foundSale && (
             <ExchangeConfirmRefundStep
               foundSale={foundSale}
               selectedReturnItems={selectedReturnItems}
