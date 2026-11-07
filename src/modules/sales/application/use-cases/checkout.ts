@@ -66,7 +66,9 @@ export class Checkout {
         quantity: line.quantity,
         price: line.price,
         discountType: hasDiscount ? line.discountType : undefined,
-        discountRate: hasDiscount ? line.discountRate : undefined,
+        // El backend valida `discountRate` como porcentaje (0-100). En modo monto el front guarda ahí el
+        // precio final, así que solo se envía en modo porcentaje; el monto viaja en `discountAmount`.
+        discountRate: hasDiscount && line.discountType === DiscountType.PERCENTAGE ? line.discountRate : undefined,
         discountAmount: Money.ofLine(line.discountAmount ?? 0, line.quantity).toNumber(),
       };
     });
@@ -84,7 +86,7 @@ export class Checkout {
       cashSessionId: command.cashSessionId,
       customerId: command.customerId,
       discountType: hasGlobalDiscount ? command.globalDiscount?.type : undefined,
-      discountRate: hasGlobalDiscount ? command.globalDiscount?.rate : undefined,
+      discountRate: hasGlobalDiscount && command.globalDiscount?.type === DiscountType.PERCENTAGE ? command.globalDiscount.rate : undefined,
       discountAmount: pricing.globalDiscountAmount,
       items,
       payments: allocatePayments(pricing.total, command.payments),

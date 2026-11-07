@@ -47,6 +47,22 @@ describe('Checkout', () => {
     expect(sent?.items[0]).toMatchObject({ discountAmount: 3, discountType: DiscountType.PERCENTAGE });
   });
 
+  it('en modo monto no envía discountRate (el servidor lo valida como porcentaje ≤ 100)', async () => {
+    const { checkout, processSale } = setup();
+    await checkout.execute(
+      command({
+        lines: [{ variantId: 'v1', quantity: 1, price: 250, discountType: DiscountType.AMOUNT, discountRate: 150, discountAmount: 100 }],
+        globalDiscount: { type: DiscountType.AMOUNT, rate: 120, amount: 20 },
+        payments: [{ paymentMethod: PaymentMethod.EFECTIVO, amount: 130 }],
+      }),
+    );
+    const sent = processSale.mock.calls[0]?.[0];
+    expect(sent?.items[0]?.discountRate).toBeUndefined();
+    expect(sent?.items[0]).toMatchObject({ discountType: DiscountType.AMOUNT, discountAmount: 100 });
+    expect(sent?.discountRate).toBeUndefined();
+    expect(sent).toMatchObject({ discountType: DiscountType.AMOUNT, discountAmount: 20 });
+  });
+
   it('rechaza un carrito vacío y pagos que no cubren el total, indicando lo que falta', async () => {
     const { checkout, processSale } = setup();
     await expect(checkout.execute(command({ lines: [] }))).rejects.toMatchObject({ code: 'EMPTY_CART' });
