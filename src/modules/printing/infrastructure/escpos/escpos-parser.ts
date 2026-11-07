@@ -26,7 +26,7 @@ export function parseEscPosBytes(
   bytes: Uint8Array,
   paperWidth: '58mm' | '80mm' = '58mm'
 ): EscPosParseResult {
-  const maxCols = paperWidth === '80mm' ? 42 : 32;
+  const maxCols = paperWidth === '80mm' ? 48 : 32;
   const lines: EscPosParsedLine[] = [];
 
   let currentAlign: 'left' | 'center' | 'right' = 'left';

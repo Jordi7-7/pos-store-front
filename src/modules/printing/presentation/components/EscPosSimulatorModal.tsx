@@ -103,7 +103,10 @@ const SAMPLE_CLOSING_DATA: ClosingTicketData = {
   ],
   productsList: [],
   refundsList: [],
-  salesList: [],
+  salesList: [
+    { invoiceNumber: '001-001-000000683', createdAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(), total: 380.0, paymentMethods: ['EFECTIVO'] },
+    { invoiceNumber: '001-001-000000682', createdAt: new Date(Date.now() - 75 * 60 * 1000).toISOString(), total: 270.0, paymentMethods: ['TARJETA'] },
+  ],
   isClosed: true,
 };
 

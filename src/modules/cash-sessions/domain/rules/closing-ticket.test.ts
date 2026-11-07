@@ -46,6 +46,12 @@ describe('corte Z a partir del resumen del turno', () => {
     expect(ticket.discountsTotal).toBe(20);
   });
 
+  it('una venta sin pagos detallados usa su método de pago principal', () => {
+    const sales = details.sales.map((sale) => ({ ...sale, paymentMethod: PaymentMethod.TARJETA, payments: [] }));
+    const ticket = buildClosingTicketData({ ...details, sales });
+    expect(ticket.salesList.map((sale) => sale.paymentMethods)).toEqual([['TARJETA']]);
+  });
+
   it('un turno abierto se imprime como abierto y sin contado inventado: usa el esperado', () => {
     const open = { ...details, session: { ...details.session, status: CashSessionStatus.OPEN, isClosed: false, closedAt: null, closingBalance: null } };
     expect(buildClosingTicketData(open)).toMatchObject({ isClosed: false, closingBalance: 100, closedAt: undefined });

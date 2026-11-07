@@ -57,7 +57,10 @@ export function buildClosingTicketData(details: CashSessionDetailsEntity): Closi
       invoiceNumber: sale.invoiceNumber,
       createdAt: sale.createdAt,
       total: sale.total,
-      paymentMethods: sale.payments.map((payment) => payment.paymentMethod || PaymentMethod.EFECTIVO),
+      paymentMethods:
+        sale.payments.length > 0
+          ? sale.payments.map((payment) => payment.paymentMethod || PaymentMethod.EFECTIVO)
+          : [sale.paymentMethod || PaymentMethod.EFECTIVO],
     })),
     userName: session.openedByName,
     branchName: session.branchName,
