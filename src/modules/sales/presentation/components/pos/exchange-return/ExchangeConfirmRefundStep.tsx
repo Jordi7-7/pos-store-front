@@ -35,7 +35,7 @@ export const ExchangeConfirmRefundStep: React.FC<ExchangeConfirmRefundStepProps>
 
       <div className="flex flex-col gap-2">
         {selectedReturnItems.map((item: SaleItemRow) => (
-          <div key={item.variantId} className="flex items-center justify-between rounded-lg bg-muted/40 border border-border px-4 py-2.5">
+          <div key={item.saleItemId} className="flex items-center justify-between rounded-lg bg-muted/40 border border-border px-4 py-2.5">
             <div className="min-w-0 pr-3">
               <p className="text-sm font-semibold text-foreground">{item.productName}</p>
               <div className="flex items-center gap-2 flex-wrap mt-0.5">
@@ -48,8 +48,8 @@ export const ExchangeConfirmRefundStep: React.FC<ExchangeConfirmRefundStepProps>
               </div>
             </div>
             <div className="text-right shrink-0">
-              <p className="text-xs text-muted-foreground">×{returnQtyMap[item.variantId] ?? 0}</p>
-              <p className="text-sm font-semibold text-rose-500">-{formatMoney(refundAmount(item, returnQtyMap[item.variantId] ?? 0))}</p>
+              <p className="text-xs text-muted-foreground">×{returnQtyMap[item.saleItemId] ?? 0}</p>
+              <p className="text-sm font-semibold text-rose-500">-{formatMoney(refundAmount(item, returnQtyMap[item.saleItemId] ?? 0))}</p>
             </div>
           </div>
         ))}

@@ -31,9 +31,9 @@ export function refundAmount(item: RefundableItem, quantity: number): number {
   return paid.fraction(after, item.quantity).minus(paid.fraction(item.refundedQty, item.quantity)).toNumber();
 }
 
-/** Total a devolver por las cantidades elegidas por línea (`quantities[variantId]`). */
-export function returnTotal(items: ReadonlyArray<RefundableItem & { variantId: string }>, quantities: Readonly<Record<string, number>>): number {
-  return Money.sum(items.map((item) => Money.of(refundAmount(item, quantities[item.variantId] ?? 0)))).toNumber();
+/** Total a devolver por las cantidades elegidas por línea (`quantities[saleItemId]`). */
+export function returnTotal(items: ReadonlyArray<RefundableItem & { saleItemId: string }>, quantities: Readonly<Record<string, number>>): number {
+  return Money.sum(items.map((item) => Money.of(refundAmount(item, quantities[item.saleItemId] ?? 0)))).toNumber();
 }
 
 export interface ExchangeLine {

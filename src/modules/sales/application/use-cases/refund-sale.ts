@@ -15,7 +15,7 @@ export interface RefundSaleCommand {
   /** Motivo escrito por el cajero; si está vacío se usa `defaultReason`. */
   reason: string;
   defaultReason: string;
-  items: Array<{ variantId: string; quantity: number }>;
+  items: Array<{ variantId: string; saleItemId?: string; quantity: number }>;
 }
 
 /** Devolver productos de una venta. Ignora las líneas con cantidad 0 y exige al menos una. */

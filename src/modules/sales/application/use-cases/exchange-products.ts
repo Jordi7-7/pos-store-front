@@ -19,7 +19,7 @@ export interface ExchangeCommand {
   cashSessionId: string;
   saleId: string;
   customerId?: string;
-  returned: Array<{ variantId: string; quantity: number }>;
+  returned: Array<{ variantId: string; saleItemId?: string; quantity: number }>;
   reason: string;
   newLines: readonly CheckoutLine[];
 }

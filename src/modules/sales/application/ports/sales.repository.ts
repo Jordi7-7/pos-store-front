@@ -42,7 +42,7 @@ export interface ProcessRefundInput {
   saleId: string;
   cashSessionId: string;
   reason: string;
-  items: Array<{ variantId: string; quantity: number }>;
+  items: Array<{ variantId: string; saleItemId?: string; quantity: number }>;
 }
 
 export interface SalesQuery {

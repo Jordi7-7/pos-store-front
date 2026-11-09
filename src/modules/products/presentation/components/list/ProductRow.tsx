@@ -129,7 +129,7 @@ export const ProductRow: React.FC<ProductRowProps> = ({ product, branchId, isExp
     </TableCell>
 
     {/* Barcode */}
-    <TableCell className="hidden py-2.5 font-mono text-xs text-muted-foreground lg:table-cell">
+    <TableCell className="py-2.5 font-mono text-xs text-muted-foreground">
       {barcode}
     </TableCell>
 

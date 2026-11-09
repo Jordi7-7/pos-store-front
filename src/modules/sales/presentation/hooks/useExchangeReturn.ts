@@ -39,7 +39,7 @@ export function useExchangeReturn({
   const [isSearching, setIsSearching] = useState(false);
   const [foundSale, setFoundSale] = useState<SaleDetailEntity | null>(null);
 
-  // Map variantId -> qty to return
+  // Map saleItemId -> qty (una misma variante puede estar en varias líneas con precios distintos) to return
   const [returnQtyMap, setReturnQtyMap] = useState<Record<string, number>>({});
 
   // Reason
@@ -76,7 +76,7 @@ export function useExchangeReturn({
       setFoundSale(sale);
       const qtyMap: Record<string, number> = {};
       for (const item of sale.items) {
-        qtyMap[item.variantId] = 0;
+        qtyMap[item.saleItemId] = 0;
       }
       setReturnQtyMap(qtyMap);
       setStep('select-items');
@@ -88,15 +88,15 @@ export function useExchangeReturn({
   }, [invoiceInput, fetchSale]);
 
   // Adjust return qty
-  const adjustReturnQty = useCallback((variantId: string, delta: number, max: number) => {
+  const adjustReturnQty = useCallback((saleItemId: string, delta: number, max: number) => {
     setReturnQtyMap((prev) => ({
       ...prev,
-      [variantId]: Math.min(max, Math.max(0, (prev[variantId] ?? 0) + delta)),
+      [saleItemId]: Math.min(max, Math.max(0, (prev[saleItemId] ?? 0) + delta)),
     }));
   }, []);
 
   const selectedReturnItems: SaleItemRow[] = useMemo(
-    () => foundSale?.items?.filter((item: SaleItemRow) => (returnQtyMap[item.variantId] ?? 0) > 0) ?? [],
+    () => foundSale?.items?.filter((item: SaleItemRow) => (returnQtyMap[item.saleItemId] ?? 0) > 0) ?? [],
     [foundSale, returnQtyMap],
   );
 
@@ -189,7 +189,7 @@ export function useExchangeReturn({
   const exchangeDiff = exchangeDifference(totalNewItems, totalToReturn);
 
   const returnedItems = useMemo(
-    () => selectedReturnItems.map((item: SaleItemRow) => ({ variantId: item.variantId, quantity: returnQtyMap[item.variantId] ?? 0 })),
+    () => selectedReturnItems.map((item: SaleItemRow) => ({ variantId: item.variantId, saleItemId: item.saleItemId, quantity: returnQtyMap[item.saleItemId] ?? 0 })),
     [selectedReturnItems, returnQtyMap],
   );
 

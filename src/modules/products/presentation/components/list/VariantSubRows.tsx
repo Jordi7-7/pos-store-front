@@ -43,7 +43,7 @@ export const VariantSubRows: React.FC<VariantSubRowsProps> = ({ product, branchI
               )}
             </div>
           </TableCell>
-          <TableCell className="hidden py-2 font-mono text-xs text-muted-foreground lg:table-cell">
+          <TableCell className="py-2 font-mono text-xs text-muted-foreground">
             {v.barcode || '—'}
           </TableCell>
           <TableCell className="py-2 text-right font-mono text-xs text-muted-foreground">

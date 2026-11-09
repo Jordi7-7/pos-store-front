@@ -8,7 +8,7 @@ import type { SaleDetailEntity } from '../../../../domain/entities/sale.entity';
 interface ExchangeSelectItemsStepProps {
   foundSale: SaleDetailEntity;
   returnQtyMap: Record<string, number>;
-  onAdjustReturnQty: (variantId: string, delta: number, max: number) => void;
+  onAdjustReturnQty: (saleItemId: string, delta: number, max: number) => void;
   selectedReturnItems: SaleItemRow[];
   totalToReturn: number;
   allItemsFullyRefunded: boolean;
@@ -64,10 +64,10 @@ export const ExchangeSelectItemsStep: React.FC<ExchangeSelectItemsStepProps> = (
       )}
       <div className="flex flex-col gap-2">
         {foundSale.items.map((item: SaleItemRow) => {
-          const qty = returnQtyMap[item.variantId] ?? 0;
+          const qty = returnQtyMap[item.saleItemId] ?? 0;
           const isFullyRefunded = item.refundableQty === 0;
           return (
-            <div key={item.variantId} className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${
+            <div key={item.saleItemId} className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${
               isFullyRefunded ? 'bg-muted/20 border-border/50 opacity-60' : 'bg-muted/40 border-border'
             }`}>
               <div className="flex-1 min-w-0">
@@ -114,7 +114,7 @@ export const ExchangeSelectItemsStep: React.FC<ExchangeSelectItemsStepProps> = (
               <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
-                  onClick={() => onAdjustReturnQty(item.variantId, -1, item.refundableQty)}
+                  onClick={() => onAdjustReturnQty(item.saleItemId, -1, item.refundableQty)}
                   disabled={qty === 0 || isFullyRefunded}
                   className="w-7 h-7 rounded-lg bg-background border border-border flex items-center justify-center disabled:opacity-30 hover:bg-muted transition-colors cursor-pointer"
                 >
@@ -125,7 +125,7 @@ export const ExchangeSelectItemsStep: React.FC<ExchangeSelectItemsStepProps> = (
                 </span>
                 <button
                   type="button"
-                  onClick={() => onAdjustReturnQty(item.variantId, +1, item.refundableQty)}
+                  onClick={() => onAdjustReturnQty(item.saleItemId, +1, item.refundableQty)}
                   disabled={qty >= item.refundableQty || isFullyRefunded}
                   className="w-7 h-7 rounded-lg bg-background border border-border flex items-center justify-center disabled:opacity-30 hover:bg-muted transition-colors cursor-pointer"
                 >

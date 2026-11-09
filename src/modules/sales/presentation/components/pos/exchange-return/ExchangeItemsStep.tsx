@@ -65,7 +65,7 @@ export const ExchangeItemsStep: React.FC<ExchangeItemsStepProps> = ({
  <p className="text-xs text-rose-400 font-semibold mb-1.5">Prendas que devuelve</p>
         <div className="flex flex-col gap-1.5">
           {selectedReturnItems.map((item: SaleItemRow) => (
-            <div key={item.variantId} className="flex items-center justify-between rounded-lg bg-rose-500/8 border border-rose-500/20 px-3.5 py-2.5">
+            <div key={item.saleItemId} className="flex items-center justify-between rounded-lg bg-rose-500/8 border border-rose-500/20 px-3.5 py-2.5">
               <div className="min-w-0 pr-3">
                 <p className="text-sm font-semibold text-foreground">{item.productName}</p>
                 <div className="flex items-center gap-2 flex-wrap mt-0.5">
@@ -78,8 +78,8 @@ export const ExchangeItemsStep: React.FC<ExchangeItemsStepProps> = ({
                 </div>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-xs text-muted-foreground">×{returnQtyMap[item.variantId] ?? 0}</p>
-                <p className="text-sm font-semibold text-rose-500">-{formatMoney(refundAmount(item, returnQtyMap[item.variantId] ?? 0))}</p>
+                <p className="text-xs text-muted-foreground">×{returnQtyMap[item.saleItemId] ?? 0}</p>
+                <p className="text-sm font-semibold text-rose-500">-{formatMoney(refundAmount(item, returnQtyMap[item.saleItemId] ?? 0))}</p>
               </div>
             </div>
           ))}

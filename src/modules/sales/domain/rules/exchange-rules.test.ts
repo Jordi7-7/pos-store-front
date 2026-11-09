@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { exchangeDifference, newItemsTotal, refundAmount, returnTotal, type RefundableItem } from './exchange-rules';
 
-const item = (overrides: Partial<RefundableItem & { variantId: string }> = {}) => ({
+const item = (overrides: Partial<RefundableItem & { variantId: string; saleItemId: string }> = {}) => ({
   variantId: 'v1',
+  saleItemId: 'i1',
   quantity: 2,
   refundedQty: 0,
   price: 100,
@@ -36,9 +37,17 @@ describe('devolución (paridad con refund-plan del backend)', () => {
   });
 
   it('el total a devolver suma las cantidades elegidas por línea', () => {
-    const items = [item({ variantId: 'a', lineTotal: 180 }), item({ variantId: 'b', price: 50, quantity: 1, lineTotal: 50 })];
+    const items = [item({ saleItemId: 'a', lineTotal: 180 }), item({ saleItemId: 'b', price: 50, quantity: 1, lineTotal: 50 })];
     expect(returnTotal(items, { a: 1, b: 1 })).toBe(140);
     expect(returnTotal(items, {})).toBe(0);
+  });
+
+  it('la misma variante en líneas con distinto precio se elige por línea, no todas a la vez', () => {
+    const items = [
+      item({ saleItemId: 'l1', variantId: 'v', quantity: 1, price: 250, lineTotal: 225 }),
+      item({ saleItemId: 'l2', variantId: 'v', quantity: 1, price: 250, lineTotal: 200 }),
+    ];
+    expect(returnTotal(items, { l2: 1 })).toBe(200);
   });
 });
 
