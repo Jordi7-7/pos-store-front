@@ -1,7 +1,7 @@
 import type { PaginatedResult } from '@/shared/domain/value-objects/paginated';
 import type { InventoryLotEntity, InventoryMovementEntity, VariantBatchEntity } from '../../domain/entities/inventory.entity';
 import type { ProductHistoryPurchase, ProductHistorySale } from '../../domain/entities/history.entity';
-import type { InventoryMovementType } from '../../domain/enums';
+import type { BatchOriginType, InventoryMovementType } from '../../domain/enums';
 
 export interface AdjustStockInput {
   branchId: string;
@@ -13,6 +13,8 @@ export interface AdjustStockInput {
 
 export interface BatchesQuery {
   branchId?: string;
+  /** Solo lotes de estos orígenes; vacío o ausente = todos. */
+  originTypes?: readonly BatchOriginType[];
   startDate?: string;
   endDate?: string;
   search?: string;

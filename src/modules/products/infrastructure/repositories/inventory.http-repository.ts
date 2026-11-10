@@ -23,6 +23,7 @@ export class InventoryHttpRepository implements InventoryRepository {
     if (query?.startDate) params.append('startDate', query.startDate);
     if (query?.endDate) params.append('endDate', query.endDate);
     if (query?.search) params.append('search', query.search);
+    if (query?.originTypes?.length) params.append('originTypes', query.originTypes.join(','));
     if (query?.page) params.append('page', String(query.page));
     if (query?.limit) params.append('limit', String(query.limit));
     const queryString = params.toString();

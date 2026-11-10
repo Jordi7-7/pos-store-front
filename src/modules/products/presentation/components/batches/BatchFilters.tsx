@@ -5,11 +5,15 @@ import { type DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { SearchInput } from '@/shared/presentation/components/SearchInput';
+import { BatchOriginFilter } from './BatchOriginFilter';
+import type { BatchOriginType } from '../../../domain/enums';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface BatchFiltersProps {
   dateRange: DateRange | undefined;
   onDateRangeChange: (range: DateRange | undefined) => void;
+  originTypes: readonly BatchOriginType[];
+  onOriginTypesChange: (types: BatchOriginType[]) => void;
   search: string;
   onSearchChange: (value: string) => void;
   onExpandAll: () => void;
@@ -17,7 +21,7 @@ interface BatchFiltersProps {
 }
 
 /** Barra de filtros de los lotes: rango de fechas, búsqueda y expandir/colapsar todos. */
-export const BatchFilters: React.FC<BatchFiltersProps> = ({ dateRange, onDateRangeChange, search, onSearchChange, onExpandAll, onCollapseAll }) => (
+export const BatchFilters: React.FC<BatchFiltersProps> = ({ dateRange, onDateRangeChange, originTypes, onOriginTypesChange, search, onSearchChange, onExpandAll, onCollapseAll }) => (
   <>
   {/* Controls Bar */}
   <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -59,6 +63,8 @@ export const BatchFilters: React.FC<BatchFiltersProps> = ({ dateRange, onDateRan
           </button>
         )}
       </div>
+
+      <BatchOriginFilter selected={originTypes} onChange={onOriginTypesChange} />
 
       <SearchInput value={search} onValueChange={onSearchChange} placeholder="Buscar por lote, producto o factura…" aria-label="Buscar lote" className="sm:flex-1" />
     </div>

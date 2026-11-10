@@ -29,7 +29,7 @@ export const useBatches = (params?: UseBatchesParams): UseBatchesReturn => {
   const fmt = useFormatters();
 
   const batchesQuery = useQuery({
-    queryKey: ['batches', tenantId, params?.branchId, params?.startDate, params?.endDate, params?.search, params?.page, params?.limit],
+    queryKey: ['batches', tenantId, params?.branchId, params?.startDate, params?.endDate, params?.search, params?.originTypes, params?.page, params?.limit],
     queryFn: () => inventoryRepository.listBatches(params),
     enabled: isAuthenticated && !!tenantId,
   });

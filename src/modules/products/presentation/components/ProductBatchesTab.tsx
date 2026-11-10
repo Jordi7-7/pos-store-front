@@ -21,6 +21,7 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
     startDate: filters.startDate,
     endDate: filters.endDate,
     search: filters.searchTerm,
+    originTypes: filters.originTypes,
     page: filters.page,
     limit: filters.limit,
   });
@@ -28,7 +29,7 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
   // Al cambiar de página o de filtros, los lotes vuelven a verse cerrados.
   useEffect(() => {
     setExpanded({});
-  }, [filters.page, filters.searchTerm, selectedBranchId, filters.startDate, filters.endDate]);
+  }, [filters.page, filters.searchTerm, selectedBranchId, filters.startDate, filters.endDate, filters.originTypes]);
 
   const toggle = (lotId: string) => setExpanded((prev) => ({ ...prev, [lotId]: !prev[lotId] }));
   const expandAll = () => setExpanded(Object.fromEntries(lots.map((lot) => [lot.id, true])));
@@ -39,6 +40,8 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
         <BatchFilters
           dateRange={filters.dateRange}
           onDateRangeChange={filters.setDateRange}
+          originTypes={filters.originTypes}
+          onOriginTypesChange={filters.setOriginTypes}
           search={filters.search}
           onSearchChange={filters.setSearch}
           onExpandAll={expandAll}
