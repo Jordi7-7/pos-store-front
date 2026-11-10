@@ -8,7 +8,6 @@ import {
   PackageCheck
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { type DateRange } from 'react-day-picker';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -39,6 +38,8 @@ interface ProductSalesTabProps {
   selectedBranchId?: string;
 }
 
+import { requireDateRange, type RequiredDateSpan } from '@/shared/domain/rules/date-range';
+
 export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranchId }) => {
   const fmt = useFormatters();
   const currentTenant = useTenant(); // el nombre del negocio ya está en la sesión: no hace falta pedirlo
@@ -46,7 +47,7 @@ export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranch
   const { loading, data: productSalesData, fetchProductSales } = useProductSalesReport();
 
   // Date Range Defaults: Start of month to today
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+  const [dateRange, setDateRange] = useState<RequiredDateSpan>({
     from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     to: new Date()
   });
@@ -174,7 +175,7 @@ export const ProductSalesTab: React.FC<ProductSalesTabProps> = ({ selectedBranch
                   mode="range"
                   defaultMonth={dateRange?.from}
                   selected={dateRange}
-                  onSelect={setDateRange}
+                  onSelect={(range) => setDateRange((current) => requireDateRange(range, current))}
                   numberOfMonths={2}
                 />
               </PopoverContent>

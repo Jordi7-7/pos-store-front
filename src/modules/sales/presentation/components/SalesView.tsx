@@ -15,12 +15,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import { Field } from '@/components/ui/field';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { requireDateRange, type RequiredDateSpan } from '@/shared/domain/rules/date-range';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/shared/presentation/components/PageHeader';
 
 export const SalesView: React.FC = () => {
   const { selectedBranchId } = useLayoutContext();
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+  const [dateRange, setDateRange] = useState<RequiredDateSpan>({
     from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     to: new Date(),
   });
@@ -46,7 +47,7 @@ export const SalesView: React.FC = () => {
   });
 
   const updateDateRange = (range: DateRange | undefined) => {
-    setDateRange(range);
+    setDateRange((current) => requireDateRange(range, current));
     setPage(1);
   };
 

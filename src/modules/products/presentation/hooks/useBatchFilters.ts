@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
+import { useTimezone } from '@/modules/auth/presentation/hooks/useSession';
+import { requireDateRange, todayRange, type RequiredDateSpan } from '@/shared/domain/rules/date-range';
 import type { BatchOriginType } from '../../domain/enums';
 
-/** Filtros y paginación de la lista de lotes. La búsqueda espera 350 ms a que se deje de teclear; cualquier filtro vuelve a la página 1. */
+/** Filtros y paginación de la lista de lotes. La fecha siempre está puesta (por defecto, hoy en la zona de la tienda) para no traer todos los lotes. La búsqueda espera 350 ms a que se deje de teclear; cualquier filtro vuelve a la página 1. */
 export function useBatchFilters() {
-  const [dateRange, setDateRangeState] = useState<DateRange | undefined>(undefined);
+  const timezone = useTimezone();
+  const [dateRange, setDateRangeState] = useState<RequiredDateSpan>(() => todayRange(timezone));
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [originTypes, setOriginTypesState] = useState<BatchOriginType[]>([]);
@@ -21,7 +24,7 @@ export function useBatchFilters() {
   }, [search]);
 
   const setDateRange = (range: DateRange | undefined) => {
-    setDateRangeState(range);
+    setDateRangeState((current) => requireDateRange(range, current));
     setPage(1);
   };
   const setOriginTypes = (types: BatchOriginType[]) => {
@@ -44,8 +47,8 @@ export function useBatchFilters() {
     setPage,
     limit,
     setLimit,
-    startDate: dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
-    endDate: dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined,
+    startDate: format(dateRange.from, 'yyyy-MM-dd'),
+    endDate: format(dateRange.to ?? dateRange.from, 'yyyy-MM-dd'),
     searchTerm: debouncedSearch.trim() || undefined,
   };
 }

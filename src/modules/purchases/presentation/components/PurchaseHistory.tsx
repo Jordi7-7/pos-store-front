@@ -29,11 +29,13 @@ interface PurchaseHistoryProps {
   selectedBranchId?: string;
 }
 
+import { requireDateRange, type RequiredDateSpan } from '@/shared/domain/rules/date-range';
+
 export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranchId }) => {
   const isAll = !selectedBranchId;
 
   // Date Range Defaults: Start of month to today
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+  const [dateRange, setDateRange] = useState<RequiredDateSpan>({
     from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     to: new Date(),
   });
@@ -67,7 +69,7 @@ export const PurchaseHistory: React.FC<PurchaseHistoryProps> = ({ selectedBranch
   };
 
   const handleDateRangeSelect = (range: DateRange | undefined) => {
-    setDateRange(range);
+    setDateRange((current) => requireDateRange(range, current));
     setPage(1);
   };
 

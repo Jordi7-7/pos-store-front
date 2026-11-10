@@ -9,7 +9,6 @@ import {
   Package
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { type DateRange } from 'react-day-picker';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -41,6 +40,8 @@ interface CostSalesTabProps {
   selectedBranchId?: string;
 }
 
+import { requireDateRange, type RequiredDateSpan } from '@/shared/domain/rules/date-range';
+
 export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) => {
   const fmt = useFormatters();
   const currentTenant = useTenant(); // el nombre del negocio ya está en la sesión: no hace falta pedirlo
@@ -64,7 +65,7 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
   };
 
   // Date Picker Range state (Defaults: start of month to today)
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+  const [dateRange, setDateRange] = useState<RequiredDateSpan>({
     from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     to: new Date()
   });
@@ -147,7 +148,7 @@ export const CostSalesTab: React.FC<CostSalesTabProps> = ({ selectedBranchId }) 
                   mode="range"
                   defaultMonth={dateRange?.from}
                   selected={dateRange}
-                  onSelect={setDateRange}
+                  onSelect={(range) => setDateRange((current) => requireDateRange(range, current))}
                   numberOfMonths={2}
                 />
               </PopoverContent>
