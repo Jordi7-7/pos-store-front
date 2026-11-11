@@ -103,6 +103,7 @@ export const ERROR_MESSAGES: Readonly<Record<string, Entry>> = {
   SALE_NOT_FOUND: 'Venta no encontrada.',
   SALE_ALREADY_REFUNDED: 'Esta venta ya fue devuelta en su totalidad.',
   IDEMPOTENCY_KEY_REUSED: 'Ese identificador ya se usó en otra venta distinta. Vuelve a intentar el cobro.',
+  OFFLINE_REFERENCE_TAKEN: 'Ese número provisional ya lo tiene otra venta. Revisa la venta pendiente.',
   INSUFFICIENT_PAYMENT: 'El monto pagado es menor al total de la venta.',
   CUSTOMER_NOT_FOUND: 'Cliente no encontrado.',
   CUSTOMER_IDENTITY_TAKEN: 'Ya existe un cliente con ese documento.',
