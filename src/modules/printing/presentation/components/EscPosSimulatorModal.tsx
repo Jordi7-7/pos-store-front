@@ -53,7 +53,7 @@ interface EscPosSimulatorModalProps {
 const SAMPLE_SALE_DATA: TicketSaleData = {
   invoiceNumber: 'FAC-001092',
   createdAt: new Date().toLocaleString(),
-  branchName: 'Aura Store Centro',
+  branchName: 'POS Store Centro',
   branchAddress: 'Av. Central 450, Col. Comercio',
   clientName: 'Juan Carlos Perez Gomez',
   clientIdentity: '0928374651',
@@ -83,7 +83,7 @@ const SAMPLE_SALE_DATA: TicketSaleData = {
 // Datos de cierre de caja de ejemplo para simulación
 const SAMPLE_CLOSING_DATA: ClosingTicketData = {
   id: 'c8f49a21-9981-42cb-b1b0-128471923011',
-  branchName: 'Aura Store Centro',
+  branchName: 'POS Store Centro',
   userName: 'Cajero Principal',
   openedAt: new Date(Date.now() - 8 * 3600 * 1000).toISOString(),
   closedAt: new Date().toISOString(),
