@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useTenant } from '@/modules/auth/presentation/hooks/useSession';
-import { thermalPrinterService } from '../../infrastructure/printers/thermal-printer.service';
+import { layoutOf, thermalPrinterService } from '../../infrastructure/printers/thermal-printer.service';
 import { buildClosingReceiptBytes } from '../../infrastructure/escpos/escpos-builder';
 import { parseEscPosBytes } from '../../infrastructure/escpos/escpos-parser';
 import {
@@ -71,7 +71,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
   const receiptBytes = useMemo(() => {
     if (!sessionData) return new Uint8Array();
     return buildClosingReceiptBytes(sessionData, {
-      paperWidth: config.paperWidth,
+      ...layoutOf(config),
       openDrawer: config.openDrawer,
       cutPaper: config.cutPaper,
       tenantName: tenantName || publicTenant?.name,
@@ -82,8 +82,8 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
 
   // 2. Decodificación de líneas exactas
   const parseResult = useMemo(() => {
-    return parseEscPosBytes(receiptBytes, config.paperWidth);
-  }, [receiptBytes, config.paperWidth]);
+    return parseEscPosBytes(receiptBytes, config.paperWidth, layoutOf(config).columns);
+  }, [receiptBytes, config]);
 
   // 3. Renderizado de imagen PNG de alta resolución
   const pngDataUrl = useMemo(() => {
@@ -113,11 +113,11 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
       }
 
       // Fallback: Diálogo del navegador con imagen limpia
-      printImageViaIframe(pngDataUrl, `Corte-Caja-${sessionData.id.slice(0, 8)}`);
+      printImageViaIframe(pngDataUrl, `Corte-Caja-${sessionData.id.slice(0, 8)}`, config.paperWidth);
       onClose();
     } catch (err) {
       console.error('Error al imprimir corte de caja:', err);
-      printImageViaIframe(pngDataUrl, `Corte-Caja-${sessionData.id.slice(0, 8)}`);
+      printImageViaIframe(pngDataUrl, `Corte-Caja-${sessionData.id.slice(0, 8)}`, config.paperWidth);
       onClose();
     } finally {
       setIsPrinting(false);
@@ -165,7 +165,7 @@ export const ThermalClosingTicketModal: React.FC<ThermalClosingTicketModalProps>
             </div>
           </div>
           <DialogDescription className="text-xs text-neutral">
-            Formato: <strong>{config.paperWidth}</strong> ({config.paperWidth === '80mm' ? '42 columnas' : '32 columnas'})
+            Formato: <strong>{config.paperWidth}</strong> ({parseResult.maxCols} columnas)
           </DialogDescription>
         </DialogHeader>
 

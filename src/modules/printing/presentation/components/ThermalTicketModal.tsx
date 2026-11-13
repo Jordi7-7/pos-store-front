@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useTenant } from '@/modules/auth/presentation/hooks/useSession';
-import { thermalPrinterService } from '../../infrastructure/printers/thermal-printer.service';
+import { layoutOf, thermalPrinterService } from '../../infrastructure/printers/thermal-printer.service';
 import { buildSaleReceiptBytes } from '../../infrastructure/escpos/escpos-builder';
 import { parseEscPosBytes } from '../../infrastructure/escpos/escpos-parser';
 import {
@@ -71,7 +71,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
   const receiptBytes = useMemo(() => {
     if (!saleData) return new Uint8Array();
     return buildSaleReceiptBytes(saleData, {
-      paperWidth: config.paperWidth,
+      ...layoutOf(config),
       openDrawer: config.openDrawer,
       cutPaper: config.cutPaper,
       tenantRuc: effectiveRuc,
@@ -81,8 +81,8 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
 
   // 2. Decodificación de líneas exactas
   const parseResult = useMemo(() => {
-    return parseEscPosBytes(receiptBytes, config.paperWidth);
-  }, [receiptBytes, config.paperWidth]);
+    return parseEscPosBytes(receiptBytes, config.paperWidth, layoutOf(config).columns);
+  }, [receiptBytes, config]);
 
   // 3. Renderizado de imagen PNG de alta resolución
   const pngDataUrl = useMemo(() => {
@@ -113,11 +113,11 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
       }
 
       // Fallback: Diálogo de impresión del navegador imprimiendo la imagen limpia
-      printImageViaIframe(pngDataUrl, `Ticket-${saleData.invoiceNumber}`);
+      printImageViaIframe(pngDataUrl, `Ticket-${saleData.invoiceNumber}`, config.paperWidth);
       onClose();
     } catch (err) {
       console.error('Error al imprimir ticket:', err);
-      printImageViaIframe(pngDataUrl, `Ticket-${saleData.invoiceNumber}`);
+      printImageViaIframe(pngDataUrl, `Ticket-${saleData.invoiceNumber}`, config.paperWidth);
       onClose();
     } finally {
       setIsPrinting(false);
@@ -165,7 +165,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
             </div>
           </div>
           <DialogDescription className="text-xs text-neutral">
-            Formato: <strong>{config.paperWidth}</strong> ({config.paperWidth === '80mm' ? '42 columnas' : '32 columnas'})
+            Formato: <strong>{config.paperWidth}</strong> ({parseResult.maxCols} columnas)
           </DialogDescription>
         </DialogHeader>
 

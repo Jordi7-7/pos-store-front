@@ -12,20 +12,12 @@ import {
   Printer,
   Scissors,
   Zap,
-  Copy,
-  Check,
-  FileText,
-  Binary,
   AlertTriangle,
   Download,
-  Image as ImageIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseEscPosBytes } from '../../infrastructure/escpos/escpos-parser';
-import {
-  renderEscPosToDataUrl,
-  downloadEscPosImage,
-} from '../../infrastructure/escpos/escpos-image';
+import { downloadEscPosImage } from '../../infrastructure/escpos/escpos-image';
 import {
   buildSaleReceiptBytes,
   buildClosingReceiptBytes,
@@ -35,6 +27,7 @@ import {
 import { useTenant } from '@/modules/auth/presentation/hooks/useSession';
 import type { ClosingTicketData, TicketSaleData } from '../../domain/entities/ticket';
 import { PaymentMethod } from '@/shared/domain/enums/payments';
+import { defaultColumns, resolveColumns } from '../../domain/rules/print-layout';
 
 interface EscPosSimulatorModalProps {
   isOpen: boolean;
@@ -47,6 +40,8 @@ interface EscPosSimulatorModalProps {
   closingData?: ClosingTicketData | null;
   tenantRuc?: string;
   defaultPaperWidth?: PaperWidth;
+  /** Columnas configuradas en la impresora (si faltan, las estándar del papel). */
+  defaultColumnCount?: number;
 }
 
 // Datos de venta de ejemplo para simulación
@@ -118,14 +113,20 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
   closingData,
   tenantRuc,
   defaultPaperWidth = '58mm',
+  defaultColumnCount,
 }) => {
   const publicTenant = useTenant();
   const format = useTicketFormat();
   const effectiveRuc = tenantRuc || publicTenant?.ruc || '';
 
   const [paperWidth, setPaperWidth] = useState<PaperWidth>(defaultPaperWidth);
-  const [activeTab, setActiveTab] = useState<'paper' | 'image' | 'hex'>('paper');
-  const [copied, setCopied] = useState(false);
+  const [columnOverride, setColumnOverride] = useState<number | undefined>(defaultColumnCount);
+  const columns = resolveColumns(paperWidth, columnOverride);
+  const choosePaper = (width: PaperWidth) => {
+    setPaperWidth(width);
+    // Las columnas configuradas valen para el papel configurado; otro papel vuelve a su estándar.
+    setColumnOverride(width === defaultPaperWidth ? defaultColumnCount : defaultColumns(width));
+  };
   const [sampleMode, setSampleMode] = useState<'sale' | 'closing' | 'test'>(
     closingData ? 'closing' : 'sale'
   );
@@ -137,7 +138,7 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
     }
 
     if (sampleMode === 'test') {
-      const builder = new EscPosBuilder(paperWidth);
+      const builder = new EscPosBuilder(paperWidth, { columns });
       builder.openCashDrawer();
       builder
         .align('center')
@@ -147,7 +148,7 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
         .line('================================')
         .bold(false)
         .line(`Fecha: ${new Date().toLocaleDateString()}`)
-        .line(`Formato: ${paperWidth} (${paperWidth === '80mm' ? 42 : 32} columnas)`)
+        .line(`Formato: ${paperWidth} (${columns} columnas)`)
         .line('Cajon: Activado | Corte: Activado')
         .line('')
         .bold(true)
@@ -161,6 +162,7 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
       const dataToUse = closingData || SAMPLE_CLOSING_DATA;
       return buildClosingReceiptBytes(dataToUse, {
         paperWidth,
+        columns,
         openDrawer: true,
         cutPaper: true,
         format,
@@ -170,28 +172,22 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
     const dataToUse = saleData || SAMPLE_SALE_DATA;
     return buildSaleReceiptBytes(dataToUse, {
       paperWidth,
+      columns,
       openDrawer: true,
       cutPaper: true,
       tenantRuc: effectiveRuc,
       format,
     });
-  }, [externalBytes, saleData, closingData, effectiveRuc, format, paperWidth, sampleMode]);
+  }, [externalBytes, saleData, closingData, effectiveRuc, format, paperWidth, columns, sampleMode]);
 
   // Decodificar los bytes con el parser
   const parseResult = useMemo(() => {
-    return parseEscPosBytes(currentBytes, paperWidth);
-  }, [currentBytes, paperWidth]);
-
-  const handleCopyHex = async () => {
-    await navigator.clipboard.writeText(parseResult.hexDump);
-    setCopied(true);
-    toast.success('Bytes hexadecimales copiados al portapapeles');
-    setTimeout(() => setCopied(false), 2000);
-  };
+    return parseEscPosBytes(currentBytes, paperWidth, columns);
+  }, [currentBytes, paperWidth, columns]);
 
   const hasOverflows = parseResult.lines.some((l) => l.isOverflow);
 
-  // Crear regla de columnas 1..32 o 1..42
+  // Crear regla de columnas 1..N
   const columnRuler = useMemo(() => {
     let ruler = '';
     for (let c = 1; c <= parseResult.maxCols; c++) {
@@ -199,15 +195,6 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
     }
     return ruler;
   }, [parseResult.maxCols]);
-
-  // Generar imagen PNG del ticket en memoria
-  const pngDataUrl = useMemo(() => {
-    try {
-      return renderEscPosToDataUrl(parseResult);
-    } catch {
-      return '';
-    }
-  }, [parseResult]);
 
   const handleDownloadImage = () => {
     const filename = sampleMode === 'closing' ? 'ticket-cierre-caja' : 'ticket-venta';
@@ -232,7 +219,7 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
                   </span>
                 </DialogTitle>
                 <DialogDescription className="text-xs text-neutral">
-                  Visualización exacta de la cuadrícula monospaciada que recibe el cabezal térmico.
+                  Vista previa de cómo saldrá el ticket en el papel, sin gastar rollo.
                 </DialogDescription>
               </div>
             </div>
@@ -245,25 +232,25 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
               <div className="inline-flex rounded-lg bg-bg-dark p-0.5 border border-border-card">
                 <button
                   type="button"
-                  onClick={() => setPaperWidth('58mm')}
+                  onClick={() => choosePaper('58mm')}
                   className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
                     paperWidth === '58mm'
                       ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'text-neutral hover:text-secondary'
                   }`}
                 >
-                  58mm (32 cols)
+                  58mm ({defaultColumns('58mm')} cols)
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPaperWidth('80mm')}
+                  onClick={() => choosePaper('80mm')}
                   className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
                     paperWidth === '80mm'
                       ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'text-neutral hover:text-secondary'
                   }`}
                 >
-                  80mm (42 cols)
+                  80mm ({defaultColumns('80mm')} cols)
                 </button>
               </div>
             </div>
@@ -307,38 +294,6 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
                 </div>
               )}
 
-              <div className="inline-flex rounded-lg bg-bg-dark p-0.5 border border-border-card">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('paper')}
-                  className={`p-1.5 rounded-md transition-all ${
-                    activeTab === 'paper' ? 'bg-card text-primary' : 'text-neutral hover:text-secondary'
-                  }`}
-                  title="Vista Papel Térmico"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('image')}
-                  className={`p-1.5 rounded-md transition-all ${
-                    activeTab === 'image' ? 'bg-card text-primary' : 'text-neutral hover:text-secondary'
-                  }`}
-                  title="Vista Imagen PNG (WhatsApp)"
-                >
-                  <ImageIcon className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('hex')}
-                  className={`p-1.5 rounded-md transition-all ${
-                    activeTab === 'hex' ? 'bg-card text-primary' : 'text-neutral hover:text-secondary'
-                  }`}
-                  title="Inspector de Bytes (Hex)"
-                >
-                  <Binary className="w-3.5 h-3.5" />
-                </button>
-              </div>
             </div>
           </div>
 
@@ -354,7 +309,7 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
 
         {/* Contenedor Principal Scrolleable */}
         <div className="flex-1 overflow-y-auto py-4 flex justify-center bg-bg-dark/50 rounded-xl my-2 p-2">
-          {activeTab === 'paper' ? (
+          {(
             /* Papel Térmico Virtual */
             <div
               className="bg-[#fdfcf7] text-neutral-900 shadow-2xl border border-neutral-300 rounded-sm font-mono text-xs leading-[18px] p-5 select-text transition-all w-fit h-fit shrink-0 my-1"
@@ -433,51 +388,6 @@ export const EscPosSimulatorModal: React.FC<EscPosSimulatorModalProps> = ({
               {/* Diente de sierra / corte inferior simulado */}
  <div className="mt-6 pt-3 border-t border-dashed border-neutral-300 text-center text-xs text-neutral-400 ">
                 Fin del Rollo Térmico
-              </div>
-            </div>
-          ) : activeTab === 'image' ? (
-            /* Vista Imagen Renderizada PNG */
-            <div className="flex flex-col items-center gap-3 py-2 w-full">
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleDownloadImage}
-                  className="h-7 text-xs gap-1.5 bg-bg-card border-border-card text-secondary hover:text-white"
-                >
-                  <Download className="w-3.5 h-3.5 text-primary" />
-                  <span>Descargar Archivo PNG</span>
-                </Button>
-              </div>
-              {pngDataUrl ? (
-                <img
-                  src={pngDataUrl}
-                  alt="Ticket Renderizado en PNG"
-                  className={`shadow-2xl rounded border border-neutral-300 bg-white select-all ${
-                    paperWidth === '80mm' ? 'max-w-[360px]' : 'max-w-[285px]'
-                  }`}
-                />
-              ) : (
-                <div className="text-xs text-neutral">Generando imagen...</div>
-              )}
-            </div>
-          ) : (
-            /* Inspector Hexadecimal de Bytes */
-            <div className="w-full bg-black/90 text-emerald-400 font-mono text-xs p-4 rounded-lg overflow-x-auto leading-relaxed border border-border-card select-all">
-              <div className="flex justify-between items-center pb-2 mb-2 border-b border-neutral-800 text-neutral-400 text-xs">
-                <span>Volcado Hexadecimal ({parseResult.totalChars} bytes)</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleCopyHex}
-                  className="h-6 text-xs gap-1 bg-neutral-900 border-neutral-700 text-neutral-200 hover:text-white"
-                >
-                  {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                  {copied ? 'Copiado' : 'Copiar Hex'}
-                </Button>
-              </div>
- <div className="break-all font-mono">
-                {parseResult.hexDump}
               </div>
             </div>
           )}

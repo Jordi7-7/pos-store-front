@@ -7,14 +7,60 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Printer, CheckCircle2, AlertCircle, RefreshCw, Unplug, Zap, Eye } from 'lucide-react';
+import { Printer, CheckCircle2, AlertCircle, RefreshCw, Unplug, Zap, Eye, Ruler } from 'lucide-react';
 import { toast } from 'sonner';
 import {
+  layoutOf,
   thermalPrinterService,
   type PrinterConfig,
 } from '../../infrastructure/printers/thermal-printer.service';
+import {
+  MAX_COLUMNS,
+  MAX_FEED_LINES,
+  MAX_LEFT_MARGIN_MM,
+  MIN_COLUMNS,
+  type PaperWidth,
+} from '../../domain/rules/print-layout';
 import { EscPosSimulatorModal } from './EscPosSimulatorModal';
 import { deviceErrorMessage, isNoPrinterConfigured } from '../../domain/rules/device-error';
+
+/** Campo numérico que confirma al salir del campo: así se puede teclear "42" sin que el "4" se corrija a 24. */
+const NumberField: React.FC<{
+  value: number;
+  min: number;
+  max: number;
+  onCommit: (value: number) => void;
+  className?: string;
+  ariaLabel?: string;
+  id?: string;
+}> = ({ value, min, max, onCommit, className, ariaLabel, id }) => {
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => setDraft(String(value)), [value]);
+
+  const commit = () => {
+    const parsed = Number(draft);
+    if (draft.trim() === '' || !Number.isFinite(parsed)) {
+      setDraft(String(value));
+      return;
+    }
+    onCommit(Math.min(max, Math.max(min, Math.round(parsed))));
+  };
+
+  return (
+    <input
+      type="number"
+      min={min}
+      max={max}
+      value={draft}
+      aria-label={ariaLabel}
+      id={id}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+      className={className}
+    />
+  );
+};
 
 interface PrinterConfigModalProps {
   isOpen: boolean;
@@ -31,6 +77,7 @@ export const PrinterConfigModal: React.FC<PrinterConfigModalProps> = ({
   const [isConfigured, setIsConfigured] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  const [isCalibrating, setIsCalibrating] = useState(false);
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
   const [config, setConfig] = useState<PrinterConfig>(thermalPrinterService.getConfig());
 
@@ -81,6 +128,30 @@ export const PrinterConfigModal: React.FC<PrinterConfigModalProps> = ({
       setIsTesting(false);
     }
   };
+
+  const handleCalibrationPrint = async () => {
+    try {
+      setIsCalibrating(true);
+      await thermalPrinterService.printCalibrationTicket();
+      toast.success('Hoja de calibración enviada. Elige la línea más larga que no se parta en dos.');
+    } catch (err) {
+      if (isNoPrinterConfigured(err)) {
+        toast.error('Primero debes vincular tu impresora USB.');
+      } else {
+        toast.error(`Error al imprimir: ${deviceErrorMessage(err, 'Verifica la conexión USB')}`);
+      }
+    } finally {
+      setIsCalibrating(false);
+    }
+  };
+
+  /** Cambiar de papel devuelve las columnas al estándar de ese papel. */
+  const handlePaperChange = (paperWidth: PaperWidth) => {
+    const updated = thermalPrinterService.saveConfig({ paperWidth, columns: undefined });
+    setConfig(updated);
+  };
+
+  const layout = layoutOf(config);
 
   const handleUnlink = async () => {
     await thermalPrinterService.forgetPrinter();
@@ -174,7 +245,7 @@ export const PrinterConfigModal: React.FC<PrinterConfigModalProps> = ({
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => handleConfigChange('paperWidth', '58mm')}
+                    onClick={() => handlePaperChange('58mm')}
                     className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
                       config.paperWidth === '58mm'
                         ? 'bg-primary/10 border-primary text-primary font-bold'
@@ -182,12 +253,12 @@ export const PrinterConfigModal: React.FC<PrinterConfigModalProps> = ({
                     }`}
                   >
                     <div className="text-xs">58 mm (2 pulgadas)</div>
-                    <div className="text-xs opacity-70">Mini impresoras (32 cols)</div>
+                    <div className="text-xs opacity-70">Mini impresoras</div>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => handleConfigChange('paperWidth', '80mm')}
+                    onClick={() => handlePaperChange('80mm')}
                     className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
                       config.paperWidth === '80mm'
                         ? 'bg-primary/10 border-primary text-primary font-bold'
@@ -195,9 +266,44 @@ export const PrinterConfigModal: React.FC<PrinterConfigModalProps> = ({
                     }`}
                   >
                     <div className="text-xs">80 mm (3 pulgadas)</div>
-                    <div className="text-xs opacity-70">Epson / Bixolon (42 cols)</div>
+                    <div className="text-xs opacity-70">Epson / Bixolon / genéricas</div>
                   </button>
                 </div>
+              </div>
+
+              {/* Columnas: lo que más suele fallar. Se ajusta con la hoja de calibración */}
+              <div className="p-3 rounded-xl bg-bg-dark border border-border-card space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-xs font-bold text-muted-foreground" htmlFor="printer-columns">
+                    Caracteres por línea
+                  </label>
+                  <NumberField
+                    value={layout.columns}
+                    min={MIN_COLUMNS}
+                    max={MAX_COLUMNS}
+                    onCommit={(v) => handleConfigChange('columns', v)}
+                    ariaLabel="Columnas por línea"
+                    id="printer-columns"
+                    className="w-16 h-7 rounded-lg border border-border-card bg-bg-card px-2 text-xs text-secondary"
+                  />
+                </div>
+                <p className="text-xs text-neutral">
+                  ¿El ticket sale partido o a medio ancho? Imprime la hoja de calibración y escribe aquí el número de la línea más larga que no se parta.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCalibrationPrint}
+                  disabled={isCalibrating || !isConfigured}
+                  className="w-full text-xs h-8 gap-1.5 cursor-pointer font-medium bg-bg-card border-border-card text-secondary hover:text-white"
+                >
+                  {isCalibrating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Ruler className="w-3.5 h-3.5 text-primary" />}
+                  <span>{isCalibrating ? 'Imprimiendo...' : 'Imprimir hoja de calibración'}</span>
+                </Button>
+                {!isConfigured && (
+                  <p className="text-xs text-neutral">Vincula la impresora USB para poder imprimirla.</p>
+                )}
               </div>
 
               {/* Switches de hardware */}
@@ -226,34 +332,60 @@ export const PrinterConfigModal: React.FC<PrinterConfigModalProps> = ({
               </div>
             </div>
 
-            {/* Botones de Prueba y Simulación */}
-            <div className="space-y-2 pt-1">
+            {isConfigured && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setIsSimulatorOpen(true)}
-                className="w-full text-xs h-9 gap-1.5 cursor-pointer font-medium bg-bg-dark border-border-card text-secondary hover:text-white"
+                onClick={handleTestPrint}
+                disabled={isTesting}
+                className="w-full text-xs h-9 gap-1.5 cursor-pointer font-bold border-primary/30 text-primary hover:bg-primary/10"
               >
-                <Eye className="w-3.5 h-3.5 text-primary" />
-                <span>Simular Salida de Bytes ESC/POS (Sin impresora)</span>
+                {isTesting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
+                <span>{isTesting ? 'Imprimiendo prueba...' : 'Imprimir ticket de prueba'}</span>
               </Button>
+            )}
 
-              {isConfigured && (
+            {/* Ajustes que casi nunca hacen falta */}
+            <details className="rounded-xl bg-bg-dark border border-border-card p-3 text-xs">
+              <summary className="cursor-pointer font-bold text-muted-foreground">Ajustes avanzados</summary>
+              <div className="mt-3 space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-xs text-secondary font-medium space-y-1 block">
+                    <span>Margen izquierdo (mm)</span>
+                    <NumberField
+                      value={layout.leftMarginMm}
+                      min={0}
+                      max={MAX_LEFT_MARGIN_MM}
+                      onCommit={(v) => handleConfigChange('leftMarginMm', v)}
+                      className="w-full h-7 rounded-lg border border-border-card bg-bg-card px-2 text-xs text-secondary"
+                    />
+                  </label>
+                  <label className="text-xs text-secondary font-medium space-y-1 block">
+                    <span>Líneas antes del corte</span>
+                    <NumberField
+                      value={layout.feedLines}
+                      min={0}
+                      max={MAX_FEED_LINES}
+                      onCommit={(v) => handleConfigChange('feedLines', v)}
+                      className="w-full h-7 rounded-lg border border-border-card bg-bg-card px-2 text-xs text-secondary"
+                    />
+                  </label>
+                </div>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={handleTestPrint}
-                  disabled={isTesting}
-                  className="w-full text-xs h-9 gap-1.5 cursor-pointer font-bold border-primary/30 text-primary hover:bg-primary/10"
+                  onClick={() => setIsSimulatorOpen(true)}
+                  className="w-full text-xs h-8 gap-1.5 cursor-pointer font-medium bg-bg-card border-border-card text-secondary hover:text-white"
                 >
-                  {isTesting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
-                  <span>{isTesting ? 'Imprimiendo prueba en físico...' : 'Imprimir Ticket de Prueba USB'}</span>
+                  <Eye className="w-3.5 h-3.5 text-primary" />
+                  <span>Ver vista previa del ticket (sin impresora)</span>
                 </Button>
-              )}
-            </div>
+              </div>
+            </details>
           </div>
+
         )}
 
         <div className="pt-3 flex justify-end gap-2 border-t border-border-card/60 mt-3">
@@ -267,6 +399,7 @@ export const PrinterConfigModal: React.FC<PrinterConfigModalProps> = ({
           isOpen={isSimulatorOpen}
           onClose={() => setIsSimulatorOpen(false)}
           defaultPaperWidth={config.paperWidth}
+          defaultColumnCount={layout.columns}
         />
       </DialogContent>
     </Dialog>
