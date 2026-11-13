@@ -1,3 +1,5 @@
+import { resolveColumns, type PaperWidth } from '../../domain/rules/print-layout';
+
 export interface EscPosParsedLine {
   text: string;
   align: 'left' | 'center' | 'right';
@@ -24,9 +26,10 @@ export interface EscPosParseResult {
  */
 export function parseEscPosBytes(
   bytes: Uint8Array,
-  paperWidth: '58mm' | '80mm' = '58mm'
+  paperWidth: PaperWidth = '58mm',
+  columns?: number
 ): EscPosParseResult {
-  const maxCols = paperWidth === '80mm' ? 48 : 32;
+  const maxCols = resolveColumns(paperWidth, columns);
   const lines: EscPosParsedLine[] = [];
 
   let currentAlign: 'left' | 'center' | 'right' = 'left';
@@ -65,6 +68,12 @@ export function parseEscPosBytes(
       doubleWidth = false;
       doubleHeight = false;
       i += 2;
+      continue;
+    }
+
+    // GS L nL nH (margen izquierdo): 4 bytes, no son texto
+    if (byte === 0x1d && bytes[i + 1] === 0x4c) {
+      i += 4;
       continue;
     }
 

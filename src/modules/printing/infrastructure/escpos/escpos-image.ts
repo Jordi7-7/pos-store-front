@@ -1,4 +1,5 @@
 import type { EscPosParseResult } from './escpos-parser';
+import { PAPER_MM, type PaperWidth } from '../../domain/rules/print-layout';
 
 export interface EscPosImageOptions {
   scale?: number;
@@ -15,8 +16,7 @@ export function renderEscPosToCanvas(
   options: EscPosImageOptions = {}
 ): HTMLCanvasElement {
   const scale = options.scale || 2; // 2x para nitidez Retina
-  const is80mm = parseResult.paperWidth === '80mm';
-  const maxCols = is80mm ? 48 : 32;
+  const maxCols = parseResult.maxCols;
 
   const baseFontSize = 13;
   const fontFamily = '"Courier New", Courier, monospace';
@@ -163,7 +163,12 @@ export function downloadEscPosImage(
 /**
  * Envía la imagen PNG del ticket al diálogo de impresión del navegador de forma limpia
  */
-export function printImageViaIframe(dataUrl: string, title: string = 'Impresión de Ticket'): void {
+export function printImageViaIframe(
+  dataUrl: string,
+  title: string = 'Impresión de Ticket',
+  paperWidth: PaperWidth = '80mm'
+): void {
+  const widthMm = PAPER_MM[paperWidth];
   const iframe = document.createElement('iframe');
   iframe.style.position = 'fixed';
   iframe.style.right = '0';
@@ -185,17 +190,16 @@ export function printImageViaIframe(dataUrl: string, title: string = 'Impresión
         <style>
           @page {
             margin: 0;
-            size: auto;
+            size: ${widthMm}mm auto;
           }
           body {
             margin: 0;
             padding: 0;
-            display: flex;
-            justify-content: center;
+            width: ${widthMm}mm;
             background: #fff;
           }
           img {
-            max-width: 100%;
+            width: 100%;
             height: auto;
             display: block;
           }

@@ -1,9 +1,11 @@
 import {
   buildSaleReceiptBytes,
   buildClosingReceiptBytes,
+  buildCalibrationBytes,
   EscPosBuilder,
   type PaperWidth,
 } from '../escpos/escpos-builder';
+import { resolvePrintLayout, type PrintLayout } from '../../domain/rules/print-layout';
 import type { TicketPrinter } from '../../application/ports/ticket-printer';
 import type { ClosingTicketData, TicketFormat, TicketSaleData } from '../../domain/entities/ticket';
 import { getSerial, type SerialPortLike } from './web-serial';
@@ -11,6 +13,12 @@ import { isDevicePickerCancelled, NO_PRINTER_CONFIGURED } from '../../domain/rul
 
 export interface PrinterConfig {
   paperWidth: PaperWidth;
+  /** Caracteres por línea; si falta, el estándar del papel (32 en 58 mm, 48 en 80 mm). */
+  columns?: number;
+  /** Margen izquierdo en mm. */
+  leftMarginMm: number;
+  /** Líneas en blanco antes del corte. */
+  feedLines: number;
   openDrawer: boolean;
   cutPaper: boolean;
   baudRate: number;
@@ -18,10 +26,17 @@ export interface PrinterConfig {
 
 const DEFAULT_CONFIG: PrinterConfig = {
   paperWidth: '58mm',
+  leftMarginMm: 0,
+  feedLines: 3,
   openDrawer: true,
   cutPaper: true,
   baudRate: 9600,
 };
+
+/** Medidas de impresión ya validadas (columnas, margen y avance) a partir de la configuración guardada. */
+export function layoutOf(config: PrinterConfig): PrintLayout {
+  return resolvePrintLayout(config);
+}
 
 const STORAGE_KEY = 'aura_pos_printer_config';
 
@@ -138,7 +153,7 @@ class ThermalPrinterService implements TicketPrinter {
   ): Promise<boolean> {
     const config = this.getConfig();
     const bytes = buildSaleReceiptBytes(saleData, {
-      paperWidth: config.paperWidth,
+      ...layoutOf(config),
       openDrawer: config.openDrawer,
       cutPaper: config.cutPaper,
       tenantRuc: extraOptions.tenantRuc,
@@ -153,7 +168,7 @@ class ThermalPrinterService implements TicketPrinter {
   async printClosingTicket(sessionData: ClosingTicketData, format: TicketFormat): Promise<boolean> {
     const config = this.getConfig();
     const bytes = buildClosingReceiptBytes(sessionData, {
-      paperWidth: config.paperWidth,
+      ...layoutOf(config),
       openDrawer: config.openDrawer,
       cutPaper: config.cutPaper,
       format,
@@ -166,7 +181,8 @@ class ThermalPrinterService implements TicketPrinter {
   /** Imprime un ticket de prueba para validar que la conexión funciona */
   async printTestTicket(): Promise<boolean> {
     const config = this.getConfig();
-    const builder = new EscPosBuilder(config.paperWidth);
+    const layout = layoutOf(config);
+    const builder = new EscPosBuilder(layout.paperWidth, layout);
 
     if (config.openDrawer) {
       builder.openCashDrawer();
@@ -180,7 +196,7 @@ class ThermalPrinterService implements TicketPrinter {
       .line('================================')
       .bold(false)
       .line(`Fecha: ${new Date().toLocaleString()}`)
-      .line(`Formato: ${config.paperWidth}`)
+      .line(`Formato: ${layout.paperWidth} (${layout.columns} col)`)
       .line(`Baudios: ${config.baudRate}`)
       .line('Cajon: Activado | Corte: Activado')
       .line('')
@@ -193,6 +209,17 @@ class ThermalPrinterService implements TicketPrinter {
     }
 
     await this.sendRawBytes(builder.encode());
+    return true;
+  }
+
+  /** Imprime la hoja de calibración: líneas de largo creciente para averiguar las columnas reales. */
+  async printCalibrationTicket(): Promise<boolean> {
+    const config = this.getConfig();
+    const bytes = buildCalibrationBytes({
+      ...layoutOf(config),
+      cutPaper: config.cutPaper,
+    });
+    await this.sendRawBytes(bytes);
     return true;
   }
 

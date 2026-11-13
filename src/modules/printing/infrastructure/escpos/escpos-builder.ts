@@ -1,12 +1,26 @@
 import { numeroALetras } from 'numero-a-letras-es';
 import type { ClosingTicketData, TicketFormat, TicketSaleData } from '../../domain/entities/ticket';
 import { ticketMoney } from '../../domain/rules/ticket-money';
+import {
+  CALIBRATION_LENGTHS,
+  isWideLayout,
+  marginToDots,
+  resolvePrintLayout,
+  type PaperWidth,
+  type PrintLayout,
+} from '../../domain/rules/print-layout';
 import { PaymentMethod } from '@/shared/domain/enums/payments';
 
-export type PaperWidth = '58mm' | '80mm';
+export type { PaperWidth };
 
 export interface EscPosOptions {
   paperWidth?: PaperWidth;
+  /** Caracteres por línea (si falta, el estándar del papel: 32 en 58 mm, 48 en 80 mm). */
+  columns?: number;
+  /** Margen izquierdo en milímetros (0 = sin margen). */
+  leftMarginMm?: number;
+  /** Líneas en blanco antes del corte. */
+  feedLines?: number;
   openDrawer?: boolean;
   cutPaper?: boolean;
   tenantName?: string;
@@ -18,16 +32,25 @@ export type TicketOptions = EscPosOptions & { format: TicketFormat };
 
 /**
  * Generador nativo de comandos ESC/POS en formato Uint8Array sin dependencias externas.
- * Soporta anchos de 58mm (32 columnas) y 80mm (42 columnas) y caracteres en español.
+ * Soporta 58 mm y 80 mm con columnas configurables (por defecto 32 y 48) y caracteres en español.
  */
 export class EscPosBuilder {
   private buffer: number[] = [];
   private readonly maxCols: number;
+  private readonly feedLines: number;
 
-  constructor(paperWidth: PaperWidth = '58mm') {
-    // 58mm = 32 columnas estándar | 80mm = 48 columnas estándar
-    this.maxCols = paperWidth === '80mm' ? 48 : 32;
+  constructor(paperWidth: PaperWidth = '58mm', layout: Omit<Partial<PrintLayout>, 'paperWidth'> = {}) {
+    const resolved = resolvePrintLayout({ paperWidth, ...layout });
+    this.maxCols = resolved.columns;
+    this.feedLines = resolved.feedLines;
     this.init();
+    this.leftMargin(resolved.leftMarginMm);
+  }
+
+  /** Margen izquierdo (GS L nL nH), en puntos. Con 0 no se envía nada. */
+  private leftMargin(mm: number): void {
+    const dots = marginToDots(mm);
+    if (dots > 0) this.buffer.push(0x1d, 0x4c, dots & 0xff, (dots >> 8) & 0xff);
   }
 
   getMaxCols(): number {
@@ -153,7 +176,7 @@ export class EscPosBuilder {
 
   /** Cortar papel (GS V 0) */
   cut(): this {
-    this.buffer.push(0x0a, 0x0a, 0x0a); // Avanzar 3 líneas antes de cortar
+    for (let i = 0; i < this.feedLines; i++) this.buffer.push(0x0a); // Avanzar antes de cortar
     this.buffer.push(0x1d, 0x56, 0x00);
     return this;
   }
@@ -179,7 +202,8 @@ export function buildSaleReceiptBytes(
 ): Uint8Array {
   const money = ticketMoney(options.format);
   const width = options.paperWidth || '58mm';
-  const builder = new EscPosBuilder(width);
+  const builder = new EscPosBuilder(width, options);
+  const wide = isWideLayout(builder.getMaxCols());
 
   // Apertura de cajón monedero si está habilitado
   if (options.openDrawer !== false) {
@@ -214,7 +238,7 @@ export function buildSaleReceiptBytes(
 
   // 3. Encabezado de Productos
   builder.bold(true);
-  if (width === '80mm') {
+  if (wide) {
     builder.row('CANT  DESCRIPCION', 'TOTAL');
   } else {
     builder.row('CANT DESCRIPCION', 'TOTAL');
@@ -394,7 +418,8 @@ export function buildClosingReceiptBytes(
 ): Uint8Array {
   const money = ticketMoney(options.format);
   const width = options.paperWidth || '58mm';
-  const builder = new EscPosBuilder(width);
+  const builder = new EscPosBuilder(width, options);
+  const wide = isWideLayout(builder.getMaxCols());
 
   if (options.openDrawer !== false) {
     builder.openCashDrawer();
@@ -552,7 +577,7 @@ export function buildClosingReceiptBytes(
   if (sessionData.expensesList && sessionData.expensesList.length > 0) {
     builder.bold(true).line('DETALLE DE GASTOS').bold(false);
     sessionData.expensesList.forEach((exp) => {
-      const maxDesc = width === '80mm' ? 24 : 16;
+      const maxDesc = wide ? 24 : 16;
       const desc = (exp.description || 'Gasto').slice(0, maxDesc);
       builder.row(` ${desc}`, `-${money(Number(exp.amount))}`);
     });
@@ -565,7 +590,7 @@ export function buildClosingReceiptBytes(
 
   // 6. Auditoria y Doble Firma
   builder.line('').line('');
-  if (width === '80mm') {
+  if (wide) {
     builder
       .align('center')
       .line('-----------------    -----------------')
@@ -583,5 +608,30 @@ export function buildClosingReceiptBytes(
     builder.cut();
   }
 
+  return builder.encode();
+}
+
+/**
+ * Hoja de calibración: imprime líneas de largo creciente (cada una empieza con su largo).
+ * La mayor que NO se parte en dos renglones es la capacidad real de la impresora.
+ * Al final dibuja un marco con las columnas configuradas para comprobar el margen.
+ */
+export function buildCalibrationBytes(options: EscPosOptions = {}): Uint8Array {
+  const builder = new EscPosBuilder(options.paperWidth || '58mm', options);
+  const cols = builder.getMaxCols();
+
+  builder.align('left').bold(true).line('CALIBRACION').bold(false);
+  builder.line('Busque la linea mas larga').line('que NO se parte en dos.');
+  builder.line('Su numero = columnas.').line('');
+
+  for (const length of CALIBRATION_LENGTHS) {
+    // Sin espacios: así el generador no la parte y es la impresora la que decide dónde cortar.
+    builder.line(String(length) + '='.repeat(length - String(length).length));
+  }
+
+  builder.line('').line(`Marco de ${cols} columnas:`);
+  builder.line('|' + '='.repeat(cols - 2) + '|');
+
+  if (options.cutPaper !== false) builder.cut();
   return builder.encode();
 }
