@@ -1,5 +1,5 @@
 /**
- * Reglas de dependencia entre capas (docs/refactor-plan.md §2). Dependencias solo hacia adentro:
+ * Reglas de dependencia entre capas (ver CLAUDE.md de la web). Dependencias solo hacia adentro:
  * presentation → application → domain, e infrastructure → application/domain.
  * Equivalente en la web al `architecture.spec.ts` del backend.
  */

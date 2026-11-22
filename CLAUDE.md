@@ -1,6 +1,6 @@
 # CLAUDE.md — web `pos-store-front`
 
-Contexto y reglas para cualquier sesión de trabajo en la web. **Léelo entero antes de cambiar código**, y después `docs/refactor-plan.md` (análisis, arquitectura objetivo, plan por etapas y decisiones pendientes). El backend ya está terminado y es la fuente de verdad del contrato: `../pos-store/CLAUDE.md`, `../pos-store/architecture_guide.md`, `../pos-store/docs/error-codes.md`.
+Contexto y reglas para cualquier sesión de trabajo en la web. **Léelo entero antes de cambiar código.** Otros documentos: `docs/auth-session-contract.md` (sesión y cookie), `docs/diseno-interfaz.md` (UI), `docs/hallazgos-abiertos.md` (pendientes encontrados probando). **Estado actual, cifras y pendientes: `docs/estado.md`** (caduca; contrástalo con `git log`/`git status`). `docs/etapa-0-linea-base.md` y `docs/auditoria-web.md` son históricos. El backend es la fuente de verdad del contrato: `../pos-store/CLAUDE.md`, `../pos-store/architecture_guide.md`, `../pos-store/docs/error-codes.md`.
 
 ## Quién y cómo
 - El dueño habla **español**: responde en español; textos de interfaz y comentarios en español; **commits en inglés** (convencionales).
@@ -8,16 +8,17 @@ Contexto y reglas para cualquier sesión de trabajo en la web. **Léelo entero a
 - Cierra cada bloque con: qué cambió, qué se verificó (cifras reales), qué no se cubrió, qué decide el dueño.
 
 ## Reglas de trabajo (no negociables)
-1. **No hagas `git commit` ni `git push` salvo petición expresa.** Hay ~24 archivos modificados sin commit de una fase anterior (Vitest, lint, CI): no los toques ni los comitees sin preguntar. Cuando pida commit: por temas, mensajes en inglés.
+1. **No hagas `git commit` ni `git push` salvo petición expresa.** El árbol puede tener trabajo en curso sin commit: mira `git status` antes de empezar y no lo toques ni lo comitees sin preguntar. Cuando pida commit: por temas, mensajes en inglés.
 2. **Secretos:** los `.env` están ignorados por git; no imprimas ni pegues sus valores. La web solo usa `VITE_API_URL` y `VITE_IDLE_TIMEOUT_MINUTES` (no secretos).
 3. **El backend lo arranca el dueño a mano** desde su terminal (puerto 3000, `VITE_API_URL=http://localhost:3000`); no lo arranques ni lo detengas tú. Si necesitas verlo funcionando, pídeselo.
 4. No reabras las decisiones tomadas sin motivo nuevo.
 
 ## Decisiones vigentes
-- **Arquitectura: Clean/Hexagonal en cuatro capas** — `domain`, `application` (casos de uso + puertos), `infrastructure`, `presentation` — por módulo, con `src/shared/` para lo transversal. Dependencias solo hacia adentro. Detalle y árbol de carpetas en `docs/refactor-plan.md` §2. La app móvil usa tres capas (casos de uso dentro de `domain`); se alineará después, en la Fase 4.
+- **Arquitectura: Clean/Hexagonal en cuatro capas** — `domain`, `application` (casos de uso + puertos), `infrastructure`, `presentation` — por módulo, con `src/shared/` para lo transversal. Dependencias solo hacia adentro. El árbol de carpetas está más abajo y lo vigila `src/architecture.test.ts` (reglas en `src/test/layer-rules.ts`). La app móvil usa tres capas (casos de uso dentro de `domain`); se alineará después, en la Fase 4.
 - **Pragmatismo:** casos de uso completos donde hay reglas y dinero (ventas, caja, productos, compras, auth); administración sencilla = repositorio + hook.
 - **Errores por `code`**, nunca parseando `message`. Un catálogo `code → mensaje en español` en `shared/presentation/formatting/error-messages.ts` (los textos pueden usar los `details` del error). Un código nuevo del backend se añade ahí; el `message` del backend solo se muestra para los 4 códigos que lo explican por sí mismos.
-- **Cero `any`**, lint estricto; la deuda baja, no sube (`oxlint --max-warnings` es un tope que se reduce).
+- **Cero `any`** en código nuevo y escrito a mano, lint estricto; la deuda baja, no sube (`oxlint --max-warnings` es un tope que se reduce). Quedan fuera `components/ui/` (shadcn) y `routeTree.gen.ts` (generado: sus `as any` no cuentan).
+- **Paridad con el backend en dinero:** `Money` y las reglas de carrito, arqueo, asignación de pagos y devoluciones son copias de las del backend. Si cambias una de las dos, cambia la otra y su test con los mismos casos.
 - **Sesión web con cookie:** el refresh token va en una cookie `HttpOnly` que pone el backend (`/auth/web/*`), el token de acceso solo en memoria y `localStorage` guarda únicamente `user` y `tenant`. No guardes tokens en ningún almacenamiento del navegador. Detalle en `docs/auth-session-contract.md`.
 - **Sesión = tokens + `user` + `tenant` y nada más**; lo demás se deriva (selectores `useTenantId`, `useTimezone`…). La tienda no tiene valores por defecto: si falta un dato se exige. Contrato común con el móvil en `docs/auth-session-contract.md`.
 - **Dinero con `Money`** (`src/shared/domain/money.ts`, copia del backend: céntimos enteros, mitad hacia arriba). Redondear con `roundMoney(x)`, nunca `Number(x.toFixed(2))`; mostrar con `formatMoney(x)` (`useSession`), que usa la moneda y el idioma de la tienda. Nada de `$`, `USD` ni `es-EC` fijos (lo vigila `no-hardcoded-tenant-data.test.ts`). Los tickets térmicos (`escpos-builder`, `label-builder`) quedan fuera hasta los puertos de impresión (Etapa 3).
@@ -69,7 +70,7 @@ Todas las pantallas siguen `docs/diseno-interfaz.md` (tipografía, `PageHeader`,
 ## Reglas del código
 - `domain` no importa `react`, `@tanstack/*`, `zustand`, `sonner`, `fetch`, ni nada de `infrastructure`/`presentation`. `application` no importa `infrastructure` ni `presentation`. Lo hace cumplir `src/architecture.test.ts` (reglas en `src/test/layer-rules.ts`; también vigila `infrastructure` → sin `presentation`, UI ni estado). Hallazgos pendientes: `docs/hallazgos-abiertos.md`.
 - La **lógica de negocio no vive en componentes ni en hooks de UI**: va en `domain/rules` (puras, con test) o en un caso de uso. `toast` solo en `presentation`.
-- Se trocea un componente solo cuando mezcla responsabilidades y eso dificulta leerlo (reglas de negocio, estado y varias piezas de UI en el mismo archivo); el tamaño no es criterio. Un archivo largo pero cohesionado se deja. Nada de `apiClient` ni `fetch` en componentes.
+- Se trocea un componente solo cuando mezcla responsabilidades y eso dificulta leerlo (reglas de negocio, estado y varias piezas de UI en el mismo archivo); el tamaño no es criterio de rechazo. Un archivo largo pero cohesionado se deja. Como **aviso para revisar a mano**: más de ~400 líneas o más de ~8 props. Nada de `apiClient` ni `fetch` en componentes.
 - **Todo cambio de reglas de dinero o de caja lleva test** (Vitest). Las reglas puras (carrito, arqueo, asignación de pagos) deben tener paridad con las del backend (`../pos-store/src/modules/sales/domain/services/`).
 - **SKU:** el servidor lo normaliza (MAYÚSCULAS); el cliente no debe reimplementarlo salvo para mostrar.
 - Rutas (`src/routes`, TanStack): adaptadores finos; **toda ruta protegida con `beforeLoad` y permisos**.
@@ -82,15 +83,10 @@ pnpm typecheck && pnpm lint && pnpm test      # = pnpm verify
 pnpm build
 pnpm e2e            # Playwright contra el backend real (puerto 3000); credenciales en .env.e2e.local (ignorado por git)
 ```
-Línea base al empezar el refactor: 22 tests · tope de lint 265 · 202 `any`. **Medido el 2026-11-09:** typecheck limpio · **429 tests** (71 archivos) · tope de lint **51** · **25 `any`** (sin `components/ui`). Si una cifra empeora, algo se rompió.
+Si bajan los tests, suben los avisos de lint o reaparecen `any`, algo se rompió (últimas cifras en `docs/estado.md`).
 
 ## Trampas del entorno
 - **zsh** expande comodines: entrecomilla o usa `Grep`/`find`. **macOS no tiene `timeout`**: `perl -e 'alarm 240; exec @ARGV' <comando>`.
 - Las herramientas `Edit`/`Write` exigen haber leído el archivo antes en la sesión.
 - `src/routeTree.gen.ts` es **generado** por el plugin del router: no lo edites.
 - `components/ui/` es de shadcn: no se refactoriza.
-
-## Estado actual de las etapas
-Ver la tabla de `docs/refactor-plan.md` §3. **Hecho** (contrastado con el código y los commits del 2026-11-05 al 11-09): Etapas 0 a 4 y la migración de todos los módulos a 4 capas (lo vigila `architecture.test.ts`); `HttpClient`/`ApiError` y catálogo `code → mensaje` completo; sesión con refresh token en cookie `HttpOnly` y access token en memoria (el backend se despliega primero); guardas de ruta con permisos (`ROUTE_PERMISSIONS`); `clientRequestId` por intento de cobro; carrito, arqueo y devoluciones como reglas puras con test (paridad con el backend); casos de uso con puertos; tickets con la moneda de la tienda; `POSView`, `CierreModal` y editores troceados. Pruebas contra el backend real: recorrido por API (2026-11-05) y 14 specs de Playwright en `e2e/`. Desde el 2026-11-09: devoluciones por línea (`saleItemId`), filtro de lotes por tipo y fecha obligatoria en los filtros por fecha (`shared/domain/rules/date-range.ts`).
-
-**Falta:** repasar a mano 429/403/409 contra el backend real; bajar los `any` que quedan (25) y los avisos de lint (tope 51, solo baja); lo que la tabla de `docs/refactor-plan.md` §3 tenga aún sin marcar (Etapas 5 y 6). Offline: se prepara (repositorios como puertos, `clientRequestId`) pero no se implementa; antes hay que decidir alcance, factura provisional y conflictos. Hallazgos abiertos: `docs/hallazgos-abiertos.md`.
