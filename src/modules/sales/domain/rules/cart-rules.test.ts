@@ -1,6 +1,6 @@
 import { DiscountType } from '@/modules/sales/domain/enums';
 import { describe, expect, it } from 'vitest';
-import { cartRefsFromPosVariant, clampGlobalDiscount, computeCartTotals, computeLineDiscount, discountForPrice, withWholesale, type PricedCartLine } from './cart-rules';
+import { cartRefsFromPosVariant, clampGlobalDiscount, computeCartTotals, computeLineDiscount, discountForPrice, newestFirst, withWholesale, type PricedCartLine } from './cart-rules';
 import { priceSale } from './sale-pricing';
 
 const line = (overrides: Partial<PricedCartLine> = {}): PricedCartLine => ({
@@ -89,5 +89,19 @@ describe('cartRefsFromPosVariant', () => {
     const { variant } = cartRefsFromPosVariant({ id: 'v', sku: 's', productName: 'p', salePrice: 1, wholesalePrice: 0, attributes: [{ name: 'Talla', value: 'M' }] });
     expect(variant.wholesalePrice).toBe(0);
     expect(variant.attributes).toEqual([{ name: 'Talla', value: 'M' }]);
+  });
+});
+
+describe('orden de la lista del carrito', () => {
+  it('muestra primero lo último que se escaneó, sin tocar el carrito (la venta y el ticket siguen en orden de escaneo)', () => {
+    const scanned = [{ id: 'primero' }, { id: 'segundo' }, { id: 'tercero' }];
+
+    expect(newestFirst(scanned).map((l) => l.id)).toEqual(['tercero', 'segundo', 'primero']);
+    expect(scanned.map((l) => l.id)).toEqual(['primero', 'segundo', 'tercero']);
+  });
+
+  it('una lista vacía o de un solo elemento queda igual', () => {
+    expect(newestFirst([])).toEqual([]);
+    expect(newestFirst([{ id: 'unico' }])).toEqual([{ id: 'unico' }]);
   });
 });

@@ -20,6 +20,12 @@ export interface PricedCartLine {
   discountAmount?: number;
 }
 
+/**
+ * El carrito se guarda en el orden en que se escanea (la venta y el ticket salen así), pero el cajero ve primero lo último que
+ * escaneó: la lista se muestra del más reciente al más antiguo.
+ */
+export const newestFirst = <T>(lines: readonly T[]): T[] => [...lines].reverse();
+
 export const hasWholesalePrice = (line: Pick<PricedCartLine, 'wholesalePrice'>): boolean =>
   line.wholesalePrice !== null && line.wholesalePrice !== undefined && Number(line.wholesalePrice) > 0;
 

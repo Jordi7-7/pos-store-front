@@ -1,5 +1,5 @@
 import { DiscountType } from '@/modules/sales/domain/enums';
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   ShoppingCart,
   Trash2,
@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { CartItem } from '../../../domain/entities/cart-item';
+import { newestFirst } from '../../../domain/rules/cart-rules';
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 import { useCurrencySymbol } from '@/modules/auth/presentation/hooks/useCurrencySymbol';
 
@@ -45,6 +46,15 @@ export const POSCartList: React.FC<POSCartListProps> = ({
   onOpenImageZoom,
 }) => {
   const currencySymbol = useCurrencySymbol();
+  const listRef = useRef<HTMLDivElement>(null);
+  const previousCount = useRef(cart.length);
+
+  // Lo recién escaneado queda arriba: si la lista estaba desplazada hacia abajo, se vuelve al inicio para verlo
+  useEffect(() => {
+    if (cart.length > previousCount.current) listRef.current?.scrollTo({ top: 0 });
+    previousCount.current = cart.length;
+  }, [cart.length]);
+
   return (
     <>
       {/* Cart Header */}
@@ -99,8 +109,8 @@ export const POSCartList: React.FC<POSCartListProps> = ({
           </span>
         </div>
       ) : (
-        <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto pr-1">
-          {cart.map((item) => {
+        <div ref={listRef} className="min-h-0 flex-1 space-y-2.5 overflow-y-auto pr-1">
+          {newestFirst(cart).map((item) => {
             const currentItemDiscountType = item.discountType || DiscountType.PERCENTAGE;
             const currentItemDiscountRate = item.discountRate || 0;
             const currentItemDiscountAmount = item.discountAmount || 0;
