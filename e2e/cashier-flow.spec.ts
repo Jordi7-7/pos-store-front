@@ -103,6 +103,8 @@ test.describe('turno completo del cajero', () => {
     expect(replay.status()).toBe(201);
     expect(((await replay.json()) as SaleResponse).id).toBe(created.id);
     await page.keyboard.press('Escape');
+    // Al cerrar el ticket, el foco vuelve al campo de escaneo: el cajero puede pasar el siguiente producto sin tocar el ratón
+    await expect(page.getByPlaceholder(/Escanea código/)).toBeFocused();
 
     // 3. Devolver (la propietaria, por API: el cajero no tiene la acción en pantalla)
     const refund = await admin.call('POST', '/sales/refunds', {

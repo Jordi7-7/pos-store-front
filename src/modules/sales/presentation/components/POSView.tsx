@@ -49,6 +49,8 @@ export const POSView: React.FC<POSViewProps> = ({ activeSession: externalActiveS
   const { customers, selectedCustomerId, setSelectedCustomerId } = usePOSCustomer();
   const payments = usePOSPayments(cart.cartTotal);
 
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   const sale = usePOSSale({
     branchId: selectedBranchId,
     branchName: selectedBranch?.name || selectedBranchName,
@@ -64,11 +66,13 @@ export const POSView: React.FC<POSViewProps> = ({ activeSession: externalActiveS
       cart.clearCart();
       payments.resetPayments();
       setSelectedCustomerId('');
+      // Lista para la siguiente venta: el foco vuelve al campo de escaneo. Si se abre la vista previa del ticket, al cerrarla
+      // el foco regresa aquí (`returnFocusTo`); con impresión directa no se abre nada y basta con esto.
+      searchInputRef.current?.focus();
     },
     onNeedOpenSession: () => shift.setIsAperturaModalOpen(true),
   });
 
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const paymentAmountInputRef = useRef<HTMLInputElement>(null);
   const [selectedImageForZoom, setSelectedImageForZoom] = useState<string | null>(null);
 
@@ -165,6 +169,7 @@ export const POSView: React.FC<POSViewProps> = ({ activeSession: externalActiveS
         onClose={sale.closeTicketModal}
         saleData={sale.lastCompletedSale}
         tenantRuc={tenant?.ruc || ''}
+        returnFocusTo={searchInputRef}
       />
 
       {shift.isAperturaModalOpen && (

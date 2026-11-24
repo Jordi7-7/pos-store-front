@@ -28,6 +28,8 @@ export interface ThermalTicketModalProps {
   onClose: () => void;
   saleData: TicketSaleData | null;
   tenantRuc?: string;
+  /** A qué elemento vuelve el foco al cerrar (en el POS, el campo de escaneo); sin esto, al que lo tenía antes de abrirse. */
+  returnFocusTo?: React.RefObject<HTMLElement | null>;
 }
 
 export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
@@ -35,6 +37,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
   onClose,
   saleData,
   tenantRuc,
+  returnFocusTo,
 }) => {
   const publicTenant = useTenant();
   const [isPrinting, setIsPrinting] = useState(false);
@@ -131,7 +134,7 @@ export const ThermalTicketModal: React.FC<ThermalTicketModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md max-h-[95vh] flex flex-col bg-bg-card border border-border-card p-6 overflow-hidden">
+      <DialogContent finalFocus={returnFocusTo} className="sm:max-w-md max-h-[95vh] flex flex-col bg-bg-card border border-border-card p-6 overflow-hidden">
         <DialogHeader className="shrink-0 pb-3 border-b border-border-card">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
