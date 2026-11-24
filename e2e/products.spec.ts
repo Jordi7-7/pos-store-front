@@ -45,7 +45,7 @@ test('catálogo: crear un producto, verlo en la lista, editar su precio, darle e
     await page.goto('/inventario/productos');
     await page.waitForLoadState('networkidle');
     await page.getByPlaceholder(/Buscar por nombre, SKU/).fill(sku);
-    await page.getByRole('button', { name: 'Buscar' }).click();
+    await page.getByPlaceholder(/Buscar por nombre, SKU/).press('Enter');
     const row = page.getByRole('row', { name: new RegExp(name) });
     await expect(row).toBeVisible();
     await expect(row).toContainText(/\$\s?100\.00/);

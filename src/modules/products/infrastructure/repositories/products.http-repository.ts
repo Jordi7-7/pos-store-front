@@ -28,7 +28,7 @@ export class ProductsHttpRepository implements ProductsRepository {
     if (query?.search) params.append('search', query.search);
     if (query?.type) params.append('type', query.type);
     if (query?.branchId) params.append('branchId', query.branchId);
-    if (query?.inStockOnly) params.append('inStockOnly', 'true');
+    if (query?.stockStatus) params.append('stockStatus', query.stockStatus);
     const queryString = params.toString();
     const response = await apiClient.get<PaginatedResult<ProductDTO>>(`/products${queryString ? `?${queryString}` : ''}`);
     return { data: toProductEntities(response.data), meta: response.meta };

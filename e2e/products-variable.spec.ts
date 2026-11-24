@@ -51,7 +51,7 @@ test('producto variable: editar el padre, cambiar el precio de una variante y a√
     await page.goto('/inventario/productos');
     await page.waitForLoadState('networkidle');
     await page.getByPlaceholder(/Buscar por nombre, SKU/).fill(baseSku);
-    await page.getByRole('button', { name: 'Buscar' }).click();
+    await page.getByPlaceholder(/Buscar por nombre, SKU/).press('Enter');
     const row = page.getByRole('row', { name: new RegExp(name) });
     await expect(row).toBeVisible();
     await row.getByTitle('Editar Ficha de Producto').click();

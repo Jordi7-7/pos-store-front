@@ -1,129 +1,79 @@
-import React, { useState } from 'react';
-import { Barcode, Layers, Package, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ProductType } from '../../../domain/enums';
+import React from 'react';
+import { ChevronDown, Layers, Package } from 'lucide-react';
+import { SearchInput } from '@/shared/presentation/components/SearchInput';
+import { ProductType, StockStatus, StockStatusLabels } from '../../../domain/enums';
 
 interface ProductListToolbarProps {
-  search: string;
-  onSearchChange: (search: string) => void;
+  searchInput: string;
+  onSearchInputChange: (value: string) => void;
+  onSearchSubmit: (event: React.FormEvent) => void;
   onResetPage: () => void;
   productType?: ProductType;
   onProductTypeChange?: (type?: ProductType) => void;
-  inStockOnly?: boolean;
-  onInStockOnlyChange?: (inStockOnly: boolean) => void;
-  canPrint: boolean;
-  selectedCount: number;
-  onPrintSelected: () => void;
+  stockStatus?: StockStatus;
+  onStockStatusChange?: (status?: StockStatus) => void;
 }
 
-/** Barra de la lista: impresión masiva, filtros por tipo y existencias, y búsqueda. */
-export const ProductListToolbar: React.FC<ProductListToolbarProps> = ({ search, onSearchChange, onResetPage, productType, onProductTypeChange, inStockOnly, onInStockOnlyChange, canPrint, selectedCount, onPrintSelected }) => {
-  const [searchInput, setSearchInput] = useState(search);
+const TYPE_OPTIONS = [
+  { value: undefined, label: 'Todos', Icon: null },
+  { value: ProductType.SIMPLE, label: 'Simples', Icon: Package },
+  { value: ProductType.VARIABLE, label: 'Con variantes', Icon: Layers },
+] as const;
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSearchChange(searchInput.trim());
-    onResetPage();
-  };
-
-  const handleClearSearch = () => {
-    setSearchInput('');
-    onSearchChange('');
-    onResetPage();
-  };
-
-  return (
-  <div className="flex flex-wrap items-center gap-2 w-full">
-    {/* Botón de impresión masiva cuando hay seleccionados */}
-    {canPrint && selectedCount > 0 && (
-      <Button
-        type="button"
-        size="sm"
-        onClick={onPrintSelected}
-        className="text-xs h-9 gap-1.5 font-bold bg-primary text-white shadow-sm cursor-pointer animate-fade-in"
-      >
-        <Barcode className="w-4 h-4" />
-        Imprimir Etiquetas ({selectedCount})
-      </Button>
-    )}
-
-    {/* Filtro por tipo de producto (Todos / Simples / Con Variantes) */}
-    {onProductTypeChange && (
-      <div className="flex h-9 items-center rounded-lg border border-border-card bg-muted/60 p-0.5">
-        <button
-          type="button"
-          onClick={() => onProductTypeChange(undefined)}
-          className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
-            productType === undefined
-              ? 'bg-background text-foreground shadow-2xs'
-              : 'text-neutral hover:text-foreground'
-          }`}
-        >
-          Todos
-        </button>
-        <button
-          type="button"
-          onClick={() => onProductTypeChange(ProductType.SIMPLE)}
-          className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-            productType === ProductType.SIMPLE
-              ? 'bg-background text-foreground shadow-2xs'
-              : 'text-neutral hover:text-foreground'
-          }`}
-        >
-          <Package className="w-3.5 h-3.5 text-neutral" />
-          <span>Simples</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => onProductTypeChange(ProductType.VARIABLE)}
-          className={`text-xs px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-            productType === ProductType.VARIABLE
-              ? 'bg-background text-primary shadow-2xs font-bold'
-              : 'text-neutral hover:text-foreground'
-          }`}
-        >
-          <Layers className="w-3.5 h-3.5 text-primary" />
-          <span>Con Variantes</span>
-        </button>
-      </div>
-    )}
-
-    {/* Solo con existencias: casilla compacta, no un botón grande */}
-    {onInStockOnlyChange && (
-      <label
-        className="inline-flex h-9 cursor-pointer select-none items-center gap-2 rounded-lg border border-border-card bg-card px-3 text-[13px] font-medium text-secondary transition-colors hover:bg-muted/50 has-[:checked]:border-primary/40 has-[:checked]:bg-muted/40"
-        title="Ocultar los productos sin existencias"
-      >
-        <input type="checkbox" checked={Boolean(inStockOnly)} onChange={(e) => onInStockOnlyChange(e.target.checked)} className="h-4 w-4 cursor-pointer accent-primary" />
-        Solo con stock
-      </label>
-    )}
-
-    <form onSubmit={handleSearchSubmit} className="flex gap-2 flex-1 min-w-[260px]">
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
-        <Input
-          type="text"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Buscar por nombre, SKU o código de barras..."
-          className="pl-9 pr-8 text-xs h-9"
-        />
-        {searchInput && (
-          <button
-            type="button"
-            onClick={handleClearSearch}
-            className="absolute right-3 top-2 text-xs text-muted-foreground hover:text-foreground font-bold"
-          >
-            ×
-          </button>
-        )}
-      </div>
-      <Button type="submit" size="sm" className="text-xs h-9">
-        Buscar
-      </Button>
+/**
+ * Barra de la lista de productos: búsqueda y filtros (existencias y tipo) en una fila que se parte si no cabe. Las acciones que
+ * dependen del contexto (limpiar filtros, imprimir lo seleccionado) están en la franja de la tarjeta, junto al contador.
+ */
+export const ProductListToolbar: React.FC<ProductListToolbarProps> = ({ searchInput, onSearchInputChange, onSearchSubmit, onResetPage, productType, onProductTypeChange, stockStatus, onStockStatusChange }) => (
+  <div className="flex flex-wrap items-center gap-3">
+    <form onSubmit={onSearchSubmit} className="w-full sm:w-auto sm:min-w-[320px] sm:max-w-md sm:flex-1">
+      <SearchInput value={searchInput} onValueChange={onSearchInputChange} placeholder="Buscar por nombre, SKU o código de barras…" aria-label="Buscar producto" className="sm:w-full" />
     </form>
+
+    {onStockStatusChange && (
+      <div className="relative">
+        <select
+          aria-label="Existencias"
+          title="Filtrar por existencias"
+          value={stockStatus ?? ''}
+          onChange={(event) => {
+            onStockStatusChange(Object.values(StockStatus).find((status) => status === event.target.value));
+            onResetPage();
+          }}
+          className={`h-9 cursor-pointer appearance-none rounded-lg border bg-card pl-3 pr-9 text-sm text-foreground transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 ${stockStatus ? 'border-primary/40 bg-muted/40 font-medium' : 'border-border-card'}`}
+        >
+          <option value="">Todas las existencias</option>
+          {Object.values(StockStatus).map((status) => (
+            <option key={status} value={status}>
+              {StockStatusLabels[status]}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      </div>
+    )}
+
+    {onProductTypeChange && (
+      <div role="group" aria-label="Tipo de producto" className="flex h-9 items-center gap-0.5 rounded-lg border border-border-card bg-muted/60 p-0.5">
+        {TYPE_OPTIONS.map(({ value, label, Icon }) => {
+          const active = productType === value;
+          return (
+            <button
+              key={label}
+              type="button"
+              aria-pressed={active}
+              onClick={() => {
+                onProductTypeChange(value);
+                onResetPage();
+              }}
+              className={`flex h-full cursor-pointer items-center gap-1.5 rounded-md px-3 text-xs font-semibold transition-colors ${active ? 'bg-background text-foreground shadow-2xs' : 'text-neutral hover:text-foreground'}`}
+            >
+              {Icon && <Icon className="h-3.5 w-3.5" />}
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    )}
   </div>
-  );
-};
+);

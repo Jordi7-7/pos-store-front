@@ -33,7 +33,7 @@ test('editar un producto simple conserva sus etiquetas (defecto: el editor las b
     await page.goto('/inventario/productos');
     await page.waitForLoadState('networkidle');
     await page.getByPlaceholder(/Buscar por nombre, SKU/).fill(sku);
-    await page.getByRole('button', { name: 'Buscar' }).click();
+    await page.getByPlaceholder(/Buscar por nombre, SKU/).press('Enter');
     await page.getByRole('row', { name: new RegExp(name) }).getByTitle('Editar Ficha de Producto').click();
 
     // El editor muestra la etiqueta que ya tiene y, al guardar un cambio de precio, no la pierde

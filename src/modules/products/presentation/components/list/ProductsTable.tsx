@@ -34,7 +34,7 @@ export const ProductsTable: React.FC<ProductsTableProps> = ({ products, branchId
     });
 
   return (
-  <div className="overflow-x-auto rounded-xl border border-border bg-card">
+  <div className="overflow-x-auto">
     <Table>
       <TableHeader>
         <TableRow className="bg-muted/50 hover:bg-muted/50">

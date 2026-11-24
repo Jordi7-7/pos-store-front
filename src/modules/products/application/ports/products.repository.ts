@@ -1,4 +1,4 @@
-import type { ProductType } from '../../domain/enums';
+import type { ProductType, StockStatus } from '../../domain/enums';
 import type { ProductEntity } from '../../domain/entities/product.entity';
 import type { CreatedVariantEntity, PosSearchResult, PosVariantEntity, VariantLookup } from '../../domain/entities/catalog.entity';
 import type { PaginatedResult } from '@/shared/domain/value-objects/paginated';
@@ -111,7 +111,8 @@ export interface ProductsQuery {
   search?: string;
   type?: ProductType;
   branchId?: string;
-  inStockOnly?: boolean;
+  /** Solo los productos en ese estado de existencias; sin valor, todos. */
+  stockStatus?: StockStatus;
 }
 
 /** Puerto de salida: catálogo de productos y variantes en el servidor. */

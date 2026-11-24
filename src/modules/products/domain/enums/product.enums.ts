@@ -70,6 +70,22 @@ export const InventoryMovementCategoryLabels: Record<InventoryMovementCategory, 
   [InventoryMovementCategory.TRANSFER]: 'Traslados',
 };
 
+/** Estado de existencias para filtrar el listado de productos (lo resuelve el servidor, así funciona con la paginación). */
+export enum StockStatus {
+  /** Alguna variante con existencia mayor que cero. */
+  IN_STOCK = 'IN_STOCK',
+  /** Ninguna variante con existencias: todo en cero (o sin fila de stock). */
+  ZERO = 'ZERO',
+  /** Alguna variante con existencia menor que cero (se vendió más de lo que había). */
+  NEGATIVE = 'NEGATIVE',
+}
+
+export const StockStatusLabels: Record<StockStatus, string> = {
+  [StockStatus.IN_STOCK]: 'Con existencias',
+  [StockStatus.ZERO]: 'Existencia en cero',
+  [StockStatus.NEGATIVE]: 'Existencia en negativo',
+};
+
 /** Entrada o salida manual: lo que entra o sale de una sucursal. */
 export enum InventoryDocumentKind {
   ENTRY = 'ENTRY',

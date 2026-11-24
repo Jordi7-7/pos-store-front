@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useProductList } from '../../hooks/useProductList';
 import { useCategories } from '../../hooks/useCategories';
 import { ProductListTab } from '../ProductListTab';
-import { ProductType } from '../../../domain/enums';
+import { ProductType, StockStatus } from '../../../domain/enums';
 import { PageHeader } from '@/shared/presentation/components/PageHeader';
 
 export interface ProductsListViewProps {
@@ -16,7 +16,7 @@ export const ProductsListView: React.FC<ProductsListViewProps> = ({
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [productType, setProductType] = useState<ProductType | undefined>(undefined);
-  const [inStockOnly, setInStockOnly] = useState<boolean>(false);
+  const [stockStatus, setStockStatus] = useState<StockStatus | undefined>(undefined);
 
   const { products, meta, isLoading: isLoadingProducts } = useProductList({
     page,
@@ -24,7 +24,7 @@ export const ProductsListView: React.FC<ProductsListViewProps> = ({
     search,
     type: productType,
     branchId: selectedBranchId || undefined,
-    inStockOnly,
+    stockStatus,
   });
   const { categories } = useCategories();
 
@@ -47,9 +47,9 @@ export const ProductsListView: React.FC<ProductsListViewProps> = ({
           setProductType(type);
           setPage(1);
         }}
-        inStockOnly={inStockOnly}
-        onInStockOnlyChange={(val) => {
-          setInStockOnly(val);
+        stockStatus={stockStatus}
+        onStockStatusChange={(status) => {
+          setStockStatus(status);
           setPage(1);
         }}
       />

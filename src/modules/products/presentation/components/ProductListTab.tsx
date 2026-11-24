@@ -2,17 +2,17 @@ import React, { useState } from 'react';
 import { Package } from 'lucide-react';
 import { APP_PERMISSIONS } from '@/constants/permissions';
 import { usePermissions } from '@/hooks/usePermissions';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PaginationControls } from '@/shared/presentation/components/PaginationControls';
-import { ProductType } from '../../domain/enums';
+import { ProductType, type StockStatus } from '../../domain/enums';
 import { isVariableProduct, labelLinesFor } from '../../domain/rules/product-stock';
+import { useProductSearch } from '../hooks/useProductSearch';
 import { useProductSelection } from '../hooks/useProductSelection';
 import type { ProductVM } from '../view-models/product.vm';
 import { BarcodePrintModal, type BarcodeLabelItem } from './barcode-printer/BarcodePrintModal';
 import { ProductsTable } from './list/ProductsTable';
+import { ProductListSummary } from './list/ProductListSummary';
 import { ProductListToolbar } from './list/ProductListToolbar';
 import { ProductDetailModal } from './ProductDetailModal';
 import { ProductEditDrawer } from './ProductEditDrawer';
@@ -31,8 +31,8 @@ interface ProductListTabProps {
   onSearchChange: (search: string) => void;
   productType?: ProductType;
   onProductTypeChange?: (type?: ProductType) => void;
-  inStockOnly?: boolean;
-  onInStockOnlyChange?: (inStockOnly: boolean) => void;
+  stockStatus?: StockStatus;
+  onStockStatusChange?: (status?: StockStatus) => void;
 }
 
 /**
@@ -41,7 +41,7 @@ interface ProductListTabProps {
  */
 export const ProductListTab: React.FC<ProductListTabProps> = ({
   products, isLoading, categories, selectedBranchId, meta, onPageChange, onLimitChange,
-  search, onSearchChange, productType, onProductTypeChange, inStockOnly, onInStockOnlyChange,
+  search, onSearchChange, productType, onProductTypeChange, stockStatus, onStockStatusChange,
 }) => {
   const { can } = usePermissions();
   const canEdit = can(APP_PERMISSIONS.PRODUCTS_EDIT);
@@ -67,51 +67,49 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
 
   const isAll = !selectedBranchId;
 
-  return (
-    <Card className="border border-border/80 shadow-xs">
-      <CardHeader>
-        <div className="flex flex-col gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-sm font-bold">Catálogo de Productos ({meta.total})</CardTitle>
-              <Badge variant="outline" className={`text-xs font-semibold gap-1 ${
-                isAll 
-                  ? 'text-amber-400 border-amber-500/30 bg-amber-500/5' 
-                  : 'text-primary border-primary/30 bg-primary/5'
-              }`}>
-                {isAll ? 'Existencias Consolidadas (Toda la Empresa)' : 'Existencias de esta Sucursal'}
-              </Badge>
-            </div>
-            <CardDescription className="text-xs">
-              {isAll 
-                ? 'Visualizando las existencias totales sumadas de todas las sucursales de tu empresa.' 
-                : 'El catálogo es compartido por toda la empresa; las existencias corresponden a la sucursal seleccionada.'}
-            </CardDescription>
-          </div>
+  const resetPage = () => onPageChange(1);
+  const searchField = useProductSearch(search, onSearchChange, resetPage);
+  const clearFilters = () => {
+    searchField.clear();
+    onProductTypeChange?.(undefined);
+    onStockStatusChange?.(undefined);
+    resetPage();
+  };
 
-          <ProductListToolbar
-            search={search}
-            onSearchChange={onSearchChange}
-            onResetPage={() => onPageChange(1)}
-            productType={productType}
-            onProductTypeChange={onProductTypeChange}
-            inStockOnly={inStockOnly}
-            onInStockOnlyChange={onInStockOnlyChange}
-            canPrint={canPrintBarcodes}
-            selectedCount={selection.count}
-            onPrintSelected={() => openLabels(selection.selected)}
-          />
+  return (
+    <div className="space-y-4">
+      <ProductListToolbar
+        searchInput={searchField.input}
+        onSearchInputChange={searchField.setInput}
+        onSearchSubmit={searchField.applyNow}
+        onResetPage={resetPage}
+        productType={productType}
+        onProductTypeChange={onProductTypeChange}
+        stockStatus={stockStatus}
+        onStockStatusChange={onStockStatusChange}
+      />
+
+      <Card className="gap-0 overflow-hidden p-0">
+        <ProductListSummary
+          total={meta.total}
+          isConsolidated={isAll}
+          hasActiveFilters={Boolean(search || productType || stockStatus)}
+          onClearFilters={clearFilters}
+          canPrint={canPrintBarcodes}
+          selectedCount={selection.count}
+          onPrintSelected={() => openLabels(selection.selected)}
+        />
+
+        <div className="px-4">
+          <PaginationControls placement="top" meta={meta} onPageChange={onPageChange} onLimitChange={onLimitChange} />
         </div>
-      </CardHeader>
-      <CardContent>
-        <PaginationControls meta={meta} onPageChange={onPageChange} onLimitChange={onLimitChange} />
 
         {isLoading ? (
-          <div className="space-y-2.5 py-4">
+          <div className="space-y-2.5 p-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-4 p-3 border border-border rounded-xl">
+              <div key={i} className="flex items-center gap-4 rounded-xl border border-border p-3">
                 <Skeleton className="h-10 w-10 rounded-lg" />
-                <div className="space-y-1.5 flex-1">
+                <div className="flex-1 space-y-1.5">
                   <Skeleton className="h-4 w-40" />
                   <Skeleton className="h-3 w-60" />
                 </div>
@@ -120,14 +118,9 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
             ))}
           </div>
         ) : products.length === 0 ? (
-          <div className="py-16 text-center flex flex-col items-center justify-center gap-3">
-            <Package className="w-10 h-10 text-muted-foreground opacity-40" />
-            <p className="text-sm text-muted-foreground">No se encontraron productos en esta página.</p>
-            {search && (
-              <Button variant="link" size="sm" onClick={() => onSearchChange('')} className="text-xs">
-                Limpiar filtros de búsqueda
-              </Button>
-            )}
+          <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+            <Package className="h-10 w-10 text-muted-foreground opacity-40" />
+            <p className="text-sm text-muted-foreground">No hay productos que coincidan con los filtros.</p>
           </div>
         ) : (
           <ProductsTable
@@ -145,7 +138,10 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
           />
         )}
 
-      </CardContent>
+        <div className="px-4">
+          <PaginationControls meta={meta} onPageChange={onPageChange} onLimitChange={onLimitChange} />
+        </div>
+      </Card>
 
       <ProductEditDrawer
         product={simpleToEdit}
@@ -168,6 +164,6 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
         selectedBranchId={selectedBranchId}
       />
       <BarcodePrintModal isOpen={isLabelModalOpen} onClose={() => setIsLabelModalOpen(false)} items={labelQueue} onUpdateItems={setLabelQueue} />
-    </Card>
+    </div>
   );
 };

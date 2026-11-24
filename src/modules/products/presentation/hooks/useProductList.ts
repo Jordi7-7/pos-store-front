@@ -12,7 +12,7 @@ export const useProductList = (params?: ProductsQuery) => {
   const fmt = useFormatters();
 
   const productsQuery = useQuery({
-    queryKey: ['products', tenantId, params?.page, params?.limit, params?.search, params?.type, params?.branchId, params?.inStockOnly],
+    queryKey: ['products', tenantId, params?.page, params?.limit, params?.search, params?.type, params?.branchId, params?.stockStatus],
     queryFn: () => productsRepository.list(params),
     enabled: isAuthenticated && !!tenantId,
   });
