@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 import { Field, FieldLabel } from '@/components/ui/field';
 import {
   Pagination,
@@ -22,19 +22,23 @@ interface PaginationControlsProps {
   meta: PaginationMeta;
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
+  /** Dónde se pone respecto de la lista: `bottom` (por defecto) lleva el borde arriba; `top` lo lleva abajo. Se pueden usar los dos a la vez. */
+  placement?: 'top' | 'bottom';
 }
 
-export const PaginationControls: React.FC<PaginationControlsProps> = ({ meta, onPageChange, onLimitChange }) => {
+export const PaginationControls: React.FC<PaginationControlsProps> = ({ meta, onPageChange, onLimitChange, placement = 'bottom' }) => {
+  // Un id por instancia: si la lista tiene paginación arriba y abajo, cada etiqueta debe apuntar a su propio selector
+  const selectId = useId();
   if (meta.total === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4 pb-5">
+    <div className={`flex flex-wrap items-center justify-between gap-4 border-border ${placement === 'top' ? 'border-b py-3' : 'border-t pt-4 pb-5'}`}>
       <Field orientation="horizontal" className="w-fit gap-2">
-        <FieldLabel htmlFor="select-rows-per-page" className="text-xs text-muted-foreground whitespace-nowrap">
+        <FieldLabel htmlFor={selectId} className="text-xs text-muted-foreground whitespace-nowrap">
           Filas por página
         </FieldLabel>
         <Select value={String(meta.limit)} onValueChange={(value) => onLimitChange(Number(value))}>
-          <SelectTrigger className="w-20" id="select-rows-per-page">
+          <SelectTrigger className="w-20" id={selectId}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent align="start">
