@@ -102,7 +102,7 @@ export const ERROR_MESSAGES: Readonly<Record<string, Entry>> = {
   // Ventas
   SALE_NOT_FOUND: 'Venta no encontrada.',
   SALE_ALREADY_REFUNDED: 'Esta venta ya fue devuelta en su totalidad.',
-  IDEMPOTENCY_KEY_REUSED: 'Ese identificador ya se usó en otra venta distinta. Vuelve a intentar el cobro.',
+  IDEMPOTENCY_KEY_REUSED: 'Esa operación ya se había enviado con otros datos. Vuelve a intentarlo.',
   OFFLINE_REFERENCE_TAKEN: 'Ese número provisional ya lo tiene otra venta. Revisa la venta pendiente.',
   INSUFFICIENT_PAYMENT: 'El monto pagado es menor al total de la venta.',
   CUSTOMER_NOT_FOUND: 'Cliente no encontrado.',
@@ -128,12 +128,29 @@ export const ERROR_MESSAGES: Readonly<Record<string, Entry>> = {
   PRODUCT_HAS_STOCK: 'No se puede eliminar el producto porque tiene existencias o saldos negativos. Deja todas las cantidades en 0.',
   VARIANT_HAS_STOCK: 'No se puede eliminar la variante porque tiene existencias o saldos negativos. Deja todas las cantidades en 0.',
   INSUFFICIENT_STOCK: (d) => {
+    // Un movimiento con varias líneas informa todas las que no alcanzan
+    const short = Array.isArray(d.lines)
+      ? d.lines.flatMap((line: unknown) => {
+          const item = line as { sku?: unknown; available?: unknown; requested?: unknown };
+          return text(item.sku) && text(item.available) !== null && text(item.requested) !== null ? [`${text(item.sku)} (hay ${text(item.available)}, pides ${text(item.requested)})`] : [];
+        })
+      : [];
+    if (short.length > 0) return `No hay stock suficiente en: ${short.join(', ')}.`;
     const available = text(d.available);
     const requested = text(d.requested);
     return available && requested
       ? `No hay stock suficiente: hay ${available} y se piden ${requested}.`
       : 'No hay stock suficiente para esta operación.';
   },
+  EMPTY_INVENTORY_DOCUMENT: 'Agrega al menos un producto al movimiento.',
+  INVENTORY_DOCUMENT_TOO_LARGE: (d) => (text(d.max) ? `Un movimiento admite hasta ${text(d.max)} productos.` : 'Hay demasiados productos en el movimiento.'),
+  COUNT_WITHOUT_DIFFERENCES: 'Lo contado coincide con el sistema: no hay nada que ajustar.',
+  DUPLICATE_COUNT_LINE: 'Un producto aparece más de una vez en el conteo.',
+  STOCK_CHANGED_SINCE_COUNT: 'El stock cambió desde que agregaste los productos al conteo. Revisa las diferencias y confirma.',
+  INVENTORY_DOCUMENT_NOT_FOUND: 'Documento de inventario no encontrado.',
+  COMMENT_REQUIRED: (d) => (text(d.min) ? `Escribe un comentario que explique el movimiento (mínimo ${text(d.min)} caracteres).` : 'Escribe un comentario que explique el movimiento.'),
+  SAME_BRANCH_TRANSFER: 'El origen y el destino del traslado deben ser sucursales distintas.',
+  INVALID_MOVEMENT_REASON: 'Ese motivo no es válido para este tipo de movimiento. Elige otro.',
   CATEGORY_NOT_FOUND: 'Categoría no encontrada.',
   CATEGORY_NAME_TAKEN: (d) => (text(d.name) ? `La categoría "${text(d.name)}" ya existe.` : 'Esa categoría ya existe.'),
   ATTRIBUTE_NOT_FOUND: 'Atributo no encontrado.',

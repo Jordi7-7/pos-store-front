@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowDownRight, Boxes, ChevronDown, ListFilter, Package, SlidersHorizontal, X, type LucideIcon } from 'lucide-react';
+import { ArrowDownRight, ArrowLeftRight, Boxes, ChevronDown, ListFilter, Package, SlidersHorizontal, X, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ const ORIGIN_ICON: Record<BatchOriginType, { icon: LucideIcon; color: string }> 
   INITIAL_STOCK: { icon: Package, color: 'text-blue-500' },
   ADJUSTMENT: { icon: SlidersHorizontal, color: 'text-violet-400' },
   REFUND: { icon: ArrowDownRight, color: 'text-amber-500' },
+  TRANSFER: { icon: ArrowLeftRight, color: 'text-sky-500' },
 };
 
 interface BatchOriginFilterProps {

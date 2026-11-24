@@ -49,6 +49,11 @@ interface AdminSession {
   call: <T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, body?: unknown) => Promise<{ status: number; data: T }>;
 }
 
+/** Deja a 0 el stock de una variante de prueba con una salida manual: un producto con existencias no se puede borrar. */
+export async function emptyStock(admin: AdminSession, branchId: string, variantId: string, quantity: number): Promise<void> {
+  await admin.call('POST', '/products/inventory-documents', { branchId, kind: 'EXIT', reason: 'MERMA', comment: 'e2e: limpieza', lines: [{ variantId, quantity }] });
+}
+
 /** Sesión de la propietaria por API, para preparar y verificar datos sin pasar por la interfaz. */
 export async function adminApi(request: APIRequestContext): Promise<AdminSession> {
   const login = await request.post(`${API_URL}/auth/login`, {

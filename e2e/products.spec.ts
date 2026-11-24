@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { adminApi, creds, login } from './helpers';
+import { adminApi, creds, emptyStock, login } from './helpers';
 
 test.skip(!creds.slug || !creds.user || !creds.pass, 'Faltan credenciales E2E en .env.e2e.local');
 
@@ -14,7 +14,7 @@ interface ProductsPage {
 
 const stockOf = (product: ProductResponse | undefined): number => (product?.variants[0]?.stocks ?? []).reduce((sum, stock) => sum + Number(stock.quantity), 0);
 
-test('catálogo: crear un producto, verlo en la lista, editar su precio, ajustar su stock y borrarlo', async ({ page, request }) => {
+test('catálogo: crear un producto, verlo en la lista, editar su precio, darle entrada de stock y borrarlo', async ({ page, request }) => {
   const admin = await adminApi(request);
   const stamp = Date.now().toString().slice(-8);
   const sku = `E2E${stamp}`;
@@ -58,17 +58,16 @@ test('catálogo: crear un producto, verlo en la lista, editar su precio, ajustar
     expect((await updated).status()).toBe(200);
     expect((await find())?.variants[0]?.salePrice).toBe(120);
 
-    // 4. Ajustar el stock (entrada de 5): 10 → 15
-    await page.goto('/inventario/productos');
+    // 4. Entrada de inventario manual (5 unidades): 10 → 15
+    await page.goto('/inventario/entrada');
     await page.waitForLoadState('networkidle');
-    await page.getByPlaceholder(/Buscar por nombre, SKU/).fill(sku);
-    await page.getByRole('button', { name: 'Buscar' }).click();
-    await page.getByRole('row', { name: new RegExp(name) }).click();
-    await page.getByRole('tab', { name: 'Ajuste' }).click();
-    await page.getByLabel('Cantidad').fill('5');
-    const adjusted = page.waitForResponse((r) => r.url().endsWith('/products/stock-adjustments') && r.request().method() === 'POST');
-    await page.getByRole('button', { name: 'Registrar ajuste' }).click();
-    expect((await adjusted).status()).toBe(201);
+    await page.getByLabel('Motivo').selectOption('DONACION');
+    await page.getByLabel('SKU del producto').fill(sku);
+    await page.getByRole('button', { name: 'Agregar' }).click();
+    await page.getByLabel(`Cantidad de ${sku}`).fill('5');
+    const entered = page.waitForResponse((r) => r.url().endsWith('/products/inventory-documents') && r.request().method() === 'POST');
+    await page.getByRole('button', { name: 'Confirmar entrada' }).click();
+    expect((await entered).status()).toBe(201);
     expect(stockOf(await find())).toBe(15);
   } finally {
     // Limpieza: el producto de prueba no debe quedar en el catálogo, aunque falle algún paso.
@@ -78,7 +77,7 @@ test('catálogo: crear un producto, verlo en la lista, editar su precio, ajustar
       for (const variant of leftover.variants) {
         for (const stock of variant.stocks ?? []) {
           if (Number(stock.quantity) > 0) {
-            await admin.call('POST', '/products/stock-adjustments', { branchId: stock.branchId, variantId: variant.id, quantity: Number(stock.quantity), type: 'OUT', comment: 'e2e: limpieza' });
+            await emptyStock(admin, stock.branchId, variant.id, Number(stock.quantity));
           }
         }
       }

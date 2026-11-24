@@ -1,16 +1,22 @@
 import type {
   InventoryMovementDTO,
+  InventoryMovementHistoryDTO,
+  InventoryDocumentDTO,
+  InventoryDocumentDetailDTO,
   VariantBatchItemDTO,
   InventoryLotDTO,
   LotItemDTO,
 } from '../dtos/inventory.dto';
 import type {
   InventoryMovementEntity,
+  InventoryMovementHistoryEntity,
+  InventoryDocumentEntity,
+  InventoryDocumentDetailEntity,
   VariantBatchEntity,
   InventoryLotEntity,
   LotItemEntity,
 } from '../../domain/entities/inventory.entity';
-import { InventoryMovementType, BatchStatus } from '../../domain/enums';
+import { InventoryDocumentKind, InventoryMovementCategory, InventoryMovementType, BatchStatus } from '../../domain/enums';
 
 export const toInventoryMovementEntity = (dto: InventoryMovementDTO): InventoryMovementEntity => {
   const dateObj = new Date(dto.createdAt);
@@ -26,6 +32,63 @@ export const toInventoryMovementEntity = (dto: InventoryMovementDTO): InventoryM
     destinationBranchName: dto.destinationBranch?.name || '-',
   };
 };
+
+const toDocumentKind = (kind: string): InventoryDocumentKind => Object.values(InventoryDocumentKind).find((candidate) => candidate === kind) ?? InventoryDocumentKind.EXIT;
+
+const toCategory = (category: string | null | undefined): InventoryMovementCategory | null => Object.values(InventoryMovementCategory).find((candidate) => candidate === category) ?? null;
+
+const toNumberOrNull = (value: number | string | null | undefined): number | null => (value === null || value === undefined ? null : Number(value));
+
+export const toInventoryMovementHistoryEntity = (dto: InventoryMovementHistoryDTO): InventoryMovementHistoryEntity => ({
+  id: dto.id,
+  createdAt: new Date(dto.createdAt),
+  type: dto.type === InventoryMovementType.IN ? InventoryMovementType.IN : InventoryMovementType.OUT,
+  category: toCategory(dto.category),
+  reason: dto.reason,
+  quantity: Number(dto.quantity || 0),
+  unitCost: toNumberOrNull(dto.unitCost),
+  balanceAfter: toNumberOrNull(dto.balanceAfter),
+  variantId: dto.variantId,
+  sku: dto.sku,
+  productName: dto.productName,
+  originBranchName: dto.originBranch?.name ?? null,
+  destinationBranchName: dto.destinationBranch?.name ?? null,
+  document: dto.document ? { ...dto.document, kind: toDocumentKind(dto.document.kind) } : null,
+});
+
+export const toInventoryDocumentDetailEntity = (dto: InventoryDocumentDetailDTO): InventoryDocumentDetailEntity => ({
+  id: dto.id,
+  number: dto.number,
+  kind: toDocumentKind(dto.kind),
+  reason: dto.reason,
+  comment: dto.comment,
+  createdAt: new Date(dto.createdAt),
+  userName: dto.userName,
+  branchName: dto.branch.name,
+  destinationBranchName: dto.destinationBranch?.name ?? null,
+  lines: dto.lines.map((line) => ({
+    variantId: line.variantId,
+    sku: line.sku,
+    productName: line.productName,
+    type: line.type === InventoryMovementType.IN ? InventoryMovementType.IN : InventoryMovementType.OUT,
+    quantity: Number(line.quantity || 0),
+    branchName: line.branchName,
+    unitCost: toNumberOrNull(line.unitCost),
+    balanceAfter: toNumberOrNull(line.balanceAfter),
+  })),
+});
+
+export const toInventoryDocumentEntity = (dto: InventoryDocumentDTO): InventoryDocumentEntity => ({
+  id: dto.id,
+  number: dto.number,
+  kind: toDocumentKind(dto.kind),
+  reason: dto.reason,
+  comment: dto.comment,
+  branchId: dto.branchId,
+  destinationBranchId: dto.destinationBranchId ?? null,
+  createdAt: new Date(dto.createdAt),
+  lines: dto.lines.map((line) => ({ variantId: line.variantId, sku: line.sku, quantity: Number(line.quantity), type: line.type === InventoryMovementType.IN ? InventoryMovementType.IN : InventoryMovementType.OUT })),
+});
 
 export const toVariantBatchEntity = (dto: VariantBatchItemDTO): VariantBatchEntity => {
   const dateObj = new Date(dto.createdAt);

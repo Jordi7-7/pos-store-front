@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import type { ProductVM, ProductVariantVM } from '../view-models/product.vm';
 import { useProductDetail } from '../hooks';
-import { StockAdjustmentForm } from './StockAdjustmentForm';
 import {
   ProductDetailInfoTab,
   ProductDetailBatchesTab,
@@ -18,7 +17,6 @@ import {
   ShoppingCart, 
   Truck, 
   ClipboardList, 
-  SlidersHorizontal, 
   Boxes,
 } from 'lucide-react';
 import { BarcodePrintModal, type BarcodeLabelItem } from './barcode-printer/BarcodePrintModal';
@@ -27,7 +25,7 @@ import { APP_PERMISSIONS } from '@/constants/permissions';
 
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
-type TabName = 'details' | 'sales' | 'purchases' | 'batches' | 'movements' | 'adjustment';
+type TabName = 'details' | 'sales' | 'purchases' | 'batches' | 'movements';
 
 interface TabConfig {
   id: TabName;
@@ -59,7 +57,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   selectedBranchId,
 }) => {
   const { can } = usePermissions();
-  const canAdjustStock = can(APP_PERMISSIONS.PRODUCTS_ADJUST_STOCK);
   const canPrintBarcodes = can(APP_PERMISSIONS.PRODUCTS_PRINT_BARCODES);
 
   const [tab, setTab] = useState<TabName>('details');
@@ -229,12 +226,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                       {label}
                     </TabsTrigger>
                   ))}
-                  {canAdjustStock && (
-                    <TabsTrigger value="adjustment" className="gap-1.5 text-xs">
-                      <SlidersHorizontal className="w-3.5 h-3.5" />
-                      Ajuste
-                    </TabsTrigger>
-                  )}
                 </TabsList>
 
                 <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
@@ -293,18 +284,6 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                       />
                     )}
                   </TabsContent>
-
-                  {canAdjustStock && (
-                    <TabsContent value="adjustment" className="mt-0">
-                      {tab === 'adjustment' && (
-                        <StockAdjustmentForm
-                          product={detailProduct}
-                          selectedBranchId={selectedBranchId}
-                          selectedVariantId={activeVariantId}
-                        />
-                      )}
-                    </TabsContent>
-                  )}
                 </div>
               </Tabs>
             </div>

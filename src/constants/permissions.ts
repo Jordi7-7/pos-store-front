@@ -55,6 +55,10 @@ export const APP_PERMISSIONS = {
   PRODUCTS_EDIT: 'action:products.edit',
   PRODUCTS_DELETE: 'action:products.delete',
   PRODUCTS_ADJUST_STOCK: 'action:products.adjust_stock',
+  PRODUCTS_STOCK_ENTRY: 'action:products.stock_entry',
+  PRODUCTS_STOCK_EXIT: 'action:products.stock_exit',
+  PRODUCTS_STOCK_COUNT: 'action:products.stock_count',
+  PRODUCTS_STOCK_TRANSFER: 'action:products.stock_transfer',
   PRODUCTS_IMPORT: 'action:products.import',
   PRODUCTS_PRINT_BARCODES: 'action:products.print_barcodes',
 

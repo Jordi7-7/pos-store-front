@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { createFileRoute, Outlet, redirect, useNavigate, useRouterState } from '@tanstack/react-router';
+import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useAuthStore, selectIsAuthenticated, useIsAuthenticated, useTenant, useTenantFormatKey, SessionExpiredModal, useIdleTimer } from '@/modules/auth';
 import { LayoutContextProvider, useLayoutContext } from '@/providers/LayoutContext';
 import type { Branch } from '@/modules/branches';
@@ -50,6 +50,9 @@ function AppLayout() {
   );
 }
 
+/** Partes del título que, cuando no son la última, llevan a su página (p. ej. volver a «Movimientos» desde una entrada). */
+const BREADCRUMB_LINKS: Readonly<Record<string, '/inventario/movimientos'>> = { Movimientos: '/inventario/movimientos' };
+
 function DashboardShell() {
   const { user } = useAuthStore();
   // Si cambia la moneda, el país o la zona horaria de la tienda, el contenido se repinta con el formato nuevo.
@@ -67,6 +70,11 @@ function DashboardShell() {
   const getPageTitle = () => {
     if (currentPath.startsWith('/inventario/productos')) return 'Inventario - Productos';
     if (currentPath.startsWith('/inventario/lotes')) return 'Inventario - Lotes';
+    if (currentPath.startsWith('/inventario/entrada')) return 'Inventario - Movimientos - Entrada';
+    if (currentPath.startsWith('/inventario/salida')) return 'Inventario - Movimientos - Salida';
+    if (currentPath.startsWith('/inventario/traslado')) return 'Inventario - Movimientos - Traslado';
+    if (currentPath.startsWith('/inventario/conteo')) return 'Inventario - Movimientos - Conteo físico';
+    if (currentPath.startsWith('/inventario/movimientos')) return 'Inventario - Movimientos';
     if (currentPath.startsWith('/inventario/crear')) return 'Inventario - Crear producto';
     if (currentPath.startsWith('/dashboard')) return 'Dashboard';
     if (currentPath.startsWith('/pos')) return 'Punto de Venta (POS)';
@@ -107,7 +115,13 @@ function DashboardShell() {
                   {breadcrumb.map((part, index) => (
                     <span key={part} className={`items-center gap-1.5 ${index === breadcrumb.length - 1 ? 'flex' : 'hidden sm:flex'}`}>
                       {index > 0 && <ChevronRight className="hidden h-3.5 w-3.5 sm:block" />}
-                      <span className={index === breadcrumb.length - 1 ? 'font-medium text-secondary' : ''}>{part}</span>
+                      {BREADCRUMB_LINKS[part] && index < breadcrumb.length - 1 ? (
+                        <Link to={BREADCRUMB_LINKS[part]} className="hover:text-secondary hover:underline">
+                          {part}
+                        </Link>
+                      ) : (
+                        <span className={index === breadcrumb.length - 1 ? 'font-medium text-secondary' : ''}>{part}</span>
+                      )}
                     </span>
                   ))}
                 </nav>

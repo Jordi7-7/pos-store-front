@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  ArrowLeftRight,
   LayoutDashboard,
   ShoppingBag,
   Receipt,
@@ -88,6 +89,13 @@ export const navigationConfig: NavItem[] = [
         label: 'Lotes',
         path: '/inventario/lotes',
         icon: Boxes,
+        permission: APP_PERMISSIONS.VIEW_PRODUCTS,
+      },
+      {
+        id: 'inventory-movements',
+        label: 'Movimientos',
+        path: '/inventario/movimientos',
+        icon: ArrowLeftRight,
         permission: APP_PERMISSIONS.VIEW_PRODUCTS,
       },
       {

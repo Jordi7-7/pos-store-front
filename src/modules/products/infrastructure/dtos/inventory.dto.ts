@@ -62,3 +62,45 @@ export interface VariantBatchItemDTO {
   totalCostValue: number;
   status: BatchStatus | string;
 }
+
+export interface InventoryMovementHistoryDTO {
+  id: string;
+  createdAt: string;
+  type: InventoryMovementType | string;
+  category?: string | null;
+  reason: string;
+  quantity: number;
+  unitCost?: number | null;
+  balanceAfter?: number | null;
+  variantId: string;
+  sku: string;
+  productName: string;
+  originBranch: { id: string; name: string } | null;
+  destinationBranch: { id: string; name: string } | null;
+  document?: { id: string; number: string; comment: string | null; userName: string | null; kind: string; counterpartBranchName: string | null } | null;
+}
+
+export interface InventoryDocumentDetailDTO {
+  id: string;
+  number: string;
+  kind: string;
+  reason: string;
+  comment: string | null;
+  createdAt: string;
+  userName: string | null;
+  branch: { id: string; name: string };
+  destinationBranch: { id: string; name: string } | null;
+  lines: Array<{ variantId: string; sku: string; productName: string; type: string; quantity: number | string; branchName: string | null; unitCost?: number | string | null; balanceAfter?: number | string | null }>;
+}
+
+export interface InventoryDocumentDTO {
+  id: string;
+  number: string;
+  kind: string;
+  reason: string;
+  comment: string | null;
+  branchId: string;
+  destinationBranchId?: string | null;
+  createdAt: string;
+  lines: { variantId: string; sku: string; quantity: number | string; type: string }[];
+}

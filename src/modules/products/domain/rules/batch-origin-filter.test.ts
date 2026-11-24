@@ -14,7 +14,7 @@ describe('toggleOriginType', () => {
   });
 
   it('con todos los tipos marcados vuelve a "Todos" (lista vacía)', () => {
-    const three = [BatchOriginType.PURCHASE, BatchOriginType.INITIAL_STOCK, BatchOriginType.ADJUSTMENT];
-    expect(toggleOriginType(three, BatchOriginType.REFUND)).toEqual([]);
+    const four = [BatchOriginType.PURCHASE, BatchOriginType.INITIAL_STOCK, BatchOriginType.ADJUSTMENT, BatchOriginType.REFUND];
+    expect(toggleOriginType(four, BatchOriginType.TRANSFER)).toEqual([]);
   });
 });

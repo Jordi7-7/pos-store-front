@@ -6,6 +6,7 @@ export const BATCH_ORIGIN_TYPES: readonly BatchOriginType[] = [
   BatchOriginType.INITIAL_STOCK,
   BatchOriginType.ADJUSTMENT,
   BatchOriginType.REFUND,
+  BatchOriginType.TRANSFER,
 ];
 
 /**

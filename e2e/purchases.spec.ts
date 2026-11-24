@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import * as XLSX from 'xlsx';
-import { adminApi, creds, login } from './helpers';
+import { adminApi, creds, emptyStock, login } from './helpers';
 
 test.skip(!creds.slug || !creds.user || !creds.pass, 'Faltan credenciales E2E en .env.e2e.local');
 
@@ -69,7 +69,7 @@ test('compras: registrar un ingreso sube el stock, sale en el historial y al anu
       for (const variant of leftover.variants) {
         for (const stock of variant.stocks ?? []) {
           if (Number(stock.quantity) > 0) {
-            await admin.call('POST', '/products/stock-adjustments', { branchId: stock.branchId, variantId: variant.id, quantity: Number(stock.quantity), type: 'OUT', comment: 'e2e: limpieza' });
+            await emptyStock(admin, stock.branchId, variant.id, Number(stock.quantity));
           }
         }
       }
@@ -127,7 +127,7 @@ test('compras: la carga masiva por Excel valida los SKU, marca los que no existe
       for (const variant of leftover.variants) {
         for (const stock of variant.stocks ?? []) {
           if (Number(stock.quantity) > 0) {
-            await admin.call('POST', '/products/stock-adjustments', { branchId: stock.branchId, variantId: variant.id, quantity: Number(stock.quantity), type: 'OUT', comment: 'e2e: limpieza' });
+            await emptyStock(admin, stock.branchId, variant.id, Number(stock.quantity));
           }
         }
       }

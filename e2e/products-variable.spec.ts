@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { adminApi, creds, login } from './helpers';
+import { adminApi, creds, emptyStock, login } from './helpers';
 
 test.skip(!creds.slug || !creds.user || !creds.pass, 'Faltan credenciales E2E en .env.e2e.local');
 
@@ -94,7 +94,7 @@ test('producto variable: editar el padre, cambiar el precio de una variante y aÃ
     for (const product of list) {
       for (const variant of product.variants) {
         for (const stock of variant.stocks ?? []) {
-          if (Number(stock.quantity) > 0) await admin.call('POST', '/products/stock-adjustments', { branchId: stock.branchId, variantId: variant.id, quantity: Number(stock.quantity), type: 'OUT', comment: 'e2e: limpieza' });
+          if (Number(stock.quantity) > 0) await emptyStock(admin, stock.branchId, variant.id, Number(stock.quantity));
         }
       }
       await admin.call('DELETE', `/products/${product.id}`);

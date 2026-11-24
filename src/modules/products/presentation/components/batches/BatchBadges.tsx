@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowDownRight, Boxes, Clock, Package, SlidersHorizontal } from 'lucide-react';
+import { ArrowDownRight, ArrowLeftRight, Boxes, Clock, Package, SlidersHorizontal } from 'lucide-react';
 import { barWidth, stockLevel } from '../../../domain/rules/batch-level';
 import { BatchStatus } from '../../../domain/enums';
 
@@ -39,6 +39,13 @@ export const OriginBadge: React.FC<{ originType: string; originLabel: string }> 
         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20">
           <ArrowDownRight className="w-3 h-3" />
           {originLabel}
+        </span>
+      );
+  case 'TRANSFER':
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-semibold bg-sky-500/10 text-sky-500 border border-sky-500/20">
+          <ArrowLeftRight className="w-3 h-3" />
+          {originLabel || 'Traslado entre sucursales'}
         </span>
       );
     default:
