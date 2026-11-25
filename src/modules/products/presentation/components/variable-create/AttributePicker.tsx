@@ -1,50 +1,58 @@
 import React, { useState } from 'react';
-import { Tag as TagIcon, Plus, Check, Loader2, Sparkles, Layers, ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
+import { Tag as TagIcon, Plus, Check, Loader2, Layers, AlertTriangle, X } from 'lucide-react';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
+import { MAX_ATTRIBUTES_PER_PRODUCT, MAX_VARIANTS, WARN_VARIANTS } from '../../../domain/rules/variable-wizard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import type { AttributeEntity, AttributeValueEntity } from '../../../domain/entities/catalog.entity';
 
-interface StepAttributeSelectionProps {
+interface AttributePickerProps {
   attributes: AttributeEntity[];
   isLoadingAttributes: boolean;
   selectedAttributeValues: Record<string, string[]>;
+  /** Atributos con los que se está armando el producto (los demás del catálogo se agregan a demanda). */
+  activeAttributeIds: string[];
+  onActivateAttribute: (attributeId: string) => void;
+  onDeactivateAttribute: (attributeId: string) => void;
   onToggleValue: (attrId: string, valId: string) => void;
   createAttribute: (name: string) => Promise<AttributeEntity>;
   isCreatingAttribute: boolean;
   createAttributeValue: (payload: { attributeId: string; value: string }) => Promise<AttributeValueEntity>;
   isCreatingValue: boolean;
   onNavigateToAttributes?: () => void;
-  onBack: () => void;
-  onGenerateAndProceed: () => void;
 }
 
-export const StepAttributeSelection: React.FC<StepAttributeSelectionProps> = ({
+export const AttributePicker: React.FC<AttributePickerProps> = ({
   attributes,
   isLoadingAttributes,
   selectedAttributeValues,
+  activeAttributeIds,
+  onActivateAttribute,
+  onDeactivateAttribute,
   onToggleValue,
   createAttribute,
   isCreatingAttribute,
   createAttributeValue,
   isCreatingValue,
   onNavigateToAttributes,
-  onBack,
-  onGenerateAndProceed,
 }) => {
   const [isCreatingAttrInline, setIsCreatingAttrInline] = useState(false);
   const [newAttributeName, setNewAttributeName] = useState('');
   const [newValueMap, setNewValueMap] = useState<Record<string, string>>({});
+  const [attributeFilter, setAttributeFilter] = useState('');
 
   const handleCreateAttribute = async () => {
     if (!newAttributeName.trim()) return;
     try {
-      await createAttribute(newAttributeName.trim());
+      const created = await createAttribute(newAttributeName.trim());
+      onActivateAttribute(created.id);
       setNewAttributeName('');
       setIsCreatingAttrInline(false);
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'No se pudo crear el atributo.'));
     }
   };
 
@@ -55,10 +63,15 @@ export const StepAttributeSelection: React.FC<StepAttributeSelectionProps> = ({
       const created = await createAttributeValue({ attributeId, value: val });
       setNewValueMap((prev) => ({ ...prev, [attributeId]: '' }));
       onToggleValue(attributeId, created.id);
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'No se pudo crear la opción.'));
     }
   };
+
+  const activeAttributes = activeAttributeIds.map((id) => attributes.find((attribute) => attribute.id === id)).filter((attribute): attribute is AttributeEntity => attribute !== undefined);
+  const filterText = attributeFilter.trim().toLowerCase();
+  const availableAttributes = attributes.filter((attribute) => !activeAttributeIds.includes(attribute.id) && attribute.name.toLowerCase().includes(filterText));
+  const SHOWN_AVAILABLE = 12;
 
   // Calculate combinations summary
   const activeAttributesWithSelections = attributes.filter(
@@ -70,11 +83,6 @@ export const StepAttributeSelection: React.FC<StepAttributeSelectionProps> = ({
     activeAttributesWithSelections.length > 0 ? 1 : 0
   );
 
-  const totalValuesSelected = Object.values(selectedAttributeValues).reduce(
-    (acc, arr) => acc + arr.length,
-    0
-  );
-
   return (
     <Card className="border-border shadow-xs bg-card overflow-hidden">
       <CardHeader className="pb-4 border-b border-border/50 bg-muted/15">
@@ -82,16 +90,16 @@ export const StepAttributeSelection: React.FC<StepAttributeSelectionProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <CardTitle className="text-sm sm:text-base font-bold text-secondary">
-                2. Selección de Atributos y Opciones
+                Opciones
               </CardTitle>
               {estimatedCombinations > 0 && (
                 <Badge className="bg-primary/15 text-primary border-primary/30 hover:bg-primary/20 text-xs font-mono font-bold">
-                  {estimatedCombinations} variante(s) resultante(s)
+                  {estimatedCombinations} {estimatedCombinations === 1 ? 'variante' : 'variantes'}
                 </Badge>
               )}
             </div>
             <CardDescription className="text-xs text-neutral mt-0.5">
-              Marca los valores que aplican para este producto (ej. Tallas: S, M, L y Colores: Azul, Negro).
+              Marca lo que cambia entre variantes (p. ej. tallas S, M, L y colores Azul, Negro). La tabla de abajo se arma sola y conserva lo que ya escribiste.
             </CardDescription>
           </div>
 
@@ -104,7 +112,7 @@ export const StepAttributeSelection: React.FC<StepAttributeSelectionProps> = ({
                   className="text-xs font-semibold text-primary hover:underline flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-primary/10 transition-colors cursor-pointer"
                 >
                   <TagIcon className="w-3.5 h-3.5" />
-                  <span>Catálogo Global</span>
+                  <span>Catálogo de atributos</span>
                 </button>
                 <span className="text-neutral/30 font-light">|</span>
               </>
@@ -117,7 +125,7 @@ export const StepAttributeSelection: React.FC<StepAttributeSelectionProps> = ({
               className="text-xs h-8 gap-1 cursor-pointer font-semibold"
             >
               <Plus className="w-3.5 h-3.5 text-primary" />
-              {isCreatingAttrInline ? 'Cerrar creador' : 'Crear Atributo'}
+              {isCreatingAttrInline ? 'Cerrar' : 'Crear atributo'}
             </Button>
           </div>
         </div>
@@ -151,15 +159,25 @@ export const StepAttributeSelection: React.FC<StepAttributeSelectionProps> = ({
       </CardHeader>
 
       <CardContent className="p-5 sm:p-6 space-y-5">
+        {estimatedCombinations > WARN_VARIANTS && (
+          <div role="status" className={`flex items-start gap-2 rounded-xl border p-3 text-xs ${estimatedCombinations > MAX_VARIANTS ? 'border-destructive/40 bg-destructive/10 text-destructive' : 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300'}`}>
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              {estimatedCombinations > MAX_VARIANTS
+                ? `Con estas opciones saldrían ${estimatedCombinations} variantes y el máximo por producto es ${MAX_VARIANTS}. Quita algunas opciones.`
+                : `Saldrían ${estimatedCombinations} variantes: la tabla será larga. Si no vendes todas las combinaciones, quita opciones o separa el producto en dos.`}
+            </span>
+          </div>
+        )}
         {/* Inline Attribute Creator */}
         {isCreatingAttrInline && (
           <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="flex-1">
  <span className="text-xs font-bold text-primary mb-1 block">
-                Nuevo Tipo de Atributo Global
+                Nuevo atributo
               </span>
               <Input
-                placeholder="Nombre del atributo (ej. Talla, Color, Material)..."
+                placeholder="Nombre del atributo (p. ej. Talla, Color, Material)"
                 value={newAttributeName}
                 onChange={(e) => setNewAttributeName(e.target.value)}
                 onKeyDown={(e) => {
@@ -179,7 +197,7 @@ export const StepAttributeSelection: React.FC<StepAttributeSelectionProps> = ({
               disabled={isCreatingAttribute || !newAttributeName.trim()}
               className="h-9 px-4 text-xs shrink-0 self-end sm:self-end cursor-pointer font-bold shadow-xs"
             >
-              {isCreatingAttribute ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Registrar Atributo'}
+              {isCreatingAttribute ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Crear atributo'}
             </Button>
           </div>
         )}
@@ -199,8 +217,52 @@ export const StepAttributeSelection: React.FC<StepAttributeSelectionProps> = ({
             </p>
           </div>
         ) : (
+          <div className="space-y-4">
+            {/* Atributos del catálogo: se agregan los que cambian en este producto */}
+            <div className="space-y-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <span className="text-xs font-bold text-secondary">
+                  Atributos del producto <span className="font-normal text-neutral">({activeAttributes.length} de {MAX_ATTRIBUTES_PER_PRODUCT})</span>
+                </span>
+                {attributes.length > SHOWN_AVAILABLE && (
+                  <Input
+                    value={attributeFilter}
+                    onChange={(e) => setAttributeFilter(e.target.value)}
+                    placeholder={`Buscar entre ${attributes.length} atributos…`}
+                    aria-label="Buscar atributo"
+                    className="h-8 max-w-xs bg-background text-xs"
+                  />
+                )}
+              </div>
+              {availableAttributes.length === 0 ? (
+                <p className="text-xs text-neutral">{filterText ? 'Ningún atributo coincide con la búsqueda.' : 'Ya agregaste todos los atributos del catálogo.'}</p>
+              ) : (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs text-neutral">Agregar:</span>
+                  {availableAttributes.slice(0, SHOWN_AVAILABLE).map((attribute) => (
+                    <button
+                      key={attribute.id}
+                      type="button"
+                      onClick={() => {
+                        setAttributeFilter('');
+                        onActivateAttribute(attribute.id);
+                      }}
+                      className="flex cursor-pointer items-center gap-1 rounded-md border border-dashed border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-primary/60 hover:bg-primary/5 hover:text-primary"
+                    >
+                      <Plus className="h-3 w-3" />
+                      {attribute.name}
+                    </button>
+                  ))}
+                  {availableAttributes.length > SHOWN_AVAILABLE && <span className="text-xs text-neutral">y {availableAttributes.length - SHOWN_AVAILABLE} más: usa el buscador</span>}
+                </div>
+              )}
+            </div>
+
+            {activeAttributes.length === 0 ? (
+              <div className="rounded-xl border-2 border-dashed border-border bg-muted/10 p-8 text-center text-xs text-neutral">Agrega un atributo (por ejemplo, talla o color) para elegir sus opciones.</div>
+            ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {attributes.map((attr) => {
+            {activeAttributes.map((attr) => {
               const selectedVals = selectedAttributeValues[attr.id] || [];
               const valInput = newValueMap[attr.id] || '';
               const hasSelection = selectedVals.length > 0;
@@ -225,19 +287,28 @@ export const StepAttributeSelection: React.FC<StepAttributeSelectionProps> = ({
                       </span>
                     </div>
 
-                    {hasSelection ? (
-                      <Badge className="bg-primary text-primary-foreground text-xs font-mono font-bold shadow-2xs">
-                        {selectedVals.length} seleccionado(s)
-                      </Badge>
-                    ) : (
-                      <span className="text-xs text-neutral font-medium">
-                        Ninguno marcado
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {hasSelection ? (
+                        <Badge className="bg-primary text-primary-foreground text-xs font-mono font-bold shadow-2xs">
+                          {selectedVals.length} {selectedVals.length === 1 ? 'marcada' : 'marcadas'}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-neutral font-medium">Ninguna marcada</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => onDeactivateAttribute(attr.id)}
+                        aria-label={`Quitar el atributo ${attr.name}`}
+                        title="Quitar este atributo del producto"
+                        className="cursor-pointer rounded-md p-1 text-neutral transition-colors hover:bg-rose-500/10 hover:text-rose-500"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Chips of values */}
-                  <div className="flex flex-wrap gap-1.5 min-h-[36px] items-center p-2 rounded-lg bg-muted/20 border border-border/40">
+                  <div className="flex max-h-40 min-h-[36px] flex-wrap items-center gap-1.5 overflow-y-auto rounded-lg border border-border/40 bg-muted/20 p-2">
                     {(attr.values || []).map((val) => {
                       const isChecked = selectedVals.includes(val.id);
                       return (
@@ -301,30 +372,9 @@ export const StepAttributeSelection: React.FC<StepAttributeSelectionProps> = ({
               );
             })}
           </div>
+            )}
+          </div>
         )}
-
-        {/* Footer Navigation */}
-        <div className="flex items-center justify-between pt-4 border-t border-border">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onBack}
-            className="h-10 px-4 text-xs font-semibold cursor-pointer"
-          >
-            &larr; Volver a Ficha
-          </Button>
-
-          <Button
-            type="button"
-            onClick={onGenerateAndProceed}
-            disabled={totalValuesSelected === 0}
-            className="h-10 px-5 text-xs font-bold gap-2 cursor-pointer shadow-sm shadow-primary/20"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>Generar Variantes ({estimatedCombinations})</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );

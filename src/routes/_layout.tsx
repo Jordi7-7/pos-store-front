@@ -75,6 +75,7 @@ function DashboardShell() {
     if (currentPath.startsWith('/inventario/traslado')) return 'Inventario - Movimientos - Traslado';
     if (currentPath.startsWith('/inventario/conteo')) return 'Inventario - Movimientos - Conteo físico';
     if (currentPath.startsWith('/inventario/movimientos')) return 'Inventario - Movimientos';
+    if (currentPath.startsWith('/inventario/crear-compuesto')) return 'Inventario - Crear con variantes';
     if (currentPath.startsWith('/inventario/crear')) return 'Inventario - Crear producto';
     if (currentPath.startsWith('/dashboard')) return 'Dashboard';
     if (currentPath.startsWith('/pos')) return 'Punto de Venta (POS)';

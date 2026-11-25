@@ -13,20 +13,21 @@ interface ProductsPage {
 
 test.setTimeout(90_000);
 
-test('asistente de producto compuesto: ficha, atributos, matriz con valores en bloque y guardado', async ({ page, request }) => {
+test('crear con variantes: la tabla se arma sola al marcar opciones y conserva lo escrito', async ({ page, request }) => {
   const admin = await adminApi(request);
   const stamp = Date.now().toString().slice(-8);
   const baseSku = `E2EW${stamp}`;
   const name = `Producto e2e asistente ${stamp}`;
   const valueA = `A${stamp}`;
   const valueB = `B${stamp}`;
+  const valueC = `C${stamp}`;
   let attributeId = '';
 
   try {
-    // Preparación por API: un atributo propio con tres valores (se eligen dos)
+    // Preparación por API: un atributo propio con tres valores (se eligen dos y luego un tercero)
     const attribute = (await admin.call<Attribute>('POST', '/products/attributes', { name: `E2E Atributo ${stamp}` })).data;
     attributeId = attribute.id;
-    for (const value of [valueA, valueB, `C${stamp}`]) {
+    for (const value of [valueA, valueB, valueC]) {
       await admin.call('POST', '/products/attributes/values', { attributeId, value });
     }
 
@@ -35,37 +36,52 @@ test('asistente de producto compuesto: ficha, atributos, matriz con valores en b
     await page.goto('/inventario/crear-compuesto');
     await page.waitForLoadState('networkidle');
 
-    // 1. Ficha: sin nombre no deja avanzar
-    await page.getByRole('button', { name: /Continuar a Selección de Atributos/ }).click();
+    // Sin nombre no deja guardar
+    await page.getByRole('button', { name: /Guardar producto/ }).click();
     await expect(page.getByText('El nombre del producto es obligatorio')).toBeVisible();
-    await page.getByLabel(/Código SKU Base/).fill(baseSku.toLowerCase()); // el campo lo pasa a mayúsculas
-    await page.getByLabel(/Nombre del Producto/).fill(name);
-    await page.getByRole('button', { name: /Continuar a Selección de Atributos/ }).click();
+    await page.getByLabel(/SKU base/).fill(baseSku.toLowerCase()); // el campo lo pasa a mayúsculas
+    await page.getByLabel(/Nombre del producto/).fill(name);
 
-    // 2. Atributos: dos valores dan dos combinaciones
+    // Los atributos se agregan a demanda (el catálogo puede tener decenas); el nuevo aparece entre los disponibles
+    await page.getByLabel('Buscar atributo').fill(`E2E Atributo ${stamp}`);
+    await page.getByRole('button', { name: `E2E Atributo ${stamp}` }).click();
+
+    // Dos opciones dan dos variantes, con SKU a partir de sus valores
     await page.getByRole('button', { name: valueA, exact: true }).click();
     await page.getByRole('button', { name: valueB, exact: true }).click();
-    await page.getByRole('button', { name: /Generar Variantes \(2\)/ }).click();
+    await expect(page.getByLabel(`SKU de ${valueA}`)).toHaveValue(`${baseSku}-${valueA}`);
+    await expect(page.getByLabel(`SKU de ${valueB}`)).toHaveValue(`${baseSku}-${valueB}`);
 
-    // 3. Matriz: valores en bloque para todas las variantes
-    await expect(page.getByRole('button', { name: /Guardar Producto Compuesto \(2 variantes\)/ })).toBeVisible();
-    await page.getByPlaceholder('0.00').nth(0).fill('40'); // P. Compra
-    await page.getByPlaceholder('0.00').nth(1).fill('90'); // P. Venta
-    await page.getByPlaceholder('0', { exact: true }).fill('3'); // Stock inicial
-    await page.getByRole('button', { name: 'Aplicar a Todas' }).click();
+    // Valores en bloque para todas, y un precio propio en la primera
+    await page.getByLabel('Precio de compra', { exact: true }).fill('40');
+    await page.getByLabel('Precio de venta', { exact: true }).fill('90');
+    await page.getByLabel('Stock inicial', { exact: true }).fill('3');
+    await page.getByRole('button', { name: /Aplicar a las 2/ }).click();
+    await page.getByLabel(`Precio de venta de ${valueA}`).fill('95');
+
+    // Añadir una opción NO borra lo ya escrito: la primera sigue en 95 y la nueva hereda los precios de la primera
+    await page.getByRole('button', { name: valueC, exact: true }).click();
+    await expect(page.getByLabel(`Precio de venta de ${valueA}`)).toHaveValue('95');
+    await expect(page.getByLabel(`Precio de venta de ${valueC}`)).toHaveValue('95');
+    await expect(page.getByLabel(`Stock inicial de ${valueB}`)).toHaveValue('3');
+    await page.getByLabel(`Stock inicial de ${valueC}`).fill('3');
+
+    // Una combinación que no vendes se quita; la fila que sigue se conserva
+    await page.getByRole('button', { name: `Quitar la variante ${valueC}` }).click();
+    await expect(page.getByLabel(`SKU de ${valueC}`)).toHaveCount(0);
 
     const created = page.waitForResponse((r) => r.url().endsWith('/products/variable') && r.request().method() === 'POST');
-    await page.getByRole('button', { name: /Guardar Producto Compuesto/ }).click();
+    await page.getByRole('button', { name: /Guardar producto con 2 variantes/ }).click();
     expect((await created).status()).toBe(201);
 
     const product = (await admin.call<ProductsPage>('GET', `/products?search=${baseSku}&limit=5`)).data.data[0];
     expect(product?.name).toBe(name);
     expect(product?.baseSku).toBe(baseSku);
-    expect(product?.variants.map((v) => v.sku).sort()).toEqual([`${baseSku}-1`, `${baseSku}-2`]);
-    for (const variant of product?.variants ?? []) {
-      expect(variant).toMatchObject({ purchasePrice: 40, salePrice: 90 });
-      expect(Number(variant.stocks?.[0]?.quantity)).toBe(3);
-    }
+    expect(product?.variants.map((v) => v.sku).sort()).toEqual([`${baseSku}-${valueA}`, `${baseSku}-${valueB}`]);
+    const bySku = new Map((product?.variants ?? []).map((variant) => [variant.sku, variant]));
+    expect(bySku.get(`${baseSku}-${valueA}`)).toMatchObject({ purchasePrice: 40, salePrice: 95 });
+    expect(bySku.get(`${baseSku}-${valueB}`)).toMatchObject({ purchasePrice: 40, salePrice: 90 });
+    for (const variant of product?.variants ?? []) expect(Number(variant.stocks?.[0]?.quantity)).toBe(3);
   } finally {
     const list = (await admin.call<ProductsPage>('GET', '/products?search=E2EW&limit=50')).data.data.filter((p) => p.name.startsWith('Producto e2e asistente '));
     for (const product of list) {
@@ -76,5 +92,7 @@ test('asistente de producto compuesto: ficha, atributos, matriz con valores en b
       }
       await admin.call('DELETE', `/products/${product.id}`);
     }
+    // El atributo de la prueba ya se puede borrar (sin productos que lo usen): la base de desarrollo no acumula basura
+    if (attributeId) await admin.call('DELETE', `/products/attributes/${attributeId}`);
   }
 });

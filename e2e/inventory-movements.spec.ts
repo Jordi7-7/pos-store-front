@@ -103,11 +103,14 @@ test('movimientos de inventario: entrada, salida con aviso de stock, conteo con 
     // 5. El historial muestra los documentos de la prueba con su número
     await page.goto('/inventario/movimientos');
     await page.waitForLoadState('networkidle');
+    // La búsqueda espera 350 ms antes de pedir: se aguarda la respuesta ya filtrada para no leer el historial completo de la base
+    const filtered = page.waitForResponse((r) => r.url().includes('/products/inventory-movements') && r.url().includes(`search=${sku}`));
     await page.getByPlaceholder(/Buscar por producto o SKU/).fill(sku);
+    await filtered;
     await expect(page.getByRole('cell', { name: /^ENT-\d{6}/ }).first()).toBeVisible();
     await expect(page.getByRole('cell', { name: /^SAL-\d{6}/ }).first()).toBeVisible();
     await expect(page.getByRole('cell', { name: /^CNT-\d{6}/ }).first()).toBeVisible();
-    await expect(page.getByText('Merma o caducidad')).toBeVisible();
+    await expect(page.getByText('Merma o caducidad').first()).toBeVisible();
     await expect(page.getByText('Conteo físico').first()).toBeVisible();
 
     // El número del documento lo abre: cabecera completa (tipo, motivo, quién, comentario) y todas sus líneas con costo y saldo

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Controller, type Control, type FieldErrors } from 'react-hook-form';
+import { toast } from 'sonner';
 import { Loader2, Plus, Tag as TagIcon, Upload, X, ImageIcon } from 'lucide-react';
+import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +25,7 @@ export interface VariableProductHeaderValues {
   categoryId?: string;
 }
 
-interface StepGeneralInfoProps {
+interface ProductHeaderCardProps {
   control: Control<VariableProductHeaderValues>;
   errors: FieldErrors<VariableProductHeaderValues>;
   categories: CategoryEntity[];
@@ -33,10 +35,11 @@ interface StepGeneralInfoProps {
   onRemoveImage: (id: string) => void;
   onOpenGalleryModal: () => void;
   onOpenUploadModal: () => void;
-  onNext: () => void;
+  /** Al salir del nombre: el padre propone un SKU base si aún está vacío. */
+  onNameBlur: () => void;
 }
 
-export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
+export const ProductHeaderCard: React.FC<ProductHeaderCardProps> = ({
   control,
   categories,
   createCategory,
@@ -45,7 +48,7 @@ export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
   onRemoveImage,
   onOpenGalleryModal,
   onOpenUploadModal,
-  onNext,
+  onNameBlur,
 }) => {
   const [isCreatingCategoryInline, setIsCreatingCategoryInline] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -57,17 +60,17 @@ export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
       onChange(created.id);
       setNewCategoryName('');
       setIsCreatingCategoryInline(false);
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'No se pudo crear la categoría.'));
     }
   };
 
   return (
     <Card className="border-border shadow-xs">
       <CardHeader className="pb-4">
-        <CardTitle className="text-sm">Ficha del Producto Compuesto</CardTitle>
+        <CardTitle className="text-sm">Datos del producto</CardTitle>
         <CardDescription className="text-xs">
-          Información base de catalogación general y de variantes.
+          Lo común a todas las variantes: nombre, código base, categoría y fotos.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -81,35 +84,39 @@ export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
  <FieldLabel htmlFor="var-base-sku" className="text-xs font-bold ">
-                    Código SKU Base <span className="text-destructive">*</span>
+                    SKU base <span className="text-destructive">*</span>
                   </FieldLabel>
                   <div className="relative">
                     <TagIcon className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
                     <Input
                       {...field}
                       id="var-base-sku"
-                      placeholder="HM-1230 (Prefijo de las variantes)"
+                      placeholder="Ej. PLY"
                       aria-invalid={fieldState.invalid}
                       onChange={(e) => field.onChange(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))}
                       className="pl-8 text-xs h-9"
                     />
                   </div>
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid ? <FieldError errors={[fieldState.error]} /> : <p className="text-xs text-muted-foreground">Cada variante lleva este código y sus opciones: PLY-NEGRO-M.</p>}
                 </Field>
               )}
             />
 
-            {/* Nombre del Producto */}
+            {/* Nombre del producto */}
             <Controller
               name="name"
               control={control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
  <FieldLabel htmlFor="var-prod-name" className="text-xs font-bold ">
-                    Nombre del Producto <span className="text-destructive">*</span>
+                    Nombre del producto <span className="text-destructive">*</span>
                   </FieldLabel>
                   <Input
                     {...field}
+                    onBlur={() => {
+                      field.onBlur();
+                      onNameBlur();
+                    }}
                     id="var-prod-name"
                     placeholder="Ej. Playera Oversize"
                     aria-invalid={fieldState.invalid}
@@ -243,7 +250,7 @@ export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="flex items-center gap-2">
  <span className="text-xs font-bold text-foreground">
-                Imágenes del Producto{' '}
+                Fotos del producto{' '}
                 <span className="text-muted-foreground font-normal">({selectedImages.length})</span>
               </span>
             </div>
@@ -257,7 +264,7 @@ export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
                 className="text-xs h-7 px-2.5 gap-1.5"
               >
                 <ImageIcon className="w-3.5 h-3.5 text-primary" />
-                Seleccionar de la Galería
+                Elegir de la galería
               </Button>
               <Button
                 type="button"
@@ -267,7 +274,7 @@ export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
                 className="text-xs h-auto p-0 gap-1 text-primary"
               >
                 <Upload className="w-3.5 h-3.5" />
-                + Subir Nueva Imagen
+                Subir una foto
               </Button>
             </div>
           </div>
@@ -310,21 +317,9 @@ export const StepGeneralInfo: React.FC<StepGeneralInfoProps> = ({
               className="h-16 border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 rounded-xl flex items-center justify-center gap-2 text-muted-foreground text-xs cursor-pointer transition-all"
             >
               <ImageIcon className="w-4 h-4 text-muted-foreground/60" />
-              <span>Este producto aún no tiene imágenes. Haz click para <strong>Seleccionar de la Galería</strong></span>
+              <span>Este producto aún no tiene fotos. Haz clic para <strong>elegirlas de la galería</strong></span>
             </div>
           )}
-        </div>
-
-        {/* Footer Navigation Button */}
-        <div className="pt-2">
-          <Button
-            type="button"
-            onClick={onNext}
-            className="w-full h-10 text-xs font-semibold cursor-pointer shadow-xs"
-          >
-            <span>Continuar a Selección de Atributos</span>
-            <span aria-hidden="true" className="ml-1.5">&rarr;</span>
-          </Button>
         </div>
       </CardContent>
     </Card>

@@ -123,6 +123,8 @@ export const ERROR_MESSAGES: Readonly<Record<string, Entry>> = {
   BASE_SKU_REQUIRED: 'El SKU base es obligatorio para un producto con variantes.',
   VARIANTS_REQUIRED: 'Un producto con variantes debe tener al menos una variante.',
   DUPLICATE_VARIANT_COMBINATION: 'No se permiten dos variantes con la misma combinación de atributos en un producto.',
+  IMPORT_INVALID: 'El archivo tiene errores. Revísalos, corrige el Excel y vuelve a importar.',
+  VARIANT_ATTRIBUTES_INCONSISTENT: 'Todas las variantes de un producto deben usar los mismos atributos, y una variante no puede tener dos valores del mismo atributo.',
   LAST_VARIANT_CANNOT_BE_DELETED: 'No puedes eliminar la única variante de un producto. Si quieres retirarlo, elimina el producto.',
   PRODUCT_NOT_SIMPLE: 'Este producto tiene variantes: edítalo como producto con variantes o variante por variante.',
   PRODUCT_HAS_STOCK: 'No se puede eliminar el producto porque tiene existencias o saldos negativos. Deja todas las cantidades en 0.',
@@ -154,6 +156,10 @@ export const ERROR_MESSAGES: Readonly<Record<string, Entry>> = {
   CATEGORY_NOT_FOUND: 'Categoría no encontrada.',
   CATEGORY_NAME_TAKEN: (d) => (text(d.name) ? `La categoría "${text(d.name)}" ya existe.` : 'Esa categoría ya existe.'),
   ATTRIBUTE_NOT_FOUND: 'Atributo no encontrado.',
+  ATTRIBUTE_IN_USE: (d) => {
+    const n = typeof d.variants === 'number' ? d.variants : null;
+    return n === null ? 'Hay variantes que lo usan: quítalo de ellas antes de eliminarlo.' : `Lo usan ${n} ${n === 1 ? 'variante' : 'variantes'} de productos: quítalo de ellas antes de eliminarlo.`;
+  },
   ATTRIBUTE_NAME_TAKEN: (d) => (text(d.name) ? `El atributo "${text(d.name)}" ya existe.` : 'Ese atributo ya existe.'),
   ATTRIBUTE_VALUE_TAKEN: (d) => (text(d.value) ? `El valor "${text(d.value)}" ya existe para este atributo.` : 'Ese valor ya existe para este atributo.'),
   ATTRIBUTE_VALUES_NOT_FOUND: 'Uno o más valores de atributo ya no existen.',
