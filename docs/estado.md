@@ -6,10 +6,10 @@
 | Comprobación | Resultado | Fecha |
 |---|---|---|
 | `pnpm typecheck` | limpio | 2026-11-22 |
-| `pnpm test` | 496 tests, 79 archivos | 2026-11-24 |
-| `pnpm lint` | 50 avisos (tope 51, solo baja) | 2026-11-22 |
+| `pnpm test` | 522 tests, 80 archivos | 2026-11-25 |
+| `pnpm lint` | 47 avisos (tope 47, solo baja) | 2026-11-25 |
 | `any` escritos a mano (sin `components/ui` ni `routeTree.gen.ts`) | 1 (`CashSessionsHistoryView.tsx`) | 2026-11-22 |
-| `pnpm e2e` (Playwright) | 29 en verde contra el backend real; los e2e del filtro de existencias, de «Buscar» con Enter y del foco del POS **no se han podido ejecutar** (el backend de desarrollo estaba sobre la copia de producción) | 2026-11-24 |
+| `pnpm e2e` (Playwright) | **32 en verde contra el backend real** (base de desarrollo `pos_store`), incluidos el filtro de existencias, «Buscar» con Enter, el foco del POS, la vista por documentos, crear con variantes y la importación por Excel | 2026-11-25 |
 
 Al empezar el refactor: 22 tests, tope de lint 265, 202 `any`. Si una cifra empeora, algo se rompió.
 
@@ -24,6 +24,14 @@ Al empezar el refactor: 22 tests, tope de lint 265, 202 `any`. Si una cifra empe
 - casos de uso con puertos; tickets con la moneda de la tienda; `POSView`, `CierreModal` y editores troceados.
 
 Pruebas contra el backend real: recorrido por API (2026-11-05) y 14 specs de Playwright en `e2e/`. Desde el 2026-11-09: devoluciones por línea (`saleItemId`), filtro de lotes por tipo y fecha obligatoria en los filtros por fecha (`shared/domain/rules/date-range.ts`).
+
+**Hecho el 2026-11-25 (sin comitear al escribir esto):**
+- **Crear con variantes en una sola pantalla** (ya no hay asistente de 3 pasos): datos del producto, opciones y tabla de variantes que se arma sola al marcar opciones y **conserva lo escrito** (`syncRows`). SKU derivados de los valores (`PLY-NEGRO-M`), avisos por fila (SKU repetido, venta en 0, bajo el costo, stock con costo 0), Enter baja de fila, se puede pegar desde Excel, y una combinación que no vendes se quita (y se restaura). Reglas en `domain/rules/variable-wizard.ts`; estado en `useVariableProductForm`.
+- **Importar productos con variantes desde Excel** (`VariantImportModal`, botón en esa pantalla): lectura tolerante de columnas (`domain/rules/variants-import.ts`), informe por fila antes de guardar y plantilla descargable con ejemplos.
+- Vista por documentos en Movimientos (lista de documentos con filtros; se comiteó el 2026-11-25).
+- Los atributos se agregan a demanda (buscador + máximo 4 por producto): con decenas de atributos en el catálogo ya no se despliegan todos. Los errores de precios y stock solo se pintan tras el primer intento de guardar.
+- `products-wizard.spec.ts` (reescrito) y `products-import-variants.spec.ts` (nuevo) pasan contra el backend real.
+- Catálogo de atributos: se pueden eliminar atributos y opciones (con confirmación; el servidor rechaza los que usa alguna variante). Los e2e de variantes ya borran el atributo que crean; las categorías «E2E …» siguen acumulándose (no hay borrado de categorías). El producto simple y su importador no se tocaron.
 
 **Hecho el 2026-11-24 (comiteado):**
 - Pantallas de movimientos de inventario (entrada, salida, conteo, traslado), historial filtrado por **categoría** con la columna **Saldo** y ventana de documento.
