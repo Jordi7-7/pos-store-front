@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { InventoryMovementCategory, InventoryMovementType } from '../../domain/enums';
-import { toInventoryDocumentDetailEntity, toInventoryMovementHistoryEntity } from './inventory.mapper';
+import { toInventoryDocumentDetailEntity, toInventoryDocumentListItemEntity, toInventoryMovementHistoryEntity } from './inventory.mapper';
 
 const dto = {
   id: 'm1', createdAt: '2026-11-05T18:30:00.000Z', type: 'OUT', reason: 'VENTA', quantity: '3' as unknown as number, variantId: 'v1', sku: 'CAM-M',
@@ -52,5 +52,21 @@ describe('mapper de un documento abierto', () => {
   it('sin sucursal de destino es null, y un tipo de documento o de línea desconocido no se inventa', () => {
     expect(toInventoryDocumentDetailEntity({ ...detail, destinationBranch: null }).destinationBranchName).toBeNull();
     expect(toInventoryDocumentDetailEntity({ ...detail, lines: [{ ...outgoing, type: 'X' }] }).lines).toMatchObject([{ type: InventoryMovementType.OUT }]);
+  });
+});
+
+describe('mapper de la lista de documentos', () => {
+  const row = {
+    id: 'd1', number: 'ENT-000001', kind: 'ENTRY', reason: 'DONACION', comment: 'Regalo', createdAt: '2026-11-05T18:30:00.000Z', userName: 'Ana',
+    branch: { id: 'b1', name: 'Matriz' }, destinationBranch: null, productsCount: '2' as unknown as number, unitsCount: 16,
+  };
+
+  it('convierte la fila: sucursal por nombre, destino nulo y totales como números', () => {
+    expect(toInventoryDocumentListItemEntity(row)).toMatchObject({ id: 'd1', number: 'ENT-000001', kind: 'ENTRY', comment: 'Regalo', userName: 'Ana', branchName: 'Matriz', destinationBranchName: null, productsCount: 2, unitsCount: 16 });
+  });
+
+  it('un traslado trae la sucursal que recibe, y un tipo desconocido no se inventa', () => {
+    expect(toInventoryDocumentListItemEntity({ ...row, kind: 'TRANSFER', destinationBranch: { id: 'b2', name: 'Norte' } })).toMatchObject({ kind: 'TRANSFER', destinationBranchName: 'Norte' });
+    expect(toInventoryDocumentListItemEntity({ ...row, kind: 'RARO' }).kind).toBe('EXIT');
   });
 });

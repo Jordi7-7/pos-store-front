@@ -3,6 +3,7 @@ import type {
   InventoryMovementHistoryDTO,
   InventoryDocumentDTO,
   InventoryDocumentDetailDTO,
+  InventoryDocumentListItemDTO,
   VariantBatchItemDTO,
   InventoryLotDTO,
   LotItemDTO,
@@ -12,6 +13,7 @@ import type {
   InventoryMovementHistoryEntity,
   InventoryDocumentEntity,
   InventoryDocumentDetailEntity,
+  InventoryDocumentListItemEntity,
   VariantBatchEntity,
   InventoryLotEntity,
   LotItemEntity,
@@ -54,6 +56,20 @@ export const toInventoryMovementHistoryEntity = (dto: InventoryMovementHistoryDT
   originBranchName: dto.originBranch?.name ?? null,
   destinationBranchName: dto.destinationBranch?.name ?? null,
   document: dto.document ? { ...dto.document, kind: toDocumentKind(dto.document.kind) } : null,
+});
+
+export const toInventoryDocumentListItemEntity = (dto: InventoryDocumentListItemDTO): InventoryDocumentListItemEntity => ({
+  id: dto.id,
+  number: dto.number,
+  kind: toDocumentKind(dto.kind),
+  reason: dto.reason,
+  comment: dto.comment,
+  createdAt: new Date(dto.createdAt),
+  userName: dto.userName,
+  branchName: dto.branch.name,
+  destinationBranchName: dto.destinationBranch?.name ?? null,
+  productsCount: Number(dto.productsCount || 0),
+  unitsCount: Number(dto.unitsCount || 0),
 });
 
 export const toInventoryDocumentDetailEntity = (dto: InventoryDocumentDetailDTO): InventoryDocumentDetailEntity => ({

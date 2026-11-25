@@ -1,5 +1,5 @@
 import type { PaginatedResult } from '@/shared/domain/value-objects/paginated';
-import type { InventoryLotEntity, InventoryMovementEntity, InventoryDocumentEntity, InventoryDocumentDetailEntity, InventoryMovementHistoryEntity, VariantBatchEntity } from '../../domain/entities/inventory.entity';
+import type { InventoryLotEntity, InventoryMovementEntity, InventoryDocumentEntity, InventoryDocumentDetailEntity, InventoryDocumentListItemEntity, InventoryMovementHistoryEntity, VariantBatchEntity } from '../../domain/entities/inventory.entity';
 import type { ProductHistoryPurchase, ProductHistorySale } from '../../domain/entities/history.entity';
 import type { BatchOriginType, InventoryDocumentKind, InventoryMovementCategory, InventoryMovementType } from '../../domain/enums';
 
@@ -58,6 +58,18 @@ export interface CreateStockTransferInput {
   lines: { variantId: string; quantity: number }[];
 }
 
+/** Filtros de la lista de documentos de inventario. */
+export interface DocumentsQuery {
+  branchId?: string;
+  kind?: InventoryDocumentKind;
+  /** Número, comentario o SKU/código de barras de alguna de sus líneas. */
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
 /** Filtros del historial global de movimientos. */
 export interface MovementsQuery {
   branchId?: string;
@@ -85,6 +97,8 @@ export interface InventoryRepository {
   listBatches(query?: BatchesQuery): Promise<PaginatedResult<InventoryLotEntity>>;
   listMovements(query?: MovementsQuery): Promise<PaginatedResult<InventoryMovementHistoryEntity>>;
   createDocument(input: CreateInventoryDocumentInput): Promise<InventoryDocumentEntity>;
+  /** Los documentos de inventario, uno por fila. */
+  listDocuments(query?: DocumentsQuery): Promise<PaginatedResult<InventoryDocumentListItemEntity>>;
   /** Un documento con todas sus líneas, para abrirlo desde el historial. */
   getDocument(id: string): Promise<InventoryDocumentDetailEntity>;
   createStockCount(input: CreateStockCountInput): Promise<InventoryDocumentEntity>;

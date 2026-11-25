@@ -104,6 +104,22 @@ export interface InventoryDocumentEntity {
   lines: { variantId: string; sku: string; quantity: number; type: InventoryMovementType }[];
 }
 
+/** Una fila de la lista de documentos de inventario, con cuántos productos y unidades movió. */
+export interface InventoryDocumentListItemEntity {
+  id: string;
+  number: string;
+  kind: InventoryDocumentKind;
+  reason: string;
+  comment: string | null;
+  createdAt: Date;
+  userName: string | null;
+  branchName: string;
+  /** Solo en traslados: la sucursal que recibe (`branchName` es la que envía). */
+  destinationBranchName: string | null;
+  productsCount: number;
+  unitsCount: number;
+}
+
 /** Una línea del kardex de un documento abierto, con el costo y el saldo con los que quedó. */
 export interface InventoryDocumentDetailLineEntity {
   variantId: string;

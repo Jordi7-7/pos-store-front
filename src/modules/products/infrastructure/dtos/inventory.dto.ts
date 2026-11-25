@@ -80,6 +80,20 @@ export interface InventoryMovementHistoryDTO {
   document?: { id: string; number: string; comment: string | null; userName: string | null; kind: string; counterpartBranchName: string | null } | null;
 }
 
+export interface InventoryDocumentListItemDTO {
+  id: string;
+  number: string;
+  kind: string;
+  reason: string;
+  comment: string | null;
+  createdAt: string;
+  userName: string | null;
+  branch: { id: string; name: string };
+  destinationBranch: { id: string; name: string } | null;
+  productsCount: number | string;
+  unitsCount: number | string;
+}
+
 export interface InventoryDocumentDetailDTO {
   id: string;
   number: string;

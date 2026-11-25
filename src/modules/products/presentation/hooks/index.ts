@@ -13,6 +13,7 @@ export * from './useInvalidateInventory';
 
 export * from './useInventoryMovements';
 export * from './useInventoryDocument';
+export * from './useInventoryDocuments';
 export * from './useMovementFilters';
 export * from './useInventoryDocumentForm';
 export * from './useStockCountForm';

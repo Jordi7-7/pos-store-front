@@ -1,7 +1,7 @@
 import { roundQuantity } from '@/shared/domain/rules/quantity';
 import { InventoryDocumentKind, InventoryMovementReasonLabels, InventoryMovementType, type InventoryMovementReason } from '../../domain/enums';
 import type { Formatters } from '@/shared/presentation/formatting/formatters';
-import type { InventoryDocumentDetailEntity, InventoryDocumentDetailLineEntity, InventoryLotEntity, InventoryMovementEntity, InventoryMovementHistoryEntity, LotItemEntity, VariantBatchEntity } from '../../domain/entities/inventory.entity';
+import type { InventoryDocumentDetailEntity, InventoryDocumentDetailLineEntity, InventoryDocumentListItemEntity, InventoryLotEntity, InventoryMovementEntity, InventoryMovementHistoryEntity, LotItemEntity, VariantBatchEntity } from '../../domain/entities/inventory.entity';
 
 /** Inventario con los textos listos para mostrar (importes con la moneda de la tienda y fechas en su zona horaria). */
 
@@ -111,7 +111,7 @@ export type InventoryDocumentDetailVM = Omit<InventoryDocumentDetailEntity, 'lin
   unitsText: string;
 };
 
-const DOCUMENT_KIND_LABELS: Record<InventoryDocumentKind, string> = {
+export const DOCUMENT_KIND_LABELS: Record<InventoryDocumentKind, string> = {
   [InventoryDocumentKind.ENTRY]: 'Entrada de inventario',
   [InventoryDocumentKind.EXIT]: 'Salida de inventario',
   [InventoryDocumentKind.COUNT]: 'Conteo físico',
@@ -137,5 +137,29 @@ export const toInventoryDocumentDetailVM = (document: InventoryDocumentDetailEnt
     lines,
     productsText: `${products} producto(s)`,
     unitsText: `${units} unidad(es)`,
+  };
+};
+
+export type InventoryDocumentListItemVM = InventoryDocumentListItemEntity & {
+  dateFormatted: string;
+  kindLabel: string;
+  /** El motivo elegido; el conteo y el traslado no tienen (lo pone el sistema) y se omite. */
+  reasonLabel: string | null;
+  /** La sucursal, o «Matriz → Norte» en un traslado. */
+  branchText: string;
+  productsText: string;
+  unitsText: string;
+};
+
+export const toInventoryDocumentListItemVM = (document: InventoryDocumentListItemEntity, fmt: Formatters): InventoryDocumentListItemVM => {
+  const hasChosenReason = document.kind === InventoryDocumentKind.ENTRY || document.kind === InventoryDocumentKind.EXIT;
+  return {
+    ...document,
+    dateFormatted: fmt.dateTime(document.createdAt),
+    kindLabel: DOCUMENT_KIND_LABELS[document.kind],
+    reasonLabel: hasChosenReason ? (InventoryMovementReasonLabels[document.reason as InventoryMovementReason] ?? document.reason) : null,
+    branchText: document.destinationBranchName ? `${document.branchName} → ${document.destinationBranchName}` : document.branchName,
+    productsText: String(document.productsCount),
+    unitsText: String(document.unitsCount),
   };
 };

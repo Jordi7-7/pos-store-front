@@ -121,6 +121,17 @@ test('movimientos de inventario: entrada, salida con aviso de stock, conteo con 
     await expect(dialog.getByText('1 producto(s) · 3 unidad(es)')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
+
+    // Vista por documentos: una fila por documento, con la misma búsqueda (por el SKU de alguna línea); se abre con clic en la fila
+    await page.getByRole('button', { name: 'Documentos' }).click();
+    await expect(page.getByRole('button', { name: /^ENT-\d{6}$/ }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /^SAL-\d{6}$/ }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /^CNT-\d{6}$/ }).first()).toBeVisible();
+    await page.getByLabel('Tipo de documento').selectOption('EXIT');
+    await expect(page.getByRole('button', { name: /^ENT-\d{6}$/ })).toHaveCount(0);
+    await page.getByRole('row', { name: /SAL-\d{6}/ }).first().click();
+    await expect(page.getByRole('dialog').getByText('Se mojó en bodega')).toBeVisible();
+    await page.keyboard.press('Escape');
   } finally {
     // Limpieza: el backend no deja borrar un producto con existencias, así que se sacan antes de borrarlo.
     const leftovers = (await admin.call<ProductsPage>('GET', '/products?search=E2EM&limit=50')).data.data.filter((p) => p.name.startsWith('Producto e2e mov '));

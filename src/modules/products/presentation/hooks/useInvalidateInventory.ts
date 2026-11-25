@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTenantId } from '@/modules/auth/presentation/hooks/useSession';
 
 /** Lo que muestra existencias o movimientos y deja de ser cierto cuando se registra un documento de inventario. */
-const INVENTORY_QUERY_KEYS = ['inventory-movements', 'products', 'batches', 'variant-movements', 'product-detail'] as const;
+const INVENTORY_QUERY_KEYS = ['inventory-movements', 'inventory-documents-list', 'products', 'batches', 'variant-movements', 'product-detail'] as const;
 
 /** Devuelve una función que refresca todas las consultas afectadas por un documento de inventario (entrada, salida, conteo o traslado). */
 export function useInvalidateInventory(): () => void {

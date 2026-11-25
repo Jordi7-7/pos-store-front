@@ -1,10 +1,10 @@
 import { apiClient } from '@/lib/apiClient';
 import type { PaginatedResult } from '@/shared/domain/value-objects/paginated';
-import type { BatchesQuery, CreateInventoryDocumentInput, CreateStockCountInput, CreateStockTransferInput, InventoryRepository, MovementsQuery, StockCountSheetPage, StockCountSheetQuery, VariantHistoryQuery } from '../../application/ports/inventory.repository';
+import type { BatchesQuery, CreateInventoryDocumentInput, DocumentsQuery, CreateStockCountInput, CreateStockTransferInput, InventoryRepository, MovementsQuery, StockCountSheetPage, StockCountSheetQuery, VariantHistoryQuery } from '../../application/ports/inventory.repository';
 import type { ProductHistoryPurchase, ProductHistorySale } from '../../domain/entities/history.entity';
-import type { InventoryLotEntity, InventoryMovementEntity, InventoryDocumentEntity, InventoryDocumentDetailEntity, InventoryMovementHistoryEntity, VariantBatchEntity } from '../../domain/entities/inventory.entity';
-import type { InventoryLotDTO, InventoryMovementDTO, InventoryDocumentDTO, InventoryDocumentDetailDTO, InventoryMovementHistoryDTO, VariantBatchItemDTO } from '../dtos/inventory.dto';
-import { toInventoryLotEntity, toInventoryMovementEntity, toInventoryDocumentEntity, toInventoryDocumentDetailEntity, toInventoryMovementHistoryEntity, toVariantBatchEntity } from '../mappers/inventory.mapper';
+import type { InventoryLotEntity, InventoryMovementEntity, InventoryDocumentEntity, InventoryDocumentDetailEntity, InventoryDocumentListItemEntity, InventoryMovementHistoryEntity, VariantBatchEntity } from '../../domain/entities/inventory.entity';
+import type { InventoryLotDTO, InventoryMovementDTO, InventoryDocumentDTO, InventoryDocumentDetailDTO, InventoryDocumentListItemDTO, InventoryMovementHistoryDTO, VariantBatchItemDTO } from '../dtos/inventory.dto';
+import { toInventoryLotEntity, toInventoryMovementEntity, toInventoryDocumentEntity, toInventoryDocumentDetailEntity, toInventoryDocumentListItemEntity, toInventoryMovementHistoryEntity, toVariantBatchEntity } from '../mappers/inventory.mapper';
 
 const page = <TDto, TEntity>(response: PaginatedResult<TDto>, convert: (dto: TDto) => TEntity): PaginatedResult<TEntity> => ({
   data: (response.data || []).map(convert),
@@ -66,6 +66,25 @@ export class InventoryHttpRepository implements InventoryRepository {
     return page(
       await apiClient.get<PaginatedResult<InventoryMovementHistoryDTO>>(`/products/inventory-movements${queryString ? `?${queryString}` : ''}`),
       toInventoryMovementHistoryEntity,
+    );
+  }
+
+  async listDocuments(query?: DocumentsQuery): Promise<PaginatedResult<InventoryDocumentListItemEntity>> {
+    const params = new URLSearchParams();
+    const filters: Record<string, string | number | undefined> = {
+      branchId: query?.branchId,
+      kind: query?.kind,
+      search: query?.search,
+      startDate: query?.startDate,
+      endDate: query?.endDate,
+      page: query?.page,
+      limit: query?.limit,
+    };
+    for (const [key, value] of Object.entries(filters)) if (value !== undefined && value !== '') params.append(key, String(value));
+    const queryString = params.toString();
+    return page(
+      await apiClient.get<PaginatedResult<InventoryDocumentListItemDTO>>(`/products/inventory-documents${queryString ? `?${queryString}` : ''}`),
+      toInventoryDocumentListItemEntity,
     );
   }
 

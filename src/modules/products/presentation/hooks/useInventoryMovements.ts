@@ -12,7 +12,7 @@ type Meta = PaginatedResult<unknown>['meta'];
 const DEFAULT_META: Meta = { total: 0, page: 1, limit: 20, totalPages: 1 };
 
 /** Historial global de movimientos de inventario (kardex), con los filtros pedidos. */
-export const useInventoryMovements = (params: MovementsQuery) => {
+export const useInventoryMovements = (params: MovementsQuery, enabled = true) => {
   const tenantId = useTenantId();
   const isAuthenticated = useIsAuthenticated();
   const fmt = useFormatters();
@@ -20,7 +20,7 @@ export const useInventoryMovements = (params: MovementsQuery) => {
   const query = useQuery({
     queryKey: ['inventory-movements', tenantId, params],
     queryFn: () => inventoryRepository.listMovements(params),
-    enabled: isAuthenticated && !!tenantId,
+    enabled: enabled && isAuthenticated && !!tenantId,
   });
 
   const entities = query.data?.data;

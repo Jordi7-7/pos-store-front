@@ -3,7 +3,7 @@ import { format, subDays } from 'date-fns';
 import { type DateRange } from 'react-day-picker';
 import { useTimezone } from '@/modules/auth/presentation/hooks/useSession';
 import { requireDateRange, todayRange, type RequiredDateSpan } from '@/shared/domain/rules/date-range';
-import type { InventoryMovementCategory, InventoryMovementType } from '../../domain/enums';
+import type { InventoryDocumentKind, InventoryMovementCategory, InventoryMovementType } from '../../domain/enums';
 
 const DEFAULT_DAYS = 7;
 
@@ -18,6 +18,7 @@ export function useMovementFilters() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [type, setTypeState] = useState<InventoryMovementType | undefined>();
   const [category, setCategoryState] = useState<InventoryMovementCategory | undefined>();
+  const [documentKind, setDocumentKindState] = useState<InventoryDocumentKind | undefined>();
   const [page, setPage] = useState(1);
   const [limit, setLimitState] = useState(20);
 
@@ -41,6 +42,10 @@ export function useMovementFilters() {
     setCategoryState(value);
     setPage(1);
   };
+  const setDocumentKind = (value: InventoryDocumentKind | undefined) => {
+    setDocumentKindState(value);
+    setPage(1);
+  };
   const setLimit = (value: number) => {
     setLimitState(value);
     setPage(1);
@@ -53,6 +58,8 @@ export function useMovementFilters() {
     setType,
     category,
     setCategory,
+    documentKind,
+    setDocumentKind,
     search,
     setSearch,
     page,

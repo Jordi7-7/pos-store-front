@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createFormatters } from '@/shared/presentation/formatting/formatters';
 import { InventoryDocumentKind, InventoryMovementCategory, InventoryMovementType } from '../../domain/enums';
-import type { InventoryDocumentDetailEntity, InventoryMovementHistoryEntity } from '../../domain/entities/inventory.entity';
-import { toInventoryDocumentDetailVM, toInventoryMovementHistoryVM } from './inventory.vm';
+import type { InventoryDocumentDetailEntity, InventoryDocumentListItemEntity, InventoryMovementHistoryEntity } from '../../domain/entities/inventory.entity';
+import { toInventoryDocumentDetailVM, toInventoryDocumentListItemVM, toInventoryMovementHistoryVM } from './inventory.vm';
 
 const mxn = createFormatters({ currencyCode: 'MXN', locale: 'es-MX', timezone: 'America/Mexico_City' });
 
@@ -101,5 +101,24 @@ describe('view-model de un documento abierto', () => {
     const vm = toInventoryDocumentDetailVM(document({ kind: InventoryDocumentKind.COUNT, reason: 'CONTEO_FISICO' }), mxn);
 
     expect(vm).toMatchObject({ kindLabel: 'Conteo físico', reasonLabel: null });
+  });
+});
+
+describe('view-model de la lista de documentos', () => {
+  const item = (overrides: Partial<InventoryDocumentListItemEntity> = {}): InventoryDocumentListItemEntity => ({
+    id: 'd1', number: 'ENT-000001', kind: InventoryDocumentKind.ENTRY, reason: 'DONACION', comment: 'Regalo', createdAt: new Date('2026-11-05T18:30:00Z'), userName: 'Ana',
+    branchName: 'Matriz', destinationBranchName: null, productsCount: 2, unitsCount: 16, ...overrides,
+  });
+
+  it('una entrada: tipo, motivo con su etiqueta, sucursal y totales', () => {
+    expect(toInventoryDocumentListItemVM(item(), mxn)).toMatchObject({ kindLabel: 'Entrada de inventario', reasonLabel: 'Donación', branchText: 'Matriz', productsText: '2', unitsText: '16' });
+  });
+
+  it('un traslado muestra «origen → destino» y no tiene motivo', () => {
+    expect(toInventoryDocumentListItemVM(item({ kind: InventoryDocumentKind.TRANSFER, reason: 'TRASLADO', destinationBranchName: 'Norte' }), mxn)).toMatchObject({ kindLabel: 'Traslado entre sucursales', reasonLabel: null, branchText: 'Matriz → Norte' });
+  });
+
+  it('un conteo tampoco muestra motivo', () => {
+    expect(toInventoryDocumentListItemVM(item({ kind: InventoryDocumentKind.COUNT, reason: 'CONTEO_FISICO' }), mxn)).toMatchObject({ kindLabel: 'Conteo físico', reasonLabel: null });
   });
 });
