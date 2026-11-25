@@ -2,6 +2,7 @@ import type { ProductType, StockStatus } from '../../domain/enums';
 import type { ProductEntity } from '../../domain/entities/product.entity';
 import type { CreatedVariantEntity, PosSearchResult, PosVariantEntity, VariantLookup } from '../../domain/entities/catalog.entity';
 import type { PaginatedResult } from '@/shared/domain/value-objects/paginated';
+import type { ImportRowInput } from '../../domain/rules/variants-import';
 
 export interface CreateSimpleProductInput {
   name: string;
@@ -93,6 +94,33 @@ export interface BulkImportProductsResult {
   importedCount: number;
 }
 
+/** Importación de productos con variantes (una fila por variante). `dryRun` solo valida y cuenta, sin escribir. */
+export interface ImportVariantsInput {
+  branchId?: string;
+  dryRun: boolean;
+  rows: ImportRowInput[];
+}
+
+export interface ImportRowIssue {
+  row: number;
+  field: string;
+  message: string;
+}
+
+export interface ImportVariantsReport {
+  valid: boolean;
+  applied: boolean;
+  errors: ImportRowIssue[];
+  summary: {
+    products: number;
+    variants: number;
+    units: number;
+    newCategories: string[];
+    newAttributes: string[];
+    newAttributeValues: number;
+  };
+}
+
 /** Variante nueva que se añade a un producto existente. */
 export interface NewVariantInput {
   sku: string;
@@ -134,4 +162,5 @@ export interface ProductsRepository {
   listPosVariants(branchId: string): Promise<PosVariantEntity[]>;
   validateImport(items: ValidateImportItemInput[]): Promise<ValidateImportResult>;
   importProducts(input: BulkImportProductsInput): Promise<BulkImportProductsResult>;
+  importVariants(input: ImportVariantsInput): Promise<ImportVariantsReport>;
 }

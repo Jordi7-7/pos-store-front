@@ -5,6 +5,8 @@ import type {
   BulkImportProductsResult,
   CreateSimpleProductInput,
   CreateVariableProductInput,
+  ImportVariantsInput,
+  ImportVariantsReport,
   NewVariantInput,
   ProductsQuery,
   ProductsRepository,
@@ -95,5 +97,9 @@ export class ProductsHttpRepository implements ProductsRepository {
 
   importProducts(input: BulkImportProductsInput): Promise<BulkImportProductsResult> {
     return apiClient.post<BulkImportProductsResult>('/products/import', input);
+  }
+
+  importVariants(input: ImportVariantsInput): Promise<ImportVariantsReport> {
+    return apiClient.post<ImportVariantsReport>('/products/import-variants', input);
   }
 }
