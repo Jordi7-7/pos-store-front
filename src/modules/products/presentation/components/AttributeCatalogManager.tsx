@@ -5,7 +5,9 @@ import {
   Loader2, 
   Search, 
   Check, 
-  Layers
+  Layers,
+  Trash2,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -25,6 +27,9 @@ import {
 } from '@/components/ui/dialog';
 import type { AttributeEntity as Attribute } from '../../domain/entities/catalog.entity';
 import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
+import { useConfirm } from '@/shared/presentation/components/useConfirm';
+import { usePermissions } from '@/hooks/usePermissions';
+import { APP_PERMISSIONS } from '@/constants/permissions';
 
 export const AttributeCatalogManager: React.FC = () => {
   const { 
@@ -33,8 +38,13 @@ export const AttributeCatalogManager: React.FC = () => {
     createAttribute, 
     isCreatingAttribute, 
     createAttributeValue, 
-    isCreatingValue 
+    isCreatingValue,
+    deleteAttribute,
+    deleteAttributeValue,
   } = useAttributes();
+  const { can } = usePermissions();
+  const canDelete = can(APP_PERMISSIONS.ATTRIBUTES_DELETE);
+  const { confirm, confirmDialog } = useConfirm();
 
   // Create attribute modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -71,6 +81,34 @@ export const AttributeCatalogManager: React.FC = () => {
     }
   };
 
+  const handleDeleteAttribute = async (attribute: Attribute) => {
+    const values = (attribute.values || []).length;
+    const accepted = await confirm({
+      title: 'Eliminar atributo',
+      message: `Se eliminará "${attribute.name}"${values > 0 ? ` y sus ${values} opciones` : ''}. Si algún producto lo usa, no se podrá eliminar.`,
+      confirmLabel: 'Eliminar',
+      destructive: true,
+    });
+    if (!accepted) return;
+    try {
+      await deleteAttribute(attribute.id);
+      toast.success(`Atributo "${attribute.name}" eliminado.`);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'No se pudo eliminar el atributo.'));
+    }
+  };
+
+  const handleDeleteValue = async (attribute: Attribute, valueId: string, valueText: string) => {
+    const accepted = await confirm({ title: 'Eliminar opción', message: `Se eliminará la opción "${valueText}" de ${attribute.name}. Si alguna variante la usa, no se podrá eliminar.`, confirmLabel: 'Eliminar', destructive: true });
+    if (!accepted) return;
+    try {
+      await deleteAttributeValue(valueId);
+      toast.success(`Opción "${valueText}" eliminada.`);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'No se pudo eliminar la opción.'));
+    }
+  };
+
   const filteredAttributes = attributes.filter((attr:Attribute) =>
     attr.name.toLowerCase().includes(search.toLowerCase()) ||
     (attr.values || []).some((v) => v.value.toLowerCase().includes(search.toLowerCase()))
@@ -83,7 +121,7 @@ export const AttributeCatalogManager: React.FC = () => {
         <div>
           <h4 className="text-sm font-bold text-secondary flex items-center gap-2">
             <Layers className="w-4 h-4 text-primary" />
-            Atributos Registrados ({attributes.length})
+            Atributos registrados ({attributes.length})
           </h4>
           <p className="text-xs text-neutral mt-0.5">
             Administra los atributos globales y sus valores. Al crear productos podrás seleccionar los que apliquen.
@@ -109,7 +147,7 @@ export const AttributeCatalogManager: React.FC = () => {
             className="h-9 px-3.5 text-xs font-bold gap-1.5 cursor-pointer shrink-0 shadow-xs"
           >
             <Plus className="w-4 h-4" />
-            <span>Nuevo Atributo</span>
+            <span>Nuevo atributo</span>
           </Button>
         </div>
       </div>
@@ -158,9 +196,22 @@ export const AttributeCatalogManager: React.FC = () => {
                           {attr.name}
                         </CardTitle>
                       </div>
-                      <Badge variant="secondary" className="text-xs font-mono">
-                        {vals.length} valores
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant="secondary" className="text-xs font-mono">
+                          {vals.length} {vals.length === 1 ? 'valor' : 'valores'}
+                        </Badge>
+                        {canDelete && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAttribute(attr)}
+                            aria-label={`Eliminar el atributo ${attr.name}`}
+                            title="Eliminar este atributo"
+                            className="cursor-pointer rounded-md p-1 text-neutral transition-colors hover:bg-rose-500/10 hover:text-rose-500"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </CardHeader>
 
@@ -174,6 +225,17 @@ export const AttributeCatalogManager: React.FC = () => {
                         >
                           <Check className="w-2.5 h-2.5 text-primary" />
                           {v.value}
+                          {canDelete && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteValue(attr, v.id, v.value)}
+                              aria-label={`Eliminar la opción ${v.value} de ${attr.name}`}
+                              title="Eliminar esta opción"
+                              className="cursor-pointer rounded-sm text-neutral transition-colors hover:text-rose-500"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          )}
                         </span>
                       ))}
                       {vals.length === 0 && (
@@ -220,13 +282,15 @@ export const AttributeCatalogManager: React.FC = () => {
         </div>
       )}
 
+      {confirmDialog}
+
       {/* Modal / Dialog para Crear Atributo */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-base font-semibold text-secondary flex items-center gap-2">
               <TagIcon className="w-4 h-4 text-primary" />
-              Nuevo Atributo Global
+              Nuevo atributo
             </DialogTitle>
             <DialogDescription className="text-xs text-neutral">
               Ingresa el nombre del atributo que compartirán los productos de tu tienda (ej. Talla, Color, Presentación, Capacidad).
@@ -236,7 +300,7 @@ export const AttributeCatalogManager: React.FC = () => {
           <form onSubmit={handleCreateAttribute} className="space-y-4 py-2">
             <Field>
  <FieldLabel htmlFor="new-attr-input" className="text-xs font-bold text-secondary">
-                Nombre del Atributo <span className="text-destructive">*</span>
+                Nombre del atributo <span className="text-destructive">*</span>
               </FieldLabel>
               <Input
                 id="new-attr-input"
@@ -263,7 +327,7 @@ export const AttributeCatalogManager: React.FC = () => {
                 className="text-xs h-9 font-bold"
               >
                 {isCreatingAttribute && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
-                Guardar Atributo
+                Guardar atributo
               </Button>
             </DialogFooter>
           </form>

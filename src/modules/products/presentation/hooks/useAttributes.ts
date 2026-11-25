@@ -18,6 +18,9 @@ export const useAttributes = () => {
     onSuccess: refresh,
   });
 
+  const deleteAttributeMutation = useMutation({ mutationFn: (attributeId: string) => catalogRepository.deleteAttribute(attributeId), onSuccess: refresh });
+  const deleteAttributeValueMutation = useMutation({ mutationFn: (valueId: string) => catalogRepository.deleteAttributeValue(valueId), onSuccess: refresh });
+
   return {
     attributes: attributesQuery.data || [],
     isLoading: attributesQuery.isLoading,
@@ -26,6 +29,8 @@ export const useAttributes = () => {
     isCreatingAttribute: createAttributeMutation.isPending,
     createAttributeValue: createAttributeValueMutation.mutateAsync,
     isCreatingValue: createAttributeValueMutation.isPending,
+    deleteAttribute: deleteAttributeMutation.mutateAsync,
+    deleteAttributeValue: deleteAttributeValueMutation.mutateAsync,
   };
 };
 

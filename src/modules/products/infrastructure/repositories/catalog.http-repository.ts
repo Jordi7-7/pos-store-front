@@ -23,6 +23,14 @@ export class CatalogHttpRepository implements CatalogRepository {
     return { id: attribute.id, name: attribute.name, values: attribute.values ?? [] };
   }
 
+  async deleteAttribute(attributeId: string): Promise<void> {
+    await apiClient.delete(`/products/attributes/${attributeId}`);
+  }
+
+  async deleteAttributeValue(valueId: string): Promise<void> {
+    await apiClient.delete(`/products/attributes/values/${valueId}`);
+  }
+
   createAttributeValue(attributeId: string, value: string): Promise<AttributeValueEntity> {
     return apiClient.post<AttributeValueDTO>('/products/attributes/values', { attributeId, value });
   }

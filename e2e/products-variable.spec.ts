@@ -22,12 +22,14 @@ test('producto variable: editar el padre, cambiar el precio de una variante y a√
   const stamp = Date.now().toString().slice(-8);
   const baseSku = `E2EV${stamp}`;
   const name = `Producto e2e variable ${stamp}`;
+  let attributeId = '';
 
   try {
     // Preparaci√≥n por API: un atributo propio con dos valores y un producto variable con dos variantes
     const branch = (await admin.call<ProfileResponse>('GET', '/auth/profile')).data.branches[0];
     expect(branch, 'la tienda de pruebas tiene sucursal').toBeTruthy();
     const attribute = (await admin.call<Attribute>('POST', '/products/attributes', { name: `E2E Talla ${stamp}` })).data;
+    attributeId = attribute.id;
     const values = [] as Array<{ id: string; value: string }>;
     for (const value of ['S', 'M', 'L']) {
       values.push((await admin.call<{ id: string; value: string }>('POST', '/products/attributes/values', { attributeId: attribute.id, value })).data);
@@ -99,5 +101,6 @@ test('producto variable: editar el padre, cambiar el precio de una variante y a√
       }
       await admin.call('DELETE', `/products/${product.id}`);
     }
+    if (attributeId) await admin.call('DELETE', `/products/attributes/${attributeId}`);
   }
 });
