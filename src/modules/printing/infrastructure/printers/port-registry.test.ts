@@ -10,7 +10,7 @@ function fakePort(info: PortInfo): SerialPortLike & { written: number[]; forgott
     written: [] as number[],
     forgotten: false,
     readable: null,
-    writable: { getWriter: () => ({ write: async (chunk: Uint8Array) => void port.written.push(...chunk), releaseLock: () => undefined }) } as unknown as WritableStream<Uint8Array>,
+    writable: { getWriter: () => ({ write: async (chunk: Uint8Array) => void port.written.push(...chunk), close: async () => undefined, releaseLock: () => undefined }) } as unknown as WritableStream<Uint8Array>,
     open: async () => undefined,
     close: async () => undefined,
     forget: async () => {

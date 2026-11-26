@@ -102,39 +102,56 @@ class LabelPrinterService implements LabelPrinter {
     }
   }
 
-  /** Obtiene el puerto de etiquetas abierto para comunicación */
-  private async getOpenPort(): Promise<SerialPortLike | null> {
+  /** Abre la conexión con la impresora de etiquetas. Si había quedado abierta, la cierra antes: puede estar caída. */
+  private async openPort(): Promise<SerialPortLike> {
     if (!this.isSupported()) {
       throw new Error('Web Serial API no soportada');
     }
 
     const port = await portRegistry.portFor('label');
-    if (!port) return null;
+    if (!port) throw new Error(NO_PRINTER_CONFIGURED);
 
-    if (!port.readable && !port.writable) {
-      const config = this.getConfig();
-      await port.open({ baudRate: config.baudRate || 9600 });
-    }
-
+    if (port.readable || port.writable) await this.closeQuietly(port);
+    await port.open({ baudRate: this.getConfig().baudRate || 9600 });
     return port;
   }
 
-  /** Envía los bytes crudos a la impresora de etiquetas, en bloques pequeños (Bluetooth no aguanta uno grande). */
-  async sendRawBytes(bytes: Uint8Array): Promise<void> {
-    const port = await this.getOpenPort();
-    if (!port) {
-      throw new Error(NO_PRINTER_CONFIGURED);
-    }
-
-    if (!port.writable) throw new Error('El puerto de la impresora no admite escritura.');
-    const writer = port.writable.getWriter();
+  private async closeQuietly(port: SerialPortLike): Promise<void> {
     try {
-      for (let offset = 0; offset < bytes.length; offset += CHUNK_BYTES) {
-        await writer.write(bytes.slice(offset, offset + CHUNK_BYTES));
+      await port.close();
+    } catch {
+      // ya estaba cerrado o se perdió la conexión: no debe tapar el resultado del envío
+    }
+  }
+
+  /**
+   * Envía los trabajos en una sola conexión: abre, escribe en bloques pequeños (Bluetooth no aguanta uno grande), espera
+   * a que salga todo y cierra. El puerto no se deja abierto porque la impresora Bluetooth corta el enlace y la siguiente
+   * impresión fallaba con «An unknown system error has occurred».
+   */
+  private async send(jobs: Uint8Array[]): Promise<void> {
+    const port = await this.openPort();
+    try {
+      if (!port.writable) throw new Error('El puerto de la impresora no admite escritura.');
+      const writer = port.writable.getWriter();
+      try {
+        for (const bytes of jobs) {
+          for (let offset = 0; offset < bytes.length; offset += CHUNK_BYTES) {
+            await writer.write(bytes.slice(offset, offset + CHUNK_BYTES));
+          }
+        }
+        await writer.close(); // sin esto, cerrar el puerto descartaría lo que aún no ha salido
+      } finally {
+        writer.releaseLock();
       }
     } finally {
-      writer.releaseLock();
+      await this.closeQuietly(port);
     }
+  }
+
+  /** Envía los bytes crudos a la impresora de etiquetas. */
+  async sendRawBytes(bytes: Uint8Array): Promise<void> {
+    await this.send([bytes]);
   }
 
   /** Trabajo de impresión de una etiqueta (con sus copias): la imagen de la vista previa en el idioma de la impresora. */
@@ -155,17 +172,15 @@ class LabelPrinterService implements LabelPrinter {
   async printLabels(items: LabelItem[], storeName: string, format: TicketFormat): Promise<boolean> {
     if (!items || items.length === 0) return false;
     const config = this.getConfig();
-    for (const item of items) {
-      await this.sendRawBytes(this.jobFor(item, storeName, format, config));
-    }
+    await this.send(items.map((item) => this.jobFor(item, storeName, format, config)));
     return true;
   }
 
   /** Dos etiquetas de prueba: una de medidas (marco y regla) y una de muestra con el diseño real. */
   async printTestLabel(storeName: string, format: TicketFormat): Promise<boolean> {
     const config = this.getConfig();
-    await this.sendRawBytes(this.imageJob(canvasToBitmap(renderMeasureCanvas(specOf(config))), config, 1));
-    await this.sendRawBytes(this.jobFor(TEST_ITEM, storeName, format, config));
+    const measureJob = this.imageJob(canvasToBitmap(renderMeasureCanvas(specOf(config))), config, 1);
+    await this.send([measureJob, this.jobFor(TEST_ITEM, storeName, format, config)]);
     return true;
   }
 
