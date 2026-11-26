@@ -1,7 +1,7 @@
 /** Lectura del archivo de importación de productos con variantes (una fila por variante). Sin pantalla ni HTTP. */
 
 export const MAX_IMPORT_ROWS = 2000;
-export const MAX_IMPORT_ATTRIBUTES = 4;
+export const MAX_IMPORT_ATTRIBUTES = 5;
 
 export interface ImportRowInput {
   /** Número de fila en el archivo (la primera de datos es la 2). */
@@ -49,7 +49,7 @@ const COLUMNS = {
 type ColumnKey = keyof typeof COLUMNS;
 const REQUIRED: readonly ColumnKey[] = ['name', 'sku', 'salePrice'];
 
-/** Cabeceras de la plantilla en orden: producto, SKU base, categoría, hasta 4 pares atributo/valor y los datos de la variante. */
+/** Cabeceras de la plantilla en orden: producto, SKU base, categoría, hasta 5 pares atributo/valor y los datos de la variante. */
 export const TEMPLATE_HEADERS: readonly string[] = [
   COLUMNS.name.label,
   COLUMNS.baseSku.label,

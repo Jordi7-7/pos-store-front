@@ -43,6 +43,7 @@ export const downloadVariantsTemplate = () => {
     ['Un producto sin atributos y sin "SKU base" es un producto simple (como el tornillo del ejemplo).'],
     ['Obligatorio: Producto, SKU y Precio de venta. En las variantes también el SKU base y los atributos.'],
     ['Todas las variantes de un producto usan los mismos atributos (p. ej. todas con Talla y Color) y no pueden repetir la combinación.'],
+    ['Cada fila admite hasta 5 atributos (columnas "Atributo 1" a "Atributo 5"), por ejemplo las cuatro piezas de una mochila y el cierre.'],
     ['Si la categoría, el atributo o el valor no existen, se crean. No hace falta crearlos antes.'],
     ['Las existencias se guardan en la sucursal que elijas al importar. Máximo 2000 filas por archivo.'],
     ['Primero se revisa el archivo y se te muestran los errores por fila; no se guarda nada hasta que lo confirmes.'],

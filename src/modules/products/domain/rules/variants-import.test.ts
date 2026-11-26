@@ -22,6 +22,17 @@ describe('normalizeHeader', () => {
 });
 
 describe('parseImportSheet', () => {
+  it('lee hasta cinco atributos por fila (mochila: cuatro piezas y el cierre)', () => {
+    const pieces = ['Frente', 'Bolsillo', 'Laterales', 'Base', 'Cierre'];
+    const attributes = Object.fromEntries(pieces.flatMap((piece, i) => [[`Atributo ${i + 1}`, piece], [`Valor ${i + 1}`, `Color ${i + 1}`]]));
+
+    const { rows } = parseImportSheet([record(attributes)]);
+
+    expect(rows[0]?.attributes).toEqual(pieces.map((name, i) => ({ name, value: `Color ${i + 1}` })));
+    expect(TEMPLATE_HEADERS).toEqual(expect.arrayContaining(['Atributo 5', 'Valor 5']));
+    expect(TEMPLATE_HEADERS).not.toContain('Atributo 6');
+  });
+
   it('lee una fila con sus atributos y números', () => {
     const { rows, problems, missingColumns } = parseImportSheet([record({ __rowNum__: 1 })]);
 
