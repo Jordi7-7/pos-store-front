@@ -5,20 +5,12 @@ export interface BarcodeEngine {
   detect(video: HTMLVideoElement): Promise<string | null>;
 }
 
-interface NativeDetector {
-  detect(source: CanvasImageSource): Promise<Array<{ rawValue: string }>>;
-}
-interface NativeDetectorConstructor {
-  new (options: { formats: string[] }): NativeDetector;
-  getSupportedFormats?: () => Promise<string[]>;
-}
-
 const NATIVE_FORMATS = ['code_128', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_39'];
 /** Se baja el fotograma a este ancho antes de leerlo: más rápido y suficiente para un código a unos centímetros. */
 const MAX_FRAME_WIDTH = 960;
 
 async function nativeEngine(): Promise<BarcodeEngine | null> {
-  const Detector = (window as unknown as { BarcodeDetector?: NativeDetectorConstructor }).BarcodeDetector;
+  const Detector = window.BarcodeDetector;
   if (!Detector) return null;
   try {
     const supported = (await Detector.getSupportedFormats?.()) ?? [];

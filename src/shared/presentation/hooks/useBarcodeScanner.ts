@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { acceptScan, normalizeScan, type LastScan } from '../../domain/rules/scan-filter';
+import { classifyCameraFailure } from '../../domain/rules/camera-error';
 import { createBarcodeEngine } from '../../infrastructure/scanner/barcode-engine';
+import { applyAdvanced, keepScreenAwake, listCameras, openCamera, readAbilities, rememberCamera, savedCamera, startDetection, type ZoomRange } from '../../infrastructure/scanner/camera';
 
 export type ScannerStatus = 'starting' | 'scanning' | 'denied' | 'no-camera' | 'insecure' | 'error';
+export type { ZoomRange };
 
 interface Options {
   /** La cámara solo se enciende mientras esto sea `true`. */
@@ -15,45 +17,15 @@ interface Options {
 
 const SCAN_INTERVAL_MS = 120;
 
-interface ExtendedCapabilities extends MediaTrackCapabilities {
-  torch?: boolean;
-  zoom?: { min: number; max: number; step: number };
-}
-
-export interface ZoomRange {
-  min: number;
-  max: number;
-  step: number;
-  value: number;
-}
-
-const CAMERA_KEY = 'pos_scanner_camera';
-
-const savedCamera = (): string | undefined => {
-  try {
-    return localStorage.getItem(CAMERA_KEY) ?? undefined;
-  } catch {
-    return undefined;
-  }
-};
-const rememberCamera = (id: string | undefined) => {
-  try {
-    if (id) localStorage.setItem(CAMERA_KEY, id);
-    else localStorage.removeItem(CAMERA_KEY);
-  } catch {
-    // sin almacenamiento solo se olvida la elección
-  }
-};
-
 /**
- * Enciende la cámara trasera, lee códigos de barras y los entrega. Se apaga sola al desactivarse o al desmontarse.
- * Devuelve el `ref` del elemento `<video>`, el estado y los controles de cambiar de cámara y de linterna.
+ * Enciende la cámara, lee códigos de barras y los entrega. Se apaga sola al desactivarse o al desmontarse.
+ * Devuelve el `ref` del elemento `<video>`, el estado y los controles de cámara, linterna y zoom.
  */
 export function useBarcodeScanner({ active, onCode, absenceMs = 700 }: Options) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const trackRef = useRef<MediaStreamTrack | null>(null);
   const onCodeRef = useRef(onCode);
   onCodeRef.current = onCode;
-  const trackRef = useRef<MediaStreamTrack | null>(null);
   const [status, setStatus] = useState<ScannerStatus>('starting');
   const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
   const [deviceId, setDeviceId] = useState<string | undefined>(savedCamera);
@@ -65,84 +37,52 @@ export function useBarcodeScanner({ active, onCode, absenceMs = 700 }: Options) 
     if (!active) return;
     setStatus('starting');
     setTorchOn(false);
-    if (!window.isSecureContext) {
-      setStatus('insecure');
-      return;
-    }
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setStatus('no-camera');
-      return;
-    }
+    if (!window.isSecureContext) return setStatus('insecure');
+    if (!navigator.mediaDevices?.getUserMedia) return setStatus('no-camera');
 
-    let attachedVideo: HTMLVideoElement | null = null;
     let cancelled = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
     let stream: MediaStream | null = null;
-    let wakeLock: WakeLockSentinel | null = null;
-    // Que la pantalla no se apague a mitad de un escaneo
-    void navigator.wakeLock?.request('screen').then((lock) => (wakeLock = lock), () => undefined);
+    let attachedVideo: HTMLVideoElement | null = null;
+    let stopDetection: (() => void) | null = null;
+    const releaseScreen = keepScreenAwake();
 
     const start = async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: false,
-          video: { ...(deviceId ? { deviceId: { exact: deviceId } } : { facingMode: { ideal: 'environment' } }), width: { ideal: 1280 }, height: { ideal: 720 } },
-        });
-        if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
+        stream = await openCamera(deviceId);
+        if (cancelled) return stream.getTracks().forEach((track) => track.stop()); // se cerró mientras la cámara arrancaba
         const track = stream.getVideoTracks()[0] ?? null;
         trackRef.current = track;
-        const capabilities = track?.getCapabilities?.() as ExtendedCapabilities | undefined;
-        setTorchSupported(Boolean(capabilities?.torch));
-        const zoomRange = capabilities?.zoom;
-        const currentZoom = (track?.getSettings() as { zoom?: number } | undefined)?.zoom;
-        setZoom(zoomRange ? { ...zoomRange, value: Number(currentZoom ?? zoomRange.min) } : null);
+        const abilities = track ? readAbilities(track) : { torch: false, zoom: null };
+        setTorchSupported(abilities.torch);
+        setZoom(abilities.zoom);
         const video = videoRef.current;
         if (!video) return;
         attachedVideo = video;
         video.srcObject = stream;
         await video.play();
-        setCameras((await navigator.mediaDevices.enumerateDevices()).filter((device) => device.kind === 'videoinput'));
+        setCameras(await listCameras());
         const engine = await createBarcodeEngine();
         if (cancelled) return;
         setStatus('scanning');
-
-        let last: LastScan | null = null;
-        const tick = async () => {
-          if (cancelled) return;
-          try {
-            const code = normalizeScan((await engine.detect(video)) ?? '');
-            const now = Date.now();
-            const isNew = acceptScan(code, last, now, absenceMs);
-            if (code) last = { code, at: now };
-            if (isNew) onCodeRef.current(code);
-          } catch {
-            // un fotograma que falla no apaga la cámara
-          }
-          if (!cancelled) timer = setTimeout(() => void tick(), SCAN_INTERVAL_MS);
-        };
-        void tick();
+        stopDetection = startDetection(video, engine, { intervalMs: SCAN_INTERVAL_MS, absenceMs, onCode: (code) => onCodeRef.current(code) });
       } catch (error) {
         if (cancelled) return;
-        const name = error instanceof DOMException ? error.name : '';
-        if (name === 'OverconstrainedError' && deviceId) {
-          // La cámara recordada ya no está (otro teléfono, otro permiso): se vuelve a la trasera por defecto
+        const failure = classifyCameraFailure(error instanceof DOMException ? error.name : '', Boolean(deviceId));
+        if (failure === 'remembered-camera-missing') {
           rememberCamera(undefined);
-          setDeviceId(undefined);
+          setDeviceId(undefined); // vuelve a la trasera por defecto
           return;
         }
-        setStatus(name === 'NotAllowedError' || name === 'SecurityError' ? 'denied' : name === 'NotFoundError' || name === 'OverconstrainedError' ? 'no-camera' : 'error');
+        setStatus(failure);
       }
     };
     void start();
 
     return () => {
       cancelled = true;
-      if (timer) clearTimeout(timer);
+      stopDetection?.();
       stream?.getTracks().forEach((track) => track.stop());
-      void wakeLock?.release().catch(() => undefined);
+      releaseScreen();
       trackRef.current = null;
       if (attachedVideo) attachedVideo.srcObject = null;
     };
@@ -161,24 +101,15 @@ export function useBarcodeScanner({ active, onCode, absenceMs = 700 }: Options) 
   const toggleTorch = useCallback(async () => {
     const track = trackRef.current;
     if (!track) return;
-    const next = !torchOn;
-    try {
-      await track.applyConstraints({ advanced: [{ torch: next } as MediaTrackConstraintSet] });
-      setTorchOn(next);
-    } catch {
-      setTorchSupported(false);
-    }
+    if (await applyAdvanced(track, { torch: !torchOn })) setTorchOn(!torchOn);
+    else setTorchSupported(false);
   }, [torchOn]);
 
   const changeZoom = useCallback(async (value: number) => {
     const track = trackRef.current;
     if (!track) return;
-    try {
-      await track.applyConstraints({ advanced: [{ zoom: value } as MediaTrackConstraintSet] });
-      setZoom((current) => (current ? { ...current, value } : current));
-    } catch {
-      setZoom(null);
-    }
+    if (await applyAdvanced(track, { zoom: value })) setZoom((current) => (current ? { ...current, value } : current));
+    else setZoom(null);
   }, []);
 
   return { videoRef, status, zoom, changeZoom, canSwitchCamera: cameras.length > 1, switchCamera, torchSupported, torchOn, toggleTorch };
