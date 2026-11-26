@@ -43,7 +43,9 @@ test('crear con variantes: la tabla se arma sola al marcar opciones y conserva l
     await page.getByLabel(/Nombre del producto/).fill(name);
 
     // Los atributos se agregan a demanda (el catálogo puede tener decenas); el nuevo aparece entre los disponibles
-    await page.getByLabel('Buscar atributo').fill(`E2E Atributo ${stamp}`);
+    // (el buscador solo aparece cuando el catálogo tiene más de 12 atributos)
+    const search = page.getByLabel('Buscar atributo');
+    if ((await search.count()) > 0) await search.fill(`E2E Atributo ${stamp}`);
     await page.getByRole('button', { name: `E2E Atributo ${stamp}` }).click();
 
     // Dos opciones dan dos variantes, con SKU a partir de sus valores

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 import type { CreatedVariantEntity } from '../../domain/entities/catalog.entity';
@@ -7,10 +7,10 @@ import {
   mergeEditableRows,
   toEditableRow,
   toVariantUpdate,
-  validateRowsForSave,
   type BulkPrices,
   type EditableVariantRow,
 } from '../../domain/rules/variant-rows';
+import { findRowIssues, summarizeRowIssues } from '../../domain/rules/variant-edit';
 import type { ProductVM } from '../view-models/product.vm';
 import { useProductMutations } from './useProductMutations';
 
@@ -22,6 +22,7 @@ export function useVariantRows(product: ProductVM | null, isOpen: boolean) {
   const { updateVariant, isUpdatingVariant, deleteVariant, isDeletingVariant } = useProductMutations();
   const [rows, setRows] = useState<EditableVariantRow[]>([]);
   const loadedProductId = useRef<string | null>(null);
+  const issues = useMemo(() => findRowIssues(rows), [rows]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -73,9 +74,9 @@ export function useVariantRows(product: ProductVM | null, isOpen: boolean) {
       toast.info('No se han modificado variantes.');
       return true;
     }
-    const validation = validateRowsForSave(rows);
-    if (!validation.ok) {
-      toast.error(validation.message);
+    const problem = summarizeRowIssues(rows, issues);
+    if (problem) {
+      toast.error(problem);
       return false;
     }
     try {
@@ -108,6 +109,7 @@ export function useVariantRows(product: ProductVM | null, isOpen: boolean) {
 
   return {
     rows,
+    issues,
     hasChanges: rows.some((row) => row.hasChanged),
     isBusy: isUpdatingVariant,
     isDeleting: isDeletingVariant,

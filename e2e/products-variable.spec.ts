@@ -71,15 +71,30 @@ test('producto variable: editar el padre, cambiar el precio de una variante y a�
     // Añadir una variante nueva (talla L): el diálogo solo ofrece los atributos que ya usa el producto
     await page.getByRole('button', { name: /Nueva variante/i }).click();
     const dialog = page.getByRole('dialog').filter({ hasText: 'Agregar Nueva Variante' });
+    // Sin elegir la opción avisa cuál falta; con una combinación que el producto ya tiene, avisa con qué SKU
+    await dialog.getByRole('button', { name: 'Crear Variante' }).click();
+    await expect(dialog.getByText(`Elige E2E Talla ${stamp}.`)).toBeVisible();
+    await dialog.locator('select').selectOption({ label: 'S' });
+    await expect(dialog.getByText(new RegExp(`Ya existe esa combinación \\(${baseSku}-S\\)`))).toBeVisible();
+    // Con una combinación libre, el SKU se propone solo a partir del SKU base y la opción
     await dialog.locator('select').selectOption({ label: 'L' });
-    await dialog.getByPlaceholder('Ej. CAM-AZU-XL').fill(`${baseSku}-L`);
+    await expect(dialog.getByPlaceholder('Ej. CAM-AZU-XL')).toHaveValue(`${baseSku}-L`);
     const variantCreated = page.waitForResponse((r) => /\/products\/[^/]+\/variants$/.test(r.url()) && r.request().method() === 'POST', { timeout: 15_000 });
     await dialog.getByRole('button', { name: 'Crear Variante' }).click();
     expect((await variantCreated).status()).toBe(201);
     await expect(page.getByText(`E2E Talla ${stamp}: L`)).toBeVisible();
 
-    // 3. Cambiar el precio de venta de la primera variante
+    // 3. Un precio negativo se señala con su motivo y no deja guardar
     const firstRow = page.getByRole('dialog').locator('tbody tr').first();
+    await firstRow.locator('input').nth(3).fill('-5', { timeout: 10_000 });
+    await expect(firstRow.getByRole('alert')).toContainText('Venta: Debe ser 0 o más.');
+    await page.getByRole('button', { name: 'Guardar Todos los Cambios' }).click();
+    await expect(page.getByText(/Corrige la variante/)).toBeVisible();
+    // La ventana sigue abierta con lo escrito y no se guardó nada (ni siquiera el nombre del padre)
+    await expect(page.getByRole('dialog').filter({ hasText: 'Editar Producto Compuesto' })).toBeVisible();
+    expect((await admin.call<ProductsPage>('GET', `/products?search=${baseSku}&limit=5`)).data.data[0]?.name).toBe(name);
+
+    // Cambiar el precio de venta de la primera variante
     await firstRow.locator('input').nth(3).fill('150', { timeout: 10_000 }); // SKU, código de barras, compra, venta, mayoreo
 
     const saved = page.waitForResponse((r) => /\/products\/variants\/[^/]+$/.test(r.url()) && r.request().method() === 'PUT', { timeout: 15_000 });

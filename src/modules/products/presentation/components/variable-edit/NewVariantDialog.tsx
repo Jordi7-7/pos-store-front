@@ -8,6 +8,7 @@ import { FieldLabel } from '@/components/ui/field';
 import type { AttributeEntity as Attribute } from '../../../domain/entities/catalog.entity';
 import type { NewVariantInput } from '../../../application/ports/products.repository';
 import type { VariantSuggestion } from '../../../domain/rules/variant-suggestion';
+import { findNewVariantIssues, suggestSkuForNewVariant, type ExistingVariant } from '../../../domain/rules/variant-edit';
 
 interface NewVariantDialogProps {
   open: boolean;
@@ -16,6 +17,10 @@ interface NewVariantDialogProps {
   suggestion: VariantSuggestion;
   /** Solo los atributos que ya usa el producto. */
   attributes: Attribute[];
+  /** SKU base del producto: de él y de las opciones elegidas sale el SKU propuesto. */
+  baseSku: string;
+  /** Variantes que el producto ya tiene (para no repetir combinación ni SKU). */
+  existing: ExistingVariant[];
   /** Sucursal donde se carga el stock inicial; sin ella no se pide stock. */
   branchId?: string;
   isSubmitting: boolean;
@@ -23,7 +28,7 @@ interface NewVariantDialogProps {
 }
 
 /** Diálogo para añadir una variante a un producto: combinación de atributos, SKU, precios y stock inicial. */
-export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpenChange, suggestion, attributes, branchId, isSubmitting, onSubmit }) => {
+export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpenChange, suggestion, attributes, baseSku, existing, branchId, isSubmitting, onSubmit }) => {
   // Estado del formulario: solo le interesa a este diálogo; se reinicia con la propuesta cada vez que se abre
   const [newVariantSku, setNewVariantSku] = useState('');
   const [newVariantBarcode, setNewVariantBarcode] = useState('');
@@ -32,6 +37,8 @@ export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpen
   const [newVariantWholesalePrice, setNewVariantWholesalePrice] = useState('');
   const [newVariantInitialStock, setNewVariantInitialStock] = useState('0');
   const [newVariantSelectedValues, setNewVariantSelectedValues] = useState<Record<string, string>>({}); // attrId -> valueId
+  const [skuEdited, setSkuEdited] = useState(false);
+  const [attempted, setAttempted] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -42,18 +49,39 @@ export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpen
     setNewVariantWholesalePrice(suggestion.wholesalePrice);
     setNewVariantInitialStock('0');
     setNewVariantSelectedValues({});
+    setSkuEdited(false);
+    setAttempted(false);
   }, [open, suggestion]);
 
+  const draft = {
+    selected: newVariantSelectedValues,
+    sku: newVariantSku,
+    purchasePrice: newVariantPurchasePrice,
+    salePrice: newVariantSalePrice,
+    wholesalePrice: newVariantWholesalePrice,
+    stock: newVariantInitialStock,
+  };
+  const issues = findNewVariantIssues(draft, attributes, existing);
+  const allChosen = attributes.length > 0 && attributes.every((attribute) => newVariantSelectedValues[attribute.id]);
+  // Problemas visibles: todo tras el primer intento de crear; antes, solo que la combinación ya exista (se sabe al elegir la última opción)
+  const shown = attempted ? issues : { combination: allChosen ? issues.combination : undefined };
+
+  const chooseValue = (attributeId: string, valueId: string) => {
+    const next = { ...newVariantSelectedValues, [attributeId]: valueId };
+    setNewVariantSelectedValues(next);
+    if (skuEdited) return;
+    const names = attributes.map((attribute) => attribute.values.find((value) => value.id === next[attribute.id])?.value).filter((name): name is string => Boolean(name));
+    const proposed = suggestSkuForNewVariant(baseSku, names, existing.map((variant) => variant.sku));
+    if (proposed) setNewVariantSku(proposed);
+  };
+
   const submit = () => {
-    if (!newVariantSku.trim()) {
-      toast.warning('Por favor ingresa un SKU para la nueva variante.');
+    setAttempted(true);
+    if (Object.keys(issues).length > 0) {
+      toast.warning(Object.values(issues)[0]);
       return;
     }
-    const selectedAttrValueIds = Object.values(newVariantSelectedValues).filter(Boolean);
-    if (selectedAttrValueIds.length === 0) {
-      toast.warning('Selecciona al menos un valor de atributo (ej. Talla o Color) para la nueva combinación.');
-      return;
-    }
+    const selectedAttrValueIds = attributes.map((attribute) => newVariantSelectedValues[attribute.id]).filter((id): id is string => Boolean(id));
     void onSubmit({
       sku: newVariantSku.trim().toUpperCase(),
       barcode: newVariantBarcode.trim() || undefined,
@@ -99,12 +127,8 @@ export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpen
                   </FieldLabel>
                   <select
                     value={newVariantSelectedValues[attr.id] || ''}
-                    onChange={(e) =>
-                      setNewVariantSelectedValues((prev) => ({
-                        ...prev,
-                        [attr.id]: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => chooseValue(attr.id, e.target.value)}
+                    aria-invalid={attempted && !newVariantSelectedValues[attr.id]}
                     className="w-full h-8.5 rounded-lg border border-input bg-background px-2.5 text-xs text-foreground shadow-2xs focus:outline-none focus:ring-1 focus:ring-primary font-medium"
                   >
                     <option value="">Seleccionar {attr.name}...</option>
@@ -117,6 +141,11 @@ export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpen
                 </div>
               ))}
             </div>
+            {shown.combination && (
+              <p role="alert" className="text-xs font-medium text-destructive">
+                {shown.combination}
+              </p>
+            )}
           </div>
 
           {/* SKU & Código de Barras */}
@@ -127,12 +156,15 @@ export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpen
               </FieldLabel>
               <Input
                 value={newVariantSku}
-                onChange={(e) =>
-                  setNewVariantSku(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))
-                }
+                onChange={(e) => {
+                  setSkuEdited(true);
+                  setNewVariantSku(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''));
+                }}
+                aria-invalid={Boolean(shown.sku)}
                 placeholder="Ej. CAM-AZU-XL"
                 className="text-xs h-8.5 font-mono font-bold bg-background"
               />
+              {shown.sku && <p role="alert" className="text-xs font-medium text-destructive">{shown.sku}</p>}
             </div>
             <div className="space-y-1">
  <FieldLabel className="text-xs font-bold text-secondary">
@@ -157,6 +189,8 @@ export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpen
                 type="number"
                 step="0.01"
                 value={newVariantPurchasePrice}
+                min={0}
+                aria-invalid={Boolean(shown.purchasePrice)}
                 onChange={(e) => setNewVariantPurchasePrice(e.target.value)}
                 className="text-xs h-8.5 font-mono bg-background"
               />
@@ -169,6 +203,8 @@ export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpen
                 type="number"
                 step="0.01"
                 value={newVariantSalePrice}
+                min={0}
+                aria-invalid={Boolean(shown.salePrice)}
                 onChange={(e) => setNewVariantSalePrice(e.target.value)}
                 className="text-xs h-8.5 font-mono font-bold text-primary bg-background border-primary/30"
               />
@@ -182,11 +218,17 @@ export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpen
                 step="0.01"
                 placeholder="N/A"
                 value={newVariantWholesalePrice}
+                min={0}
+                aria-invalid={Boolean(shown.wholesalePrice)}
                 onChange={(e) => setNewVariantWholesalePrice(e.target.value)}
                 className="text-xs h-8.5 font-mono bg-background"
               />
             </div>
           </div>
+
+          {(shown.purchasePrice || shown.salePrice || shown.wholesalePrice) && (
+            <p role="alert" className="text-xs font-medium text-destructive">Los precios deben ser 0 o más.</p>
+          )}
 
           {/* Stock inicial en sucursal */}
           {branchId && (
@@ -198,9 +240,12 @@ export const NewVariantDialog: React.FC<NewVariantDialogProps> = ({ open, onOpen
                 type="number"
                 step="1"
                 value={newVariantInitialStock}
+                min={0}
+                aria-invalid={Boolean(shown.stock)}
                 onChange={(e) => setNewVariantInitialStock(e.target.value)}
                 className="text-xs h-8.5 font-mono w-32 bg-background"
               />
+              {shown.stock && <p role="alert" className="text-xs font-medium text-destructive">La existencia inicial debe ser 0 o más.</p>}
             </div>
           )}
         </div>

@@ -6,11 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { normalizeSkuInput, splitVariantSku, type EditableVariantRow } from '../../../domain/rules/variant-rows';
+import type { RowIssues } from '../../../domain/rules/variant-edit';
 
 type ChangeField = (id: string, field: keyof EditableVariantRow, value: string | number | null) => void;
 
 interface VariantsTableProps {
   rows: EditableVariantRow[];
+  /** Problemas por id de fila (SKU vacío o repetido, precios negativos). */
+  issues: Record<string, RowIssues>;
   /** SKU base escrito ahora en el formulario del padre y el que tiene guardado el producto (los SKU de variante llevan ese prefijo). */
   currentBaseSku: string;
   savedBaseSku: string;
@@ -22,19 +25,20 @@ interface VariantsTableProps {
 }
 
 /** SKU de la variante: el prefijo del SKU base queda fijo y solo se edita el final. */
-const SkuField: React.FC<{ row: EditableVariantRow; currentBaseSku: string; savedBaseSku: string; onChange: ChangeField }> = ({ row, currentBaseSku, savedBaseSku, onChange }) => {
+const SkuField: React.FC<{ row: EditableVariantRow; currentBaseSku: string; savedBaseSku: string; onChange: ChangeField; error?: string }> = ({ row, currentBaseSku, savedBaseSku, onChange, error }) => {
   const { prefix, suffix } = splitVariantSku(row.sku || '', currentBaseSku, savedBaseSku);
   if (!prefix) {
-    return <Input value={row.sku} onChange={(e) => onChange(row.id, 'sku', normalizeSkuInput(e.target.value))} aria-label="SKU" className="w-full font-mono text-xs font-semibold md:w-36" />;
+    return <Input value={row.sku} onChange={(e) => onChange(row.id, 'sku', normalizeSkuInput(e.target.value))} aria-label="SKU" aria-invalid={Boolean(error)} className="w-full font-mono text-xs font-semibold md:w-36" />;
   }
   return (
-    <div className="flex w-full items-center overflow-hidden rounded-lg border border-input bg-card focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 md:w-40">
+    <div className={`flex w-full items-center overflow-hidden rounded-lg border bg-card focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 md:w-40 ${error ? 'border-destructive' : 'border-input'}`}>
       <span className="shrink-0 border-r border-border-card bg-muted/70 px-2 py-2 font-mono text-xs font-semibold text-foreground">{prefix}-</span>
       <input
         type="text"
         value={suffix}
         onChange={(e) => onChange(row.id, 'sku', `${prefix}-${normalizeSkuInput(e.target.value)}`)}
         aria-label="SKU"
+        aria-invalid={Boolean(error)}
         className="w-full min-w-0 bg-transparent px-2 py-1.5 font-mono text-xs font-semibold text-foreground outline-none placeholder:text-muted-foreground"
         placeholder="1"
       />
@@ -58,20 +62,38 @@ const PhotoButton: React.FC<{ row: EditableVariantRow; onPick: (id: string) => v
   );
 };
 
-const Combination: React.FC<{ row: EditableVariantRow }> = ({ row }) => (
-  <span className="flex flex-wrap items-center gap-1.5">
-    <Badge variant="outline" className="h-6 bg-card px-2 font-medium text-foreground">
-      {row.combinationText}
-    </Badge>
-    {row.hasChanged && <span className="text-xs font-medium text-primary">Modificado</span>}
+const FIELD_LABELS: Record<keyof RowIssues, string> = { sku: 'SKU', purchasePrice: 'Compra', salePrice: 'Venta', wholesalePrice: 'Mayoreo' };
+
+/** Cada problema de la fila con el nombre del campo (el borde rojo solo no dice qué corregir). */
+const IssueText: React.FC<{ issues?: RowIssues }> = ({ issues }) => {
+  const entries = (Object.entries(issues ?? {}) as Array<[keyof RowIssues, string]>).filter(([, message]) => message);
+  if (entries.length === 0) return null;
+  return (
+    <span role="alert" className="mt-1 block text-xs font-medium text-destructive">
+      {entries.map(([field, message]) => `${FIELD_LABELS[field]}: ${message}`).join(' · ')}
+    </span>
+  );
+};
+
+const Combination: React.FC<{ row: EditableVariantRow; issues?: RowIssues }> = ({ row, issues }) => (
+  <span className="block">
+    <span className="flex flex-wrap items-center gap-1.5">
+      <Badge variant="outline" className="h-6 bg-card px-2 font-medium text-foreground">
+        {row.combinationText}
+      </Badge>
+      {row.hasChanged && <span className="text-xs font-medium text-primary">Modificado</span>}
+    </span>
+    <IssueText issues={issues} />
   </span>
 );
 
-const NumberField: React.FC<{ label: string; row: EditableVariantRow; field: 'purchasePrice' | 'salePrice' | 'wholesalePrice'; onChange: ChangeField; placeholder?: string; bold?: boolean }> = ({ label, row, field, onChange, placeholder, bold }) => (
+const NumberField: React.FC<{ label: string; row: EditableVariantRow; field: 'purchasePrice' | 'salePrice' | 'wholesalePrice'; onChange: ChangeField; placeholder?: string; bold?: boolean; error?: string }> = ({ label, row, field, onChange, placeholder, bold, error }) => (
   <Input
     type="number"
     step="0.01"
     aria-label={label}
+    aria-invalid={Boolean(error)}
+    min={0}
     placeholder={placeholder}
     value={row[field] ?? ''}
     onChange={(e) => onChange(row.id, field, field === 'wholesalePrice' && e.target.value === '' ? null : e.target.value)}
@@ -80,7 +102,7 @@ const NumberField: React.FC<{ label: string; row: EditableVariantRow; field: 'pu
 );
 
 /** Lista de variantes activas, editable (SKU, código de barras, precios, foto) con alta y baja: tabla en pantallas anchas y tarjetas en móvil. */
-export const VariantsTable: React.FC<VariantsTableProps> = ({ rows, currentBaseSku, savedBaseSku, isDeleting, onChangeField, onDelete, onPickImage, onAddVariant }) => {
+export const VariantsTable: React.FC<VariantsTableProps> = ({ rows, issues, currentBaseSku, savedBaseSku, isDeleting, onChangeField, onDelete, onPickImage, onAddVariant }) => {
   // Se dibuja una sola de las dos vistas (no una oculta por CSS): así no hay controles duplicados en la página.
   const isMobile = useIsMobile();
   return (
@@ -124,12 +146,12 @@ export const VariantsTable: React.FC<VariantsTableProps> = ({ rows, currentBaseS
             {rows.map((row) => (
               <tr key={row.id} className={`transition-colors hover:bg-muted/30 ${row.hasChanged ? 'bg-primary/5' : ''}`}>
                 <td className="px-2 py-2 text-center"><PhotoButton row={row} onPick={onPickImage} /></td>
-                <td className="px-2 py-2"><Combination row={row} /></td>
-                <td className="px-2 py-2"><SkuField row={row} currentBaseSku={currentBaseSku} savedBaseSku={savedBaseSku} onChange={onChangeField} /></td>
+                <td className="px-2 py-2"><Combination row={row} issues={issues[row.id]} /></td>
+                <td className="px-2 py-2"><SkuField row={row} currentBaseSku={currentBaseSku} savedBaseSku={savedBaseSku} onChange={onChangeField} error={issues[row.id]?.sku} /></td>
                 <td className="px-2 py-2"><Input value={row.barcode} onChange={(e) => onChangeField(row.id, 'barcode', e.target.value)} placeholder="Opcional" aria-label="Código de barras" className="w-28 font-mono text-xs" /></td>
-                <td className="px-2 py-2"><NumberField label="Precio de compra" row={row} field="purchasePrice" onChange={onChangeField} /></td>
-                <td className="px-2 py-2"><NumberField label="Precio de venta" row={row} field="salePrice" onChange={onChangeField} bold /></td>
-                <td className="px-2 py-2"><NumberField label="Precio de mayoreo" row={row} field="wholesalePrice" onChange={onChangeField} placeholder="N/A" /></td>
+                <td className="px-2 py-2"><NumberField label="Precio de compra" row={row} field="purchasePrice" onChange={onChangeField} error={issues[row.id]?.purchasePrice} /></td>
+                <td className="px-2 py-2"><NumberField label="Precio de venta" row={row} field="salePrice" onChange={onChangeField} bold error={issues[row.id]?.salePrice} /></td>
+                <td className="px-2 py-2"><NumberField label="Precio de mayoreo" row={row} field="wholesalePrice" onChange={onChangeField} placeholder="N/A" error={issues[row.id]?.wholesalePrice} /></td>
                 <td className="px-2 py-2 text-center">
                   <Button type="button" variant="ghost" size="icon-sm" onClick={() => onDelete(row.id, row.sku)} disabled={isDeleting} title="Eliminar esta variante" aria-label="Eliminar esta variante" className="text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500">
                     <Trash2 />
@@ -149,17 +171,17 @@ export const VariantsTable: React.FC<VariantsTableProps> = ({ rows, currentBaseS
           <li key={row.id} className={`space-y-3 p-4 ${row.hasChanged ? 'bg-primary/5' : ''}`}>
             <div className="flex items-center gap-3">
               <PhotoButton row={row} onPick={onPickImage} />
-              <div className="min-w-0 flex-1"><Combination row={row} /></div>
+              <div className="min-w-0 flex-1"><Combination row={row} issues={issues[row.id]} /></div>
               <Button type="button" variant="ghost" size="icon-sm" onClick={() => onDelete(row.id, row.sku)} disabled={isDeleting} title="Eliminar esta variante" aria-label="Eliminar esta variante" className="text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500">
                 <Trash2 />
               </Button>
             </div>
-            <SkuField row={row} currentBaseSku={currentBaseSku} savedBaseSku={savedBaseSku} onChange={onChangeField} />
+            <SkuField row={row} currentBaseSku={currentBaseSku} savedBaseSku={savedBaseSku} onChange={onChangeField} error={issues[row.id]?.sku} />
             <Input value={row.barcode} onChange={(e) => onChangeField(row.id, 'barcode', e.target.value)} placeholder="Código de barras (opcional)" aria-label="Código de barras" className="w-full font-mono text-xs" />
             <div className="grid grid-cols-3 gap-2">
-              <label className="space-y-1 text-xs text-muted-foreground">Compra<NumberField label="Precio de compra" row={row} field="purchasePrice" onChange={onChangeField} /></label>
-              <label className="space-y-1 text-xs font-medium text-foreground">Venta<NumberField label="Precio de venta" row={row} field="salePrice" onChange={onChangeField} bold /></label>
-              <label className="space-y-1 text-xs text-muted-foreground">Mayoreo<NumberField label="Precio de mayoreo" row={row} field="wholesalePrice" onChange={onChangeField} placeholder="N/A" /></label>
+              <label className="space-y-1 text-xs text-muted-foreground">Compra<NumberField label="Precio de compra" row={row} field="purchasePrice" onChange={onChangeField} error={issues[row.id]?.purchasePrice} /></label>
+              <label className="space-y-1 text-xs font-medium text-foreground">Venta<NumberField label="Precio de venta" row={row} field="salePrice" onChange={onChangeField} bold error={issues[row.id]?.salePrice} /></label>
+              <label className="space-y-1 text-xs text-muted-foreground">Mayoreo<NumberField label="Precio de mayoreo" row={row} field="wholesalePrice" onChange={onChangeField} placeholder="N/A" error={issues[row.id]?.wholesalePrice} /></label>
             </div>
           </li>
         ))}

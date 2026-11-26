@@ -15,6 +15,7 @@ import { useProductMutations } from '../hooks/useProductMutations';
 import { useVariantRows } from '../hooks/useVariantRows';
 import type { NewVariantInput } from '../../application/ports/products.repository';
 import { attributesUsedBy } from '../../domain/rules/product-attributes';
+import { summarizeRowIssues, type ExistingVariant } from '../../domain/rules/variant-edit';
 import { suggestNewVariant, type VariantSuggestion } from '../../domain/rules/variant-suggestion';
 import { BulkAssignPanel } from './variable-edit/BulkAssignPanel';
 import { ImagePickerModals } from './variable-edit/ImagePickerModals';
@@ -53,6 +54,11 @@ export const ProductVariableEditModal: React.FC<ProductVariableEditModalProps> =
   const [suggestion, setSuggestion] = useState<VariantSuggestion | null>(null);
   const productAttributes = useMemo(() => attributesUsedBy(product?.variants ?? [], attributes), [product, attributes]);
 
+  const existingVariants = useMemo<ExistingVariant[]>(
+    () => (product?.variants ?? []).map((variant) => ({ sku: variant.sku, valueIds: variant.attributes.map((attribute) => attribute.valueId).filter((id): id is string => Boolean(id)), label: variant.attributes.map((attribute) => `${attribute.name}: ${attribute.value}`).join(' · ') })),
+    [product],
+  );
+
   const openAddVariant = () => {
     const first = variants.rows[0];
     setSuggestion(suggestNewVariant({ skus: variants.rows.map((row) => row.sku), productName: product?.name ?? '', firstPrices: first }));
@@ -71,12 +77,13 @@ export const ProductVariableEditModal: React.FC<ProductVariableEditModalProps> =
     }
   };
 
-  const saveParent = async () => {
-    if (!productId) return;
+  /** Guarda la ficha del padre. Devuelve `false` si algo falló (la ventana debe quedar abierta con lo escrito). */
+  const saveParent = async (): Promise<boolean> => {
+    if (!productId) return true;
     const values = parent.getValues();
     if (!values.name.trim()) {
       toast.warning('El nombre del producto no puede estar vacío.');
-      return;
+      return false;
     }
     try {
       await updateProduct({
@@ -90,14 +97,31 @@ export const ProductVariableEditModal: React.FC<ProductVariableEditModalProps> =
         },
       });
       toast.success('¡Información del producto padre guardada con éxito!');
+      return true;
     } catch (err) {
       toast.error(getErrorMessage(err, 'Error al actualizar el producto.'));
+      return false;
     }
   };
 
   const saveAllAndClose = async () => {
-    await saveParent();
-    if (variants.hasChanges) await variants.saveChanged();
+    // Si algo no se guardó (nombre vacío, precio negativo, error del servidor) la ventana sigue abierta para corregirlo
+    if (variants.hasChanges) {
+      const problem = summarizeRowIssues(variants.rows, variants.issues);
+      if (problem) {
+        setActiveTab('variants');
+        toast.error(problem);
+        return;
+      }
+    }
+    if (!(await saveParent())) {
+      setActiveTab('info');
+      return;
+    }
+    if (variants.hasChanges && !(await variants.saveChanged())) {
+      setActiveTab('variants');
+      return;
+    }
     onClose();
   };
 
@@ -166,6 +190,7 @@ export const ProductVariableEditModal: React.FC<ProductVariableEditModalProps> =
                   <BulkAssignPanel onApply={variants.applyBulk} />
                   <VariantsTable
                     rows={variants.rows}
+                    issues={variants.issues}
                     currentBaseSku={parent.currentBaseSku}
                     savedBaseSku={product?.baseSku ?? ''}
                     isDeleting={variants.isDeleting}
@@ -199,6 +224,8 @@ export const ProductVariableEditModal: React.FC<ProductVariableEditModalProps> =
             onOpenChange={setIsAddVariantOpen}
             suggestion={suggestion}
             attributes={productAttributes}
+            baseSku={parent.currentBaseSku || product?.baseSku || ''}
+            existing={existingVariants}
             branchId={selectedBranchId}
             isSubmitting={isCreatingVariant}
             onSubmit={submitNewVariant}
