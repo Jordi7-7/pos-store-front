@@ -6,9 +6,9 @@
 | Comprobación | Resultado | Fecha |
 |---|---|---|
 | `pnpm typecheck` | limpio | 2026-11-22 |
-| `pnpm test` | 599 tests, 92 archivos | 2026-11-25 |
-| `pnpm lint` | 47 avisos (tope 47, solo baja) | 2026-11-25 |
-| `any` escritos a mano (sin `components/ui` ni `routeTree.gen.ts`) | 1 (`CashSessionsHistoryView.tsx`) | 2026-11-22 |
+| `pnpm test` | 603 tests, 93 archivos | 2026-11-26 |
+| `pnpm lint` | 45 avisos (tope 45, solo baja) | 2026-11-26 |
+| `any` escritos a mano (sin `components/ui` ni `routeTree.gen.ts`) | 0 | 2026-11-26 |
 | `pnpm e2e` (Playwright) | **36 en verde contra el backend real** (`confirm-dialog` falló una vez en una tanda anterior y pasa solo) (base de desarrollo `pos_store`), incluidos el filtro de existencias, «Buscar» con Enter, el foco del POS, la vista por documentos, crear con variantes y la importación por Excel | 2026-11-25 |
 
 Al empezar el refactor: 22 tests, tope de lint 265, 202 `any`. Si una cifra empeora, algo se rompió.
