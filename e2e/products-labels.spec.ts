@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { adminApi, creds, deleteProductsMatching, login } from './helpers';
+import { decodeLuminance } from '../src/shared/infrastructure/scanner/zxing-decoder';
 
 test.skip(!creds.slug || !creds.user || !creds.pass, 'Faltan credenciales E2E en .env.e2e.local');
 
@@ -23,7 +24,7 @@ test('etiquetas: la vista previa, el envío directo a la impresora y el controla
     (window as unknown as { __serialBytes: number[] }).__serialBytes = written;
     const port = {
       readable: null,
-      writable: { getWriter: () => ({ write: async (chunk: Uint8Array) => void written.push(...chunk), releaseLock: () => undefined }) },
+      writable: { getWriter: () => ({ write: async (chunk: Uint8Array) => void written.push(...chunk), releaseLock: () => undefined, close: async () => undefined }) },
       open: async () => undefined,
       close: async () => undefined,
     };
@@ -80,7 +81,8 @@ test('etiquetas: la vista previa, el envío directo a la impresora y el controla
     await settings.getByRole('button', { name: /Etiqueta de prueba/ }).click();
     await expect.poll(async () => ((await bytes()).match(/BITMAP 0,0,50,240,0,/g) ?? []).length).toBe(2);
     await settings.getByRole('button', { name: 'Calibrar rollo' }).click();
-    await expect.poll(async () => (await bytes()).includes('GAPDETECT\r\nAUTODETECT')).toBe(true);
+    // Tras un envío grande se espera a que salga antes de renovar la conexión: puede tardar unos segundos
+    await expect.poll(async () => (await bytes()).includes('GAPDETECT\r\nAUTODETECT'), { timeout: 15_000 }).toBe(true);
     await page.evaluate(() => ((window as unknown as { __serialBytes: number[] }).__serialBytes.length = 0));
     await settings.getByRole('button', { name: 'Listo' }).click();
     await expect(dialog.getByText('Impresora conectada')).toBeVisible();
@@ -100,6 +102,34 @@ test('etiquetas: la vista previa, el envío directo a la impresora y el controla
     const frame = page.frames().find((candidate) => candidate !== page.mainFrame());
     expect(frame).toBeDefined();
     await expect.poll(async () => frame?.locator('.page').count()).toBe(2);
+    // La página a imprimir sigue ahí mientras la ventana del sistema prepara su vista previa (antes se borraba a los 2 s)
+    await page.waitForTimeout(3000);
+    expect(frame?.isDetached()).toBe(false);
+
+    // Solo código de barras, dos por etiqueta: las dos variantes salen en UNA etiqueta de 50 × 25, para cortarla
+    await page.evaluate(() => ((window as unknown as { __serialBytes: number[] }).__serialBytes.length = 0));
+    await dialog.getByRole('button', { name: '50 × 25 mm' }).click();
+    await dialog.getByRole('button', { name: 'Solo código de barras' }).click();
+    await dialog.getByLabel(/2 códigos por etiqueta/).check();
+    await expect(dialog.getByText(/2 códigos en 1 etiqueta/)).toBeVisible();
+    await expect(dialog.getByRole('img', { name: new RegExp(`Etiqueta de ${baseSku}-[SM] y ${baseSku}-[SM]`) })).toBeVisible();
+    await dialog.screenshot({ path: '/private/tmp/claude-501/-Users-jordi-dev-personal-pos-store-repo/698c2beb-41b6-4077-8686-404fe52bb5e6/scratchpad/etiquetas-dos.png' });
+    await dialog.getByRole('button', { name: 'Imprimir 1 etiqueta' }).click();
+    await expect(page.getByText(/1 etiqueta enviada/)).toBeVisible({ timeout: 15_000 });
+
+    const printed = Buffer.from(await page.evaluate(() => (window as unknown as { __serialBytes: number[] }).__serialBytes));
+    expect(printed.toString('latin1').match(/SIZE 50 mm,25 mm/g)).toHaveLength(1);
+    // La imagen que recibe la impresora se lee de vuelta: cada mitad tiene su propio código y es legible
+    const header = 'BITMAP 0,0,50,200,0,';
+    const start = printed.indexOf(header) + header.length;
+    const half = (top: number) => {
+      const luminance = new Uint8ClampedArray(400 * 100);
+      for (let y = 0; y < 100; y++) {
+        for (let x = 0; x < 400; x++) luminance[y * 400 + x] = ((printed[start + (top + y) * 50 + (x >> 3)] ?? 0) & (0x80 >> (x & 7))) !== 0 ? 255 : 0; // en TSPL 1 = sin imprimir
+      }
+      return decodeLuminance(luminance, 400, 100);
+    };
+    expect([half(0), half(100)].sort()).toEqual([`${baseSku}-M`, `${baseSku}-S`]);
   } finally {
     await deleteProductsMatching(admin, baseSku);
     if (attributeId) await admin.call('DELETE', `/products/attributes/${attributeId}`);

@@ -1,10 +1,11 @@
 import JsBarcode from 'jsbarcode';
 import type { LabelItem } from '../../domain/entities/label';
 import type { TicketFormat } from '../../domain/entities/ticket';
-import { pickModuleWidth } from '../../domain/rules/barcode-fit';
+import { barcodeQuality, pickModuleWidth, type BarcodeQuality } from '../../domain/rules/barcode-fit';
 import { toMonoBitmap, type MonoBitmap } from '../../domain/rules/label-bitmap';
-import { layoutLabel, type Box, type LabelSpec } from '../../domain/rules/label-layout';
+import { layoutBarcodeOnly, layoutLabel, type Box, type LabelSpec } from '../../domain/rules/label-layout';
 import { labelPriceText } from '../../domain/rules/label-price';
+import { codesPerLabel, type LabelSheet, type LabelStyle } from '../../domain/rules/label-sheets';
 
 export interface LabelRender {
   item: LabelItem;
@@ -12,6 +13,72 @@ export interface LabelRender {
   format: TicketFormat;
   spec: LabelSpec;
   showStore: boolean;
+}
+
+/** Lo que hace falta para dibujar una etiqueta física (con uno o dos códigos). */
+export interface SheetRender {
+  sheet: LabelSheet;
+  storeName: string;
+  format: TicketFormat;
+  spec: LabelSpec;
+  style: LabelStyle;
+}
+
+/** Ancho útil para las barras: se deja aire a los lados para que el escáner reconozca dónde empieza el código. */
+const barsWidth = (box: Box): number => Math.floor(box.w * 0.92);
+
+/** Dibuja el CODE128 del SKU centrado en la caja, con la barra más ancha que quepa. */
+function drawBarcode(ctx: CanvasRenderingContext2D, sku: string, box: Box): void {
+  const { narrow } = pickModuleWidth(sku.length, barsWidth(box));
+  try {
+    const barcode = document.createElement('canvas');
+    JsBarcode(barcode, sku, { format: 'CODE128', width: narrow, height: box.h, displayValue: false, margin: 0, background: '#ffffff', lineColor: '#000000' });
+    // Si ni con barras de 1 punto cabe, se encoge al ancho disponible (el escáner puede costar más; se avisa en pantalla)
+    const width = Math.min(barcode.width, box.w);
+    ctx.drawImage(barcode, 0, 0, barcode.width, barcode.height, Math.round(box.x + (box.w - width) / 2), box.y, width, box.h);
+  } catch {
+    drawFitted(ctx, sku, box, '700', 'monospace', '#000000');
+  }
+}
+
+function blankCanvas(widthDots: number, heightDots: number): { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D | null } {
+  const canvas = document.createElement('canvas');
+  canvas.width = widthDots;
+  canvas.height = heightDots;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, widthDots, heightDots);
+    ctx.imageSmoothingEnabled = false;
+  }
+  return { canvas, ctx };
+}
+
+/** Solo los códigos de barras con su número; con dos, una línea punteada marca por dónde cortar. */
+function renderBarcodeOnlyCanvas({ sheet, spec, style }: SheetRender): HTMLCanvasElement {
+  const geometry = layoutBarcodeOnly(spec, codesPerLabel(style));
+  const { canvas, ctx } = blankCanvas(geometry.widthDots, geometry.heightDots);
+  if (!ctx) return canvas;
+  sheet.items.forEach((item, index) => {
+    const slot = geometry.slots[index];
+    if (!slot) return;
+    const sku = item.sku.trim();
+    drawBarcode(ctx, sku, slot.barcode);
+    drawFitted(ctx, sku, slot.code, '700', 'monospace', '#000000');
+  });
+  if (geometry.cutY !== null) {
+    ctx.fillStyle = '#000000';
+    for (let x = 0; x < geometry.widthDots; x += 12) ctx.fillRect(x, geometry.cutY, 6, 1);
+  }
+  return canvas;
+}
+
+/** La imagen de una etiqueta física según lo que se haya elegido imprimir. */
+export function renderSheetCanvas(render: SheetRender): HTMLCanvasElement {
+  if (render.style.content === 'BARCODE') return renderBarcodeOnlyCanvas(render);
+  const [item] = render.sheet.items;
+  if (!item) return blankCanvas(1, 1).canvas;
+  return renderLabelCanvas({ item, storeName: render.storeName, format: render.format, spec: render.spec, showStore: render.style.showStore });
 }
 
 const SANS = 'Arial, Helvetica, "Segoe UI", sans-serif';
@@ -57,17 +124,7 @@ export function renderLabelCanvas({ item, storeName, format, spec, showStore }: 
   }
 
   const sku = item.sku.trim();
-  const bars = geometry.barcode;
-  const { narrow } = pickModuleWidth(sku.length, Math.floor(bars.w * 0.92));
-  try {
-    const barcode = document.createElement('canvas');
-    JsBarcode(barcode, sku, { format: 'CODE128', width: narrow, height: bars.h, displayValue: false, margin: 0, background: '#ffffff', lineColor: '#000000' });
-    // Si ni con barras de 1 punto cabe, se encoge al ancho disponible (el escáner puede costar más; se avisa en pantalla)
-    const width = Math.min(barcode.width, bars.w);
-    ctx.drawImage(barcode, 0, 0, barcode.width, barcode.height, Math.round(bars.x + (bars.w - width) / 2), bars.y, width, bars.h);
-  } catch {
-    drawFitted(ctx, sku, bars, '700', 'monospace', '#000000');
-  }
+  drawBarcode(ctx, sku, geometry.barcode);
   drawFitted(ctx, sku, geometry.code, '700', 'monospace', '#000000');
   drawFitted(ctx, item.name.trim().toUpperCase(), geometry.name, '700', SANS, '#000000');
   if (geometry.detail) drawFitted(ctx, detail, geometry.detail, '700', SANS, '#000000');
@@ -120,13 +177,13 @@ export function canvasToBitmap(canvas: HTMLCanvasElement): MonoBitmap {
   return toMonoBitmap(pixels, canvas.width, canvas.height);
 }
 
-/** La imagen de la etiqueta en blanco y negro, lista para la impresora. */
-export function renderLabelBitmap(render: LabelRender): MonoBitmap {
-  return canvasToBitmap(renderLabelCanvas(render));
+/** La imagen de una etiqueta física en blanco y negro, lista para la impresora. */
+export function renderSheetBitmap(render: SheetRender): MonoBitmap {
+  return canvasToBitmap(renderSheetCanvas(render));
 }
 
-/** ¿El código de barras cabe con barras de al menos 1 punto? Si no, se avisa que el SKU es demasiado largo para esta etiqueta. */
-export function barcodeFits(sku: string, spec: LabelSpec, showStore: boolean): boolean {
-  const geometry = layoutLabel(spec, { showStore, hasDetail: false });
-  return pickModuleWidth(sku.trim().length, Math.floor(geometry.barcode.w * 0.92)).fits;
+/** Cómo se leerá el código de este SKU en una etiqueta de este tamaño (el ancho útil es el mismo en los dos diseños). */
+export function labelBarcodeQuality(sku: string, spec: LabelSpec): BarcodeQuality {
+  const [slot] = layoutBarcodeOnly(spec, 1).slots;
+  return barcodeQuality(sku.trim().length, slot ? barsWidth(slot.barcode) : 0);
 }

@@ -17,3 +17,12 @@ export function pickModuleWidth(valueLength: number, availableDots: number): Mod
   if (narrow < 1) return { narrow: 1, fits: false };
   return { narrow: Math.min(narrow, MAX_NARROW), fits: true };
 }
+
+/** Qué tan bien se leerá el código: `thin` = barras de 1 punto (al escáner le cuesta); `too-long` = ni así cabe. */
+export type BarcodeQuality = 'good' | 'thin' | 'too-long';
+
+export function barcodeQuality(valueLength: number, availableDots: number): BarcodeQuality {
+  const { narrow, fits } = pickModuleWidth(valueLength, availableDots);
+  if (!fits) return 'too-long';
+  return narrow > 1 ? 'good' : 'thin';
+}

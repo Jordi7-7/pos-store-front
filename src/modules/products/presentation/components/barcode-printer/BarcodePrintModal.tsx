@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useTenant } from '@/modules/auth/presentation/hooks/useSession';
 import { deviceErrorMessage, isNoPrinterConfigured } from '@/modules/printing/domain/rules/device-error';
+import { buildSheets, codesPerLabel, countLabels } from '@/modules/printing/domain/rules/label-sheets';
 import { printLabelsWithSystemDriver } from '@/modules/printing/infrastructure/labels/label-browser-print';
 import { labelPrinterService } from '@/modules/printing/infrastructure/printers/label-printer.service';
 import { useLabelPrinter } from '@/modules/printing/presentation/hooks/useLabelPrinter';
@@ -37,8 +38,14 @@ export const BarcodePrintModal: React.FC<BarcodePrintModalProps> = ({ isOpen, on
     if (isOpen) setPreviewIndex(0);
   }, [isOpen]);
 
-  const totalLabels = useMemo(() => items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0), [items]);
+  const totalCodes = useMemo(() => items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0), [items]);
   const activeItem = items[Math.min(previewIndex, Math.max(0, items.length - 1))];
+  const perLabel = codesPerLabel(printer.config);
+  const sheets = useMemo(() => buildSheets(items, perLabel), [items, perLabel]);
+  // Se prefiere la etiqueta que empieza por el producto elegido; si solo comparte mitad con otro, esa
+  const activeSheet = sheets.find((sheet) => sheet.items[0]?.sku === activeItem?.sku) ?? sheets.find((sheet) => sheet.items.some((item) => item.sku === activeItem?.sku));
+  const labelCount = countLabels(sheets);
+  const labelWord = labelCount === 1 ? 'etiqueta' : 'etiquetas';
 
   const setQuantity = (sku: string, quantity: number) => onUpdateItems(items.map((item) => (item.sku === sku ? { ...item, quantity: Math.max(1, Number.isNaN(quantity) ? 1 : quantity) } : item)));
   const changeQuantity = (sku: string, delta: number) => onUpdateItems(items.map((item) => (item.sku === sku ? { ...item, quantity: Math.max(1, (item.quantity || 1) + delta) } : item)));
@@ -53,7 +60,7 @@ export const BarcodePrintModal: React.FC<BarcodePrintModalProps> = ({ isOpen, on
     setIsPrinting(true);
     try {
       await labelPrinterService.printLabels(items, storeName, ticketFormat);
-      toast.success(`${totalLabels} ${totalLabels === 1 ? 'etiqueta enviada' : 'etiquetas enviadas'} a la impresora.`);
+      toast.success(`${labelCount} ${labelCount === 1 ? 'etiqueta enviada' : 'etiquetas enviadas'} a la impresora.`);
     } catch (err) {
       if (isNoPrinterConfigured(err)) {
         setShowConfig(true);
@@ -66,7 +73,7 @@ export const BarcodePrintModal: React.FC<BarcodePrintModalProps> = ({ isOpen, on
     }
   };
 
-  const printWithSystem = () => printLabelsWithSystemDriver(items, storeName, ticketFormat, printer.spec, printer.config.showStore);
+  const printWithSystem = () => printLabelsWithSystemDriver(items, storeName, ticketFormat, printer.spec, printer.config);
 
   return (
     <>
@@ -101,13 +108,14 @@ export const BarcodePrintModal: React.FC<BarcodePrintModalProps> = ({ isOpen, on
               <BarcodeQueueList items={items} previewIndex={previewIndex} onSelectPreview={setPreviewIndex} onQuantityChange={changeQuantity} onSetQuantity={setQuantity} onRemoveItem={removeItem} onSetAllQuantities={setAllQuantities} />
             </div>
             <div className="h-full min-h-0 overflow-y-auto md:col-span-5">
-              <BarcodePreviewPanel printer={printer} storeName={storeName} onStoreNameChange={setStoreName} activeItem={activeItem} onMoreSizes={() => setShowConfig(true)} />
+              <BarcodePreviewPanel printer={printer} storeName={storeName} onStoreNameChange={setStoreName} activeItem={activeItem} activeSheet={activeSheet} onMoreSizes={() => setShowConfig(true)} />
             </div>
           </div>
 
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
             <p className="text-xs text-muted-foreground">
-              Total: <strong className="font-mono text-sm text-foreground">{totalLabels}</strong> {totalLabels === 1 ? 'etiqueta' : 'etiquetas'}
+              Total: {perLabel === 2 && <><strong className="font-mono text-sm text-foreground">{totalCodes}</strong> códigos en </>}
+              <strong className="font-mono text-sm text-foreground">{labelCount}</strong> {labelWord}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
@@ -118,7 +126,7 @@ export const BarcodePrintModal: React.FC<BarcodePrintModalProps> = ({ isOpen, on
               {printer.connected ? (
                 <Button type="button" size="sm" onClick={printDirect} disabled={items.length === 0 || isPrinting}>
                   {isPrinting ? <Loader2 className="animate-spin" /> : <Printer />}
-                  {isPrinting ? 'Enviando…' : `Imprimir ${totalLabels} ${totalLabels === 1 ? 'etiqueta' : 'etiquetas'}`}
+                  {isPrinting ? 'Enviando…' : `Imprimir ${labelCount} ${labelWord}`}
                 </Button>
               ) : (
                 <Button type="button" size="sm" onClick={() => setShowConfig(true)}>
