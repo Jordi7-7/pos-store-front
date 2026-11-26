@@ -1,361 +1,181 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Tag, CheckCircle2, RefreshCw, Unplug, Zap, Printer, Cable, Info } from 'lucide-react';
+import React, { useState } from 'react';
+import { Bluetooth, CheckCircle2, Gauge, Loader2, Monitor, Printer, Unplug, Zap } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  labelPrinterService,
-  type LabelPrinterConfig,
-} from '../../../../printing/infrastructure/printers/label-printer.service';
-import { ZEBRA_LABEL_PRESETS } from '@/modules/printing/domain/rules/label-presets';
-import { useTicketFormat } from '@/modules/printing/presentation/hooks/useTicketFormat';
-import type { LabelPreset } from '@/modules/printing/domain/entities/label';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { deviceErrorMessage, isNoPrinterConfigured } from '@/modules/printing/domain/rules/device-error';
+import type { LabelProtocol } from '@/modules/printing/domain/entities/label';
+import { labelPrinterService } from '@/modules/printing/infrastructure/printers/label-printer.service';
+import type { LabelPrinterState } from '@/modules/printing/presentation/hooks/useLabelPrinter';
+import { useTicketFormat } from '@/modules/printing/presentation/hooks/useTicketFormat';
+import { LabelSizePicker } from './LabelSizePicker';
 
 interface LabelPrinterConfigModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfigured?: () => void;
+  printer: LabelPrinterState;
+  storeName: string;
 }
 
-export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = ({
-  isOpen,
-  onClose,
-  onConfigured,
-}) => {
-  const [isSupported, setIsSupported] = useState(false);
-  const [isConfigured, setIsConfigured] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
-  const ticketFormat = useTicketFormat();
-  const [config, setConfig] = useState<LabelPrinterConfig>(labelPrinterService.getConfig());
+const LANGUAGES: Array<{ value: LabelProtocol; title: string; hint: string }> = [
+  { value: 'TSPL', title: 'TSPL', hint: 'La mayoría: Xprinter, TSC, Gprinter, HPRT, Munbyn…' },
+  { value: 'ZPL', title: 'ZPL', hint: 'Impresoras Zebra' },
+];
 
-  useEffect(() => {
-    if (!isOpen) return;
+const Section: React.FC<{ step: number; title: string; children: React.ReactNode }> = ({ step, title, children }) => (
+  <section className="space-y-3">
+    <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+      <span className="flex size-6 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">{step}</span>
+      {title}
+    </h3>
+    {children}
+  </section>
+);
 
-    const checkStatus = async () => {
-      const supported = labelPrinterService.isSupported();
-      setIsSupported(supported);
-      if (supported) {
-        const configured = await labelPrinterService.isConfigured();
-        setIsConfigured(configured);
-      }
-      setConfig(labelPrinterService.getConfig());
-    };
+/** Tamaño de las etiquetas y cómo se conecta la impresora. Los cambios se guardan al momento. */
+export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = ({ isOpen, onClose, printer, storeName }) => {
+  const { config, connected, supported, update, connect, disconnect } = printer;
+  const format = useTicketFormat();
+  const [busy, setBusy] = useState<'connect' | 'test' | 'calibrate' | null>(null);
 
-    checkStatus();
-  }, [isOpen]);
-
-  const handlePairPrinter = async () => {
+  const run = async (kind: 'connect' | 'test' | 'calibrate', action: () => Promise<void>) => {
+    setBusy(kind);
     try {
-      setIsConnecting(true);
-      const selected = await labelPrinterService.requestPort();
-      if (selected) {
-        setIsConfigured(true);
-        toast.success('¡Puerto Serie (COM) vinculado con éxito!');
-        if (onConfigured) onConfigured();
-      }
+      await action();
     } catch (err) {
-      toast.error(deviceErrorMessage(err, 'Error al conectar con el puerto serie.'));
+      toast.error(isNoPrinterConfigured(err) ? 'Primero conecta la impresora.' : deviceErrorMessage(err, 'No se pudo hablar con la impresora. Revisa que esté encendida y conectada.'));
     } finally {
-      setIsConnecting(false);
+      setBusy(null);
     }
   };
 
-  const handleTestPrint = async () => {
-    try {
-      setIsTesting(true);
-      await labelPrinterService.printTestLabel(ticketFormat);
-      toast.success('¡Etiqueta de prueba enviada al puerto serie!');
-    } catch (err) {
-      if (isNoPrinterConfigured(err)) {
-        toast.error('Primero debes vincular un puerto serie (COM).');
-      } else {
-        toast.error(`Error al imprimir en serie: ${deviceErrorMessage(err, 'Verifica la conexión')}`);
-      }
-    } finally {
-      setIsTesting(false);
-    }
-  };
-
-  const handleSaveConfig = () => {
-    labelPrinterService.saveConfig(config);
-    toast.success('Configuración de etiquetas guardada.');
-    onClose();
-  };
-
-  const handleForget = async () => {
-    await labelPrinterService.forgetPrinter();
-    setIsConfigured(false);
-    toast.info('Puerto serie desvinculado.');
-  };
-
-  const handleSelectPreset = (preset: LabelPreset) => {
-    setConfig({
-      ...config,
-      widthMm: preset.widthMm,
-      heightMm: preset.heightMm,
-      gapMm: preset.gapMm,
+  const handleConnect = () =>
+    run('connect', async () => {
+      if (await connect()) toast.success('Impresora conectada.');
     });
-  };
-
-  const isCurrentPreset = (preset: LabelPreset) => {
-    return (
-      config.widthMm === preset.widthMm &&
-      config.heightMm === preset.heightMm &&
-      config.gapMm === preset.gapMm
-    );
-  };
+  const handleTest = () =>
+    run('test', async () => {
+      await labelPrinterService.printTestLabel(storeName, format);
+      toast.success('Se enviaron 2 etiquetas de prueba: medidas y muestra.');
+    });
+  const handleCalibrate = () =>
+    run('calibrate', async () => {
+      await labelPrinterService.calibrate();
+      toast.success('Calibrando: la impresora avanzará unas etiquetas. Espera a que termine.');
+    });
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl max-h-[92vh] flex flex-col bg-card border border-border p-6 text-foreground overflow-hidden shadow-2xl">
-        <DialogHeader className="shrink-0 pb-3 border-b border-border">
-          <DialogTitle className="text-base font-semibold flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-              <Tag className="w-4 h-4" />
-            </div>
-            <span>Configuración de Etiquetas y Modos de Impresión</span>
-          </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground mt-1">
-            Configura el tamaño del rollo para tu Zebra y comprende los métodos de conexión disponibles.
-          </DialogDescription>
+      <DialogContent className="flex max-h-[92vh] flex-col overflow-hidden border border-border bg-card p-0 text-foreground shadow-2xl sm:max-w-2xl">
+        <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+          <DialogTitle className="text-base font-semibold">Mi impresora de etiquetas</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">Elige el tamaño de tus etiquetas y cómo se conecta la impresora. Los cambios se guardan solos.</DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto pr-1 space-y-5 py-3 text-xs">
-          {/* SECCIÓN 1: Tamaño del Rollo de Etiquetas (Universal) */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 font-bold text-foreground text-xs">
-                <Tag className="w-3.5 h-3.5 text-primary" />
-                <span>1. Formato del Rollo de Etiquetas (Válido para todo tipo de impresión):</span>
+        <div className="flex-1 space-y-7 overflow-y-auto px-6 py-5 text-sm">
+          <Section step={1} title="¿De qué tamaño son tus etiquetas?">
+            <LabelSizePicker config={config} onChange={update} />
+            <details className="rounded-xl border border-border p-3 text-xs text-muted-foreground">
+              <summary className="cursor-pointer font-semibold text-foreground">Opciones avanzadas: resolución de la impresora</summary>
+              <div className="mt-2 space-y-2">
+                <label className="flex flex-wrap items-center gap-2">
+                  Resolución
+                  <select aria-label="Resolución de la impresora" value={config.dpi} onChange={(e) => update({ dpi: e.target.value === '300' ? 300 : 203 })} className="rounded-lg border border-border bg-background px-2 py-1 text-xs font-semibold text-foreground">
+                    <option value={203}>203 dpi (la más común)</option>
+                    <option value={300}>300 dpi</option>
+                  </select>
+                </label>
+                <p>
+                  Debe ser la <strong>resolución real de tu impresora</strong>, no la que quieras. Casi todas las de etiquetas baratas son de 203 dpi. Si eliges 300 en una de 203, la etiqueta sale agrandada y se desborda. Para comprobarlo, imprime la etiqueta de prueba: su regla debe medir lo que dice.
+                </p>
               </div>
-              <span className="text-xs text-muted-foreground font-mono">
-                Resolución: <strong>203 DPI</strong>
-              </span>
-            </div>
+            </details>
+          </Section>
 
-            {/* Presets Zebra */}
-            <div className="grid grid-cols-2 gap-2">
-              {ZEBRA_LABEL_PRESETS.map((preset) => {
-                const selected = isCurrentPreset(preset);
-                return (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => handleSelectPreset(preset)}
-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                      selected
-                        ? 'bg-primary/10 border-primary text-primary font-bold shadow-xs'
-                        : 'bg-muted/30 border-border text-foreground hover:bg-muted/50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold">{preset.widthMm} × {preset.heightMm} mm</span>
-                      <span className="text-xs px-1.5 py-0.2 rounded bg-muted text-muted-foreground">
-                        {preset.category}
-                      </span>
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{preset.description}</div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Medidas manuales */}
-            <div className="p-3 rounded-xl bg-muted/20 border border-border space-y-2">
-              <span className="font-semibold text-foreground text-xs block">
-                O ingresa la medida exacta de tu etiqueta en milímetros:
-              </span>
-              <div className="grid grid-cols-3 gap-2.5">
-                <div>
- <label className="text-xs text-muted-foreground font-semibold block mb-1">
-                    Ancho (mm)
-                  </label>
-                  <input
-                    type="number"
-                    min="20"
-                    max="110"
-                    value={config.widthMm}
-                    onChange={(e) =>
-                      setConfig({ ...config, widthMm: Math.max(10, Number(e.target.value) || 50) })
-                    }
-                    className="w-full py-1.5 px-2.5 text-xs font-bold bg-background border border-border rounded-lg focus:outline-none focus:border-primary"
-                  />
+          <Section step={2} title="¿Cómo imprimes?">
+            <div className="space-y-3 rounded-xl border border-border p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-2.5">
+                  <Bluetooth className="mt-0.5 size-4 text-primary" />
+                  <div>
+                    <p className="font-semibold text-foreground">Directo a la impresora (Bluetooth o cable USB)</p>
+                    <p className="text-xs text-muted-foreground">Un clic y sale, sin ventanas. Recomendado si tu impresora es de etiquetas.</p>
+                  </div>
                 </div>
-                <div>
- <label className="text-xs text-muted-foreground font-semibold block mb-1">
-                    Alto (mm)
-                  </label>
-                  <input
-                    type="number"
-                    min="15"
-                    max="200"
-                    value={config.heightMm}
-                    onChange={(e) =>
-                      setConfig({ ...config, heightMm: Math.max(10, Number(e.target.value) || 30) })
-                    }
-                    className="w-full py-1.5 px-2.5 text-xs font-bold bg-background border border-border rounded-lg focus:outline-none focus:border-primary"
-                  />
-                </div>
-                <div>
- <label className="text-xs text-muted-foreground font-semibold block mb-1">
-                    GAP / Separación (mm)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="10"
-                    value={config.gapMm}
-                    onChange={(e) =>
-                      setConfig({ ...config, gapMm: Math.max(0, Number(e.target.value) || 2) })
-                    }
-                    className="w-full py-1.5 px-2.5 text-xs font-bold bg-background border border-border rounded-lg focus:outline-none focus:border-primary"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* SECCIÓN 2: Métodos de Conexión Explicados Claramente */}
-          <div className="space-y-3 pt-2 border-t border-border">
-            <div className="font-bold text-foreground text-xs flex items-center gap-1.5">
-              <Printer className="w-3.5 h-3.5 text-primary" />
-              <span>2. Métodos de Impresión disponibles en tu sistema:</span>
-            </div>
-
-            {/* Método 1: Impresión Estándar Windows / Zebra (Predeterminado) */}
-            <div className="p-3.5 rounded-xl bg-emerald-500/5 border border-emerald-500/20 space-y-1.5">
-              <div className="flex items-center gap-2 font-bold text-emerald-600 dark:text-emerald-400">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>Método Recomendado: Impresora en Windows / Zebra (Cable USB normal)</span>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed pl-6">
-                Utiliza el botón <strong>"Imprimir en Windows / Zebra"</strong>. Tu sistema genera una imagen fija a <strong>203 DPI</strong> y la envía a través del driver oficial (ZDesigner, etc.). <strong>No necesitas configurar puertos COM ni instalar nada adicional.</strong>
-              </p>
-            </div>
-
-            {/* Método 2: Puerto Serie COM Directo (Avanzado / Opcional) */}
-            <div className="p-3.5 rounded-xl bg-muted/30 border border-border space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 font-bold text-foreground">
-                  <Cable className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span>Método Avanzado: Impresión Directa por Puerto Serie (COM)</span>
-                </div>
-                {isConfigured ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                    <CheckCircle2 className="w-3 h-3" /> Puerto COM Activo
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border">
-                    Sin puerto COM
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-start gap-2 p-2.5 rounded-lg bg-background border border-border/70 text-xs text-muted-foreground leading-relaxed">
-                <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <span>
-                  Solo es necesario si conectas una impresora mediante un <strong>cable convertidor Serie RS-232 a USB</strong> o una impresora con chip serie nativo (como Xprinter). Permite imprimir en 1 clic sin ventanas emergentes.
+                <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${connected ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700' : 'border-amber-500/30 bg-amber-500/10 text-amber-700'}`}>
+                  {connected && <CheckCircle2 className="size-3" />}
+                  {connected ? 'Conectada' : 'Sin conectar'}
                 </span>
               </div>
 
-              {/* Lenguaje del puerto serie */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground block">
-                  Lenguaje de Comandos (Solo aplica para el Puerto Serie COM):
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setConfig({ ...config, protocol: 'TSPL' })}
-                    className={`p-2 rounded-lg border text-left transition-all cursor-pointer ${
-                      config.protocol === 'TSPL'
-                        ? 'bg-primary/10 border-primary text-primary font-bold'
-                        : 'bg-muted/40 border-border text-foreground hover:bg-muted/70'
-                    }`}
-                  >
-                    <div className="text-xs font-bold">TSPL (Xprinter / TSC)</div>
-                    <div className="text-xs text-muted-foreground">Para impresoras de etiquetas asiáticas</div>
-                  </button>
+              {!supported ? (
+                <p role="alert" className="rounded-lg bg-amber-500/10 p-3 text-xs text-amber-700">Este navegador no permite conectarse directo a la impresora. Usa Chrome o Edge en computadora, o imprime con el controlador del sistema (abajo).</p>
+              ) : (
+                <>
+                  <ol className="list-decimal space-y-1 pl-5 text-xs text-muted-foreground">
+                    <li><strong>Bluetooth:</strong> primero empareja la impresora en los ajustes del sistema. <strong>Cable USB:</strong> conéctala y enciéndela.</li>
+                    <li>Pulsa «{connected ? 'Cambiar impresora' : 'Conectar impresora'}» y elige su puerto en la lista (suele llamarse COM o serie).</li>
+                    <li>Haz una etiqueta de prueba para comprobar que sale bien.</li>
+                  </ol>
 
-                  <button
-                    type="button"
-                    onClick={() => setConfig({ ...config, protocol: 'ZPL' })}
-                    className={`p-2 rounded-lg border text-left transition-all cursor-pointer ${
-                      config.protocol === 'ZPL'
-                        ? 'bg-primary/10 border-primary text-primary font-bold'
-                        : 'bg-muted/40 border-border text-foreground hover:bg-muted/70'
-                    }`}
-                  >
-                    <div className="text-xs font-bold">ZPL (Zebra)</div>
-                    <div className="text-xs text-muted-foreground">Para impresoras Zebra con cable serie</div>
-                  </button>
-                </div>
-              </div>
+                  <fieldset className="space-y-1.5">
+                    <legend className="text-xs font-semibold text-foreground">Lenguaje de la impresora</legend>
+                    <div className="grid grid-cols-2 gap-2">
+                      {LANGUAGES.map((language) => (
+                        <button key={language.value} type="button" aria-pressed={config.protocol === language.value} onClick={() => update({ protocol: language.value })} className={`cursor-pointer rounded-xl border px-3 py-2 text-left transition-colors ${config.protocol === language.value ? 'border-primary bg-primary/10 ring-1 ring-primary/30' : 'border-border hover:border-primary/40'}`}>
+                          <span className="block text-sm font-semibold">{language.title}</span>
+                          <span className="block text-xs text-muted-foreground">{language.hint}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
 
-              {/* Botón de vincular puerto serie */}
-              {isSupported && (
-                <div className="flex items-center gap-2 pt-1">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={isConfigured ? 'outline' : 'secondary'}
-                    onClick={handlePairPrinter}
-                    disabled={isConnecting}
-                    className="flex-1 text-xs gap-1.5 font-bold cursor-pointer h-8"
-                  >
-                    <RefreshCw className={`w-3 h-3 ${isConnecting ? 'animate-spin' : ''}`} />
-                    {isConfigured ? 'Cambiar Puerto Serie (COM)' : 'Vincular Puerto Serie (COM)'}
-                  </Button>
-
-                  {isConfigured && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={handleForget}
-                      className="text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 px-2.5 cursor-pointer h-8"
-                      title="Desvincular puerto serie"
-                    >
-                      <Unplug className="w-3.5 h-3.5" />
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" onClick={handleConnect} disabled={busy !== null}>
+                      {busy === 'connect' ? <Loader2 className="animate-spin" /> : <Zap />}
+                      {connected ? 'Cambiar impresora' : 'Conectar impresora'}
                     </Button>
-                  )}
-                </div>
-              )}
-
-              {/* Botón de prueba si está vinculado */}
-              {isConfigured && (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={handleTestPrint}
-                  disabled={isTesting}
-                  className="w-full text-xs gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground h-8"
-                >
-                  <Zap className={`w-3.5 h-3.5 text-amber-500 ${isTesting ? 'animate-pulse' : ''}`} />
-                  {isTesting ? 'Enviando comando serie...' : 'Probar Impresión por Puerto Serie (COM)'}
-                </Button>
+                    <Button type="button" variant="outline" onClick={handleTest} disabled={!connected || busy !== null} title="Imprime una etiqueta de medidas (marco y regla) y una de muestra">
+                      {busy === 'test' ? <Loader2 className="animate-spin" /> : <Printer />}
+                      Etiqueta de prueba (2)
+                    </Button>
+                    <Button type="button" variant="outline" onClick={handleCalibrate} disabled={!connected || busy !== null} title="La impresora mide la separación entre etiquetas">
+                      {busy === 'calibrate' ? <Loader2 className="animate-spin" /> : <Gauge />}
+                      Calibrar rollo
+                    </Button>
+                    {connected && (
+                      <Button type="button" variant="ghost" onClick={() => void disconnect().then(() => toast.info('Impresora desvinculada.'))} disabled={busy !== null}>
+                        <Unplug />
+                        Desvincular
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Etiqueta de prueba:</strong> sale una de medidas (un marco en el borde y una regla) y otra de muestra. Si el marco sale cortado o corrido, o la regla no mide lo que dice, revisa el tamaño y la separación.
+                    <br />
+                    <strong>Calibrar rollo:</strong> úsalo al cambiar de rollo; la impresora avanza unas etiquetas para medir la separación. Si tu modelo no responde, mantén pulsado su botón de avance unos segundos: en muchos modelos así se calibra.
+                  </p>
+                </>
               )}
             </div>
-          </div>
+
+            <div className="space-y-1.5 rounded-xl border border-border p-4">
+              <div className="flex items-start gap-2.5">
+                <Monitor className="mt-0.5 size-4 text-primary" />
+                <div>
+                  <p className="font-semibold text-foreground">Con el controlador del sistema (cualquier impresora)</p>
+                  <p className="text-xs text-muted-foreground">
+                    Sirve con la impresora que tengas instalada en Windows o Mac, por USB, Bluetooth o red. En la ventana de impresión elige tu impresora, pon el papel en {config.widthMm} × {config.heightMm} mm y desactiva márgenes y escala.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Section>
         </div>
 
-        <div className="pt-3 flex justify-end gap-2 border-t border-border shrink-0">
-          <Button variant="outline" size="sm" onClick={onClose} className="text-xs cursor-pointer">
-            Cancelar
-          </Button>
-          <Button size="sm" onClick={handleSaveConfig} className="text-xs font-bold cursor-pointer">
-            Guardar Configuración
-          </Button>
-        </div>
+        <DialogFooter className="shrink-0 border-t border-border px-6 py-3">
+          <Button type="button" onClick={onClose}>Listo</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

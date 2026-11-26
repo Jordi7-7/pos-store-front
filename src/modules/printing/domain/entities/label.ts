@@ -6,15 +6,20 @@ export interface LabelItem {
   name: string;
   price: number;
   quantity: number;
+  /** Combinación de la variante (`Talla M · Rojo`), para distinguir las etiquetas de un mismo producto. */
+  detail?: string;
 }
 
 export type LabelProtocol = 'TSPL' | 'ZPL';
+
+/** Resolución del cabezal: 203 dpi (8 puntos por mm, la más común) o 300 dpi (12 puntos por mm). */
+export type LabelDpi = 203 | 300;
 
 export interface LabelDimensions {
   widthMm: number;    // Ancho en milímetros (ej: 50)
   heightMm: number;   // Alto en milímetros (ej: 30)
   gapMm: number;      // Separación entre etiquetas (ej: 2)
-  dpi?: number;       // Resolución típica: 203 DPI (8 dots/mm)
+  dpi?: LabelDpi;     // Resolución típica: 203 DPI (8 dots/mm)
 }
 
 export const DEFAULT_LABEL_DIMENSIONS: LabelDimensions = {
@@ -30,7 +35,7 @@ export interface LabelPreset {
   widthMm: number;
   heightMm: number;
   gapMm: number;
-  category: 'Comercio / Ropa' | 'Joyería / Farmacia' | 'Cajas / Almacén' | 'Envíos / Logística';
+  category: string;
   description: string;
 }
 

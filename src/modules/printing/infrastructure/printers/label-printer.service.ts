@@ -1,7 +1,12 @@
 import type { LabelPrinter } from '../../application/ports/label-printer';
-import { DEFAULT_LABEL_DIMENSIONS, type LabelDimensions, type LabelItem, type LabelProtocol } from '../../domain/entities/label';
+import type { LabelDpi, LabelItem, LabelProtocol } from '../../domain/entities/label';
 import type { TicketFormat } from '../../domain/entities/ticket';
-import { buildTsplLabelCommands, buildZplLabelCommands, buildTestLabelCommands } from '../labels/label-builder';
+import type { MonoBitmap } from '../../domain/rules/label-bitmap';
+import type { LabelSpec } from '../../domain/rules/label-layout';
+import { layoutLabel } from '../../domain/rules/label-layout';
+import { canvasToBitmap, renderLabelBitmap, renderMeasureCanvas } from '../labels/label-canvas';
+import { tsplCalibrate, tsplImageJob, zplCalibrate, zplImageJob } from '../labels/label-commands';
+import { portRegistry } from './port-registry';
 import { getSerial, type SerialPortLike } from './web-serial';
 import { isDevicePickerCancelled, NO_PRINTER_CONFIGURED } from '../../domain/rules/device-error';
 
@@ -11,21 +16,32 @@ export interface LabelPrinterConfig {
   gapMm: number;
   protocol: LabelProtocol;
   baudRate: number;
+  /** Resolución del cabezal: 203 (la común) o 300 dpi. */
+  dpi: LabelDpi;
+  /** Franja negra con el nombre de la tienda. */
+  showStore: boolean;
 }
 
 const DEFAULT_LABEL_CONFIG: LabelPrinterConfig = {
-  widthMm: DEFAULT_LABEL_DIMENSIONS.widthMm,
-  heightMm: DEFAULT_LABEL_DIMENSIONS.heightMm,
-  gapMm: DEFAULT_LABEL_DIMENSIONS.gapMm,
+  widthMm: 50,
+  heightMm: 25,
+  gapMm: 2,
   protocol: 'TSPL',
   baudRate: 9600,
+  dpi: 203,
+  showStore: true,
 };
 
 const STORAGE_KEY = 'aura_label_printer_config';
 
-class LabelPrinterService implements LabelPrinter {
-  private activePort: SerialPortLike | null = null;
+/** Tamaño de cada envío: las conexiones Bluetooth se atragantan con bloques grandes. */
+const CHUNK_BYTES = 2048;
 
+export const specOf = (config: LabelPrinterConfig): LabelSpec => ({ widthMm: config.widthMm, heightMm: config.heightMm, dpi: config.dpi });
+
+const TEST_ITEM: LabelItem = { sku: 'TEST-123456', name: 'Etiqueta de prueba', detail: 'M / Rojo', price: 9.99, quantity: 1 };
+
+class LabelPrinterService implements LabelPrinter {
   /** Comprueba si el navegador actual soporta Web Serial API */
   isSupported(): boolean {
     return getSerial() !== undefined;
@@ -58,18 +74,17 @@ class LabelPrinterService implements LabelPrinter {
     return updated;
   }
 
-  /** Comprueba si ya existe un puerto USB emparejado en el navegador */
+  /** ¿Hay una impresora de ETIQUETAS vinculada? (La de tickets no cuenta.) */
   async isConfigured(): Promise<boolean> {
     if (!this.isSupported()) return false;
     try {
-      const ports = await this.serial().getPorts();
-      return ports && ports.length > 0;
+      return (await portRegistry.portFor('label')) !== null;
     } catch {
       return false;
     }
   }
 
-  /** Solicita al usuario vincular su impresora de etiquetas USB */
+  /** Solicita al usuario vincular su impresora de etiquetas (USB o Bluetooth) */
   async requestPort(): Promise<boolean> {
     if (!this.isSupported()) {
       throw new Error('Tu navegador no soporta Web Serial API. Usa Google Chrome o Microsoft Edge.');
@@ -77,8 +92,8 @@ class LabelPrinterService implements LabelPrinter {
 
     try {
       const port = await this.serial().requestPort();
-      this.activePort = port;
-      return true;
+      await portRegistry.assign('label', port);
+        return true;
     } catch (err) {
       if (isDevicePickerCancelled(err)) {
         return false;
@@ -87,22 +102,14 @@ class LabelPrinterService implements LabelPrinter {
     }
   }
 
-  /** Obtiene el puerto abierto para comunicación */
+  /** Obtiene el puerto de etiquetas abierto para comunicación */
   private async getOpenPort(): Promise<SerialPortLike | null> {
     if (!this.isSupported()) {
       throw new Error('Web Serial API no soportada');
     }
 
-    let port = this.activePort;
-
-    if (!port) {
-      const ports = await this.serial().getPorts();
-      // Si hay más de un puerto, toma el último
-      const last = ports[ports.length - 1];
-      if (!last) return null;
-      port = last;
-      this.activePort = port;
-    }
+    const port = await portRegistry.portFor('label');
+    if (!port) return null;
 
     if (!port.readable && !port.writable) {
       const config = this.getConfig();
@@ -112,7 +119,7 @@ class LabelPrinterService implements LabelPrinter {
     return port;
   }
 
-  /** Envía los bytes crudos a la impresora de etiquetas */
+  /** Envía los bytes crudos a la impresora de etiquetas, en bloques pequeños (Bluetooth no aguanta uno grande). */
   async sendRawBytes(bytes: Uint8Array): Promise<void> {
     const port = await this.getOpenPort();
     if (!port) {
@@ -122,63 +129,55 @@ class LabelPrinterService implements LabelPrinter {
     if (!port.writable) throw new Error('El puerto de la impresora no admite escritura.');
     const writer = port.writable.getWriter();
     try {
-      await writer.write(bytes);
+      for (let offset = 0; offset < bytes.length; offset += CHUNK_BYTES) {
+        await writer.write(bytes.slice(offset, offset + CHUNK_BYTES));
+      }
     } finally {
       writer.releaseLock();
     }
   }
 
-  /** Imprime un lote de etiquetas directamente por USB */
+  /** Trabajo de impresión de una etiqueta (con sus copias): la imagen de la vista previa en el idioma de la impresora. */
+  private jobFor(item: LabelItem, storeName: string, format: TicketFormat, config: LabelPrinterConfig): Uint8Array {
+    const spec = specOf(config);
+    return this.imageJob(renderLabelBitmap({ item, storeName, format, spec, showStore: config.showStore }), config, Math.max(1, Math.floor(Number(item.quantity) || 1)));
+  }
+
+  private imageJob(bitmap: MonoBitmap, config: LabelPrinterConfig, copies: number): Uint8Array {
+    if (config.protocol === 'ZPL') {
+      const { widthDots, heightDots } = layoutLabel(specOf(config), { showStore: false, hasDetail: false });
+      return zplImageJob(bitmap, widthDots, heightDots, copies);
+    }
+    return tsplImageJob(bitmap, config, copies);
+  }
+
+  /** Imprime un lote de etiquetas directamente por el puerto (USB o Bluetooth) */
   async printLabels(items: LabelItem[], storeName: string, format: TicketFormat): Promise<boolean> {
     if (!items || items.length === 0) return false;
-
     const config = this.getConfig();
-    const dimensions: LabelDimensions = {
-      widthMm: config.widthMm,
-      heightMm: config.heightMm,
-      gapMm: config.gapMm,
-    };
-
-    let bytes: Uint8Array;
-    if (config.protocol === 'ZPL') {
-      bytes = buildZplLabelCommands(items, storeName, format, dimensions);
-    } else {
-      bytes = buildTsplLabelCommands(items, storeName, format, dimensions);
+    for (const item of items) {
+      await this.sendRawBytes(this.jobFor(item, storeName, format, config));
     }
-
-    await this.sendRawBytes(bytes);
     return true;
   }
 
-  /** Imprime una etiqueta de prueba */
-  async printTestLabel(format: TicketFormat): Promise<boolean> {
+  /** Dos etiquetas de prueba: una de medidas (marco y regla) y una de muestra con el diseño real. */
+  async printTestLabel(storeName: string, format: TicketFormat): Promise<boolean> {
     const config = this.getConfig();
-    const dimensions: LabelDimensions = {
-      widthMm: config.widthMm,
-      heightMm: config.heightMm,
-      gapMm: config.gapMm,
-    };
-
-    const bytes = buildTestLabelCommands(config.protocol, format, dimensions);
-    await this.sendRawBytes(bytes);
+    await this.sendRawBytes(this.imageJob(canvasToBitmap(renderMeasureCanvas(specOf(config))), config, 1));
+    await this.sendRawBytes(this.jobFor(TEST_ITEM, storeName, format, config));
     return true;
   }
 
-  /** Desvincula el puerto activo */
+  /** Hace que la impresora mida el rollo y se ajuste; avanza unas etiquetas. Conviene tras cambiar de rollo. */
+  async calibrate(): Promise<void> {
+    const config = this.getConfig();
+    await this.sendRawBytes(config.protocol === 'ZPL' ? zplCalibrate() : tsplCalibrate(config));
+  }
+
+  /** Desvincula la impresora de etiquetas (no toca la de tickets) */
   async forgetPrinter(): Promise<void> {
-    try {
-      if (this.activePort) {
-        if (this.activePort.readable || this.activePort.writable) {
-          await this.activePort.close();
-        }
-        if (typeof this.activePort.forget === 'function') {
-          await this.activePort.forget();
-        }
-        this.activePort = null;
-      }
-    } catch {
-      // Ignorar
-    }
+    await portRegistry.release('label');
   }
 }
 

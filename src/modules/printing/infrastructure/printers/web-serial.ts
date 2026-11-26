@@ -5,6 +5,8 @@ export interface SerialPortLike {
   open(options: { baudRate: number }): Promise<void>;
   close(): Promise<void>;
   forget?(): Promise<void>;
+  /** Fabricante y modelo (USB) o servicio (Bluetooth) del puerto. */
+  getInfo?(): { usbVendorId?: number; usbProductId?: number; bluetoothServiceClassId?: string | number };
 }
 
 interface SerialLike {

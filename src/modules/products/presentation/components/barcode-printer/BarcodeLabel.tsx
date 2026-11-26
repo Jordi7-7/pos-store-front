@@ -1,54 +1,26 @@
 import React, { useMemo } from 'react';
-import { renderLabelToPng203Dpi } from './ThermalPrintOutput';
+import type { LabelItem } from '@/modules/printing/domain/entities/label';
+import type { LabelSpec } from '@/modules/printing/domain/rules/label-layout';
+import { renderLabelCanvas } from '@/modules/printing/infrastructure/labels/label-canvas';
 import { useTicketFormat } from '@/modules/printing/presentation/hooks/useTicketFormat';
 
 interface BarcodeLabelProps {
-  storeName?: string;
-  sku: string;
-  name: string;
-  price: number;
-  widthMm?: number;
-  heightMm?: number;
+  item: LabelItem;
+  storeName: string;
+  spec: LabelSpec;
+  showStore: boolean;
 }
 
-export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({
-  storeName = 'MI TIENDA',
-  sku,
-  name,
-  price,
-  widthMm = 50,
-  heightMm = 30,
-}) => {
+/** La etiqueta tal como saldrá: la misma imagen que recibe la impresora (o el controlador del sistema). */
+export const BarcodeLabel: React.FC<BarcodeLabelProps> = ({ item, storeName, spec, showStore }) => {
   const format = useTicketFormat();
-  // Genera en vivo la imagen fija a 203 DPI para que la vista previa sea exactamente 1:1 con la física
-  const pngDataUrl = useMemo(() => {
-    return renderLabelToPng203Dpi(
-      { sku, name, price, quantity: 1 },
-      storeName,
-      format,
-      widthMm,
-      heightMm
-    );
-  }, [sku, name, price, storeName, format, widthMm, heightMm]);
-
+  const dataUrl = useMemo(() => renderLabelCanvas({ item, storeName, format, spec, showStore }).toDataURL('image/png'), [item, storeName, format, spec, showStore]);
   return (
-    <div
-      className="barcode-sticker bg-white text-black flex flex-col items-center justify-center select-none overflow-hidden rounded-md border border-neutral-300 shadow-sm transition-all"
-      style={{
-        maxWidth: '100%',
-        width: `${Math.min(300, widthMm * 5.5)}px`,
-        aspectRatio: `${widthMm} / ${heightMm}`,
-      }}
-    >
-      {pngDataUrl ? (
-        <img
-          src={pngDataUrl}
-          alt={`Etiqueta ${sku}`}
-          className="w-full h-full object-contain block"
-        />
-      ) : (
-        <div className="text-xs text-muted-foreground p-4">Cargando etiqueta...</div>
-      )}
-    </div>
+    <img
+      src={dataUrl}
+      alt={`Etiqueta de ${item.sku}`}
+      className="block h-auto max-w-full rounded-sm border border-neutral-300 bg-white shadow-sm"
+      style={{ width: `${Math.min(420, spec.widthMm * 7)}px`, aspectRatio: `${spec.widthMm} / ${spec.heightMm}` }}
+    />
   );
 };

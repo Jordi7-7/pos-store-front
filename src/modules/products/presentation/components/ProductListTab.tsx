@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Package } from 'lucide-react';
+import { toast } from 'sonner';
 import { APP_PERMISSIONS } from '@/constants/permissions';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Card } from '@/components/ui/card';
@@ -61,7 +62,10 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
   };
 
   const openLabels = (toPrint: ProductVM[]) => {
-    setLabelQueue(labelLinesFor(toPrint));
+    const { lines, skipped } = labelLinesFor(toPrint);
+    if (skipped > 0) toast.warning(`${skipped} ${skipped === 1 ? 'variante sin SKU no se imprimirá' : 'variantes sin SKU no se imprimirán'}: el código de barras sale del SKU.`);
+    if (lines.length === 0) return;
+    setLabelQueue(lines);
     setIsLabelModalOpen(true);
   };
 

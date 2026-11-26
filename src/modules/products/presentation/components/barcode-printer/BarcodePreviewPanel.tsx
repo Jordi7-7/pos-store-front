@@ -1,106 +1,75 @@
 import React from 'react';
-import { Sliders, Store, Eye, Tag } from 'lucide-react';
+import { AlertTriangle, Eye, Store } from 'lucide-react';
+import { LABEL_PRESETS } from '@/modules/printing/domain/rules/label-presets';
+import type { LabelPrinterState } from '@/modules/printing/presentation/hooks/useLabelPrinter';
+import { barcodeFits } from '@/modules/printing/infrastructure/labels/label-canvas';
 import { BarcodeLabel } from './BarcodeLabel';
 import type { BarcodeLabelItem } from './types';
-import { ZEBRA_LABEL_PRESETS } from '@/modules/printing/domain/rules/label-presets';
 
 interface BarcodePreviewPanelProps {
+  printer: LabelPrinterState;
   storeName: string;
   onStoreNameChange: (name: string) => void;
   activeItem?: BarcodeLabelItem;
-  widthMm?: number;
-  heightMm?: number;
-  onSelectDimensions?: (width: number, height: number) => void;
+  onMoreSizes: () => void;
 }
 
-export const BarcodePreviewPanel: React.FC<BarcodePreviewPanelProps> = ({
-  storeName,
-  onStoreNameChange,
-  activeItem,
-  widthMm = 50,
-  heightMm = 30,
-  onSelectDimensions,
-}) => {
+/** Medidas que se ofrecen a un clic; las demás están en la configuración. */
+const QUICK_SIZE_IDS = ['50x25', '50x30', '40x30', '60x40'];
+
+/** Tamaño de la etiqueta, nombre de la tienda y la vista de cómo saldrá la etiqueta elegida. */
+export const BarcodePreviewPanel: React.FC<BarcodePreviewPanelProps> = ({ printer, storeName, onStoreNameChange, activeItem, onMoreSizes }) => {
+  const { config, spec, update } = printer;
+  const quick = LABEL_PRESETS.filter((preset) => QUICK_SIZE_IDS.includes(preset.id));
+  const isQuick = quick.some((preset) => preset.widthMm === config.widthMm && preset.heightMm === config.heightMm);
+  const tooLong = activeItem ? !barcodeFits(activeItem.sku, spec, config.showStore) : false;
+
   return (
-    <div className="flex flex-col gap-3.5 h-full">
-      {/* Configuración de Cabecera y Tamaño Rápido */}
-      <div className="bg-card border border-border/80 rounded-xl p-3.5 space-y-3 shrink-0">
- <div className="flex items-center justify-between text-xs font-bold text-foreground ">
-          <div className="flex items-center gap-1.5">
-            <Sliders className="w-3.5 h-3.5 text-primary" />
-            <span>Cabecera</span>
-          </div>
-          <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
-            {widthMm} × {heightMm} mm
-          </span>
-        </div>
-
+    <div className="flex h-full flex-col gap-3.5">
+      <div className="shrink-0 space-y-3 rounded-xl border border-border/80 bg-card p-3.5">
         <div>
- <label className="text-xs text-muted-foreground font-bold block mb-1">
-            Nombre en la franja negra
-          </label>
-          <div className="relative">
-            <Store className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
-            <input
-              type="text"
-              value={storeName}
-              onChange={(e) => onStoreNameChange(e.target.value.toUpperCase())}
-              placeholder="NOMBRE TIENDA"
- className="w-full pl-8 pr-3 py-1.5 text-xs font-bold bg-background border border-border rounded-lg focus:outline-none focus:border-primary"
-            />
+          <p className="mb-1.5 text-xs font-semibold text-foreground">Tamaño de la etiqueta</p>
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Tamaño de la etiqueta">
+            {quick.map((preset) => {
+              const selected = preset.widthMm === config.widthMm && preset.heightMm === config.heightMm;
+              return (
+                <button key={preset.id} type="button" aria-pressed={selected} onClick={() => update({ widthMm: preset.widthMm, heightMm: preset.heightMm, gapMm: preset.gapMm })} className={`cursor-pointer rounded-lg border px-2.5 py-1 text-xs font-semibold transition-colors ${selected ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-foreground hover:border-primary/40'}`}>
+                  {preset.name}
+                </button>
+              );
+            })}
+            <button type="button" onClick={onMoreSizes} className={`cursor-pointer rounded-lg border px-2.5 py-1 text-xs font-semibold transition-colors ${isQuick ? 'border-dashed border-border text-muted-foreground hover:text-foreground' : 'border-primary bg-primary/10 text-primary'}`}>
+              {isQuick ? 'Otra medida…' : `${config.widthMm} × ${config.heightMm} mm · cambiar`}
+            </button>
           </div>
         </div>
 
-        {/* Selector rápido de medidas estándar Zebra */}
-        {onSelectDimensions && (
-          <div>
- <div className="flex items-center gap-1 text-xs text-muted-foreground font-bold mb-1.5">
-              <Tag className="w-3 h-3 text-muted-foreground" />
-              <span>Tamaño de Etiqueta (Zebra / Térmica)</span>
+        <div className="space-y-1.5">
+          <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-foreground">
+            <input type="checkbox" checked={config.showStore} onChange={(e) => update({ showStore: e.target.checked })} className="size-4 cursor-pointer accent-primary" />
+            Mostrar el nombre de la tienda arriba
+          </label>
+          {config.showStore && (
+            <div className="relative">
+              <Store className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <input type="text" aria-label="Nombre de la tienda en la etiqueta" value={storeName} onChange={(e) => onStoreNameChange(e.target.value.toUpperCase())} placeholder="NOMBRE DE LA TIENDA" className="w-full rounded-lg border border-border bg-background py-1.5 pl-8 pr-3 text-xs font-semibold focus:border-primary focus:outline-none" />
             </div>
-            <select
-              value={`${widthMm}x${heightMm}`}
-              onChange={(e) => {
-                const [w, h] = e.target.value.split('x').map(Number);
-                if (w && h) onSelectDimensions(w, h);
-              }}
-              className="w-full text-xs font-semibold bg-background border border-border rounded-lg py-1.5 px-2.5 focus:outline-none focus:border-primary cursor-pointer text-foreground"
-            >
-              {ZEBRA_LABEL_PRESETS.map((p) => (
-                <option key={p.id} value={`${p.widthMm}x${p.heightMm}`}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Vista Previa en Vivo 100% WYSIWYG a 203 DPI */}
-      <div className="flex-1 flex flex-col border border-border/80 rounded-xl bg-muted/20 p-4 items-center justify-center min-h-[220px]">
- <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground mb-3">
-          <Eye className="w-4 h-4 text-primary" />
-          <span>Vista Real ({widthMm} × {heightMm} mm)</span>
+      <div className="flex min-h-[220px] flex-1 flex-col items-center justify-center rounded-xl border border-border/80 bg-muted/20 p-4">
+        <div className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+          <Eye className="h-4 w-4 text-primary" />
+          <span>Así saldrá ({config.widthMm} × {config.heightMm} mm)</span>
         </div>
-
-        {activeItem ? (
-          <div className="p-2 bg-white rounded-xl shadow-lg border border-neutral-300 max-w-full flex items-center justify-center">
-            <BarcodeLabel
-              storeName={storeName}
-              sku={activeItem.sku}
-              name={activeItem.name}
-              price={activeItem.price}
-              widthMm={widthMm}
-              heightMm={heightMm}
-            />
-          </div>
-        ) : (
-          <div className="text-xs text-muted-foreground italic">No hay producto seleccionado</div>
+        {activeItem ? <BarcodeLabel item={activeItem} storeName={storeName} spec={spec} showStore={config.showStore} /> : <p className="text-xs italic text-muted-foreground">Elige un producto de la lista para ver su etiqueta.</p>}
+        {tooLong && (
+          <p role="alert" className="mt-3 flex max-w-xs items-start gap-1.5 text-xs font-medium text-amber-600">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            El SKU {activeItem?.sku} es muy largo para esta etiqueta: el código saldrá apretado y puede costar al escáner. Usa una etiqueta más ancha.
+          </p>
         )}
-
-        <p className="mt-3 text-xs text-muted-foreground text-center max-w-[260px] leading-relaxed">
-          Renderizado exacto a <strong>203 DPI</strong>. La imagen enviada a la impresora será 100% idéntica a esta vista.
-        </p>
       </div>
     </div>
   );

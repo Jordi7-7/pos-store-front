@@ -8,6 +8,7 @@ import {
 import { resolvePrintLayout, type PrintLayout } from '../../domain/rules/print-layout';
 import type { TicketPrinter } from '../../application/ports/ticket-printer';
 import type { ClosingTicketData, TicketFormat, TicketSaleData } from '../../domain/entities/ticket';
+import { portRegistry } from './port-registry';
 import { getSerial, type SerialPortLike } from './web-serial';
 import { isDevicePickerCancelled, NO_PRINTER_CONFIGURED } from '../../domain/rules/device-error';
 
@@ -41,8 +42,6 @@ export function layoutOf(config: PrinterConfig): PrintLayout {
 const STORAGE_KEY = 'aura_pos_printer_config';
 
 class ThermalPrinterService implements TicketPrinter {
-  private activePort: SerialPortLike | null = null;
-
   /** Comprueba si el navegador soporta Web Serial API */
   isSupported(): boolean {
     return getSerial() !== undefined;
@@ -75,18 +74,17 @@ class ThermalPrinterService implements TicketPrinter {
     return updated;
   }
 
-  /** Comprueba si ya existe un puerto USB previamente emparejado */
+  /** ¿Hay una impresora de TICKETS vinculada? (La de etiquetas no cuenta.) */
   async isConfigured(): Promise<boolean> {
     if (!this.isSupported()) return false;
     try {
-      const ports = await this.serial().getPorts();
-      return ports && ports.length > 0;
+      return (await portRegistry.portFor('ticket')) !== null;
     } catch {
       return false;
     }
   }
 
-  /** Pide al usuario que seleccione su impresora USB en la ventana del navegador */
+  /** Pide al usuario que seleccione su impresora de tickets en la ventana del navegador */
   async requestPort(): Promise<boolean> {
     if (!this.isSupported()) {
       throw new Error('Tu navegador no soporta Web Serial API. Usa Google Chrome o Microsoft Edge.');
@@ -94,8 +92,8 @@ class ThermalPrinterService implements TicketPrinter {
 
     try {
       const port = await this.serial().requestPort();
-      this.activePort = port;
-      return true;
+      await portRegistry.assign('ticket', port);
+        return true;
     } catch (err) {
       if (isDevicePickerCancelled(err)) {
         // Usuario canceló la selección de dispositivo
@@ -105,21 +103,14 @@ class ThermalPrinterService implements TicketPrinter {
     }
   }
 
-  /** Obtiene un puerto listo para escribir (abre conexión si no está abierta) */
+  /** Obtiene el puerto de tickets listo para escribir (abre conexión si no está abierta) */
   private async getOpenPort(): Promise<SerialPortLike | null> {
     if (!this.isSupported()) {
       throw new Error('Web Serial API no soportada');
     }
 
-    let port = this.activePort;
-
-    if (!port) {
-      const ports = await this.serial().getPorts();
-      const first = ports[0];
-      if (!first) return null;
-      port = first;
-      this.activePort = port;
-    }
+    const port = await portRegistry.portFor('ticket');
+    if (!port) return null;
 
     // Abrir puerto si está cerrado
     if (!port.readable && !port.writable) {
@@ -223,21 +214,9 @@ class ThermalPrinterService implements TicketPrinter {
     return true;
   }
 
-  /** Desvincula la impresora activa */
+  /** Desvincula la impresora de tickets (no toca la de etiquetas) */
   async forgetPrinter(): Promise<void> {
-    try {
-      if (this.activePort) {
-        if (this.activePort.readable || this.activePort.writable) {
-          await this.activePort.close();
-        }
-        if (typeof this.activePort.forget === 'function') {
-          await this.activePort.forget();
-        }
-        this.activePort = null;
-      }
-    } catch {
-      // Ignorar error al cerrar
-    }
+    await portRegistry.release('ticket');
   }
 }
 

@@ -3,6 +3,8 @@ import { ProductType } from '../../../domain/enums';
 import type { ProductVM, ProductVariantVM } from '../../view-models/product.vm';
 import { Badge } from '@/components/ui/badge';
 import { Barcode } from 'lucide-react';
+import { toast } from 'sonner';
+import { labelLineFor, type LabelLine } from '../../../domain/rules/product-stock';
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 interface ProductDetailInfoTabProps {
@@ -14,7 +16,7 @@ interface ProductDetailInfoTabProps {
   selectedBranchId: string;
   canPrintBarcodes: boolean;
   onSelectVariant: (variantId: string) => void;
-  onPrintBarcode: (item: { sku: string; name: string; price: number; quantity: number }) => void;
+  onPrintBarcode: (item: LabelLine) => void;
 }
 
 export const ProductDetailInfoTab: React.FC<ProductDetailInfoTabProps> = ({
@@ -131,12 +133,9 @@ export const ProductDetailInfoTab: React.FC<ProductDetailInfoTabProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        onPrintBarcode({
-                          sku: variant.sku || 'SIN-SKU',
-                          name: detailProduct.name,
-                          price: Number(variant.salePrice || 0),
-                          quantity: 1,
-                        });
+                        const line = labelLineFor(detailProduct.name, variant);
+                        if (line) onPrintBarcode(line);
+                        else toast.warning('Esta variante no tiene SKU: el código de barras sale del SKU.');
                       }}
                       className="p-1.5 rounded-lg hover:bg-primary/10 text-primary transition-all cursor-pointer"
                       title="Imprimir Código de Barras Térmico"

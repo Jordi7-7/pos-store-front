@@ -44,13 +44,38 @@ export interface LabelLine {
   name: string;
   price: number;
   quantity: number;
+  /** Combinación de la variante (`M / Rojo`); vacío si no tiene atributos. */
+  detail?: string;
 }
 
-/** Una etiqueta por variante (con el precio de venta); un producto sin variantes da una etiqueta "SIN-SKU". */
-export function labelLinesFor(products: Array<{ name: string; variants: Array<{ sku: string; salePrice: number }> }>): LabelLine[] {
-  return products.flatMap((product) =>
-    product.variants.length === 0
-      ? [{ sku: 'SIN-SKU', name: product.name, price: 0, quantity: 1 }]
-      : product.variants.map((variant) => ({ sku: variant.sku || 'SIN-SKU', name: product.name, price: Number(variant.salePrice || 0), quantity: 1 })),
-  );
+interface LabelVariant {
+  sku: string;
+  salePrice: number | string;
+  attributes?: Array<{ value: string }>;
+}
+
+/** Línea de etiqueta de una variante: el código de barras es su SKU, así que sin SKU no hay etiqueta (`null`). */
+export function labelLineFor(productName: string, variant: LabelVariant): LabelLine | null {
+  const sku = (variant.sku ?? '').trim();
+  if (!sku) return null;
+  const detail = (variant.attributes ?? []).map((attribute) => attribute.value.trim()).filter(Boolean).join(' / ');
+  return { sku, name: productName, price: Number(variant.salePrice || 0), quantity: 1, ...(detail ? { detail } : {}) };
+}
+
+/**
+ * Una etiqueta por variante con SKU (con el precio de venta y su combinación). Las variantes sin SKU no pueden llevar
+ * código de barras: se cuentan en `skipped` para avisar, en vez de imprimir una etiqueta que no sirve.
+ */
+export function labelLinesFor(products: Array<{ name: string; variants: LabelVariant[] }>): { lines: LabelLine[]; skipped: number } {
+  const lines: LabelLine[] = [];
+  let skipped = 0;
+  for (const product of products) {
+    if (product.variants.length === 0) skipped += 1;
+    for (const variant of product.variants) {
+      const line = labelLineFor(product.name, variant);
+      if (line) lines.push(line);
+      else skipped += 1;
+    }
+  }
+  return { lines, skipped };
 }

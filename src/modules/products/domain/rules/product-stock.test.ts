@@ -32,11 +32,20 @@ describe('existencias en la lista de productos', () => {
     expect(isVariableProduct({ type: ProductType.SIMPLE, variants: [{ attributes: [] }] })).toBe(false);
   });
 
-  it('etiquetas: una por variante con su precio; sin variantes, una "SIN-SKU"', () => {
-    expect(labelLinesFor([{ name: 'Playera', variants: [{ sku: 'P-S', salePrice: 10 }, { sku: '', salePrice: 12 }] }, { name: 'Vacío', variants: [] }])).toEqual([
-      { sku: 'P-S', name: 'Playera', price: 10, quantity: 1 },
-      { sku: 'SIN-SKU', name: 'Playera', price: 12, quantity: 1 },
-      { sku: 'SIN-SKU', name: 'Vacío', price: 0, quantity: 1 },
+  it('etiquetas: una por variante con SKU, con su precio y su combinación', () => {
+    const { lines, skipped } = labelLinesFor([
+      { name: 'Playera', variants: [{ sku: 'P-S', salePrice: 10, attributes: [{ value: 'S' }, { value: 'Rojo' }] }, { sku: ' P-M ', salePrice: '12' }] },
     ]);
+    expect(lines).toEqual([
+      { sku: 'P-S', name: 'Playera', price: 10, quantity: 1, detail: 'S / Rojo' },
+      { sku: 'P-M', name: 'Playera', price: 12, quantity: 1 },
+    ]);
+    expect(skipped).toBe(0);
+  });
+
+  it('una variante sin SKU, o un producto sin variantes, no genera etiqueta y se cuenta para avisar', () => {
+    const { lines, skipped } = labelLinesFor([{ name: 'Playera', variants: [{ sku: 'P-S', salePrice: 10 }, { sku: '  ', salePrice: 12 }] }, { name: 'Vacío', variants: [] }]);
+    expect(lines.map((line) => line.sku)).toEqual(['P-S']);
+    expect(skipped).toBe(2);
   });
 });
