@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 
 interface NumberCellProps extends Omit<React.ComponentProps<typeof Input>, 'value' | 'onChange' | 'type'> {
@@ -21,11 +21,13 @@ const parse = (text: string): number | null => {
  */
 export const NumberCell: React.FC<NumberCellProps> = ({ value, onValueChange, ...inputProps }) => {
   const [text, setText] = useState(toText(value));
+  const [shownValue, setShownValue] = useState(value);
 
-  useEffect(() => {
-    // Si el valor cambió desde fuera (pegar, aplicar en bloque), la celda lo refleja; si es el mismo número que ya se ve, se respeta el texto
+  // Si el valor cambió desde fuera (pegar, aplicar en bloque), la celda lo refleja; si es el mismo número que ya se ve, se respeta el texto
+  if (shownValue !== value) {
+    setShownValue(value);
     if (parse(text) !== value) setText(toText(value));
-  }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
   return (
     <Input

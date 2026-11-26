@@ -12,11 +12,34 @@ interface LabelSizePickerProps {
 
 const sameSize = (config: LabelPrinterConfig, widthMm: number, heightMm: number) => config.widthMm === widthMm && config.heightMm === heightMm;
 
-/** Número de milímetros escrito a mano: solo valores razonables (5 a 300 mm). */
-const mm = (text: string): number | null => {
-  const value = Number(text);
-  return Number.isFinite(value) && value >= 5 && value <= 300 ? Math.round(value * 10) / 10 : null;
-};
+interface MillimetersFieldProps {
+  label: string;
+  /** Texto accesible completo del campo. */
+  ariaLabel: string;
+  value: number;
+  min: number;
+  max: number;
+  onValue: (value: number) => void;
+}
+
+/** Campo de milímetros: solo pasa al padre valores dentro del rango, con un decimal como máximo. */
+const MillimetersField: React.FC<MillimetersFieldProps> = ({ label, ariaLabel, value, min, max, onValue }) => (
+  <label className="space-y-1 text-xs text-muted-foreground">
+    {label}
+    <Input
+      type="number"
+      min={min}
+      max={max}
+      step="0.5"
+      value={value}
+      aria-label={ariaLabel}
+      onChange={(event) => {
+        const typed = Number(event.target.value);
+        if (event.target.value !== '' && Number.isFinite(typed) && typed >= min && typed <= max) onValue(Math.round(typed * 10) / 10);
+      }}
+    />
+  </label>
+);
 
 /** Tamaños de etiqueta comunes, medida propia y girar (ancho ↔ alto) para rollos que se alimentan de lado. */
 export const LabelSizePicker: React.FC<LabelSizePickerProps> = ({ config, onChange }) => (
@@ -42,18 +65,9 @@ export const LabelSizePicker: React.FC<LabelSizePickerProps> = ({ config, onChan
     <div className="rounded-xl border border-border bg-muted/20 p-3">
       <p className="mb-2 text-xs font-semibold text-foreground">¿Otra medida? Escríbela (en milímetros)</p>
       <div className="grid grid-cols-3 gap-2">
-        <label className="space-y-1 text-xs text-muted-foreground">
-          Ancho
-          <Input type="number" min={5} max={300} step="0.5" value={config.widthMm} onChange={(e) => { const value = mm(e.target.value); if (value) onChange({ widthMm: value }); }} aria-label="Ancho de la etiqueta en milímetros" />
-        </label>
-        <label className="space-y-1 text-xs text-muted-foreground">
-          Alto
-          <Input type="number" min={5} max={300} step="0.5" value={config.heightMm} onChange={(e) => { const value = mm(e.target.value); if (value) onChange({ heightMm: value }); }} aria-label="Alto de la etiqueta en milímetros" />
-        </label>
-        <label className="space-y-1 text-xs text-muted-foreground">
-          Separación
-          <Input type="number" min={0} max={10} step="0.5" value={config.gapMm} onChange={(e) => { const value = Number(e.target.value); if (Number.isFinite(value) && value >= 0 && value <= 10) onChange({ gapMm: value }); }} aria-label="Separación entre etiquetas en milímetros" />
-        </label>
+        <MillimetersField label="Ancho" ariaLabel="Ancho de la etiqueta en milímetros" value={config.widthMm} min={5} max={300} onValue={(widthMm) => onChange({ widthMm })} />
+        <MillimetersField label="Alto" ariaLabel="Alto de la etiqueta en milímetros" value={config.heightMm} min={5} max={300} onValue={(heightMm) => onChange({ heightMm })} />
+        <MillimetersField label="Separación" ariaLabel="Separación entre etiquetas en milímetros" value={config.gapMm} min={0} max={10} onValue={(gapMm) => onChange({ gapMm })} />
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">El <strong>ancho</strong> es el lado que cruza la impresora. Si tu rollo sale de lado, gira la medida.</p>
