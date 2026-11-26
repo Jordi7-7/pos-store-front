@@ -1,14 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { adminApi, creds, emptyStock, login } from './helpers';
+import { adminApi, creds, deleteProductsMatching, login } from './helpers';
 
 test.skip(!creds.slug || !creds.user || !creds.pass, 'Faltan credenciales E2E en .env.e2e.local');
 
 interface Attribute {
   id: string;
   values?: Array<{ id: string; value: string }>;
-}
-interface ProductsPage {
-  data: Array<{ id: string; name: string; variants: Array<{ id: string; stocks?: Array<{ branchId: string; quantity: number }> }> }>;
 }
 
 test.setTimeout(90_000);
@@ -104,11 +101,7 @@ test('etiquetas: la vista previa, el envío directo a la impresora y el controla
     expect(frame).toBeDefined();
     await expect.poll(async () => frame?.locator('.page').count()).toBe(2);
   } finally {
-    const products = (await admin.call<ProductsPage>('GET', `/products?search=${baseSku}&limit=5`)).data.data;
-    for (const product of products) {
-      for (const variant of product.variants) for (const stock of variant.stocks ?? []) if (Number(stock.quantity) > 0) await emptyStock(admin, stock.branchId, variant.id, Number(stock.quantity));
-      await admin.call('DELETE', `/products/${product.id}`);
-    }
+    await deleteProductsMatching(admin, baseSku);
     if (attributeId) await admin.call('DELETE', `/products/attributes/${attributeId}`);
   }
 });

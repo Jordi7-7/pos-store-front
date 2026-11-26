@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { adminApi, cashier, creds, emptyStock, fakeCameraArgs, pinLogin, resetCashRegister, writeFakeCameraVideo } from './helpers';
+import { adminApi, cashier, creds, deleteProductsMatching, fakeCameraArgs, pinLogin, resetCashRegister, writeFakeCameraVideo } from './helpers';
 
 test.skip(!creds.slug || !creds.user || !creds.pass || !cashier.pin, 'Faltan credenciales E2E en .env.e2e.local');
 
@@ -46,10 +46,6 @@ test('POS con la cámara: un código único se agrega al carrito y el escáner s
     await expect(page.getByText('MONTO TOTAL A COBRAR')).toBeVisible();
   } finally {
     await resetCashRegister(request, REGISTER);
-    const products = (await admin.call<{ data: Array<{ id: string; variants: Array<{ id: string; stocks?: Array<{ branchId: string; quantity: number }> }> }> }>('GET', `/products?search=${UNIQUE_SKU}&limit=5`)).data.data;
-    for (const product of products) {
-      for (const variant of product.variants) for (const stock of variant.stocks ?? []) if (Number(stock.quantity) > 0) await emptyStock(admin, stock.branchId, variant.id, Number(stock.quantity));
-      await admin.call('DELETE', `/products/${product.id}`);
-    }
+    await deleteProductsMatching(admin, UNIQUE_SKU);
   }
 });

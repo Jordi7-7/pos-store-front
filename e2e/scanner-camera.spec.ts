@@ -1,11 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { adminApi, creds, emptyStock, fakeCameraArgs, login, writeFakeCameraVideo } from './helpers';
+import { adminApi, creds, deleteProductsMatching, fakeCameraArgs, login, writeFakeCameraVideo } from './helpers';
 
 test.skip(!creds.slug || !creds.user || !creds.pass, 'Faltan credenciales E2E en .env.e2e.local');
 
-interface ProductsPage {
-  data: Array<{ id: string; name: string; variants: Array<{ id: string; stocks?: Array<{ branchId: string; quantity: number }> }> }>;
-}
 
 const stamp = Date.now().toString().slice(-8);
 const sku = `E2ESCAN${stamp}`;
@@ -53,10 +50,6 @@ test('escáner con la cámara: lee un código y lo busca en el listado de produc
     // 3. Al cerrar, la cámara se apaga: ningún video conserva su transmisión
     await expect.poll(() => page.evaluate(() => Array.from(document.querySelectorAll('video')).filter((video) => video.srcObject !== null).length)).toBe(0);
   } finally {
-    const products = (await admin.call<ProductsPage>('GET', `/products?search=${sku}&limit=5`)).data.data;
-    for (const product of products) {
-      for (const variant of product.variants) for (const stock of variant.stocks ?? []) if (Number(stock.quantity) > 0) await emptyStock(admin, stock.branchId, variant.id, Number(stock.quantity));
-      await admin.call('DELETE', `/products/${product.id}`);
-    }
+    await deleteProductsMatching(admin, sku);
   }
 });

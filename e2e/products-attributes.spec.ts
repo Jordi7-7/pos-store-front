@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { adminApi, creds, emptyStock, login } from './helpers';
+import { adminApi, creds, deleteProductsMatching, login } from './helpers';
 
 test.skip(!creds.slug || !creds.user || !creds.pass, 'Faltan credenciales E2E en .env.e2e.local');
 
@@ -7,9 +7,6 @@ interface Attribute {
   id: string;
   name: string;
   values?: Array<{ id: string; value: string }>;
-}
-interface ProductsPage {
-  data: Array<{ id: string; variants: Array<{ id: string; stocks?: Array<{ branchId: string; quantity: number }> }> }>;
 }
 
 test.setTimeout(90_000);
@@ -61,13 +58,7 @@ test('catálogo de atributos: se elimina una opción y un atributo sin usar, y u
     await expect(page.getByRole('button', { name: `Eliminar el atributo ${freeName}` })).toHaveCount(0);
     expect(await byName(freeName)).toBeUndefined();
   } finally {
-    const products = (await admin.call<ProductsPage>('GET', `/products?search=${sku}&limit=5`)).data.data;
-    for (const product of products) {
-      for (const variant of product.variants) {
-        for (const stock of variant.stocks ?? []) if (Number(stock.quantity) > 0) await emptyStock(admin, stock.branchId, variant.id, Number(stock.quantity));
-      }
-      await admin.call('DELETE', `/products/${product.id}`);
-    }
+    await deleteProductsMatching(admin, sku);
     for (const id of createdIds) await admin.call('DELETE', `/products/attributes/${id}`);
   }
 });

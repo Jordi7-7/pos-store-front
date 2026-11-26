@@ -139,3 +139,18 @@ export function writeFakeCameraVideo(codes: string | string[], name: string): st
 }
 
 export const fakeCameraArgs = (file: string): string[] => ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', `--use-file-for-fake-video-capture=${file}`];
+
+export interface ProductsPage {
+  data: Array<{ id: string; name: string; variants: Array<{ id: string; sku: string; salePrice: number; stocks?: Array<{ branchId: string; quantity: number }> }> }>;
+}
+
+/** Borra los productos de prueba que coinciden con la búsqueda; antes vacía sus existencias (un producto con stock no se puede borrar). */
+export async function deleteProductsMatching(admin: AdminSession, search: string, keep: (name: string) => boolean = () => true): Promise<void> {
+  const products = (await admin.call<ProductsPage>('GET', `/products?search=${encodeURIComponent(search)}&limit=50`)).data.data.filter((product) => keep(product.name));
+  for (const product of products) {
+    for (const variant of product.variants) {
+      for (const stock of variant.stocks ?? []) if (Number(stock.quantity) > 0) await emptyStock(admin, stock.branchId, variant.id, Number(stock.quantity));
+    }
+    await admin.call('DELETE', `/products/${product.id}`);
+  }
+}
