@@ -271,7 +271,7 @@ export const TenantSettings: React.FC = () => {
                   className="text-xs h-9 font-mono"
                 />
                 <p className="text-xs text-neutral mt-1">
-                  Enlace directo de acceso: <span className="font-mono text-primary font-semibold">http://localhost:5173/{slug || 'mi-tienda'}</span>
+                  Enlace directo de acceso: <span className="font-mono text-primary font-semibold">{window.location.origin}/login/{slug || 'mi-tienda'}</span>
                 </p>
               </Field>
 
