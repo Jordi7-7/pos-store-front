@@ -7,6 +7,7 @@ import {
   Check, 
   Layers,
   Trash2,
+  ArrowUpDown,
   X
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -30,6 +31,7 @@ import { getErrorMessage } from '@/shared/presentation/formatting/error-messages
 import { useConfirm } from '@/shared/presentation/components/useConfirm';
 import { usePermissions } from '@/hooks/usePermissions';
 import { APP_PERMISSIONS } from '@/constants/permissions';
+import { AttributeOrderDialog } from './AttributeOrderDialog';
 
 export const AttributeCatalogManager: React.FC = () => {
   const { 
@@ -41,10 +43,14 @@ export const AttributeCatalogManager: React.FC = () => {
     isCreatingValue,
     deleteAttribute,
     deleteAttributeValue,
+    reorderAttributeValues,
   } = useAttributes();
   const { can } = usePermissions();
   const canDelete = can(APP_PERMISSIONS.ATTRIBUTES_DELETE);
+  const canEdit = can(APP_PERMISSIONS.ATTRIBUTES_EDIT);
+  const [orderingId, setOrderingId] = useState<string | null>(null);
   const { confirm, confirmDialog } = useConfirm();
+  const reorderAttributeValues_ = (attributeId: string, valueIds: string[]) => reorderAttributeValues({ attributeId, valueIds });
 
   // Create attribute modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -200,6 +206,17 @@ export const AttributeCatalogManager: React.FC = () => {
                         <Badge variant="secondary" className="text-xs font-mono">
                           {vals.length} {vals.length === 1 ? 'valor' : 'valores'}
                         </Badge>
+                        {canEdit && vals.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setOrderingId(attr.id)}
+                            aria-label={`Ordenar las opciones de ${attr.name}`}
+                            title="Ordenar las opciones"
+                            className="cursor-pointer rounded-md p-1 text-neutral transition-colors hover:bg-primary/10 hover:text-primary"
+                          >
+                            <ArrowUpDown className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                         {canDelete && (
                           <button
                             type="button"
@@ -283,6 +300,7 @@ export const AttributeCatalogManager: React.FC = () => {
       )}
 
       {confirmDialog}
+      <AttributeOrderDialog attribute={attributes.find((attribute: Attribute) => attribute.id === orderingId) ?? null} onClose={() => setOrderingId(null)} onSave={reorderAttributeValues_} />
 
       {/* Modal / Dialog para Crear Atributo */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>

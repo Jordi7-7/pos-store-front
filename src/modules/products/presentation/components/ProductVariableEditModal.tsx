@@ -15,6 +15,7 @@ import { useProductMutations } from '../hooks/useProductMutations';
 import { useVariantRows } from '../hooks/useVariantRows';
 import type { NewVariantInput } from '../../application/ports/products.repository';
 import { attributesUsedBy } from '../../domain/rules/product-attributes';
+import { sortVariantsByOptions } from '../../domain/rules/option-order';
 import { summarizeRowIssues, type ExistingVariant } from '../../domain/rules/variant-edit';
 import { suggestNewVariant, type VariantSuggestion } from '../../domain/rules/variant-suggestion';
 import { BulkAssignPanel } from './variable-edit/BulkAssignPanel';
@@ -47,7 +48,9 @@ export const ProductVariableEditModal: React.FC<ProductVariableEditModalProps> =
   const { confirm, confirmDialog } = useConfirm();
   const [activeTab, setActiveTab] = useState<EditorTab>('info');
   const parent = useParentInfoForm(product, isOpen);
-  const variants = useVariantRows(product, isOpen);
+  // Las variantes salen en el orden de las opciones del catálogo (S, M, L…), no en el de creación
+  const orderedProduct = useMemo(() => (product ? { ...product, variants: sortVariantsByOptions(product.variants, attributes) } : product), [product, attributes]);
+  const variants = useVariantRows(orderedProduct, isOpen);
   const picker = useImagePicker({ parentImages: parent.images, setParentImages: parent.setImages, rows: variants.rows, setRowImages: variants.setRowImages });
 
   const [isAddVariantOpen, setIsAddVariantOpen] = useState(false);

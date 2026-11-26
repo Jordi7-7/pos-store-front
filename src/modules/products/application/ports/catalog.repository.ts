@@ -10,6 +10,8 @@ export interface CatalogRepository {
   /** Elimina un atributo con sus opciones; el servidor lo rechaza (`ATTRIBUTE_IN_USE`) si alguna variante vigente lo usa. */
   deleteAttribute(attributeId: string): Promise<void>;
   deleteAttributeValue(valueId: string): Promise<void>;
+  /** Fija el orden de las opciones; debe traer todas las del atributo (`ATTRIBUTE_ORDER_STALE` si la lista cambió). */
+  reorderAttributeValues(attributeId: string, valueIds: string[]): Promise<void>;
   listTags(): Promise<TagEntity[]>;
   createTag(name: string): Promise<TagEntity>;
 }

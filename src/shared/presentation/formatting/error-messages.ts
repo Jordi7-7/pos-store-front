@@ -156,6 +156,7 @@ export const ERROR_MESSAGES: Readonly<Record<string, Entry>> = {
   CATEGORY_NOT_FOUND: 'Categoría no encontrada.',
   CATEGORY_NAME_TAKEN: (d) => (text(d.name) ? `La categoría "${text(d.name)}" ya existe.` : 'Esa categoría ya existe.'),
   ATTRIBUTE_NOT_FOUND: 'Atributo no encontrado.',
+  ATTRIBUTE_ORDER_STALE: 'Las opciones cambiaron mientras las ordenabas. Cierra esta ventana, ábrela de nuevo y repite el orden.',
   ATTRIBUTE_IN_USE: (d) => {
     const n = typeof d.variants === 'number' ? d.variants : null;
     return n === null ? 'Hay variantes que lo usan: quítalo de ellas antes de eliminarlo.' : `Lo usan ${n} ${n === 1 ? 'variante' : 'variantes'} de productos: quítalo de ellas antes de eliminarlo.`;

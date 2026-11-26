@@ -71,3 +71,37 @@ test('catálogo de atributos: se elimina una opción y un atributo sin usar, y u
     for (const id of createdIds) await admin.call('DELETE', `/products/attributes/${id}`);
   }
 });
+
+test('catálogo de atributos: las opciones se ordenan como tallas, se ajustan con las flechas y el orden queda guardado', async ({ page, request }) => {
+  const admin = await adminApi(request);
+  const stamp = Date.now().toString().slice(-8);
+  const name = `E2E Talla ${stamp}`;
+  const attribute = (await admin.call<Attribute>('POST', '/products/attributes', { name })).data;
+  const valuesOf = async () => ((await admin.call<Attribute[]>('GET', '/products/attributes')).data.find((item) => item.id === attribute.id)?.values ?? []).map((value) => value.value);
+
+  try {
+    for (const value of ['L', 'S', 'XL', 'M']) await admin.call('POST', '/products/attributes/values', { attributeId: attribute.id, value });
+    expect(await valuesOf()).toEqual(['L', 'S', 'XL', 'M']); // el orden en que se crearon
+
+    await login(page);
+    await page.goto('/inventario/crear-compuesto');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('tab', { name: /Catálogo de atributos/ }).click();
+    await page.getByPlaceholder('Buscar atributo o valor...').fill(stamp);
+    await page.getByRole('button', { name: `Ordenar las opciones de ${name}` }).click();
+
+    const dialog = page.getByRole('dialog').filter({ hasText: `Ordenar ${name}` });
+    await expect(dialog.getByRole('button', { name: 'Guardar orden' })).toBeDisabled(); // sin cambios no hay nada que guardar
+    await dialog.getByRole('button', { name: 'Ordenar como tallas' }).click();
+    await expect(dialog.getByRole('listitem').locator('span.truncate')).toHaveText(['S', 'M', 'L', 'XL']);
+    await dialog.getByRole('button', { name: 'Subir XL' }).click();
+    await expect(dialog.getByRole('listitem').locator('span.truncate')).toHaveText(['S', 'M', 'XL', 'L']);
+
+    const saved = page.waitForResponse((r) => /\/products\/attributes\/[^/]+\/values\/order$/.test(r.url()) && r.request().method() === 'PUT');
+    await dialog.getByRole('button', { name: 'Guardar orden' }).click();
+    expect((await saved).status()).toBe(200);
+    expect(await valuesOf()).toEqual(['S', 'M', 'XL', 'L']);
+  } finally {
+    await admin.call('DELETE', `/products/attributes/${attribute.id}`);
+  }
+});

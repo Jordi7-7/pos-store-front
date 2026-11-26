@@ -6,10 +6,10 @@
 | Comprobación | Resultado | Fecha |
 |---|---|---|
 | `pnpm typecheck` | limpio | 2026-11-22 |
-| `pnpm test` | 530 tests, 81 archivos | 2026-11-25 |
+| `pnpm test` | 537 tests, 82 archivos | 2026-11-25 |
 | `pnpm lint` | 47 avisos (tope 47, solo baja) | 2026-11-25 |
 | `any` escritos a mano (sin `components/ui` ni `routeTree.gen.ts`) | 1 (`CashSessionsHistoryView.tsx`) | 2026-11-22 |
-| `pnpm e2e` (Playwright) | **32 en verde contra el backend real** (uno, `confirm-dialog`, falló una vez en la tanda completa y pasa solo) (base de desarrollo `pos_store`), incluidos el filtro de existencias, «Buscar» con Enter, el foco del POS, la vista por documentos, crear con variantes y la importación por Excel | 2026-11-25 |
+| `pnpm e2e` (Playwright) | **33 en verde contra el backend real** (`confirm-dialog` falló una vez en una tanda anterior y pasa solo) (base de desarrollo `pos_store`), incluidos el filtro de existencias, «Buscar» con Enter, el foco del POS, la vista por documentos, crear con variantes y la importación por Excel | 2026-11-25 |
 
 Al empezar el refactor: 22 tests, tope de lint 265, 202 `any`. Si una cifra empeora, algo se rompió.
 
@@ -32,6 +32,7 @@ Pruebas contra el backend real: recorrido por API (2026-11-05) y 14 specs de Pla
 - Los atributos se agregan a demanda (buscador + máximo 4 por producto): con decenas de atributos en el catálogo ya no se despliegan todos. Los errores de precios y stock solo se pintan tras el primer intento de guardar.
 - `products-wizard.spec.ts` (reescrito) y `products-import-variants.spec.ts` (nuevo) pasan contra el backend real.
 - Editar un producto con variantes: cada fila de la tabla muestra qué falla (SKU vacío o repetido, precios negativos) y «Guardar» ya no cierra la ventana si algo no se guardó; «Nueva variante» exige todos los atributos del producto, avisa si la combinación o el SKU ya existen y propone el SKU a partir del SKU base y las opciones (`domain/rules/variant-edit.ts`).
+- Orden de las opciones: en el catálogo de atributos, el botón «Ordenar las opciones» abre un diálogo con flechas ↑ ↓, «Ordenar como tallas» (XS…3XL o números) y «A–Z»; el orden vale para crear, importar, editar y el selector de variante (el editor de un producto también ordena sus variantes así). Reglas en `domain/rules/option-order.ts`.
 - Catálogo de atributos: se pueden eliminar atributos y opciones (con confirmación; el servidor rechaza los que usa alguna variante). Los e2e de variantes ya borran el atributo que crean; las categorías «E2E …» siguen acumulándose (no hay borrado de categorías). El producto simple y su importador no se tocaron.
 
 **Hecho el 2026-11-24 (comiteado):**

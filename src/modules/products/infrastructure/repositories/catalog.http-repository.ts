@@ -31,6 +31,10 @@ export class CatalogHttpRepository implements CatalogRepository {
     await apiClient.delete(`/products/attributes/values/${valueId}`);
   }
 
+  async reorderAttributeValues(attributeId: string, valueIds: string[]): Promise<void> {
+    await apiClient.put(`/products/attributes/${attributeId}/values/order`, { valueIds });
+  }
+
   createAttributeValue(attributeId: string, value: string): Promise<AttributeValueEntity> {
     return apiClient.post<AttributeValueDTO>('/products/attributes/values', { attributeId, value });
   }

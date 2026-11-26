@@ -20,6 +20,7 @@ export const useAttributes = () => {
 
   const deleteAttributeMutation = useMutation({ mutationFn: (attributeId: string) => catalogRepository.deleteAttribute(attributeId), onSuccess: refresh });
   const deleteAttributeValueMutation = useMutation({ mutationFn: (valueId: string) => catalogRepository.deleteAttributeValue(valueId), onSuccess: refresh });
+  const reorderMutation = useMutation({ mutationFn: ({ attributeId, valueIds }: { attributeId: string; valueIds: string[] }) => catalogRepository.reorderAttributeValues(attributeId, valueIds), onSuccess: refresh });
 
   return {
     attributes: attributesQuery.data || [],
@@ -31,6 +32,8 @@ export const useAttributes = () => {
     isCreatingValue: createAttributeValueMutation.isPending,
     deleteAttribute: deleteAttributeMutation.mutateAsync,
     deleteAttributeValue: deleteAttributeValueMutation.mutateAsync,
+    reorderAttributeValues: reorderMutation.mutateAsync,
+    isReordering: reorderMutation.isPending,
   };
 };
 
