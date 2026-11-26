@@ -8,6 +8,8 @@ import type { CartProductRef, CartVariantRef } from '../../../domain/entities/ca
 import { cartRefsFromPosVariant } from '../../../domain/rules/cart-rules';
 import { PosVariableProductModal } from './PosVariableProductModal';
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
+import { ScanButton } from '@/shared/presentation/components/ScanButton';
+import type { ScanFeedback } from '@/shared/presentation/components/BarcodeScannerDialog';
 
 interface POSProductSearchProps {
   branchId: string;
@@ -39,9 +41,15 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
     });
   };
 
-  const executeSearch = async () => {
-    const code = searchTerm.trim();
-    if (!code || isSearchingRef.current) return;
+  /**
+   * Busca un código y lo agrega al carrito. Con `fromCamera` los avisos los muestra el escáner sobre la cámara (el carrito
+   * queda tapado). Devuelve qué pasó, para que el escáner se cierre cuando la persona tiene que elegir algo.
+   */
+  const executeSearch = async (codeOverride?: string, fromCamera = false): Promise<{ outcome: 'added' | 'needs-choice' | 'not-found' | 'busy'; productName?: string }> => {
+    const code = (codeOverride ?? searchTerm).trim();
+    if (!code || isSearchingRef.current) return { outcome: 'busy' };
+    let outcome: 'added' | 'needs-choice' | 'not-found' = 'not-found';
+    let productName: string | undefined;
 
     try {
       isSearchingRef.current = true;
@@ -53,7 +61,7 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
         setVariableProductData(result.product);
         setShowVariableModal(true);
         setSearchTerm('');
-        return;
+        return { outcome: 'needs-choice' };
       }
 
       // Case 2: variantes que coinciden (una sola o varias, p. ej. código de barras repetido)
@@ -70,20 +78,24 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
           }
           onAddVariantToCart(product, variant, stockQty);
           setSearchTerm('');
+          outcome = 'added';
+          productName = singleRes.productName;
         } else {
           setSearchResults(res);
           setShowSearchModal(true);
+          outcome = 'needs-choice';
         }
-      } else {
+      } else if (!fromCamera) {
         toast.error(`No se encontró ningún producto con el código: "${code}"`);
       }
     } catch {
-      toast.error(`No se encontró ningún producto con el código: "${code}"`);
+      if (!fromCamera) toast.error(`No se encontró ningún producto con el código: "${code}"`);
     } finally {
       isSearchingRef.current = false;
       setIsSearching(false);
       focusInput();
     }
+    return { outcome, productName };
   };
 
   const handleSearchKeyPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -91,6 +103,14 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
       e.preventDefault();
       await executeSearch();
     }
+  };
+
+  const handleCameraCode = async (code: string): Promise<ScanFeedback> => {
+    const { outcome, productName } = await executeSearch(code, true);
+    if (outcome === 'added') return { status: 'ok', message: `${productName ?? 'Producto'} agregado` };
+    if (outcome === 'needs-choice') return { status: 'ok', message: 'Hay varias coincidencias: elige una', outcome: 'close' };
+    if (outcome === 'busy') return { status: 'error', message: 'Un momento, sigo con el anterior. Vuelve a escanearlo.' };
+    return { status: 'error', message: `El código ${code} no existe` };
   };
 
   return (
@@ -116,13 +136,14 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
 
         <button
           type="button"
-          onClick={executeSearch}
+          onClick={() => void executeSearch()}
           disabled={!searchTerm.trim() || isSearching}
           title="Buscar código / Confirmar (Enter)"
           className="flex items-center justify-center gap-1 h-11 w-11 bg-primary hover:bg-primary/90 active:scale-95 text-white font-bold text-xs rounded-xl shadow-sm transition-all disabled:opacity-40 disabled:pointer-events-none cursor-pointer shrink-0"
         >
           {isSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : <CornerDownLeft className="w-5 h-5" />}
         </button>
+        <ScanButton continuous title="Escanear productos para la venta" onDetected={handleCameraCode} className="h-11 w-11 shrink-0 rounded-xl" />
       </div>
 
       {/* Multiple Matches Selection Modal */}

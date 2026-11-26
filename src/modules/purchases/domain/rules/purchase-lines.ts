@@ -42,6 +42,18 @@ export function assignProduct(lines: PurchaseLine[], index: number, product: { i
   return next;
 }
 
+/**
+ * Un producto escaneado entra al ingreso: si ya está en la lista suma una unidad a su fila; si no, ocupa la primera fila
+ * vacía (o se añade una) y deja otra vacía al final para seguir escaneando.
+ */
+export function addScannedProduct(lines: PurchaseLine[], product: { id: string; sku: string; productName: string; purchasePrice: number }): PurchaseLine[] {
+  const existing = lines.findIndex((line) => line.variantId === product.id);
+  if (existing >= 0) return lines.map((line, index) => (index === existing ? { ...line, quantity: (line.quantity || 0) + 1 } : line));
+  const empty = lines.findIndex((line) => line.variantId === '');
+  if (empty >= 0) return assignProduct(lines, empty, product);
+  return assignProduct([...lines, emptyPurchaseLine()], lines.length, product);
+}
+
 export function toPurchaseRequest(lines: PurchaseLine[], branchId: string, supplierId: string, invoiceNumber: string): PurchaseRequest {
   return {
     branchId,

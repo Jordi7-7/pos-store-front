@@ -1,3 +1,8 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import JsBarcode from 'jsbarcode';
+import { encode } from 'jpeg-js';
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
 
 export const creds = {
@@ -98,3 +103,39 @@ export async function resetCashRegister(request: APIRequestContext, registerName
   }
   return { id: register.id, branchId: register.branchId };
 }
+
+/**
+ * Una "cámara" falsa para Chromium: un video (MJPEG, que son JPEG seguidos) de un papel blanco con el código de barras de
+ * `code`. El navegador lo entrega como si fuera la cámara real, así se prueba todo el camino: video → lector → pantalla.
+ * Se usa con `--use-file-for-fake-video-capture=<archivo>` en `test.use({ launchOptions })`.
+ */
+export function writeFakeCameraVideo(codes: string | string[], name: string): string {
+  const frames = (Array.isArray(codes) ? codes : [codes]).map((code) => {
+    const target: { encodings?: Array<{ data: string }> } = {};
+    JsBarcode(target, code, { format: 'CODE128' });
+    const modules = (target.encodings ?? []).map((encoding) => encoding.data).join('');
+    const narrow = 3;
+    const width = 640;
+    const height = 480;
+    const rgba = Buffer.alloc(width * height * 4, 255);
+    const left = Math.round((width - modules.length * narrow) / 2);
+    for (let y = 140; y < 340; y++) {
+      for (let m = 0; m < modules.length; m++) {
+        if (modules[m] !== '1') continue;
+        for (let dx = 0; dx < narrow; dx++) {
+          const i = (y * width + left + m * narrow + dx) * 4;
+          rgba[i] = rgba[i + 1] = rgba[i + 2] = 0;
+        }
+      }
+    }
+    return encode({ data: rgba, width, height }, 92).data;
+  });
+  const directory = join(tmpdir(), 'pos-e2e-camera');
+  mkdirSync(directory, { recursive: true });
+  const file = join(directory, `${name}.mjpeg`);
+  // Cada código se muestra unos instantes y el video da la vuelta
+  writeFileSync(file, Buffer.concat(frames.flatMap((frame) => Array.from({ length: 20 }, () => frame))));
+  return file;
+}
+
+export const fakeCameraArgs = (file: string): string[] => ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', `--use-file-for-fake-video-capture=${file}`];

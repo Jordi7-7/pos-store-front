@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { ScanButton } from '@/shared/presentation/components/ScanButton';
+import type { ScanFeedback } from '@/shared/presentation/components/BarcodeScannerDialog';
 import { AlertCircle, AlertTriangle, Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -82,6 +84,7 @@ export const StockCountForm: React.FC<StockCountFormProps> = ({ branchId, onCrea
             }}
           >
             <Input value={sku} onChange={(event) => setSku(event.target.value)} placeholder="Escribe o escanea el SKU y pulsa Enter…" aria-label="SKU del producto" disabled={disabled} className="font-mono" />
+            <ScanButton continuous title="Escanear productos" onDetected={async (code): Promise<ScanFeedback> => ((await form.addBySku(code)) ? { status: 'ok', message: `${code} agregado` } : { status: 'error', message: `El código ${code} no existe` })} />
             <Button type="submit" variant="outline" disabled={disabled || form.isSearching || !sku.trim()}>
               {form.isSearching ? <Loader2 className="animate-spin" /> : <Plus />}
               Agregar

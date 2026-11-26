@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AlertCircle, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ScanButton } from '@/shared/presentation/components/ScanButton';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 import { useLayoutContext } from '@/providers/LayoutContext';
@@ -68,10 +69,13 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({ onSuccess }) => {
         <CardHeader className="border-b border-border/60 pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">Ingresa mercancía al inventario indicando el SKU del producto; el sistema sugiere mientras escribes.</p>
-            <Button type="button" variant="outline" onClick={() => setIsBulkOpen(true)}>
-              <FileSpreadsheet />
-              Carga masiva (Excel)
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <ScanButton continuous label="Escanear" title="Escanear productos" onDetected={rows.scan} />
+              <Button type="button" variant="outline" onClick={() => setIsBulkOpen(true)}>
+                <FileSpreadsheet />
+                Carga masiva (Excel)
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-6">

@@ -86,6 +86,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
         searchInput={searchField.input}
         onSearchInputChange={searchField.setInput}
         onSearchSubmit={searchField.applyNow}
+        onScan={searchField.applyCode}
         onResetPage={resetPage}
         productType={productType}
         onProductTypeChange={onProductTypeChange}

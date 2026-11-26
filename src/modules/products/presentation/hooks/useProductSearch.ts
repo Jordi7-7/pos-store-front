@@ -27,10 +27,17 @@ export function useProductSearch(search: string, onSearchChange: (search: string
     onResetPage();
   };
 
+  /** Un código leído con la cámara: se busca al instante, sin esperar a que se deje de escribir. */
+  const applyCode = (code: string) => {
+    setInput(code);
+    onSearchChange(code);
+    onResetPage();
+  };
+
   const clear = () => {
     setInput('');
     onSearchChange('');
   };
 
-  return { input, setInput, applyNow, clear };
+  return { input, setInput, applyNow, applyCode, clear };
 }

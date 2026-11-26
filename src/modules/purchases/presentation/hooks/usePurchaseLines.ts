@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import type React from 'react';
 import { toast } from 'sonner';
+import type { ScanFeedback } from '@/shared/presentation/components/BarcodeScannerDialog';
 import { useVariantSearch } from '@/modules/products/presentation/hooks';
-import { assignProduct, emptyPurchaseLine, purchaseTotal, removeLine, type PurchaseLine } from '../../domain/rules/purchase-lines';
+import { addScannedProduct, assignProduct, emptyPurchaseLine, purchaseTotal, removeLine, type PurchaseLine } from '../../domain/rules/purchase-lines';
 
 type Column = 'sku' | 'quantity' | 'unitCost';
 
@@ -46,6 +47,18 @@ export function usePurchaseLines() {
     }
   };
 
+  /** Un código escaneado con la cámara: suma el producto al ingreso (o una unidad más si ya estaba). */
+  const scan = async (code: string): Promise<ScanFeedback> => {
+    try {
+      const variant = await findVariantBySku(code);
+      if (!variant?.id) throw new Error('Producto no encontrado');
+      setLines((prev) => addScannedProduct(prev, variant));
+      return { status: 'ok', message: `${variant.productName} agregado` };
+    } catch {
+      return { status: 'error', message: `El código ${code} no existe` };
+    }
+  };
+
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>, row: number, col: Column) => {
     const isLast = row === lines.length - 1;
     if (event.key === 'ArrowDown') {
@@ -76,5 +89,5 @@ export function usePurchaseLines() {
 
   const total = useMemo(() => purchaseTotal(lines), [lines]);
 
-  return { lines, total, updateRow, addRow, removeRow, selectProduct, onKeyDown, reset };
+  return { lines, total, updateRow, addRow, removeRow, selectProduct, scan, onKeyDown, reset };
 }

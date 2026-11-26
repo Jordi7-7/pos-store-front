@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronDown, Layers, Package } from 'lucide-react';
+import { ScanButton } from '@/shared/presentation/components/ScanButton';
 import { SearchInput } from '@/shared/presentation/components/SearchInput';
 import { ProductType, StockStatus, StockStatusLabels } from '../../../domain/enums';
 
@@ -7,6 +8,8 @@ interface ProductListToolbarProps {
   searchInput: string;
   onSearchInputChange: (value: string) => void;
   onSearchSubmit: (event: React.FormEvent) => void;
+  /** Un código leído con la cámara: se busca al instante. */
+  onScan?: (code: string) => void;
   onResetPage: () => void;
   productType?: ProductType;
   onProductTypeChange?: (type?: ProductType) => void;
@@ -24,10 +27,11 @@ const TYPE_OPTIONS = [
  * Barra de la lista de productos: búsqueda y filtros (existencias y tipo) en una fila que se parte si no cabe. Las acciones que
  * dependen del contexto (limpiar filtros, imprimir lo seleccionado) están en la franja de la tarjeta, junto al contador.
  */
-export const ProductListToolbar: React.FC<ProductListToolbarProps> = ({ searchInput, onSearchInputChange, onSearchSubmit, onResetPage, productType, onProductTypeChange, stockStatus, onStockStatusChange }) => (
+export const ProductListToolbar: React.FC<ProductListToolbarProps> = ({ searchInput, onSearchInputChange, onSearchSubmit, onScan, onResetPage, productType, onProductTypeChange, stockStatus, onStockStatusChange }) => (
   <div className="flex flex-wrap items-center gap-3">
-    <form onSubmit={onSearchSubmit} className="w-full sm:w-auto sm:min-w-[320px] sm:max-w-md sm:flex-1">
+    <form onSubmit={onSearchSubmit} className="flex w-full items-center gap-2 sm:w-auto sm:min-w-[320px] sm:max-w-md sm:flex-1">
       <SearchInput value={searchInput} onValueChange={onSearchInputChange} placeholder="Buscar por nombre, SKU o código de barras…" aria-label="Buscar producto" className="sm:w-full" />
+      {onScan && <ScanButton title="Escanear un producto" onDetected={onScan} />}
     </form>
 
     {onStockStatusChange && (
