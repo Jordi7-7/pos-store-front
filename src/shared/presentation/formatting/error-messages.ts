@@ -150,6 +150,7 @@ export const ERROR_MESSAGES: Readonly<Record<string, Entry>> = {
   DUPLICATE_COUNT_LINE: 'Un producto aparece más de una vez en el conteo.',
   STOCK_CHANGED_SINCE_COUNT: 'El stock cambió desde que agregaste los productos al conteo. Revisa las diferencias y confirma.',
   INVENTORY_DOCUMENT_NOT_FOUND: 'Documento de inventario no encontrado.',
+  BATCH_NOT_FOUND: 'Lote no encontrado.',
   COMMENT_REQUIRED: (d) => (text(d.min) ? `Escribe un comentario que explique el movimiento (mínimo ${text(d.min)} caracteres).` : 'Escribe un comentario que explique el movimiento.'),
   SAME_BRANCH_TRANSFER: 'El origen y el destino del traslado deben ser sucursales distintas.',
   INVALID_MOVEMENT_REASON: 'Ese motivo no es válido para este tipo de movimiento. Elige otro.',

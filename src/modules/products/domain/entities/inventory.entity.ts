@@ -70,6 +70,26 @@ export interface InventoryLotEntity {
   items: LotItemEntity[];
 }
 
+/** Un producto (o variante) que llegó en un lote, para imprimir sus etiquetas. */
+export interface BatchLabelItemEntity {
+  variantId: string;
+  sku: string;
+  productName: string;
+  /** Precio de venta vigente. */
+  salePrice: number;
+  /** Valores de la variante (`M`, `Rojo`); vacío en un producto simple. */
+  attributes: string[];
+  /** Unidades que entraron en el lote, aunque ya se hayan vendido. */
+  quantity: number;
+}
+
+export interface BatchLabelsEntity {
+  batchId: string;
+  lines: BatchLabelItemEntity[];
+  /** Líneas del lote cuyo producto ya se eliminó. */
+  unavailable: number;
+}
+
 /** Una fila del historial global de movimientos (kardex) de la tienda. */
 export interface InventoryMovementHistoryEntity {
   id: string;

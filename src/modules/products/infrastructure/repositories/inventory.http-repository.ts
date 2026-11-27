@@ -2,7 +2,7 @@ import { apiClient } from '@/lib/apiClient';
 import type { PaginatedResult } from '@/shared/domain/value-objects/paginated';
 import type { BatchesQuery, CreateInventoryDocumentInput, DocumentsQuery, CreateStockCountInput, CreateStockTransferInput, InventoryRepository, MovementsQuery, StockCountSheetPage, StockCountSheetQuery, VariantHistoryQuery } from '../../application/ports/inventory.repository';
 import type { ProductHistoryPurchase, ProductHistorySale } from '../../domain/entities/history.entity';
-import type { InventoryLotEntity, InventoryMovementEntity, InventoryDocumentEntity, InventoryDocumentDetailEntity, InventoryDocumentListItemEntity, InventoryMovementHistoryEntity, VariantBatchEntity } from '../../domain/entities/inventory.entity';
+import type { BatchLabelsEntity, InventoryLotEntity, InventoryMovementEntity, InventoryDocumentEntity, InventoryDocumentDetailEntity, InventoryDocumentListItemEntity, InventoryMovementHistoryEntity, VariantBatchEntity } from '../../domain/entities/inventory.entity';
 import type { InventoryLotDTO, InventoryMovementDTO, InventoryDocumentDTO, InventoryDocumentDetailDTO, InventoryDocumentListItemDTO, InventoryMovementHistoryDTO, VariantBatchItemDTO } from '../dtos/inventory.dto';
 import { toInventoryLotEntity, toInventoryMovementEntity, toInventoryDocumentEntity, toInventoryDocumentDetailEntity, toInventoryDocumentListItemEntity, toInventoryMovementHistoryEntity, toVariantBatchEntity } from '../mappers/inventory.mapper';
 
@@ -33,6 +33,11 @@ export class InventoryHttpRepository implements InventoryRepository {
     if (query.after) params.append('after', query.after);
     if (query.limit) params.append('limit', String(query.limit));
     return apiClient.get<StockCountSheetPage>(`/products/stock-count-sheet?${params.toString()}`);
+  }
+
+  /** El servidor ya devuelve las líneas con la forma que necesitan las etiquetas. */
+  batchLabels(batchId: string): Promise<BatchLabelsEntity> {
+    return apiClient.get<BatchLabelsEntity>(`/batches/${encodeURIComponent(batchId)}/labels`);
   }
 
   async listBatches(query?: BatchesQuery): Promise<PaginatedResult<InventoryLotEntity>> {

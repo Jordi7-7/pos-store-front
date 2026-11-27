@@ -79,3 +79,30 @@ export function labelLinesFor(products: Array<{ name: string; variants: LabelVar
   }
   return { lines, skipped };
 }
+
+interface ArrivedItem {
+  sku: string;
+  productName: string;
+  salePrice: number;
+  attributes: string[];
+  quantity: number;
+}
+
+/**
+ * Etiquetas de lo que llegó en un lote: tantas por producto como unidades entraron. Las cantidades con decimales se
+ * redondean hacia arriba (una etiqueta no se parte) y las líneas sin unidades no salen. Como en `labelLinesFor`, lo que no
+ * tiene SKU se cuenta en `skipped`.
+ */
+export function labelLinesForArrival(items: readonly ArrivedItem[]): { lines: LabelLine[]; skipped: number } {
+  const lines: LabelLine[] = [];
+  let skipped = 0;
+  for (const item of items) {
+    // A centésimas antes de redondear: una suma como 0.1 + 0.2 + 2.7 no debe pedir una etiqueta de más
+    const units = Math.ceil(Math.round(item.quantity * 100) / 100);
+    if (units <= 0) continue;
+    const line = labelLineFor(item.productName, { sku: item.sku, salePrice: item.salePrice, attributes: item.attributes.map((value) => ({ value })) });
+    if (line) lines.push({ ...line, quantity: units });
+    else skipped += 1;
+  }
+  return { lines, skipped };
+}

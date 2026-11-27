@@ -1,5 +1,5 @@
 import type { PaginatedResult } from '@/shared/domain/value-objects/paginated';
-import type { InventoryLotEntity, InventoryMovementEntity, InventoryDocumentEntity, InventoryDocumentDetailEntity, InventoryDocumentListItemEntity, InventoryMovementHistoryEntity, VariantBatchEntity } from '../../domain/entities/inventory.entity';
+import type { BatchLabelsEntity, InventoryLotEntity, InventoryMovementEntity, InventoryDocumentEntity, InventoryDocumentDetailEntity, InventoryDocumentListItemEntity, InventoryMovementHistoryEntity, VariantBatchEntity } from '../../domain/entities/inventory.entity';
 import type { ProductHistoryPurchase, ProductHistorySale } from '../../domain/entities/history.entity';
 import type { BatchOriginType, InventoryDocumentKind, InventoryMovementCategory, InventoryMovementType } from '../../domain/enums';
 
@@ -95,6 +95,8 @@ export interface VariantHistoryQuery {
 /** Puerto de salida: existencias, lotes y movimientos de inventario. */
 export interface InventoryRepository {
   listBatches(query?: BatchesQuery): Promise<PaginatedResult<InventoryLotEntity>>;
+  /** Todo lo que entró en un lote (sin los filtros del listado), para imprimir etiquetas. */
+  batchLabels(batchId: string): Promise<BatchLabelsEntity>;
   listMovements(query?: MovementsQuery): Promise<PaginatedResult<InventoryMovementHistoryEntity>>;
   createDocument(input: CreateInventoryDocumentInput): Promise<InventoryDocumentEntity>;
   /** Los documentos de inventario, uno por fila. */

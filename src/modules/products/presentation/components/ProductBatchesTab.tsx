@@ -2,8 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { PaginationControls } from '@/shared/presentation/components/PaginationControls';
+import { APP_PERMISSIONS } from '@/constants/permissions';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useBatches } from '../hooks';
 import { useBatchFilters } from '../hooks/useBatchFilters';
+import { useBatchLabels } from '../hooks/useBatchLabels';
+import { BarcodePrintModal } from './barcode-printer/BarcodePrintModal';
 import { BatchFilters } from './batches/BatchFilters';
 import { LotCard, LotListHeader } from './batches/LotCard';
 
@@ -14,6 +18,9 @@ interface ProductBatchesTabProps {
 /** Lotes de inventario de la sucursal: filtros, lista de lotes desplegables y paginación. */
 export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBranchId }) => {
   const filters = useBatchFilters();
+  const { can } = usePermissions();
+  const canPrint = can(APP_PERMISSIONS.PRODUCTS_PRINT_BARCODES);
+  const labels = useBatchLabels();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const { lots, meta, isLoading } = useBatches({
@@ -61,7 +68,14 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
           <div>
             <LotListHeader />
             {lots.map((lot) => (
-              <LotCard key={lot.id} lot={lot} isExpanded={Boolean(expanded[lot.id])} onToggle={() => toggle(lot.id)} />
+              <LotCard
+                key={lot.id}
+                lot={lot}
+                isExpanded={Boolean(expanded[lot.id])}
+                onToggle={() => toggle(lot.id)}
+                onPrintLabels={canPrint ? () => labels.open(lot.id) : undefined}
+                isPreparingLabels={labels.loadingId === lot.id}
+              />
             ))}
           </div>
         )}
@@ -72,6 +86,8 @@ export const ProductBatchesTab: React.FC<ProductBatchesTabProps> = ({ selectedBr
           </div>
         )}
       </Card>
+
+      <BarcodePrintModal isOpen={labels.isOpen} onClose={labels.close} items={labels.queue} onUpdateItems={labels.setQueue} />
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import React from 'react';
-import { ChevronRight } from 'lucide-react';
+import { Barcode, ChevronRight, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { BatchStatus } from '../../../domain/enums';
 import type { InventoryLotVM } from '../../view-models/inventory.vm';
 import { LevelFill, OriginBadge, StatusBadge } from './BatchBadges';
@@ -23,10 +24,13 @@ interface LotCardProps {
   lot: InventoryLotVM;
   isExpanded: boolean;
   onToggle: () => void;
+  /** Ausente si no se pueden imprimir etiquetas (sin permiso). */
+  onPrintLabels?: () => void;
+  isPreparingLabels?: boolean;
 }
 
 /** Una fila por lote (cerrada por defecto); al abrirla muestra los productos que llegaron en él. */
-export const LotCard: React.FC<LotCardProps> = ({ lot, isExpanded, onToggle }) => {
+export const LotCard: React.FC<LotCardProps> = ({ lot, isExpanded, onToggle, onPrintLabels, isPreparingLabels = false }) => {
   const itemsLabel = `${lot.items.length} ${lot.items.length === 1 ? 'producto' : 'productos'}`;
   const isCancelled = lot.status === BatchStatus.CANCELLED;
   const stockTone = isCancelled ? 'text-rose-500' : lot.hasStock ? 'text-secondary' : 'text-muted-foreground';
@@ -80,6 +84,14 @@ export const LotCard: React.FC<LotCardProps> = ({ lot, isExpanded, onToggle }) =
 
       {isExpanded && (
         <div className="border-t border-border-card bg-muted/20 px-4 py-3">
+          {onPrintLabels && !isCancelled && (
+            <div className="mb-2 flex justify-end">
+              <Button type="button" variant="outline" size="sm" onClick={onPrintLabels} disabled={isPreparingLabels} title="Una etiqueta por cada unidad que llegó en el lote; podrás cambiar las cantidades">
+                {isPreparingLabels ? <Loader2 className="animate-spin" /> : <Barcode />}
+                Imprimir etiquetas del lote
+              </Button>
+            </div>
+          )}
           <LotItemsTable items={lot.items} />
         </div>
       )}
