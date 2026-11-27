@@ -98,9 +98,9 @@ export interface BarcodeOnlyGeometry {
 }
 
 /** Aire arriba y abajo de cada código (mm): un corte desviado 1 mm no toca las barras. */
-const SLOT_MARGIN_MM = 1.5;
+const SLOT_MARGIN_MM = 1;
 /** Alto de la línea del SKU bajo las barras (mm): con menos de esto no se lee bien una vez impreso. */
-const CODE_TEXT_MM = 3;
+const CODE_TEXT_MM = 4;
 
 /** Etiqueta con solo el código de barras y su número; con `codes = 2` se parte en dos mitades para cortar. */
 export function layoutBarcodeOnly(spec: LabelSpec, codes: 1 | 2): BarcodeOnlyGeometry {
