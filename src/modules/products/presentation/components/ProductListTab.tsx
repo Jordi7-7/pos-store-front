@@ -47,7 +47,7 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
   const { can } = usePermissions();
   const canEdit = can(APP_PERMISSIONS.PRODUCTS_EDIT);
   const canPrintBarcodes = can(APP_PERMISSIONS.PRODUCTS_PRINT_BARCODES);
-  const selection = useProductSelection();
+  const selection = useProductSelection(selectedBranchId);
 
   const [simpleToEdit, setSimpleToEdit] = useState<ProductVM | null>(null);
   const [variableToEditId, setVariableToEditId] = useState<string | null>(null);
@@ -62,9 +62,13 @@ export const ProductListTab: React.FC<ProductListTabProps> = ({
   };
 
   const openLabels = (toPrint: ProductVM[]) => {
-    const { lines, skipped } = labelLinesFor(toPrint);
+    // De lo marcado, lo que está en la página se toma de la lista actual: sus existencias son las de ahora
+    const current = toPrint.map((product) => products.find((listed) => listed.id === product.id) ?? product);
+    const { lines, skipped, withoutStock, noneInStock } = labelLinesFor(current, selectedBranchId);
     if (skipped > 0) toast.warning(`${skipped} ${skipped === 1 ? 'variante sin SKU no se imprimirá' : 'variantes sin SKU no se imprimirán'}: el código de barras sale del SKU.`);
     if (lines.length === 0) return;
+    if (withoutStock > 0) toast.info(`${withoutStock} ${withoutStock === 1 ? 'variante sin existencias no se agregó' : 'variantes sin existencias no se agregaron'}.`);
+    if (noneInStock) toast.info('No hay existencias: se carga una etiqueta de cada uno.');
     setLabelQueue(lines);
     setIsLabelModalOpen(true);
   };

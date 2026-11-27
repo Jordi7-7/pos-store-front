@@ -48,14 +48,14 @@ export interface LabelLine {
   detail?: string;
 }
 
-interface LabelVariant {
+interface LabelVariant extends StockedVariant {
   sku: string;
   salePrice: number | string;
   attributes?: Array<{ value: string }>;
 }
 
 /** Línea de etiqueta de una variante: el código de barras es su SKU, así que sin SKU no hay etiqueta (`null`). */
-export function labelLineFor(productName: string, variant: LabelVariant): LabelLine | null {
+function labelLineFor(productName: string, variant: Omit<LabelVariant, 'stocks'>): LabelLine | null {
   const sku = (variant.sku ?? '').trim();
   if (!sku) return null;
   const detail = (variant.attributes ?? []).map((attribute) => attribute.value.trim()).filter(Boolean).join(' / ');
@@ -63,21 +63,51 @@ export function labelLineFor(productName: string, variant: LabelVariant): LabelL
 }
 
 /**
- * Una etiqueta por variante con SKU (con el precio de venta y su combinación). Las variantes sin SKU no pueden llevar
- * código de barras: se cuentan en `skipped` para avisar, en vez de imprimir una etiqueta que no sirve.
+ * Etiquetas que pide una cantidad de unidades: una por unidad, hacia arriba si hay decimales (una etiqueta no se parte) y
+ * ninguna sin unidades o en negativo. Se pasa a centésimas antes para que una suma como 0.1 + 0.2 + 2.7 no pida una de más.
  */
-export function labelLinesFor(products: Array<{ name: string; variants: LabelVariant[] }>): { lines: LabelLine[]; skipped: number } {
-  const lines: LabelLine[] = [];
+const labelUnits = (quantity: number): number => Math.max(0, Math.ceil(Math.round(quantity * 100) / 100));
+
+/** Línea de una variante con tantas etiquetas como existencias tiene en la sucursal (o en todas); al menos una. */
+export function stockedLabelLineFor(productName: string, variant: LabelVariant, branchId: string): LabelLine | null {
+  const line = labelLineFor(productName, variant);
+  return line && { ...line, quantity: Math.max(1, labelUnits(variantStock(variant, branchId))) };
+}
+
+export interface StockLabels {
+  lines: LabelLine[];
+  /** Variantes sin SKU (o productos sin variantes): no pueden llevar código de barras. */
+  skipped: number;
+  /** Variantes que quedaron fuera por no tener existencias. */
+  withoutStock: number;
+  /** Nada de lo elegido tiene existencias: sale una etiqueta de cada uno para poder imprimirlas igualmente. */
+  noneInStock: boolean;
+}
+
+/**
+ * Etiquetas de los productos elegidos: por cada variante, tantas como existencias tiene en la sucursal (sin sucursal, la
+ * suma de todas), con el precio de venta y su combinación. Las que no tienen existencias no salen, salvo que no las tenga
+ * ninguna. Las variantes sin SKU se cuentan en `skipped` para avisar, en vez de imprimir una etiqueta que no sirve.
+ */
+export function labelLinesFor(products: Array<{ name: string; variants: LabelVariant[] }>, branchId: string): StockLabels {
+  const inStock: LabelLine[] = [];
+  const outOfStock: LabelLine[] = [];
   let skipped = 0;
   for (const product of products) {
     if (product.variants.length === 0) skipped += 1;
     for (const variant of product.variants) {
       const line = labelLineFor(product.name, variant);
-      if (line) lines.push(line);
-      else skipped += 1;
+      if (!line) {
+        skipped += 1;
+        continue;
+      }
+      const units = labelUnits(variantStock(variant, branchId));
+      if (units > 0) inStock.push({ ...line, quantity: units });
+      else outOfStock.push(line);
     }
   }
-  return { lines, skipped };
+  if (inStock.length === 0) return { lines: outOfStock, skipped, withoutStock: 0, noneInStock: outOfStock.length > 0 };
+  return { lines: inStock, skipped, withoutStock: outOfStock.length, noneInStock: false };
 }
 
 interface ArrivedItem {
@@ -97,9 +127,8 @@ export function labelLinesForArrival(items: readonly ArrivedItem[]): { lines: La
   const lines: LabelLine[] = [];
   let skipped = 0;
   for (const item of items) {
-    // A centésimas antes de redondear: una suma como 0.1 + 0.2 + 2.7 no debe pedir una etiqueta de más
-    const units = Math.ceil(Math.round(item.quantity * 100) / 100);
-    if (units <= 0) continue;
+    const units = labelUnits(item.quantity);
+    if (units === 0) continue;
     const line = labelLineFor(item.productName, { sku: item.sku, salePrice: item.salePrice, attributes: item.attributes.map((value) => ({ value })) });
     if (line) lines.push({ ...line, quantity: units });
     else skipped += 1;

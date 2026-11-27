@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ProductType } from '../enums';
-import { isVariableProduct, labelLinesFor, labelLinesForArrival, productStock, stockBreakdown, variantStock } from './product-stock';
+import { isVariableProduct, labelLinesFor, labelLinesForArrival, stockedLabelLineFor, productStock, stockBreakdown, variantStock } from './product-stock';
 
 const variant = (...quantities: Array<[string, number]>) => ({ stocks: quantities.map(([branchId, quantity]) => ({ branchId, quantity })) });
 
@@ -32,21 +32,45 @@ describe('existencias en la lista de productos', () => {
     expect(isVariableProduct({ type: ProductType.SIMPLE, variants: [{ attributes: [] }] })).toBe(false);
   });
 
-  it('etiquetas: una por variante con SKU, con su precio y su combinación', () => {
-    const { lines, skipped } = labelLinesFor([
-      { name: 'Playera', variants: [{ sku: 'P-S', salePrice: 10, attributes: [{ value: 'S' }, { value: 'Rojo' }] }, { sku: ' P-M ', salePrice: '12' }] },
-    ]);
-    expect(lines).toEqual([
-      { sku: 'P-S', name: 'Playera', price: 10, quantity: 1, detail: 'S / Rojo' },
-      { sku: 'P-M', name: 'Playera', price: 12, quantity: 1 },
-    ]);
-    expect(skipped).toBe(0);
+});
+
+describe('etiquetas desde la lista de productos', () => {
+  const stocked = (sku: string, ...stocks: Array<[string, number]>) => ({ sku, salePrice: 10, ...variant(...stocks) });
+  const labels = (variants: ReturnType<typeof stocked>[], branchId = 'a') => labelLinesFor([{ name: 'Playera', variants }], branchId);
+  const quantities = (variants: ReturnType<typeof stocked>[], branchId = 'a') => labels(variants, branchId).lines.map((line) => [line.sku, line.quantity]);
+
+  it('tantas etiquetas como existencias hay en la sucursal, con precio y combinación', () => {
+    const { lines } = labelLinesFor([{ name: 'Playera', variants: [{ ...stocked(' P-S ', ['a', 4], ['b', 9]), salePrice: '12', attributes: [{ value: 'S' }, { value: 'Rojo' }] }] }], 'a');
+    expect(lines).toEqual([{ sku: 'P-S', name: 'Playera', price: 12, quantity: 4, detail: 'S / Rojo' }]);
+  });
+
+  it('sin sucursal elegida suma las de todas, y las cantidades con decimales suben', () => {
+    expect(quantities([stocked('P-S', ['a', 4], ['b', 9])], '')).toEqual([['P-S', 13]]);
+    expect(quantities([stocked('P-S', ['a', 2.5])])).toEqual([['P-S', 3]]);
+  });
+
+  it('lo que está en cero, en negativo o sin existencias en esa sucursal no sale y se cuenta', () => {
+    const result = labels([stocked('HAY', ['a', 2]), stocked('CERO', ['a', 0]), stocked('NEGATIVO', ['a', -3]), stocked('OTRA', ['b', 5])]);
+    expect(result.lines.map((line) => line.sku)).toEqual(['HAY']);
+    expect(result).toMatchObject({ withoutStock: 3, noneInStock: false });
+  });
+
+  it('si nada tiene existencias sale una etiqueta de cada uno', () => {
+    const result = labels([stocked('A', ['a', 0]), stocked('B')]);
+    expect(result.lines.map((line) => [line.sku, line.quantity])).toEqual([['A', 1], ['B', 1]]);
+    expect(result).toMatchObject({ withoutStock: 0, noneInStock: true });
   });
 
   it('una variante sin SKU, o un producto sin variantes, no genera etiqueta y se cuenta para avisar', () => {
-    const { lines, skipped } = labelLinesFor([{ name: 'Playera', variants: [{ sku: 'P-S', salePrice: 10 }, { sku: '  ', salePrice: 12 }] }, { name: 'Vacío', variants: [] }]);
-    expect(lines.map((line) => line.sku)).toEqual(['P-S']);
-    expect(skipped).toBe(2);
+    const result = labelLinesFor([{ name: 'Playera', variants: [stocked('P-S', ['a', 1]), stocked('  ', ['a', 8])] }, { name: 'Vacío', variants: [] }], 'a');
+    expect(result.lines.map((line) => line.sku)).toEqual(['P-S']);
+    expect(result.skipped).toBe(2);
+  });
+
+  it('al imprimir una sola variante lleva sus existencias, y al menos una etiqueta', () => {
+    expect(stockedLabelLineFor('Playera', stocked('A', ['a', 6]), 'a')?.quantity).toBe(6);
+    expect(stockedLabelLineFor('Playera', stocked('A', ['a', -2]), 'a')?.quantity).toBe(1);
+    expect(stockedLabelLineFor('Playera', stocked(' ', ['a', 6]), 'a')).toBeNull();
   });
 });
 

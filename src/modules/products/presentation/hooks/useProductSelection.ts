@@ -1,12 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ProductVM } from '../view-models/product.vm';
 
 /**
  * Productos marcados para imprimir etiquetas. Se guarda el producto entero (no solo el id) para que la
- * selección siga completa al buscar o cambiar de página.
+ * selección siga completa al buscar o cambiar de página. Al cambiar de sucursal se vacía: lo guardado trae
+ * las existencias de la anterior.
  */
-export function useProductSelection() {
+export function useProductSelection(branchId: string) {
   const [selected, setSelected] = useState<Map<string, ProductVM>>(new Map());
+
+  useEffect(() => {
+    setSelected(new Map());
+  }, [branchId]);
 
   const toggle = (product: ProductVM) =>
     setSelected((prev) => {

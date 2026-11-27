@@ -4,7 +4,7 @@ import type { ProductVM, ProductVariantVM } from '../../view-models/product.vm';
 import { Badge } from '@/components/ui/badge';
 import { Barcode } from 'lucide-react';
 import { toast } from 'sonner';
-import { labelLineFor, type LabelLine } from '../../../domain/rules/product-stock';
+import { stockedLabelLineFor, type LabelLine } from '../../../domain/rules/product-stock';
 import { formatMoney } from '@/modules/auth/presentation/hooks/useSession';
 
 interface ProductDetailInfoTabProps {
@@ -133,7 +133,7 @@ export const ProductDetailInfoTab: React.FC<ProductDetailInfoTabProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        const line = labelLineFor(detailProduct.name, variant);
+                        const line = stockedLabelLineFor(detailProduct.name, variant, selectedBranchId);
                         if (line) onPrintBarcode(line);
                         else toast.warning('Esta variante no tiene SKU: el código de barras sale del SKU.');
                       }}
