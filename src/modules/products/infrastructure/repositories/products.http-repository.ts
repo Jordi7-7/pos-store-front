@@ -1,3 +1,4 @@
+import type { FileMatch, ImageAssignment } from '../../domain/entities/image-files.entity';
 import { apiClient } from '@/lib/apiClient';
 import type { PaginatedResult } from '@/shared/domain/value-objects/paginated';
 import type {
@@ -97,6 +98,14 @@ export class ProductsHttpRepository implements ProductsRepository {
 
   importProducts(input: BulkImportProductsInput): Promise<BulkImportProductsResult> {
     return apiClient.post<BulkImportProductsResult>('/products/import', input);
+  }
+
+  matchImageFiles(fileNames: string[]): Promise<FileMatch[]> {
+    return apiClient.post<FileMatch[]>('/products/image-files/match', { fileNames });
+  }
+
+  async assignImages(items: ImageAssignment[]): Promise<void> {
+    await apiClient.post('/products/image-files/assign', { items });
   }
 
   importVariants(input: ImportVariantsInput): Promise<ImportVariantsReport> {

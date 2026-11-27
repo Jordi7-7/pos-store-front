@@ -6,6 +6,7 @@ import { useMediaUpload } from '@/modules/media';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/shared/presentation/formatting/error-messages';
 import { PageHeader } from '@/shared/presentation/components/PageHeader';
+import { BulkImageUploadButton } from '@/modules/products/presentation/components/bulk-images/BulkImageUploadButton';
 
 export const Route = createFileRoute('/_layout/multimedia')({
   beforeLoad: () => guardRoute('/multimedia'),
@@ -80,7 +81,7 @@ function MediaRoute() {
 
   return (
     <>
-      <PageHeader title="Galería" description="Imágenes de tu catálogo y galería multimedia." />
+      <PageHeader title="Galería" description="Imágenes de tu catálogo y galería multimedia." actions={<BulkImageUploadButton />} />
       <MediaView
         uploadedImages={uploadedImages}
         isUploading={isUploading}

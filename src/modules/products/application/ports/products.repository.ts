@@ -3,6 +3,7 @@ import type { ProductEntity } from '../../domain/entities/product.entity';
 import type { CreatedVariantEntity, PosSearchResult, PosVariantEntity, VariantLookup } from '../../domain/entities/catalog.entity';
 import type { PaginatedResult } from '@/shared/domain/value-objects/paginated';
 import type { ImportRowInput } from '../../domain/rules/variants-import';
+import type { FileMatch, ImageAssignment } from '../../domain/entities/image-files.entity';
 
 export interface CreateSimpleProductInput {
   name: string;
@@ -163,4 +164,8 @@ export interface ProductsRepository {
   validateImport(items: ValidateImportItemInput[]): Promise<ValidateImportResult>;
   importProducts(input: BulkImportProductsInput): Promise<BulkImportProductsResult>;
   importVariants(input: ImportVariantsInput): Promise<ImportVariantsReport>;
+  /** A qué producto o variante corresponde cada nombre de archivo; no escribe nada. */
+  matchImageFiles(fileNames: string[]): Promise<FileMatch[]>;
+  /** Agrega fotos de la galería a productos y variantes, sin quitar las que tenían. */
+  assignImages(items: ImageAssignment[]): Promise<void>;
 }
