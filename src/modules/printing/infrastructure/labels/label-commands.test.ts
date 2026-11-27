@@ -14,6 +14,12 @@ describe('comandos de la impresora', () => {
     expect(text.endsWith('\r\nPRINT 1,3\r\n')).toBe(true);
   });
 
+  it('TSPL: la velocidad y la intensidad solo se envían si se eligieron', () => {
+    expect(decode(tsplImageJob(bitmap, roll, 1))).not.toMatch(/SPEED|DENSITY/);
+    expect(decode(tsplImageJob(bitmap, { ...roll, speed: null, density: null }, 1))).not.toMatch(/SPEED|DENSITY/);
+    expect(decode(tsplImageJob(bitmap, { ...roll, speed: 3, density: 0 }, 1))).toContain('GAP 2 mm,0 mm\r\nSPEED 3\r\nDENSITY 0\r\n');
+  });
+
   it('TSPL: los bits van invertidos (en TSPL 1 es punto sin imprimir) y sin tocar el resto', () => {
     const job = tsplImageJob(bitmap, roll, 1);
     const start = decode(job).indexOf('BITMAP 0,0,2,2,0,') + 'BITMAP 0,0,2,2,0,'.length;

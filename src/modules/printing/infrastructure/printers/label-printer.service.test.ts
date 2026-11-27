@@ -45,6 +45,21 @@ async function installSerial(port: SerialPortLike) {
   await labelPrinterService.requestPort();
 }
 
+const FORMAT = { currencyCode: 'USD', locale: 'es-EC' };
+const labels = (quantity: number) => [{ sku: 'A', name: 'A', price: 1, quantity }];
+/** Los trabajos de imagen no se dibujan en las pruebas (no hay canvas): cada uno es un byte con sus copias. */
+vi.mock('../labels/label-canvas', () => ({
+  renderSheetBitmap: () => ({ widthBytes: 1, height: 1, bytes: new Uint8Array(1) }),
+  renderMeasureCanvas: () => null,
+  canvasToBitmap: () => ({ widthBytes: 1, height: 1, bytes: new Uint8Array(1) }),
+}));
+const printedCopies = (log: string[]): number[] =>
+  log.flatMap((entry) => {
+    if (!entry.startsWith('write:')) return [];
+    const text = String.fromCharCode(...entry.slice(6).split(',').map(Number));
+    return [...text.matchAll(/PRINT 1,(\d+)/g)].map((match) => Number(match[1]));
+  });
+
 describe('envío a la impresora de etiquetas', () => {
   beforeEach(() => localStorage.clear());
   afterEach(async () => {
@@ -124,6 +139,67 @@ describe('envío a la impresora de etiquetas', () => {
     await failure;
 
     expect(attempts).toBe(5);
+  });
+
+  it('un envío largo sale por tandas con pausas, en una sola conexión, y avisa del avance', async () => {
+    vi.useFakeTimers();
+    const { port, log } = bluetoothPort();
+    await installSerial(port);
+    const progress: number[] = [];
+
+    const printing = labelPrinterService.printLabels(labels(20), 'Tienda', FORMAT, { onProgress: (sent) => progress.push(sent) });
+    await vi.advanceTimersByTimeAsync(100);
+    expect(printedCopies(log)).toEqual([8]);
+    await vi.advanceTimersByTimeAsync(1400); // la pausa de 8 etiquetas son 1,6 s
+    expect(printedCopies(log)).toEqual([8]);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(printedCopies(log)).toEqual([8, 8]);
+    await vi.advanceTimersByTimeAsync(1600);
+
+    await expect(printing).resolves.toEqual({ sent: 20, total: 20, cancelled: false });
+    expect(printedCopies(log)).toEqual([8, 8, 4]);
+    expect(progress).toEqual([8, 16, 20]);
+    expect(log.filter((entry) => entry === 'open')).toHaveLength(1);
+    expect(log).not.toContain('close'); // la última tanda aún tiene su margen antes de cerrar
+  });
+
+  it('al cancelar no manda más tandas y dice cuántas envió', async () => {
+    vi.useFakeTimers();
+    const { port, log } = bluetoothPort();
+    await installSerial(port);
+    const abort = new AbortController();
+
+    const printing = labelPrinterService.printLabels(labels(20), 'Tienda', FORMAT, { signal: abort.signal });
+    await vi.advanceTimersByTimeAsync(100);
+    abort.abort();
+    await vi.advanceTimersByTimeAsync(0);
+
+    await expect(printing).resolves.toEqual({ sent: 8, total: 20, cancelled: true });
+    expect(printedCopies(log)).toEqual([8]);
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(log.at(-1)).toBe('close');
+  });
+
+  it('si la impresora deja de recibir, no se queda «enviando»: avisa cuántas envió y cierra el puerto', async () => {
+    vi.useFakeTimers();
+    const { port, log } = bluetoothPort();
+    const open = port.open;
+    port.open = async (options) => {
+      await open(options);
+      if (!port.writable) throw new Error('sin escritura');
+      const writer = port.writable.getWriter();
+      let writes = 0;
+      port.writable = {
+        getWriter: () => ({ ...writer, write: (chunk: Uint8Array) => (++writes > 1 ? new Promise<void>(() => undefined) : writer.write(chunk)) }),
+      } as unknown as WritableStream<Uint8Array>;
+    };
+    await installSerial(port);
+
+    const failure = expect(labelPrinterService.printLabels(labels(20), 'Tienda', FORMAT)).rejects.toThrow(/dejó de recibir \(enviadas 8 de 20\)/);
+    await vi.advanceTimersByTimeAsync(40_000);
+    await failure;
+
+    expect(log.at(-1)).toBe('close');
   });
 
   it('un puerto que quedó abierto con el enlace caído se cierra y se vuelve a abrir antes de enviar', async () => {

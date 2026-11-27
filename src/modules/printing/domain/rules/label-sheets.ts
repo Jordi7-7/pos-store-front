@@ -47,3 +47,29 @@ export function buildSheets(queue: readonly LabelItem[], perLabel: CodesPerLabel
 }
 
 export const countLabels = (sheets: readonly LabelSheet[]): number => sheets.reduce((total, sheet) => total + sheet.copies, 0);
+
+/**
+ * Parte las etiquetas físicas en tandas de como mucho `size`, dividiendo las copias cuando hace falta: así la impresora
+ * recibe poco de cada vez y alcanza a imprimirlo antes de la siguiente tanda.
+ */
+export function splitIntoBatches(sheets: readonly LabelSheet[], size: number): LabelSheet[][] {
+  const batches: LabelSheet[][] = [];
+  let current: LabelSheet[] = [];
+  let room = size;
+  for (const sheet of sheets) {
+    let remaining = sheet.copies;
+    while (remaining > 0) {
+      const copies = Math.min(remaining, room);
+      current.push({ items: sheet.items, copies });
+      remaining -= copies;
+      room -= copies;
+      if (room === 0) {
+        batches.push(current);
+        current = [];
+        room = size;
+      }
+    }
+  }
+  if (current.length > 0) batches.push(current);
+  return batches;
+}

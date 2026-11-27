@@ -22,6 +22,11 @@ const LANGUAGES: Array<{ value: LabelProtocol; title: string; hint: string }> = 
   { value: 'ZPL', title: 'ZPL', hint: 'Impresoras Zebra' },
 ];
 
+/** Velocidades en pulgadas por segundo (lo que entiende TSPL) con su equivalente en mm/s. */
+const SPEEDS = [2, 3, 4, 5, 6].map((value) => ({ value, label: `${value} (unos ${Math.round(value * 25.4)} mm/s)` }));
+const DENSITIES = [4, 6, 8, 10, 12];
+const SELECT_CLASS = 'rounded-lg border border-border bg-background px-2 py-1 text-xs font-semibold text-foreground';
+
 const Section: React.FC<{ step: number; title: string; children: React.ReactNode }> = ({ step, title, children }) => (
   <section className="space-y-3">
     <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -91,6 +96,37 @@ export const LabelPrinterConfigModal: React.FC<LabelPrinterConfigModalProps> = (
               </div>
             </details>
           </Section>
+
+          {config.protocol === 'TSPL' && (
+            <details className="rounded-xl border border-border p-3 text-xs text-muted-foreground">
+              <summary className="cursor-pointer font-semibold text-foreground">Opciones avanzadas: velocidad e intensidad</summary>
+              <div className="mt-2 space-y-2">
+                <div className="flex flex-wrap items-center gap-4">
+                  <label className="flex items-center gap-2">
+                    Velocidad
+                    <select aria-label="Velocidad de impresión" value={config.speed ?? ''} onChange={(e) => update({ speed: e.target.value === '' ? null : Number(e.target.value) })} className={SELECT_CLASS}>
+                      <option value="">La de la impresora</option>
+                      {SPEEDS.map((speed) => (
+                        <option key={speed.value} value={speed.value}>{speed.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    Intensidad
+                    <select aria-label="Intensidad de impresión" value={config.density ?? ''} onChange={(e) => update({ density: e.target.value === '' ? null : Number(e.target.value) })} className={SELECT_CLASS}>
+                      <option value="">La de la impresora</option>
+                      {DENSITIES.map((density) => (
+                        <option key={density} value={density}>{density}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <p>
+                  Solo para el envío directo. Si un lote se corta, prueba con menos velocidad e intensidad: la impresora gasta menos y calienta menos. Con poca intensidad comprueba que el escáner siga leyendo. Al volver a «La de la impresora», apágala y enciéndela para que olvide lo anterior.
+                </p>
+              </div>
+            </details>
+          )}
 
           <Section step={2} title="¿Cómo imprimes?">
             <div className="space-y-3 rounded-xl border border-border p-4">

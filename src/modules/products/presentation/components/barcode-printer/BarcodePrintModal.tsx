@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Barcode, Loader2, Monitor, Printer, Settings2, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,9 @@ export const BarcodePrintModal: React.FC<BarcodePrintModalProps> = ({ isOpen, on
   const [previewIndex, setPreviewIndex] = useState(0);
   const [showConfig, setShowConfig] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const [progress, setProgress] = useState<{ sent: number; total: number } | null>(null);
+  const [isStopping, setIsStopping] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (isOpen) setPreviewIndex(0);
@@ -57,27 +60,39 @@ export const BarcodePrintModal: React.FC<BarcodePrintModalProps> = ({ isOpen, on
   const setAllQuantities = (quantity: number) => onUpdateItems(items.map((item) => ({ ...item, quantity })));
 
   const printDirect = async () => {
+    const abort = new AbortController();
+    abortRef.current = abort;
     setIsPrinting(true);
+    setIsStopping(false);
+    setProgress({ sent: 0, total: labelCount });
     try {
-      await labelPrinterService.printLabels(items, storeName, ticketFormat);
-      toast.success(`${labelCount} ${labelCount === 1 ? 'etiqueta enviada' : 'etiquetas enviadas'} a la impresora.`);
+      const { sent, total, cancelled } = await labelPrinterService.printLabels(items, storeName, ticketFormat, { signal: abort.signal, onProgress: (done, of) => setProgress({ sent: done, total: of }) });
+      if (cancelled) toast.info(`Envío detenido: se enviaron ${sent} de ${total}. Revisa cuántas salieron antes de imprimir las que faltan.`, { duration: 10000 });
+      else toast.success(`${total} ${total === 1 ? 'etiqueta enviada' : 'etiquetas enviadas'} a la impresora.`);
     } catch (err) {
       if (isNoPrinterConfigured(err)) {
         setShowConfig(true);
         toast.info('Conecta tu impresora para imprimir directo.');
       } else {
-        toast.error(`No se pudo imprimir: ${deviceErrorMessage(err, 'revisa que la impresora esté encendida y conectada')}`);
+        toast.error(`No se pudo imprimir: ${deviceErrorMessage(err, 'revisa que la impresora esté encendida y conectada')}`, { duration: 10000 });
       }
     } finally {
       setIsPrinting(false);
+      setProgress(null);
     }
+  };
+
+  const stopPrinting = () => {
+    setIsStopping(true);
+    abortRef.current?.abort();
   };
 
   const printWithSystem = () => printLabelsWithSystemDriver(items, storeName, ticketFormat, printer.spec, printer.config);
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      {/* Mientras envía no se cierra sin querer: primero se detiene el envío */}
+      <Dialog open={isOpen} onOpenChange={(open) => !open && !isPrinting && onClose()}>
         <DialogContent className="flex h-[88vh] max-h-[760px] w-[calc(100vw-2rem)] max-w-5xl! flex-col gap-0 overflow-hidden rounded-2xl border border-border bg-card p-6 text-foreground shadow-2xl sm:max-w-5xl!">
           <DialogHeader className="shrink-0 border-b border-border pb-4">
             <div className="flex items-center justify-between gap-3">
@@ -118,15 +133,19 @@ export const BarcodePrintModal: React.FC<BarcodePrintModalProps> = ({ isOpen, on
               <strong className="font-mono text-sm text-foreground">{labelCount}</strong> {labelWord}
             </p>
             <div className="flex flex-wrap items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
-              <Button type="button" variant="outline" size="sm" onClick={printWithSystem} disabled={items.length === 0} title="Abre la ventana de impresión del sistema: sirve con cualquier impresora instalada">
+              {isPrinting ? (
+                <Button variant="ghost" size="sm" onClick={stopPrinting} disabled={isStopping}>{isStopping ? 'Deteniendo…' : 'Detener envío'}</Button>
+              ) : (
+                <Button variant="ghost" size="sm" onClick={onClose}>Cancelar</Button>
+              )}
+              <Button type="button" variant="outline" size="sm" onClick={printWithSystem} disabled={items.length === 0 || isPrinting} title="Abre la ventana de impresión del sistema: sirve con cualquier impresora instalada">
                 <Monitor />
                 Imprimir con el controlador del sistema
               </Button>
               {printer.connected ? (
                 <Button type="button" size="sm" onClick={printDirect} disabled={items.length === 0 || isPrinting}>
                   {isPrinting ? <Loader2 className="animate-spin" /> : <Printer />}
-                  {isPrinting ? 'Enviando…' : `Imprimir ${labelCount} ${labelWord}`}
+                  {isPrinting ? `Enviando ${progress?.sent ?? 0} de ${progress?.total ?? labelCount}…` : `Imprimir ${labelCount} ${labelWord}`}
                 </Button>
               ) : (
                 <Button type="button" size="sm" onClick={() => setShowConfig(true)}>
