@@ -15,3 +15,15 @@ describe('Content-Security-Policy de producción', () => {
     expect(directive('script-src')).toEqual(["'self'"]);
   });
 });
+
+describe('Permissions-Policy de producción', () => {
+  const policy = /add_header Permissions-Policy "([^"]+)"/.exec(config)?.[1]?.split(/,\s*/) ?? [];
+
+  it('deja a esta página usar la cámara (escáner) y los puertos de las impresoras', () => {
+    expect(policy).toEqual(expect.arrayContaining(['camera=(self)', 'usb=(self)', 'serial=(self)']));
+  });
+
+  it('sigue sin micrófono ni ubicación', () => {
+    expect(policy).toEqual(expect.arrayContaining(['microphone=()', 'geolocation=()']));
+  });
+});
