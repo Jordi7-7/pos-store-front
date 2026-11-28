@@ -58,7 +58,7 @@ export function useInventoryDocumentForm(kind: LinesKind, branchId: string, onCr
   const addBySku = async (rawSku: string): Promise<boolean> => {
     const variant = await find(rawSku, 'mover');
     if (!variant) return false;
-    const product: NewDocumentLine = { variantId: variant.id, sku: variant.sku, productName: variant.productName, referenceCost: Number(variant.purchasePrice || 0), stock: Number(variant.stock || 0) };
+    const product: NewDocumentLine = { variantId: variant.id, sku: variant.sku, productName: variant.productName, referenceCost: variant.referenceCost, stock: Number(variant.stock || 0) };
     setLines((current) => addDocumentLine(current, product));
     return true;
   };

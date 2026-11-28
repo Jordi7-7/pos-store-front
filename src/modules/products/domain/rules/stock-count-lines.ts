@@ -11,7 +11,8 @@ export interface CountFormLine {
   counted: number | undefined;
   /** Solo si sobra mercancía: costo de lo que se suma; sin él, el servidor usa el costo de compra. */
   unitCost?: number;
-  referenceCost: number;
+  /** Costo de compra de la variante, para mostrarlo como referencia; sin él, no se pudo consultar. */
+  referenceCost: number | undefined;
 }
 
 export type NewCountLine = Pick<CountFormLine, 'variantId' | 'sku' | 'productName' | 'expected' | 'referenceCost'>;

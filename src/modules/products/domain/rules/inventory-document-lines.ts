@@ -12,8 +12,8 @@ export interface DocumentFormLine {
   quantity: number;
   /** Solo en entradas: costo escrito a mano; sin él, el servidor usa el costo de compra de la variante. */
   unitCost?: number;
-  /** Costo de compra de la variante, para mostrarlo como referencia. */
-  referenceCost: number;
+  /** Costo de compra de la variante, para mostrarlo como referencia; sin él, no se pudo consultar. */
+  referenceCost: number | undefined;
   /** Existencia en la sucursal cuando se agregó la línea (para avisar antes de confirmar una salida). */
   stock: number;
 }

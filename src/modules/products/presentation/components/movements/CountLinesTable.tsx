@@ -63,7 +63,7 @@ export const CountLinesTable: React.FC<CountLinesTableProps> = ({ lines, onCount
                     step="any"
                     inputMode="decimal"
                     aria-label={`Costo de ${line.sku}`}
-                    placeholder={String(line.referenceCost)}
+                    placeholder={line.referenceCost?.toString()}
                     value={line.unitCost ?? ''}
                     onChange={(event) => onUnitCostChange(line.variantId, event.target.value === '' ? undefined : Number(event.target.value))}
                     className={INPUT}

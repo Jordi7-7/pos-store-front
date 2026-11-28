@@ -76,7 +76,7 @@ export function useStockCountForm(branchId: string, onCreated: (document: Invent
   const addBySku = async (rawSku: string): Promise<boolean> => {
     const variant = await find(rawSku, 'contar');
     if (!variant) return false;
-    const product: NewCountLine = { variantId: variant.id, sku: variant.sku, productName: variant.productName, expected: Number(variant.stock || 0), referenceCost: Number(variant.purchasePrice || 0) };
+    const product: NewCountLine = { variantId: variant.id, sku: variant.sku, productName: variant.productName, expected: Number(variant.stock || 0), referenceCost: variant.referenceCost };
     const next = addCountLine(lines, product);
     if (!next.added) {
       toast.info(`${variant.sku} ya está en el conteo.`);
