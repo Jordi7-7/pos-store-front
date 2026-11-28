@@ -178,8 +178,7 @@ export const POSProductSearch: React.FC<POSProductSearchProps> = ({
               {searchResults.map((variant) => {
                 const stockQty = Number(variant.stock || 0);
                 const isSimple = variant.productType === ProductType.SIMPLE;
-                const hasAttributes =
-                  !isSimple && variant.attributeValues && variant.attributeValues.length > 0;
+                const hasAttributes = !isSimple && (variant.attributes?.length ?? 0) > 0;
 
                 return (
                   <div

@@ -17,6 +17,7 @@ import { ExchangeSelectItemsStep } from './exchange-return/ExchangeSelectItemsSt
 import { ExchangeModeStep } from './exchange-return/ExchangeModeStep';
 import { ExchangeConfirmRefundStep } from './exchange-return/ExchangeConfirmRefundStep';
 import { ExchangeItemsStep } from './exchange-return/ExchangeItemsStep';
+import { PosVariableProductModal } from './PosVariableProductModal';
 
 interface ExchangeReturnModalProps {
   isOpen: boolean;
@@ -72,6 +73,9 @@ export function ExchangeReturnModal({
     isScanLoading,
     scanRef,
     handleScanKeyPress,
+    variantChoice,
+    handleChooseVariant,
+    closeVariantChoice,
     adjustNewItemQty,
     removeNewItem,
     handleUpdateNewItemDiscount,
@@ -206,6 +210,15 @@ export function ExchangeReturnModal({
             />
           )}
         </div>
+
+        {/* Dentro del diálogo del cambio: así cerrar la elección no cierra el cambio */}
+        <PosVariableProductModal
+          isOpen={variantChoice !== null}
+          productData={variantChoice}
+          onClose={closeVariantChoice}
+          onAddToCart={handleChooseVariant}
+          confirmLabel="Agregar al cambio"
+        />
       </DialogContent>
     </Dialog>
   );

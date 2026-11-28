@@ -30,20 +30,18 @@ export interface VariantLookup {
   productName: string;
 }
 
-/** Variante disponible para vender en una sucursal, con su existencia ahí. */
+/** Variante disponible para vender en una sucursal, con su existencia ahí. El escaneo del POS nunca trae el costo. */
 export interface PosVariantEntity {
   id: string;
   sku: string;
   barcode?: string;
   productName: string;
   productType?: string;
-  purchasePrice: number;
   salePrice: number;
   wholesalePrice?: number | null;
   stock: number;
   imageUrl?: string | null;
   attributes?: Array<{ name: string; value: string }>;
-  attributeValues?: Array<{ id?: string; value: string; attribute?: { id?: string; name: string } }>;
 }
 
 /** Producto variable con todas sus variantes, para elegir una (la búsqueda por SKU base). */
@@ -51,7 +49,6 @@ export interface PosVariableProductEntity {
   productId: string;
   productName: string;
   baseSku: string | null;
-  description?: string;
   imageUrl?: string | null;
   productType?: string;
   attributes: Array<{ id: string; name: string; values: Array<{ id: string; value: string }> }>;
@@ -59,13 +56,13 @@ export interface PosVariableProductEntity {
     id: string;
     sku: string;
     barcode: string;
-    purchasePrice: number;
     salePrice: number;
     wholesalePrice: number | null;
     stock: number;
     imageUrl?: string | null;
     attributes?: Array<{ name: string; value: string }>;
-    attributeValues: Array<{ attributeId: string; attributeName: string; valueId: string; valueName: string }>;
+    /** Qué opción de `attributes` del producto usa en cada atributo. */
+    attributeValues: Array<{ attributeId: string; valueId: string }>;
   }>;
 }
 

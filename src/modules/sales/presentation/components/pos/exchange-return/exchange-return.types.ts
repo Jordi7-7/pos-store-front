@@ -23,7 +23,6 @@ export interface NewExchangeItem {
   attributes: string;
   quantity: number;
   price: number;  // salePrice from POS endpoint
-  cost: number;
   discountType?: DiscountType;
   discountRate?: number;
   discountAmount?: number; // unit discount amount

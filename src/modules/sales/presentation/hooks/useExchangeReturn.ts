@@ -7,7 +7,7 @@ import { getErrorMessage } from '@/shared/presentation/formatting/error-messages
 import { ExchangeError } from '../../application/use-cases/exchange-products';
 import { RefundSaleError } from '../../application/use-cases/refund-sale';
 import type { SaleDetailEntity } from '../../domain/entities/sale.entity';
-import { useVariantSearch } from '@/modules/products';
+import { useVariantSearch, type PosVariableProductEntity } from '@/modules/products';
 import type {
   ModalStep,
   SaleItemRow,
@@ -15,6 +15,8 @@ import type {
 } from '../components/pos/exchange-return/exchange-return.types';
 import { formatMoney } from '../components/pos/exchange-return/exchange-return.types';
 import { computeLineDiscount } from '../../domain/rules/cart-rules';
+import { combinationLabel, readExchangeScan } from '../../domain/rules/exchange-scan';
+import type { CartProductRef, CartVariantRef } from '../../domain/entities/cart-item';
 import { exchangeDifference, newItemsTotal, returnTotal } from '../../domain/rules/exchange-rules';
 
 interface UseExchangeReturnProps {
@@ -50,6 +52,8 @@ export function useExchangeReturn({
   const [scanInput, setScanInput] = useState('');
   const [isScanLoading, setIsScanLoading] = useState(false);
   const scanRef = useRef<HTMLInputElement>(null);
+  /** Producto escaneado por su SKU base, a la espera de que se elija la variante. */
+  const [variantChoice, setVariantChoice] = useState<PosVariableProductEntity | null>(null);
 
   const reset = useCallback(() => {
     setStep('search');
@@ -59,6 +63,7 @@ export function useExchangeReturn({
     setReason('');
     setNewItems([]);
     setScanInput('');
+    setVariantChoice(null);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -104,6 +109,21 @@ export function useExchangeReturn({
 
   const totalToReturn = returnTotal(selectedReturnItems, returnQtyMap);
 
+  const focusScan = useCallback(() => {
+    setTimeout(() => scanRef.current?.focus(), 100);
+  }, []);
+
+  const addNewItem = useCallback((item: Omit<NewExchangeItem, 'quantity'>) => {
+    setNewItems((prev) => {
+      const existing = prev.find((x) => x.variantId === item.variantId);
+      if (existing) {
+        return prev.map((x) => (x.variantId === item.variantId ? { ...x, quantity: x.quantity + 1 } : x));
+      }
+      return [...prev, { ...item, quantity: 1 }];
+    });
+    toast.success(`${item.productName} agregado`);
+  }, []);
+
   // Scan new items
   const handleScanKeyPress = useCallback(
     async (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -112,48 +132,53 @@ export function useExchangeReturn({
       if (!code) return;
       setScanInput('');
       setIsScanLoading(true);
+      let choosing = false;
       try {
-        const result = await searchPos(code, branchId);
-        const variant = result.kind === 'variants' ? result.variants[0] : undefined;
-        if (!variant) {
-          toast.error(`Producto no encontrado: ${code}`);
-          return;
+        const scan = readExchangeScan(await searchPos(code, branchId), code);
+        if (scan.kind === 'choose') {
+          choosing = true;
+          setVariantChoice(scan.product);
+        } else if (scan.kind === 'variant') {
+          const { variant } = scan;
+          addNewItem({
+            variantId: variant.id,
+            productName: variant.productName,
+            sku: variant.sku,
+            attributes: combinationLabel(variant.attributes),
+            price: variant.salePrice,
+          });
+        } else {
+          toast.error(scan.kind === 'ambiguous' ? `El código "${code}" es de varios productos. Escribe el SKU de la prenda.` : `Producto no encontrado: ${code}`);
         }
-        const attrsString = (variant.attributeValues ?? [])
-          .map((av) => `${av.attribute?.name ?? ''}: ${av.value}`)
-          .filter(Boolean)
-          .join(' / ');
-
-        setNewItems((prev) => {
-          const existing = prev.find((x) => x.variantId === variant.id);
-          if (existing) {
-            return prev.map((x) =>
-              x.variantId === variant.id ? { ...x, quantity: x.quantity + 1 } : x,
-            );
-          }
-          return [
-            ...prev,
-            {
-              variantId: variant.id,
-              productName: variant.productName,
-              sku: variant.sku,
-              attributes: attrsString,
-              quantity: 1,
-              price: variant.salePrice,
-              cost: variant.purchasePrice,
-            },
-          ];
-        });
-        toast.success(`${variant.productName} agregado`);
-      } catch {
-        toast.error(`Producto no encontrado: ${code}`);
+      } catch (error) {
+        toast.error(getErrorMessage(error, `No se pudo buscar el código "${code}".`));
       } finally {
         setIsScanLoading(false);
-        setTimeout(() => scanRef.current?.focus(), 100);
+        // Con la elección abierta el foco es suyo
+        if (!choosing) focusScan();
       }
     },
-    [scanInput, branchId],
+    [scanInput, branchId, searchPos, addNewItem, focusScan],
   );
+
+  /** La variante elegida de un producto escaneado por su SKU base. */
+  const handleChooseVariant = useCallback(
+    (product: CartProductRef, variant: CartVariantRef) => {
+      addNewItem({
+        variantId: variant.id,
+        productName: product.name,
+        sku: variant.sku,
+        attributes: combinationLabel(variant.attributes),
+        price: variant.salePrice,
+      });
+    },
+    [addNewItem],
+  );
+
+  const closeVariantChoice = useCallback(() => {
+    setVariantChoice(null);
+    focusScan();
+  }, [focusScan]);
 
   const adjustNewItemQty = useCallback((variantId: string, delta: number) => {
     setNewItems((prev) =>
@@ -261,6 +286,9 @@ export function useExchangeReturn({
     isScanLoading,
     scanRef,
     handleScanKeyPress,
+    variantChoice,
+    handleChooseVariant,
+    closeVariantChoice,
     adjustNewItemQty,
     removeNewItem,
     handleUpdateNewItemDiscount,
